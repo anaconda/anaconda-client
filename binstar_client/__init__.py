@@ -17,7 +17,7 @@ class Binstar():
                   an anonymous user. 
     '''
     
-    def __init__(self, token=None, domain='http://api.binstar.localtest:4991'):
+    def __init__(self, token=None, domain='https://api.binstar.org'):
         self.session = requests.Session()
         self.token = token
         if token:
