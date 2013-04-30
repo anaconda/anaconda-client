@@ -54,7 +54,7 @@ def main(args):
 
 def add_parser(subparsers):
     
-    parser = subparsers.add_parser('file',
+    parser = subparsers.add_parser('dist',
                                       help='Add a release',
                                       description=__doc__)
     

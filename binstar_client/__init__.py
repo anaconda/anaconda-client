@@ -22,7 +22,7 @@ class Binstar():
         self.token = token
         if token:
             self.session.headers.update({'Authorization': 'token %s' % (token)})
-            
+        
         self.domain = domain
     
     def authenticate(self, username, password, application, application_url=None, scopes=['package'],):
@@ -185,6 +185,21 @@ class Binstar():
         self._check_response(res)
         return res.json()
 
+    def remove_dist(self, login, package_name, release, basename=None, _id=None):
+        
+        if basename:
+            url = '%s/dist/%s/%s/%s/%s' % (self.domain, login, package_name, release, basename)
+        elif _id:
+            url = '%s/dist/%s/%s/%s/-/%s' % (self.domain, login, package_name, release, _id)
+        else:
+            raise TypeError("method remove_dist expects either 'basename' or '_id' arguments")
+            
+        print 'url', url
+        res = self.session.delete(url, verify=True)
+        self._check_response(res)
+        return res.json()
+        
+    
     def download(self, login, package_name, release, basename, md5=None):
         '''
         Dowload a package distribution
