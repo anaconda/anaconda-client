@@ -10,6 +10,13 @@ setup(
     author='Sean Ross-Ross',
     author_email='srossross@gmail.com',
     url='http://github.com/Binstar/binstar_client',
-    packages=find_packages()
+    packages=find_packages(),
+    
+   entry_points={
+          'console_scripts': [
+              'binstar = binstar_client.scripts.cli:main',
+              ]
+                 },
+
 )
 

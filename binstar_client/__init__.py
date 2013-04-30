@@ -45,6 +45,7 @@ class Binstar():
         res = r.json()
         token = res['token']
         self.session.headers.update({'Authorization': 'token %s' % (token)})
+        return token
         
     def _check_response(self, res, allowed=[200]):
         if not res.status_code in allowed:
@@ -73,7 +74,7 @@ class Binstar():
         
         return res.json()
     
-    def packages(self, login=None):
+    def user_packages(self, login=None):
         '''
         Returns a list of packages for a given user
         
@@ -103,6 +104,16 @@ class Binstar():
         self._check_response(res)
         
         return res.json()
+    
+    def all_packages(self, modified_after=None):
+        '''
+        '''
+        url = '%s/package_listing' % (self.domain)
+        data = {'modified_after':modified_after or ''}
+        res = self.session.get(url, data=data, verify=True)
+        self._check_response(res)
+        return res.json()
+
     
     def add_package(self, login, package_name,
                     package_type,
@@ -241,3 +252,4 @@ class Binstar():
         return res.json()
     
 
+    
