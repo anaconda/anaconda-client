@@ -3,15 +3,16 @@ Created on Apr 29, 2013
 
 @author: sean
 '''
-from os.path import exists, join, dirname
-import yaml
-from os.path import expanduser
-import getpass
+
+from hashlib import md5
 from keyring import get_keyring
-from binstar_client import Binstar
+from os.path import exists, join, dirname, expanduser
 import appdirs
+import base64
+import getpass
 import os
 import urlparse
+import yaml
 
 class UserError(Exception):
     pass
@@ -67,9 +68,12 @@ def parse_specs(spec):
     return PackageSpec(user, package, version, basename, attrs)
 
 def get_binstar():
+    from binstar_client import Binstar
+    
     kr = get_keyring()
     token = kr.get_password('binstar-token', getpass.getuser())
     url = get_config().get('url', 'https://api.binstar.org')
+    
     return Binstar(token, domain=url,)
 
 def load_config(config_file):
@@ -104,3 +108,30 @@ def set_config(data, user=True):
     with open(config_file, 'w') as fd:
         yaml.dump(data, fd)
 
+
+
+def compute_hash(fp, buf_size=8192, size=None, hash_algorithm=md5):
+    hash_obj = hash_algorithm()
+    spos = fp.tell()
+    if size and size < buf_size:
+        s = fp.read(size)
+    else:
+        s = fp.read(buf_size)
+    while s:
+        hash_obj.update(s)
+        if size:
+            size -= len(s)
+            if size <= 0:
+                break
+        if size and size < buf_size:
+            s = fp.read(size)
+        else:
+            s = fp.read(buf_size)
+    hex_digest = hash_obj.hexdigest()
+    base64_digest = base64.encodestring(hash_obj.digest())
+    if base64_digest[-1] == '\n':
+        base64_digest = base64_digest[0:-1]
+    # data_size based on bytes read.
+    data_size = fp.tell() - spos
+    fp.seek(spos)
+    return (hex_digest, base64_digest, data_size)

@@ -12,6 +12,7 @@ def main():
     for command in sub_commands():
         command.add_parser(subparsers)
     
+    parser.add_argument('--verbose', action='store_true')
     args = parser.parse_args()
     
     return args.main(args)

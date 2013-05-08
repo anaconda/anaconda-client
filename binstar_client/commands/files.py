@@ -6,11 +6,16 @@ from argparse import FileType
 from os.path import basename
 import tarfile
 import json
+from warnings import warn
 
 def detect_conda_attrs(file):
-    tar = tarfile.open(file)
-    obj = tar.extractfile('info/index.json')
-    return json.loads(obj.read())
+    try:
+        tar = tarfile.open(file)
+        obj = tar.extractfile('info/index.json')
+        return json.loads(obj.read())
+    except:
+        warn('Trouble opening conda package')
+        return {}
 
 detectors = {'conda':detect_conda_attrs}
 def detect(binstar, user, package, file):
