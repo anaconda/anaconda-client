@@ -5,7 +5,7 @@ import pkgutil
 from os.path import dirname
 
 def sub_command_names():
-    return [name for _, name, _ in pkgutil.iter_modules([dirname(__file__)])]
+    return [name for _, name, _ in pkgutil.iter_modules([dirname(__file__)]) if not name.startswith('_')]
     
 def sub_commands():
     names = sub_command_names()

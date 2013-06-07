@@ -3,9 +3,20 @@ import requests, json
 import base64
 import os
 from binstar_client.utils import compute_hash
+from binstar_client.requests_ext import stream_multipart
 
+# from poster.encode import multipart_encode
+# from poster.streaminghttp import register_openers
+# import urllib2
+# register_openers()
 
 class BinstarError(Exception):
+    pass
+
+class Unauthorized(BinstarError):
+    pass
+
+class NotFound(IndexError, BinstarError):
     pass
 
 def jencode(payload):
@@ -43,11 +54,17 @@ class Binstar():
         url = '%s/authentications' % (self.domain)
         payload = {"scopes": scopes, "note": application, "note_url": application_url}
         data = base64.b64encode(json.dumps(payload))
-        r = self.session.post(url, auth=(username, password), data=data, verify=True)
-        res = r.json()
+        res = self.session.post(url, auth=(username, password), data=data, verify=True)
+        self._check_response(res)
+        res = res.json()
         token = res['token']
         self.session.headers.update({'Authorization': 'token %s' % (token)})
         return token
+        
+    def remove_authentication(self, token):
+        url = '%s/authentications' % (self.domain)
+        res = self.session.delete(url, verify=True)
+        self._check_response(res)
         
     def _check_response(self, res, allowed=[200]):
         if not res.status_code in allowed:
@@ -57,7 +74,12 @@ class Binstar():
                 msg = 'Undefined error'
             else: 
                 msg = data.get('error', 'Undefined error')
-            raise BinstarError(msg, res.status_code)
+            ErrCls = BinstarError
+            if res.status_code == 401:
+                ErrCls = Unauthorized
+            elif res.status_code == 404:
+                ErrCls = NotFound
+            raise ErrCls(msg, res.status_code)
         
     def user(self, login=None):
         '''
@@ -232,7 +254,7 @@ class Binstar():
             return res2.raw
             
     
-    def upload(self, login, package_name, release, basename, fd, description='', md5=None, size=None, **attrs):
+    def upload(self, login, package_name, release, basename, fd, description='', md5=None, size=None, attrs=None, callback=None):
         '''
         Upload a new distribution to a package release. 
         
@@ -246,6 +268,10 @@ class Binstar():
 
         '''
         url = '%s/stage/%s/%s/%s/%s' % (self.domain, login, package_name, release, basename)
+        if attrs is None:
+            attrs = {}
+        if not isinstance(attrs, dict):
+            raise TypeError('argument attrs must be a dictionary')
         
         payload = dict(description=description, attrs=attrs)
         data = jencode(payload)
@@ -266,8 +292,12 @@ class Binstar():
         
         s3data['Content-Length'] = size
         s3data['Content-MD5'] = b64md5
-        s3res = requests.post(s3url, data=s3data, files={'file':(basename, fd)}, verify=True)
         
+        data_stream, headers = stream_multipart(s3data, files={'file':(basename, fd)}, 
+                                       callback=callback)
+         
+        s3res = requests.post(s3url, data=data_stream, verify=True, timeout=10*60*60, headers=headers)
+         
         if s3res.status_code != 201:
             print s3res.text 
             print 
@@ -353,6 +383,9 @@ class Binstar():
         self._check_response(res, [204])
         
         return
+
+    
+    
     
     
     

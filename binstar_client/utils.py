@@ -13,6 +13,7 @@ import getpass
 import os
 import urlparse
 import yaml
+import sys
 
 class UserError(Exception):
     pass
@@ -135,3 +136,43 @@ def compute_hash(fp, buf_size=8192, size=None, hash_algorithm=md5):
     data_size = fp.tell() - spos
     fp.seek(spos)
     return (hex_digest, base64_digest, data_size)
+
+
+class upload_in_chunks(object):
+    def __init__(self, fd, chunksize=1 << 13):
+        self.fd = fd
+        self.chunksize = chunksize
+        self.totalsize = os.fstat(fd.fileno()).st_size
+        self.readsofar = 0
+
+    def __iter__(self):
+        print 'Progress:'
+        while True:
+            data = self.fd.read(self.chunksize)
+            if not data:
+                sys.stderr.write("\n")
+                break
+            self.readsofar += len(data)
+            percent = self.readsofar * 1e2 / self.totalsize
+            sys.stderr.write("\r{percent:3.0f}%".format(percent=percent))
+            yield data
+
+    def __len__(self):
+        return self.totalsize
+
+
+def upload_with_progress(fd):
+    it = upload_in_chunks(fd)
+    IterableToFileAdapter(it)
+    
+class IterableToFileAdapter(object):
+    def __init__(self, iterable):
+        self.iterator = iter(iterable)
+        self.length = len(iterable)
+
+    def read(self, size=-1): # TBD: add buffer for `len(data) > size` case
+        return next(self.iterator, b'')
+
+    def __len__(self):
+        return self.length
+

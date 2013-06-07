@@ -1,14 +1,17 @@
 '''
 Print the information of the current user
 '''
-from keyring import get_keyring
-import getpass
-from binstar_client import Binstar
-from binstar_client.utils import get_config, get_binstar
+from binstar_client import Unauthorized
+from binstar_client.utils import get_binstar
 
 def main(args):
     binstar = get_binstar()
-    user = binstar.user()
+    
+    try:
+        user = binstar.user()
+    except Unauthorized:
+        return 'Anonymous User'
+    
     for key_value in user.items():
         print  '%s: %s' % key_value
 

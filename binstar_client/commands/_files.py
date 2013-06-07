@@ -18,6 +18,7 @@ def detect_conda_attrs(file):
         return {}
 
 detectors = {'conda':detect_conda_attrs}
+
 def detect(binstar, user, package, file):
     
     package_type = binstar.package(user, package).get('package_type')
