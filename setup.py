@@ -11,7 +11,10 @@ setup(
     author_email='srossross@gmail.com',
     url='http://github.com/Binstar/binstar_client',
     packages=find_packages(),
-    install_requires=['keyring', 'appdir'],
+    install_requires=['keyring', 
+                      'appdir',
+                      'requests>=1.0',
+                      'pyyaml'],
     entry_points={
           'console_scripts': [
               'binstar = binstar_client.scripts.cli:main',
