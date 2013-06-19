@@ -5,6 +5,6 @@ FAQ
 
 **What is Binstar?**
 
-Binstar is an online repository of software designed to be used to conda_.
+Binstar is an online repository of software designed to be used to conda.
 
 .. _conda http://docs.continuum.io/conda/

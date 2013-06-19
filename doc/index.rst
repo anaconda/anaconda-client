@@ -30,7 +30,7 @@ Indices and tables
 
 
 License Agreement
-Binstar is distributed under the OpenBSD_ license.
+Binstar is distributed under the OpenBSD license.
 
 .. _OpenBSD: http://opensource.org/licenses/bsd-license.php
 
