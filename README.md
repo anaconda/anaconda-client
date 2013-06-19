@@ -11,7 +11,7 @@ First create an account on [binstar.org](https://binstar.org)
 
 `binstar login`
 
-Test you login with the whoami command
+Test your login with the whoami command
 
 `binstar whoami`
 
