@@ -28,3 +28,9 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
+
+License Agreement
+Binstar is distributed under the OpenBSD_ license.
+
+.. _OpenBSD: http://opensource.org/licenses/bsd-license.php
+

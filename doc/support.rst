@@ -1,10 +1,9 @@
 
-Support
+Support 
 ======
 
+The easiest way to get help is to open an issue on Github_.
 
-.. py:module:: binstar_client
+.. _Github https://github.com/Binstar/binstar_client/issues
 
 
-.. autoclass:: Binstar
-   :members:

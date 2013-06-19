@@ -3,8 +3,8 @@ FAQ
 ======
 
 
-.. py:module:: binstar_client
+**What is Binstar?**
 
+Binstar is an online repository of software designed to be used to conda_.
 
-.. autoclass:: Binstar
-   :members:
+.. _conda http://docs.continuum.io/conda/

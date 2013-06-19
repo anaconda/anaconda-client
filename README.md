@@ -10,12 +10,12 @@ Quickstart:
 
 First you must create an account on binstar.org
 
-[conda | pip] install binstar_client
-binstar login
+`[conda | pip] install binstar_client`
+`binstar login`
 
-Check that it's running
+After entering your credentials type:
 
-binstar whoami
+`binstar whoami`
 
 
 
@@ -23,4 +23,3 @@ binstar whoami
 
  * https://binstar-client.readthedocs.org/en/latest/
  * https://binstar.org
-
