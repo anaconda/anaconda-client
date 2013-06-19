@@ -2,18 +2,17 @@ binstar_client
 ==============
 
 Binstar Client Library 
-
-
 This library provides a Python interface to the Binstar restfull API.
 
 Quickstart:
 
-First you must create an account on binstar.org
+First create an account on [binstar.org](https://binstar.org)
 
 `[conda | pip] install binstar_client`
+
 `binstar login`
 
-After entering your credentials type:
+Test you login with the whoami command
 
 `binstar whoami`
 
