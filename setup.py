@@ -12,7 +12,6 @@ setup(
     url='http://github.com/Binstar/binstar_client',
     packages=find_packages(),
     install_requires=['keyring', 
-                      'appdirs',
                       'requests>=1.0',
                       'pyyaml'],
     entry_points={
