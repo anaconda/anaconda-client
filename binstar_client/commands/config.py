@@ -1,10 +1,9 @@
 '''
 Authenticate a user
 '''
-import getpass
 from binstar_client.utils import get_config, set_config, SITE_CONFIG,\
     USER_CONFIG
-import appdirs
+
 def main(args):
     config = get_config()
     

@@ -86,8 +86,8 @@ def load_config(config_file):
     
     return {}
 
-SITE_CONFIG = join(appdirs.site_data_dir('binstar'), 'config.yaml')
-USER_CONFIG = join(appdirs.user_data_dir('binstar'), 'config.yaml')
+SITE_CONFIG = join(appdirs.site_data_dir('binstar', 'ContinuumIO'), 'config.yaml')
+USER_CONFIG = join(appdirs.user_data_dir('binstar', 'ContinuumIO'), 'config.yaml')
 def get_config(user=True, site=True):
     
     config = {}
