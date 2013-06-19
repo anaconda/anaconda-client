@@ -6,12 +6,20 @@
 Welcome to Bistar Client's documentation!
 =========================================
 
-Contents:
+Binstar is a package management tool.
+
+
+Site Documentation
+------------------
 
 .. toctree::
-   :maxdepth: 2
+    :maxdepth: 2
 
-   api
+    getting_started
+    faq
+	api
+    support
+   
 
 Indices and tables
 ==================
