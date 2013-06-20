@@ -131,20 +131,12 @@ def main(args):
     try:
         binstar.package(username, package_name)
     except NotFound:
-        if args.mode == 'interactive':
-            create_package_interactive(binstar, username, package_name, package_type)
-        else:
-            print ("Package not found. Create package on binstar.org or run 'binstar upload -i'.")
-            raise
+        create_package_interactive(binstar, username, package_name, package_type) 
 
     try:
         binstar.release(username, package_name, version)
     except NotFound:
-        if args.mode == 'interactive':
-            create_release_interactive(binstar, username, package_name, package_type, version)
-        else:
-            print ("Release does not exist. Create release on binstar.org or run 'binstar upload -i'.")
-            raise 
+        create_release_interactive(binstar, username, package_name, package_type, version)
     
     from os.path import basename
     basefilename = basename(filename)
