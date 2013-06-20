@@ -134,6 +134,7 @@ def main(args):
         if args.mode == 'interactive':
             create_package_interactive(binstar, username, package_name, package_type)
         else:
+            print ("Package not found. Create package on binstar.org or run 'binstar upload -i'.")
             raise
 
     try:
@@ -142,6 +143,7 @@ def main(args):
         if args.mode == 'interactive':
             create_release_interactive(binstar, username, package_name, package_type, version)
         else:
+            print ("Release does not exist. Create release on binstar.org or run 'binstar upload -i'.")
             raise 
     
     from os.path import basename
