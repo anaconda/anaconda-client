@@ -4,6 +4,11 @@
 
 from setuptools import setup, find_packages
 
+try:
+    from distutils.command.build_py import build_py_2to3 as build_py
+except ImportError:
+    from distutils.command.build_py import build_py
+
 setup(
     name='binstar_client',
     version="0.1.0",
@@ -19,5 +24,6 @@ setup(
               'binstar = binstar_client.scripts.cli:main',
               ]
                  },
-
+    
+    cmdclass={'build_py': build_py},
 )
