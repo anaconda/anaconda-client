@@ -12,5 +12,3 @@ def sub_commands():
     this_module = __import__(__package__, fromlist=names) 
     for name in names:
         yield getattr(this_module, name)
-        
-    

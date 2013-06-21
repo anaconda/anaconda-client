@@ -385,9 +385,3 @@ class Binstar():
         self._check_response(res, [204])
         
         return
-
-    
-    
-    
-    
-    

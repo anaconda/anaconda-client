@@ -161,4 +161,3 @@ def main():
                                      callback=callback)
     
     requests.post('http://localhost:3339', data=data, headers=headers)
-    
