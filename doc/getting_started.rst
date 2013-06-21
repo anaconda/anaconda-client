@@ -1,4 +1,3 @@
-
 Getting Started
 ======
 
@@ -104,6 +103,8 @@ You have just built a conda package. To upload it to binstar navigate to your an
 
 ```cd anaconda/conda-bld/linux64/```
 
-Here you will see a tar.bz2 file of your package and at this point you can run:
+You will see a print out of you package name in the form of 'binstar upload path/to/binstar_test_package1'. Copy and paste the command:
 
-```binstar upload -i binstar_test_package1```
+```binstar upload binstar_test_package1```
+
+You have know created a package and uploaded it to conda, pypi, and binstar. Check out your packages on 'https://binstar.org/username/package_name'
