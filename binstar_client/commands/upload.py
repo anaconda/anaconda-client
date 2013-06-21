@@ -131,18 +131,12 @@ def main(args):
     try:
         binstar.package(username, package_name)
     except NotFound:
-        if args.mode == 'interactive':
-            create_package_interactive(binstar, username, package_name, package_type)
-        else:
-            raise
+        create_package_interactive(binstar, username, package_name, package_type) 
 
     try:
         binstar.release(username, package_name, version)
     except NotFound:
-        if args.mode == 'interactive':
-            create_release_interactive(binstar, username, package_name, package_type, version)
-        else:
-            raise 
+        create_release_interactive(binstar, username, package_name, package_type, version)
     
     from os.path import basename
     basefilename = basename(filename)
@@ -196,8 +190,6 @@ def add_parser(subparsers):
     parser.add_argument('-d','--description', help='description of the file(s)')
     parser.add_argument('-m','--metadata', help='json encoded metadata default is to autodetect')
     group = parser.add_mutually_exclusive_group()
-    group.add_argument('-i', '--interactive', action='store_const', help='Run an interactive prompt if any packages are missing', 
-                        dest='mode', const='interactive')
     group.add_argument('-f', '--fail', help='Fail if a package or release does not exist (default)', 
                                         action='store_const', dest='mode', const='fail' )
     
