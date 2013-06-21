@@ -3,10 +3,10 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Bistar Client's documentation!
+Welcome to Bistar's documentation!
 =========================================
 
-Binstar is a package management tool.
+Binstar is a package management that will maintain up to date mirrors of public package hosts (conda, pypi, ruby gem's, etc.)
 
 
 Site Documentation

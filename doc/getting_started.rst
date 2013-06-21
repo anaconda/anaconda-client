@@ -20,7 +20,7 @@ Test your login with the whoami command:
 Building a Conda Package and Uploading to Binstar
 ======
 
-**Note** *We can not have packages with the same names so if you intend to following along I would recommend changing the the digit in my package name with one of your choosing*
+**Note** *We can not upload packages with the same name to Pypi so if you intend to following along I recommend changing the the '1' digit in my package name with a random number*
 
 
 We are going to be uploading a package with a simple 'hello world' function.
@@ -48,7 +48,7 @@ Next we create a subdirectory with an __init__.py and hello.py file:
 
 hello.py contains:
 
-```def hello:
+```def hello():
 		print ("hello world")
 ```
 
@@ -87,7 +87,7 @@ My version is on: https://pypi.python.org/pypi/binstar_test_package1
 
 
 
-We can now build the conda package. If do not have it get the conda-recipies replo from Github: 
+We can now build the conda package. If do not have it get the conda-recipies repo from Github: 
 
 ```git clone https://github.com/ContinuumIO/conda-recipes```
 
