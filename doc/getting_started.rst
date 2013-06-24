@@ -4,12 +4,10 @@ Getting Started
 To get started you must have: 
 
 * Anaconda_ installed on your system 
-* Git clones of the conda_ and conda recipes_ repositories
-* Accounts on binstar_ and pypi_.
+* Git clone of the conda recipes_ repository.
+* Accounts on binstar_ and pypi_
 
 .. _anaconda: http://docs.continuum.io/anaconda/install.html
-
-.. _conda: https://github.com/continuumio/conda
 
 .. _recipes: https://github.com/ContinuumIO/conda-recipes
 
@@ -18,7 +16,7 @@ To get started you must have:
 .. _pypi: https://pypi.python.org/pypi
 
 
-Install the binstar command line client::
+Unless you are using Anaconda 1.6+ install the binstar command line client::
 
 	$ [conda | pip] install binstar
 
