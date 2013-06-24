@@ -38,7 +38,7 @@ Test your login with the whoami command::
 Building a Conda Package and Uploading to Binstar
 =================================================
 
-**Note:** *We can not upload packages with the same name to PyPI so if you intend to follow along I recommend changing the the '1' digit in my package name with a random number*
+**Note:** *We cannot upload packages with the same name to PyPI so if you intend to follow along I recommend changing the the '1' digit in my package name with a random number*
 
 
 We are going to be uploading a package with a simple 'hello world' function. To start let's make a new directory and create a setup.py file which holds the package metadata:
@@ -88,7 +88,7 @@ To create a release, your source code needs to be packaged into a single archive
 
 	$ python setup.py sdist
 
-This will create a dist sub-directory in your project, and will wrap-up all of your project’s source code files into a distribution file, a compressed archive file in the form of:
+This will create a dist sub-directory in your project and will wrap-up all of your project’s source code files into a distribution file, a compressed archive file in the form of:
 
 binstar_test_package1-0.1.0.tar.gz
 
@@ -112,7 +112,7 @@ Navigate to the conda-recipes repo and run::
 
 	$ conda skeleton pypi binstar_test_package1
 
-This will run a script and pull the package info from PyPi. Now cd into the new directory you created inside of conda-recipes, named after your package::
+This will run a script and pull the package info from PyPi. Now cd into the newly created directory in conda-recipes, named after your package::
 
 	$ cd binstar_test_package1
 
