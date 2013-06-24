@@ -15,6 +15,7 @@ Test your login with the whoami command
 
 `binstar whoami`
 
+For a complete tutorial on building and uploading conda packages to Binstar read the [Getting Started Guide](https://binstar-client.readthedocs.org/en/latest/getting_started.html).
 
 
 ### Links
