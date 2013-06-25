@@ -54,9 +54,9 @@ This a small directory that looks like this:
 		   build.sh
 		   meta.yaml
 
-Setup.py is the standard file holding the metadat aand hello.py has our single ``hello_world()`` function. 
+Setup.py is the standard file holding the metadata and hello.py has our single ``hello_world()`` function. 
 
-The bld.bat, build.sh, and meta.yaml are scripts and metadata for the Conda package. Read the Conda build_ page for more info on those three files.
+The bld.bat, build.sh, and meta.yaml are scripts and metadata for the Conda package. You can read the Conda build_ page for more info on those three files.
 
 .. _build: http://docs.continuum.io/conda/build.html
 
@@ -71,6 +71,6 @@ The print out should be in the form of 'binstar upload path/to/test_package'. My
 
 	$ binstar upload /home/xavier/anaconda/conda-bld/linux-64/test_package-0.1.0-py27_0.tar.bz2
 
-Since it is your first time creating a package and release you will have to fill out some text fields which could alternatively be done through the web app.
+Since it is your first time creating a package and release you will be prompted to fill out some text fields which could alternatively be done through the web app.
 
 You have know created a conda package and uploaded it to binstar. Check out your packages on 'https://binstar.org/<username>/<package_name>'
