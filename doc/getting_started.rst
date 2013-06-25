@@ -1,5 +1,5 @@
-Getting Started
-===============
+Uploading a Conda Package
+==========================
 
 To get started you must have: 
 
