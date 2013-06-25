@@ -17,9 +17,9 @@ Site Documentation
 
     getting_started
     pypi_to_binstar
-    windows
     faq
     api
+    windows    
     support
    
 
