@@ -28,7 +28,7 @@ Test your login with the whoami command::
 
 	$ binstar whoami
 
-We are going to be uploading a package with a simple 'hello world' function. To follow along start by getting the package repo from Github::
+We are going to be uploading a package with a simple 'hello world' function. To follow along start by getting my demonstration package repo from Github::
 
 	$ git clone https://github.com/Ghostface-jr/Test-Package
 
@@ -40,12 +40,14 @@ Now we create the package by running::
 
 	$ conda build test_package/
 
-That is all it takes to create a conda package, the final step is uploading to binstar by copying and pasting the last line of the print out after running ``conda build test_package/`` command.
+That is all it takes to create a Conda package. 
 
-On my system the command is::
+The final step is uploading to binstar by copying and pasting the last line of the print out after running the ``conda build test_package/`` command. On my system the command is::
 
 	$ binstar upload /home/xavier/anaconda/conda-bld/linux-64/test_package-0.1.0-py27_0.tar.bz2
 
 Since it is your first time creating a package and release you will be prompted to fill out some text fields which could alternatively be done through the web app.
 
-You will see a ``done`` printed out and you have now just created a conda package and uploaded it to binstar. See the package on 'https://binstar.org/<username>/<package_name>'
+You will see a ``done`` printed out to confirm you have successfully uploaded your Conda package to Binstar. 
+
+See the package on 'https://binstar.org/<username>/<package_name>'
