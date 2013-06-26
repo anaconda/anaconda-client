@@ -168,8 +168,8 @@ def main(args):
         
         binstar.upload(username, package_name, version, basefilename, fd, args.description, attrs=attrs, 
                        callback=callback)
-        print 
-        print 'done'
+
+        print ("\nUpload Complete. Your package is located at:\n\nbinstar.org/%s/%s\n" % (username, package_name))
     
     
 #     detect(binstar, user, package, file)
