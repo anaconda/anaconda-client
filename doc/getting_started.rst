@@ -56,9 +56,9 @@ This a small directory that looks like this:
 
 Setup.py is the standard file holding the metadata and hello.py has our single ``hello_world()`` function. 
 
-The bld.bat, build.sh, and meta.yaml are scripts and metadata for the Conda package. You can read the Conda build_ page for more info on those three files and their purpose.
+The bld.bat, build.sh, and meta.yaml are scripts and metadata for the Conda package. You can read the `Conda build`_ page for more info on those three files and their purpose.
 
-.. _build: http://docs.continuum.io/conda/build.html
+.. _`Conda build`: http://docs.continuum.io/conda/build.html
 
 Now we create the package by running::
 
