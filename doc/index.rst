@@ -14,6 +14,7 @@ Site Documentation
 
 .. toctree::
     :maxdepth: 2
+    
     getting_started
     condarc
     pypi_to_binstar
