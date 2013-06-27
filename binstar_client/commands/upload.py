@@ -33,16 +33,21 @@ def detect_package_type(binstar, username, package_name, filename):
     
     raise BinstarError('Could not autodetect the package type of file %s' % filename) 
 
-def bool_input(prompt):
-    while 1:
-        inpt = raw_input('%s [Y|n]: ' % prompt)
-        if inpt.lower() in ['', 'y', 'yes']:
-            return True
-        elif inpt.lower() in ['n', 'no']:
-            return False
-        else:
-            print 'please enter yes or no'
-    
+def bool_input(prompt, default=True):
+        while 1:
+            inpt = raw_input('%s [Y|n]: ' % prompt)
+            if inpt.lower() in ['y', 'yes'] and not default:
+                return True
+            elif inpt.lower() in ['', 'n', 'no'] and not default:
+                return False
+            elif inpt.lower() in ['', 'y', 'yes']:
+                return True
+            elif inpt.lower() in ['n', 'no']:
+                return False
+            else:
+                print 'please enter yes or no'
+
+
 def create_package_interactive(binstar, username, package_name, package_type):
     
     print 'The package %s/%s does not exist' % (username, package_name)
@@ -67,15 +72,15 @@ def create_release_interactive(binstar, username, package_name, package_type, ve
     
     print 'The release %s/%s/%s does not exist' % (username, package_name, version)
     if not bool_input('Would you lke to create it now?'):
-        print 'goodbbye'
+        print 'good-bye'
         raise SystemExit(-1)
     description = raw_input('Description:\n')
-    make_announcement = bool_input('Would you like to make an announcement to the package followers?')
+    print("Announcements are emailed to your package followers.")
+    make_announcement = bool_input('Would you like to make an announcement to the package followers?', False)
     if make_announcement:
         announce = raw_input('Markdown Announcement:\n')
-    else:
+    else: 
         announce = ''
-    
     binstar.add_release(username, package_name, version, [], 
                         announce, description)
 
@@ -124,18 +129,12 @@ def main(args):
     try:
         binstar.package(username, package_name)
     except NotFound:
-        if args.mode == 'interactive':
-            create_package_interactive(binstar, username, package_name, package_type)
-        else:
-            raise
+        create_package_interactive(binstar, username, package_name, package_type) 
 
     try:
         binstar.release(username, package_name, version)
     except NotFound:
-        if args.mode == 'interactive':
-            create_release_interactive(binstar, username, package_name, package_type, version)
-        else:
-            raise 
+        create_release_interactive(binstar, username, package_name, package_type, version)
     
     from os.path import basename
     basefilename = basename(filename)
@@ -167,8 +166,8 @@ def main(args):
         
         binstar.upload(username, package_name, version, basefilename, fd, args.description, attrs=attrs, 
                        callback=callback)
-        print 
-        print 'done'
+
+        print("\nUpload Complete. Your package is located at:\n\nhttps://binstar.org/%s/%s\n" % (username, package_name))
     
     
 #     detect(binstar, user, package, file)
@@ -189,13 +188,7 @@ def add_parser(subparsers):
     parser.add_argument('-d','--description', help='description of the file(s)')
     parser.add_argument('-m','--metadata', help='json encoded metadata default is to autodetect')
     group = parser.add_mutually_exclusive_group()
-    group.add_argument('-i', '--interactive', action='store_const', help='Run an interactive prompt if any packages are missing', 
-                        dest='mode', const='interactive')
     group.add_argument('-f', '--fail', help='Fail if a package or release does not exist (default)', 
                                         action='store_const', dest='mode', const='fail' )
     
     parser.set_defaults(main=main)
-    
-    
-
-

@@ -21,6 +21,3 @@ def add_parser(subparsers):
                                       description=__doc__)
     
     subparser.set_defaults(main=main)
-    
-    
-

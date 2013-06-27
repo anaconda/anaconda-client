@@ -1,10 +1,9 @@
-
 import requests, json
 import base64
 import os
 from binstar_client.utils import compute_hash
 from binstar_client.requests_ext import stream_multipart
-
+import sys
 # from poster.encode import multipart_encode
 # from poster.streaminghttp import register_openers
 # import urllib2
@@ -293,10 +292,13 @@ class Binstar():
         s3data['Content-Length'] = size
         s3data['Content-MD5'] = b64md5
         
-        data_stream, headers = stream_multipart(s3data, files={'file':(basename, fd)}, 
-                                       callback=callback)
-         
-        s3res = requests.post(s3url, data=data_stream, verify=True, timeout=10*60*60, headers=headers)
+        if sys.platform.startswith('win'):
+            s3res = requests.post(s3url, data=s3data, files={'file':(basename, fd)}, verify=True, timeout=10*60*60, headers=headers)
+        else:        
+            data_stream, headers = stream_multipart(s3data, files={'file':(basename, fd)}, 
+                                           callback=callback)
+             
+            s3res = requests.post(s3url, data=data_stream, verify=True, timeout=10*60*60, headers=headers)
          
         if s3res.status_code != 201:
             print s3res.text 
@@ -383,9 +385,3 @@ class Binstar():
         self._check_response(res, [204])
         
         return
-
-    
-    
-    
-    
-    

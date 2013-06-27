@@ -71,7 +71,3 @@ def add_parser(subparsers):
     parser.add_argument('-d','--description', help='description of the file(s)')
     
     parser.set_defaults(main=main)
-    
-    
-
-
