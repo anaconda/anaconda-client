@@ -15,13 +15,8 @@ Site Documentation
 .. toctree::
     :maxdepth: 2
     getting_started
-<<<<<<< HEAD
     condarc
     pypi_to_binstar
-    windows
-=======
-    pypi_to_binstar
->>>>>>> master
     faq
     api
     windows    
