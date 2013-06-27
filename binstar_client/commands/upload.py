@@ -1,10 +1,3 @@
-'''
-Upload a file to binstar:
-
-Examples:
-
-
-'''
 from binstar_client.utils import parse_specs, get_binstar
 import tarfile
 import json
