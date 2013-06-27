@@ -3,7 +3,6 @@ Uploading a Conda Package
 
 To get started you must have: 
 
-<<<<<<< HEAD
 * Anaconda_ installed on your system 
 * Git clone of the conda_ and `conda recipes`_ repositories
 * Account on Binstar_
