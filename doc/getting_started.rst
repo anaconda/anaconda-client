@@ -6,22 +6,13 @@ To get started you must have:
 <<<<<<< HEAD
 * Anaconda_ installed on your system 
 * Git clone of the conda_ and `conda recipes`_ repositories
-=======
-* Anaconda_ and Conda_ installed on your system 
->>>>>>> master
 * Account on Binstar_
 
 .. _Anaconda: http://docs.continuum.io/anaconda/install.html
 
-<<<<<<< HEAD
 .. _conda: https://github.com/continuumio/conda
 
 .. _`conda recipes`: https://github.com/ContinuumIO/conda-recipes
-
-.. _Binstar: https://binstar.org/
-=======
-.. _Conda: http://docs.continuum.io/conda/index.html
->>>>>>> master
 
 .. _Binstar: https://binstar.org/
 
@@ -45,7 +36,7 @@ We are going to be uploading a package with a simple 'hello world' function. To 
 
 	$ git clone https://github.com/Ghostface-jr/Test-Package
 
-<<<<<<< HEAD
+
 This a small directory that looks like this:
 
 .. code-block:: python
@@ -62,9 +53,7 @@ This a small directory that looks like this:
 Setup.py is the standard file holding the metadata and hello.py has our single ``hello_world()`` function. 
 
 The bld.bat, build.sh, and meta.yaml are scripts and metadata for the Conda package. You can read the `Conda build`_ page for more info on those three files and their purpose.
-=======
-There are several files in the directory; setup.py is the standard python file and hello.py has our single ``hello_world()`` function. The bld.bat, build.sh, and meta.yaml are scripts and metadata for the Conda package. You can read the Conda build_ page for more info on those three files and their purpose.
->>>>>>> master
+
 
 .. _`Conda build`: http://docs.continuum.io/conda/build.html
 
