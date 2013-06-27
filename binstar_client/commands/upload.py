@@ -40,16 +40,21 @@ def detect_package_type(binstar, username, package_name, filename):
     
     raise BinstarError('Could not autodetect the package type of file %s' % filename) 
 
-def bool_input(prompt):
-    while 1:
-        inpt = raw_input('%s [Y|n]: ' % prompt)
-        if inpt.lower() in ['', 'y', 'yes']:
-            return True
-        elif inpt.lower() in ['n', 'no']:
-            return False
-        else:
-            print 'please enter yes or no'
-    
+def bool_input(prompt, default=True):
+        while 1:
+            inpt = raw_input('%s [Y|n]: ' % prompt)
+            if inpt.lower() in ['y', 'yes'] and not default:
+                return True
+            elif inpt.lower() in ['', 'n', 'no'] and not default:
+                return False
+            elif inpt.lower() in ['', 'y', 'yes']:
+                return True
+            elif inpt.lower() in ['n', 'no']:
+                return False
+            else:
+                print 'please enter yes or no'
+
+
 def create_package_interactive(binstar, username, package_name, package_type):
     
     print 'The package %s/%s does not exist' % (username, package_name)
@@ -74,15 +79,15 @@ def create_release_interactive(binstar, username, package_name, package_type, ve
     
     print 'The release %s/%s/%s does not exist' % (username, package_name, version)
     if not bool_input('Would you lke to create it now?'):
-        print 'goodbbye'
+        print 'good-bye'
         raise SystemExit(-1)
     description = raw_input('Description:\n')
-    make_announcement = bool_input('Would you like to make an announcement to the package followers?')
+    print("Announcements are emailed to your package followers.")
+    make_announcement = bool_input('Would you like to make an announcement to the package followers?', False)
     if make_announcement:
         announce = raw_input('Markdown Announcement:\n')
-    else:
+    else: 
         announce = ''
-    
     binstar.add_release(username, package_name, version, [], 
                         announce, description)
 
@@ -169,7 +174,7 @@ def main(args):
         binstar.upload(username, package_name, version, basefilename, fd, args.description, attrs=attrs, 
                        callback=callback)
 
-        print ("\nUpload Complete. Your package is located at:\n\nbinstar.org/%s/%s\n" % (username, package_name))
+        print("\nUpload Complete. Your package is located at:\n\nhttps://binstar.org/%s/%s\n" % (username, package_name))
     
     
 #     detect(binstar, user, package, file)
