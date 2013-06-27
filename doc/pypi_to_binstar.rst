@@ -25,4 +25,5 @@ On my machine the command is::
 
 	$ binstar upload /home/xavier/anaconda/conda-bld/linux-64/binstar_test_package1-0.1.0-py27_0.tar.bz2
 
-After seeing ``done`` you have successfully converted and uploaded a PyPI package to Binstar. See your packages on 'https://binstar.org/<username>/<package_name>'
+After seeing ``done`` you have successfully converted a PyPI package (already on binstar) to a Conda package 
+and then and uploaded the Conda package to Binstar.  See your packages on 'https://binstar.org/<username>/<package_name>'
