@@ -72,7 +72,7 @@ def encode_multipart_formdata_stream(fields, boundary=None):
                                % (fieldname))
             body_write(b'\r\n')
 
-        if isinstance(data, int):
+        if isinstance(data, (int, long)):
             data = str(data)  # Backwards compatibility
 
         if isinstance(data, six.text_type):
