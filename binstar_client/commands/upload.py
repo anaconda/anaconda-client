@@ -6,6 +6,7 @@ from binstar_client import BinstarError, NotFound
 from os.path import exists
 import sys
 import time
+import yaml
 
 
 def detect_conda_attrs(filename):
@@ -15,7 +16,22 @@ def detect_conda_attrs(filename):
     return attrs['name'], attrs['version'], attrs
 
 detectors = {'conda':detect_conda_attrs}
-    
+
+def detect_yaml_attrs(filename):
+    tar = tarfile.open(filename)
+    obj = tar.extractfile('info/recipe/meta.yaml')
+    attrs = yaml.load(obj)
+    try:
+        description = attrs['about']['home']
+    except KeyError:
+        description = None
+    try:
+        license = attrs['about']['license']
+    except KeyError:
+        license = None
+
+    return description, license 
+
 def detect_package_type(binstar, username, package_name, filename):
     
     if filename.endswith('.tar.bz2'):
@@ -27,8 +43,7 @@ def detect_package_type(binstar, username, package_name, filename):
         else:
             return 'conda'
     
-    if package_name:
-        
+    if package_name:       
         return binstar.package(username, package_name).get('package_type')
     
     raise BinstarError('Could not autodetect the package type of file %s' % filename) 
@@ -48,17 +63,22 @@ def bool_input(prompt, default=True):
                 print 'please enter yes or no'
 
 
-def create_package_interactive(binstar, username, package_name, package_type):
+def create_package_interactive(binstar, username, package_name, package_type, summary, license):
     
-    print 'The package %s/%s does not exist' % (username, package_name)
+    print '\nThe package %s/%s does not exist' % (username, package_name)
     if not bool_input('Would you lke to create it now?'):
         print 'goodbbye'
         raise SystemExit(-1)
     
-    summary = raw_input('Enter a short description of the package\nsummary: ')
-    license = raw_input('Enter the name of the license (default:BSD)\nlicense: ')
-    license_url = raw_input('Enter the url of the license (optional)\nlicense url: ')
-    public = bool_input('Do you want to make this package public?')
+    if not summary:
+        summary = raw_input('Enter a short description of the package\nsummary: ')
+    
+    license_url = None
+    if not license:
+        license = raw_input('Enter the name of the license (default:BSD)\nlicense: ')
+        license_url = bool_input('Enter the url of the license (optional)\nlicense url: ', False)
+
+    public = bool_input('\nDo you want to make this package public?')
     
     binstar.add_package(username, package_name,
                     package_type,
@@ -68,19 +88,20 @@ def create_package_interactive(binstar, username, package_name, package_type):
                     public)
 
 
-def create_release_interactive(binstar, username, package_name, package_type, version):
+def create_release_interactive(binstar, username, package_name, package_type, version, description):
     
-    print 'The release %s/%s/%s does not exist' % (username, package_name, version)
-    if not bool_input('Would you lke to create it now?'):
+    print '\nThe release %s/%s/%s does not exist' % (username, package_name, version)
+    if not bool_input('Would you like to create it now?'):
         print 'good-bye'
         raise SystemExit(-1)
-    description = raw_input('Description:\n')
-    print("Announcements are emailed to your package followers.")
+
+    print("\nAnnouncements are emailed to your package followers.")
     make_announcement = bool_input('Would you like to make an announcement to the package followers?', False)
     if make_announcement:
         announce = raw_input('Markdown Announcement:\n')
     else: 
         announce = ''
+    
     binstar.add_release(username, package_name, version, [], 
                         announce, description)
 
@@ -119,6 +140,8 @@ def main(args):
         sys.stdout.flush()
         package_name, version, attrs = get_attrs(filename)
         print 'done'
+
+    short_description, license = detect_yaml_attrs(filename)
     
     if args.package:
         package_name = args.package
@@ -129,18 +152,18 @@ def main(args):
     try:
         binstar.package(username, package_name)
     except NotFound:
-        create_package_interactive(binstar, username, package_name, package_type) 
+        create_package_interactive(binstar, username, package_name, package_type, short_description, license) 
 
     try:
         binstar.release(username, package_name, version)
     except NotFound:
-        create_release_interactive(binstar, username, package_name, package_type, version)
+        create_release_interactive(binstar, username, package_name, package_type, version, short_description)
     
     from os.path import basename
     basefilename = basename(filename)
     
     with open(filename) as fd:
-        print 'Uploading file %s/%s/%s/%s ... ' % (username, package_name, version, basefilename)
+        print '\nUploading file %s/%s/%s/%s ... ' % (username, package_name, version, basefilename)
         sys.stdout.flush()
         
         start_time = time.time()
@@ -169,11 +192,8 @@ def main(args):
 
         print("\nUpload Complete. Your package is located at:\n\nhttps://binstar.org/%s/%s\n" % (username, package_name))
     
-    
-#     detect(binstar, user, package, file)
 
 def add_parser(subparsers):
-    
     
     parser = subparsers.add_parser('upload',
                                       help='Upload a file to binstar',
