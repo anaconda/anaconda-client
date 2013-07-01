@@ -1,0 +1,16 @@
+2013-07-01:  0.1.2:
+-------------------
+  * change default of interactive upload (default is now non-interactive)
+  * fixed upload on Windows
+  * documentation improvements
+
+
+2013-06-21:  0.1.1:
+-------------------
+  * added documentation
+  * remove external appdirs dependency
+
+
+2013-06-07:  0.1.0:
+-------------------
+  * Initial release
