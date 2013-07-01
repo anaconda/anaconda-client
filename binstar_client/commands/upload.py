@@ -114,8 +114,6 @@ def create_release_interactive(binstar, username, package_name, package_type, ve
 def main(args):
     
     binstar = get_binstar()
-
-    print args
     
     if args.user:
         username = args.user
