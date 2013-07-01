@@ -145,8 +145,8 @@ class Binstar():
                     package_type,
                     summary=None,
                     license=None,
-                    license_url=None,
                     public=True,
+                    license_url=None,
                     attrs=None,
                     host_publicly=None):
         '''

@@ -16,6 +16,7 @@ def main(args):
     bs = Binstar(token, domain=url)
     bs.remove_authentication(token)
     kr.delete_password('binstar-token', getpass.getuser())
+    print("logout successful")
 
 def add_parser(subparsers):
     subparser = subparsers.add_parser('logout', 
