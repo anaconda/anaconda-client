@@ -120,90 +120,95 @@ def main(args):
     else:
         user = binstar.user()
         username = user ['login']
+
+    uploaded_packages = [] 
+
+    for filename in args.files:
+
+        if not exists(filename):
+            raise BinstarError('file %s does not exist' %(filename)) 
     
-    filename = args.files[0]
-
-    if not exists(filename):
-        raise BinstarError('file %s does not exist' %(filename)) 
-    
-    if args.package_type:
-        package_type = args.package_type
-    else:
-        print 'detecting package type ...', 
-        sys.stdout.flush()
-        package_type = detect_package_type(binstar, username, args.package, filename)
-        print package_type
-        
-    get_attrs = detectors[package_type]
-    
-    if args.metadata:
-        attrs = json.loads(args.metadata)
-        package_name = args.package
-        version = args.version
-    else:
-        print 'extracting package attributes for upload ...',
-        sys.stdout.flush()
-        package_name, version, attrs = get_attrs(filename)
-        print 'done'
-
-    description, license = detect_yaml_attrs(filename)
-    
-    if args.package:
-        package_name = args.package
-
-    if args.version:
-        version = args.version
-
-
-    try:
-        binstar.package(username, package_name)
-    except NotFound:
-        if args.mode == 'interactive':
-            create_package_interactive(binstar, username, package_name, package_type) 
+        if args.package_type:
+            package_type = args.package_type
         else:
-             create_package(binstar, username, package_name, package_type, description, license)   
+            print 'detecting package type ...', 
+            sys.stdout.flush()
+            package_type = detect_package_type(binstar, username, args.package, filename)
+            print package_type
+        
+        get_attrs = detectors[package_type]
+    
+        if args.metadata:
+            attrs = json.loads(args.metadata)
+            package_name = args.package
+            version = args.version
+        else:
+            print 'extracting package attributes for upload ...',
+            sys.stdout.flush()
+            package_name, version, attrs = get_attrs(filename)
+            print 'done'
 
-    try:
-        binstar.release(username, package_name, version)
-    except NotFound:
+        description, license = detect_yaml_attrs(filename)
+    
+        if args.package:
+            package_name = args.package
+
+        if args.version:
+            version = args.version
+
+        try:
+            binstar.package(username, package_name)
+        except NotFound:
             if args.mode == 'interactive':
-                create_release_interactive(binstar, username, package_name, package_type, version)
+                create_package_interactive(binstar, username, package_name, package_type) 
+            else:
+                create_package(binstar, username, package_name, package_type, description, license)   
+
+        try:
+            binstar.release(username, package_name, version)
+        except NotFound:
+            if args.mode == 'interactive':
+               create_release_interactive(binstar, username, package_name, package_type, version)
             else:
                 create_release(binstar, username, package_name, package_type, version, description)
 
-
-    from os.path import basename
-    basefilename = basename(filename)
+        from os.path import basename
+        basefilename = basename(filename)
     
-    with open(filename) as fd:
-        print '\nUploading file %s/%s/%s/%s ... ' % (username, package_name, version, basefilename)
-        sys.stdout.flush()
-        
-        start_time = time.time()
-        def callback(curr, total):
-            curr_time = time.time()
-            time_delta = curr_time - start_time
-            
-            remain = total - curr
-            if curr and remain:
-                eta =  1.0 * time_delta / curr * remain / 60.0
-            else:
-                eta = 0 
-            
-            curr_kb = curr//1024
-            total_kb = total//1024
-            perc = 100.0 * curr / total if total else 0
-            
-            msg = '\r uploaded %(curr_kb)i of %(total_kb)iKb: %(perc).2f%% ETA: %(eta).1f minutes'
-            print msg % locals(),
+        with open(filename) as fd:
+            print '\nUploading file %s/%s/%s/%s ... ' % (username, package_name, version, basefilename)
             sys.stdout.flush()
-            if curr == total:
-                print
         
-        binstar.upload(username, package_name, version, basefilename, fd, args.description, attrs=attrs, 
+            start_time = time.time()
+            def callback(curr, total):
+                curr_time = time.time()
+                time_delta = curr_time - start_time
+            
+                remain = total - curr
+                if curr and remain:
+                    eta =  1.0 * time_delta / curr * remain / 60.0
+                else:
+                    eta = 0 
+            
+                curr_kb = curr//1024
+                total_kb = total//1024
+                perc = 100.0 * curr / total if total else 0
+            
+                msg = '\r uploaded %(curr_kb)i of %(total_kb)iKb: %(perc).2f%% ETA: %(eta).1f minutes'
+                print msg % locals(),
+                sys.stdout.flush()
+                if curr == total:
+                    print
+        
+            binstar.upload(username, package_name, version, basefilename, fd, args.description, attrs=attrs, 
                        callback=callback)
 
-        print("\nUpload Complete. Your package is located at:\n\nhttps://binstar.org/%s/%s\n" % (username, package_name))
+            uploaded_packages.append(package_name)
+
+
+    print("\n\nUpload(s) Complete\n")        
+    for package in uploaded_packages:        
+        print("Package located at:\nhttps://binstar.org/%s/%s\n" % (username, package))
     
 
 def add_parser(subparsers):
