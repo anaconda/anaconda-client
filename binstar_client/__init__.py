@@ -7,6 +7,8 @@ import requests
 from binstar_client.utils import compute_hash
 from binstar_client.requests_ext import stream_multipart
 
+__version__ = '0.2.0'
+
 # from poster.encode import multipart_encode
 # from poster.streaminghttp import register_openers
 # import urllib2
@@ -34,6 +36,7 @@ class Binstar():
 
     def __init__(self, token=None, domain='https://api.binstar.org'):
         self.session = requests.Session()
+        self.session.headers['x-binstar-api-version'] = __version__
         self.token = token
         if token:
             self.session.headers.update({'Authorization': 'token %s' % (token)})
@@ -73,9 +76,9 @@ class Binstar():
             try:
                 data = res.json()
             except:
-                msg = 'Undefined error'
+                msg = 'Undefined server error (status code: %s)' % (res.status_code,)
             else:
-                msg = data.get('error', 'Undefined error')
+                msg = data.get('error', 'Undefined server error (status code: %s)' %(res.status_code,))
             ErrCls = BinstarError
             if res.status_code == 401:
                 ErrCls = Unauthorized
@@ -256,7 +259,8 @@ class Binstar():
             return res2.raw
 
 
-    def upload(self, login, package_name, release, basename, fd, description='', md5=None, size=None, attrs=None, callback=None):
+    def upload(self, login, package_name, release, basename, fd, distribution_type, 
+               description='', md5=None, size=None, attrs=None, callback=None):
         '''
         Upload a new distribution to a package release.
 
@@ -275,7 +279,7 @@ class Binstar():
         if not isinstance(attrs, dict):
             raise TypeError('argument attrs must be a dictionary')
 
-        payload = dict(description=description, attrs=attrs)
+        payload = dict(distribution_type=distribution_type, description=description, attrs=attrs)
         data = jencode(payload)
         res = self.session.post(url, data=data, verify=True)
         self._check_response(res)
