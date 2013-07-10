@@ -145,7 +145,6 @@ class Binstar():
 
 
     def add_package(self, login, package_name,
-                    package_type,
                     summary=None,
                     license=None,
                     public=True,
@@ -171,8 +170,7 @@ class Binstar():
         attrs['summary'] = summary
         attrs['license'] = {'name':license, 'url':license_url}
 
-        payload = dict(package_type=package_type,
-                       public=public,
+        payload = dict(public=public,
                        public_attrs=attrs or {},
                        host_publicly=host_publicly)
 
