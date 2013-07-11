@@ -7,15 +7,8 @@ from os.path import exists
 import sys
 import time
 import yaml
-
-
-def detect_conda_attrs(filename):
-    tar = tarfile.open(filename)
-    obj = tar.extractfile('info/index.json')
-    attrs = json.loads(obj.read())
-    return attrs['name'], attrs['version'], attrs
-
-detectors = {'conda':detect_conda_attrs}
+from os.path import basename
+from email.parser import Parser
 
 def detect_yaml_attrs(filename):
     tar = tarfile.open(filename)
@@ -32,9 +25,39 @@ def detect_yaml_attrs(filename):
 
     return description, license 
 
-def detect_package_type(binstar, username, package_name, filename):
+def detect_pypi_attrs(filename):
     
-    if filename.endswith('.tar.bz2'):
+    with tarfile.open(filename) as tf:
+        pkg_info = next(name for name in tf.getnames() if name.endswith('/PKG-INFO'))
+        fd = tf.extractfile(pkg_info)
+        attrs = dict(Parser().parse(fd).items())
+        
+    name = attrs.pop('Name')
+    version = attrs.pop('Version')
+    summary = attrs.pop('Summary')
+    description = attrs.pop('Description')
+    license = attrs.pop('License')
+    attrs = {'dist':'sdist'}
+    
+    return name, version, attrs, summary, description, license
+
+def detect_conda_attrs(filename):
+    
+    tar = tarfile.open(filename)
+    obj = tar.extractfile('info/index.json')
+    attrs = json.loads(obj.read())
+    
+    description, license = detect_yaml_attrs(filename)
+    return attrs['name'], attrs['version'], attrs, description, description, license
+
+detectors = {'conda':detect_conda_attrs,
+             'pypi': detect_pypi_attrs,
+             }
+
+
+def detect_package_type(filename):
+    
+    if filename.endswith('.tar.bz2'): #Could be a conda package
         try:
             with tarfile.open(filename) as tf:
                 tf.getmember('info/index.json')
@@ -43,8 +66,10 @@ def detect_package_type(binstar, username, package_name, filename):
         else:
             return 'conda'
     
-    if package_name:       
-        return binstar.package(username, package_name).get('package_type')
+    if filename.endswith('.tar.gz'): #Could be a setuptools sdist
+        with tarfile.open(filename) as tf:
+            if any(name.endswith('/PKG-INFO') for name in tf.getnames()):
+                return 'pypi' 
     
     raise BinstarError('Could not autodetect the package type of file %s' % filename) 
 
@@ -62,18 +87,17 @@ def bool_input(prompt, default=True):
             else:
                 print 'please enter yes or no'
 
-def create_package(binstar,username, package_name, package_type, summary, license):
+def create_package(binstar,username, package_name, summary, license):
     binstar.add_package(username, package_name,
-                    package_type,
-                    summary,
-                    license)
+                        summary,
+                        license)
 
-def create_release(binstar, username, package_name, package_type, version, description, announce=None):
-    binstar.add_release(username, package_name, version, [], 
+def create_release(binstar, username, package_name, version, description, announce=None):
+    binstar.add_release(username, package_name, version, [],
                         announce, description)
 
 
-def create_package_interactive(binstar, username, package_name, package_type):
+def create_package_interactive(binstar, username, package_name):
     
     print '\nThe package %s/%s does not exist' % (username, package_name)
     if not bool_input('Would you lke to create it now?'):
@@ -86,13 +110,12 @@ def create_package_interactive(binstar, username, package_name, package_type):
     public = bool_input('\nDo you want to make this package public?')
     
     binstar.add_package(username, package_name,
-                    package_type,
                     summary,
                     license,
                     license_url,
                     public)
 
-def create_release_interactive(binstar, username, package_name, package_type, version):
+def create_release_interactive(binstar, username, package_name, version):
     
     print '\nThe release %s/%s/%s does not exist' % (username, package_name, version)
     if not bool_input('Would you like to create it now?'):
@@ -110,6 +133,28 @@ def create_release_interactive(binstar, username, package_name, package_type, ve
     binstar.add_release(username, package_name, version, [], 
                         announce, description)
 
+
+def upload_print_callback():
+    start_time = time.time()
+    def callback(curr, total):
+        curr_time = time.time()
+        time_delta = curr_time - start_time
+    
+        remain = total - curr
+        if curr and remain:
+            eta =  1.0 * time_delta / curr * remain / 60.0
+        else:
+            eta = 0 
+    
+        curr_kb = curr//1024
+        total_kb = total//1024
+        perc = 100.0 * curr / total if total else 0
+    
+        msg = '\r uploaded %(curr_kb)i of %(total_kb)iKb: %(perc).2f%% ETA: %(eta).1f minutes'
+        print msg % locals(),
+        sys.stdout.flush()
+        if curr == total:
+            print
 
 def main(args):
     
@@ -133,7 +178,7 @@ def main(args):
         else:
             print 'detecting package type ...', 
             sys.stdout.flush()
-            package_type = detect_package_type(binstar, username, args.package, filename)
+            package_type = detect_package_type(filename)
             print package_type
         
         get_attrs = detectors[package_type]
@@ -145,11 +190,9 @@ def main(args):
         else:
             print 'extracting package attributes for upload ...',
             sys.stdout.flush()
-            package_name, version, attrs = get_attrs(filename)
+            package_name, version, attrs, summary, description, license = get_attrs(filename)
             print 'done'
 
-        description, license = detect_yaml_attrs(filename)
-    
         if args.package:
             package_name = args.package
 
@@ -160,53 +203,31 @@ def main(args):
             binstar.package(username, package_name)
         except NotFound:
             if args.mode == 'interactive':
-                create_package_interactive(binstar, username, package_name, package_type) 
+                create_package_interactive(binstar, username, package_name) 
             else:
-                create_package(binstar, username, package_name, package_type, description, license)   
+                create_package(binstar, username, package_name, summary, license)   
 
         try:
             binstar.release(username, package_name, version)
         except NotFound:
             if args.mode == 'interactive':
-               create_release_interactive(binstar, username, package_name, package_type, version)
+                create_release_interactive(binstar, username, package_name, version)
             else:
-                create_release(binstar, username, package_name, package_type, version, description)
+                create_release(binstar, username, package_name, version, description)
 
-        from os.path import basename
         basefilename = basename(filename)
     
         with open(filename) as fd:
             print '\nUploading file %s/%s/%s/%s ... ' % (username, package_name, version, basefilename)
             sys.stdout.flush()
         
-            start_time = time.time()
-            def callback(curr, total):
-                curr_time = time.time()
-                time_delta = curr_time - start_time
-            
-                remain = total - curr
-                if curr and remain:
-                    eta =  1.0 * time_delta / curr * remain / 60.0
-                else:
-                    eta = 0 
-            
-                curr_kb = curr//1024
-                total_kb = total//1024
-                perc = 100.0 * curr / total if total else 0
-            
-                msg = '\r uploaded %(curr_kb)i of %(total_kb)iKb: %(perc).2f%% ETA: %(eta).1f minutes'
-                print msg % locals(),
-                sys.stdout.flush()
-                if curr == total:
-                    print
-        
-            binstar.upload(username, package_name, version, basefilename, fd, args.description, attrs=attrs, 
-                       callback=callback)
+            binstar.upload(username, package_name, version, basefilename, fd, package_type, args.description, attrs=attrs, 
+                       callback=upload_print_callback())
 
             uploaded_packages.append(package_name)
 
 
-    print("\n\nUpload(s) Complete\n")        
+    print("\n\nUpload(s) Complete\n")
     for package in uploaded_packages:        
         print("Package located at:\nhttps://binstar.org/%s/%s\n" % (username, package))
     
