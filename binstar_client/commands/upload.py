@@ -214,6 +214,10 @@ def main(args):
                 create_release_interactive(binstar, username, package_name, version)
             else:
                 create_release(binstar, username, package_name, version, description)
+        else:
+            print("\nPackage release already exists. Please update version number.\n")
+            raise SystemExit(-1)
+
 
         basefilename = basename(filename)
     
