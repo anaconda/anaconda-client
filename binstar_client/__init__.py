@@ -6,22 +6,14 @@ import requests
 
 from binstar_client.utils import compute_hash
 from binstar_client.requests_ext import stream_multipart
+from .errors import BinstarError, Conflict, NotFound, Unauthorized
 
-__version__ = '0.2.0'
+__version__ = '0.2.1'
 
 # from poster.encode import multipart_encode
 # from poster.streaminghttp import register_openers
 # import urllib2
 # register_openers()
-
-class BinstarError(Exception):
-    pass
-
-class Unauthorized(BinstarError):
-    pass
-
-class NotFound(IndexError, BinstarError):
-    pass
 
 def jencode(payload):
     return base64.b64encode(json.dumps(payload))
@@ -84,6 +76,8 @@ class Binstar():
                 ErrCls = Unauthorized
             elif res.status_code == 404:
                 ErrCls = NotFound
+            elif res.status_code == 409:
+                ErrCls = Conflict
             raise ErrCls(msg, res.status_code)
 
     def user(self, login=None):
@@ -212,6 +206,14 @@ class Binstar():
         self._check_response(res)
         return res.json()
 
+    def distribution(self, login, package_name, release, basename=None):
+
+        url = '%s/dist/%s/%s/%s/%s' % (self.domain, login, package_name, release, basename)
+
+        res = self.session.get(url, verify=True)
+        self._check_response(res)
+        return res.json()
+    
     def remove_dist(self, login, package_name, release, basename=None, _id=None):
 
         if basename:
@@ -221,7 +223,6 @@ class Binstar():
         else:
             raise TypeError("method remove_dist expects either 'basename' or '_id' arguments")
 
-        print 'url', url
         res = self.session.delete(url, verify=True)
         self._check_response(res)
         return res.json()

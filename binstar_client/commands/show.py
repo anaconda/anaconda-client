@@ -19,7 +19,17 @@ def main(args):
     
     spec = args.spec
     if spec._basename:
-        print 'file'
+        dist = binstar.distribution(spec.user, spec.package, spec.version, spec.basename)
+        print dist.pop('basename')
+        print dist.pop('description') or 'no description'
+        print  
+        metadata = dist.pop('attrs',{})
+        for key_value in dist.items():
+            print '%-25s: %r' % key_value
+        print 'Metadata:'
+        for key_value in metadata.items():
+            print '    + %-25s: %r' % key_value
+            
     elif args.spec._version:
         print 'version', spec.version
         release = binstar.release(spec.user, spec.package, spec.version)
