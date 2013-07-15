@@ -1,12 +1,13 @@
-import os
-import json
-import base64
-
-import requests
-
-from binstar_client.utils import compute_hash
-from binstar_client.requests_ext import stream_multipart
 from .errors import BinstarError, Conflict, NotFound, Unauthorized
+from binstar_client.requests_ext import stream_multipart
+from binstar_client.utils import compute_hash
+from pkg_resources import parse_version as pv
+import base64
+import json
+import os
+import requests
+import warnings
+
 
 __version__ = '0.2.1'
 
@@ -64,13 +65,19 @@ class Binstar():
         self._check_response(res)
 
     def _check_response(self, res, allowed=[200]):
+        api_version = res.headers.get('x-binstar-api-version', '0.2.1')
+        if pv(api_version) > pv(__version__):
+            msg = ('The api server is running the binstar-api version %s. you are using %s\n' %(api_version, __version__)
+                   + 'Please update your client with pip install -U binstar or conda update binstar')
+            warnings.warn(msg, stacklevel=4)
+            
         if not res.status_code in allowed:
             try:
                 data = res.json()
             except:
                 msg = 'Undefined server error (status code: %s)' % (res.status_code,)
             else:
-                msg = data.get('error', 'Undefined server error (status code: %s)' %(res.status_code,))
+                msg = data.get('error', 'Undefined server error (status code: %s)' % (res.status_code,))
             ErrCls = BinstarError
             if res.status_code == 401:
                 ErrCls = Unauthorized
@@ -258,7 +265,7 @@ class Binstar():
             return res2.raw
 
 
-    def upload(self, login, package_name, release, basename, fd, distribution_type, 
+    def upload(self, login, package_name, release, basename, fd, distribution_type,
                description='', md5=None, size=None, attrs=None, callback=None):
         '''
         Upload a new distribution to a package release.
@@ -301,7 +308,7 @@ class Binstar():
         data_stream, headers = stream_multipart(s3data, files={'file':(basename, fd)},
                                                 callback=callback)
 
-        s3res = requests.post(s3url, data=data_stream, verify=True, timeout=10*60*60, headers=headers)
+        s3res = requests.post(s3url, data=data_stream, verify=True, timeout=10 * 60 * 60, headers=headers)
 
         if s3res.status_code != 201:
             print s3res.text
@@ -322,7 +329,7 @@ class Binstar():
         if owner:
             url = '%s/groups/%s' % (self.domain, owner)
         else:
-            url = '%s/groups' % (self.domain, )
+            url = '%s/groups' % (self.domain,)
 
         res = self.session.get(url, verify=True)
         self._check_response(res)
@@ -343,19 +350,19 @@ class Binstar():
         return res.json()
 
     def is_group_member(self, org, name, member):
-        url = '%s/group/%s/%s/members/%s' % (self.domain, org, name,member)
+        url = '%s/group/%s/%s/members/%s' % (self.domain, org, name, member)
         res = self.session.get(url, verify=True)
         self._check_response(res, [204, 404])
         return res.status_code == 204
 
     def add_group_member(self, org, name, member):
-        url = '%s/group/%s/%s/members/%s' % (self.domain, org, name,member)
+        url = '%s/group/%s/%s/members/%s' % (self.domain, org, name, member)
         res = self.session.put(url, verify=True)
         self._check_response(res, [204])
         return
 
     def remove_group_member(self, org, name, member):
-        url = '%s/group/%s/%s/members/%s' % (self.domain, org, name,member)
+        url = '%s/group/%s/%s/members/%s' % (self.domain, org, name, member)
         res = self.session.delete(url, verify=True)
         self._check_response(res, [204])
         return
