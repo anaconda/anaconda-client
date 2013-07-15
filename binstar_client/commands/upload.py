@@ -43,8 +43,7 @@ def detect_pypi_attrs(filename):
     filename = basename(filename)
     return filename, name, version, attrs, summary, description, license
 
-arch_map = {('osx', 'i686'): 'osx-32',
-            ('osx', 'x86_64'):'osx-64',
+arch_map = {('osx', 'x86_64'):'osx-64',
             ('win', 'x86'):'win-32',
             ('win', 'x86_64'):'win-64',
             ('linux', 'x86'):'linux-32',
