@@ -219,7 +219,7 @@ def main(args):
 
         basefilename = basename(filename)
     
-        with open(filename) as fd:
+        with open(filename, 'rb') as fd:
             print '\nUploading file %s/%s/%s/%s ... ' % (username, package_name, version, basefilename)
             sys.stdout.flush()
         
