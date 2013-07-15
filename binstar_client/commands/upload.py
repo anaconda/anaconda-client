@@ -215,7 +215,7 @@ def main(args):
             else:
                 create_release(binstar, username, package_name, version, description)
 
-        with open(filename) as fd:
+        with open(filename, 'rb') as fd:
             print '\nUploading file %s/%s/%s/%s ... ' % (username, package_name, version, basefilename)
             sys.stdout.flush()
             try:
