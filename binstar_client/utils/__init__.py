@@ -15,39 +15,45 @@ import urlparse
 import yaml
 import sys
 
-class UserError(Exception):
-    pass
+from ..errors import UserError
 
 class PackageSpec(object):
-    def __init__(self, user, package, version, basename, attrs):
+    def __init__(self, user, package, version, basename, attrs, spec_str):
         self._user = user
         self._package = package
         self._version = version
         self._basename = basename
         self.attrs = attrs
+        self.spec_str = spec_str
+        
+    def __str__(self):
+        return self.spec_str
+    
+    def __repr__(self):
+        return '<PackageSpec %r>' %(self.spec_str)
     
     @property
     def user(self):
         if self._user is None:
-            raise UserError('user not given')
+            raise UserError('user not given (got %r expected <username> )' %(self.spec_str, ))
         return self._user
 
     @property
     def package(self):
         if self._package is None:
-            raise UserError('package not given in spec')
+            raise UserError('package not given in spec (got %r expected <username>/<package> )' %(self.spec_str, ))
         return self._package
 
     @property
     def version(self):
         if self._version is None:
-            raise UserError('version not given in spec')
+            raise UserError('version not given in spec (got %r expected <username>/<package>/<version> )' %(self.spec_str, ))
         return self._version
 
     @property
     def basename(self):
         if self._basename is None:
-            raise UserError('basename not given in spec')
+            raise UserError('basename not given in spec (got %r expected <username>/<package>/<version>/<filename> )' %(self.spec_str, ))
         return self._basename
         
 def parse_specs(spec):
@@ -66,7 +72,7 @@ def parse_specs(spec):
         basename, qsl = basename.rsplit('?', 1)
         attrs = dict(urlparse.parse_qsl(qsl))
     
-    return PackageSpec(user, package, version, basename, attrs)
+    return PackageSpec(user, package, version, basename, attrs, spec)
 
 def get_binstar():
     from binstar_client import Binstar
@@ -176,3 +182,19 @@ class IterableToFileAdapter(object):
     def __len__(self):
         return self.length
 
+
+
+def bool_input(prompt, default=True):
+        default_str = '[Y|n]' if default else '[y|N]'
+        while 1:
+            inpt = raw_input('%s %s: ' % (prompt, default_str) )
+            if inpt.lower() in ['y', 'yes'] and not default:
+                return True
+            elif inpt.lower() in ['', 'n', 'no'] and not default:
+                return False
+            elif inpt.lower() in ['', 'y', 'yes']:
+                return True
+            elif inpt.lower() in ['n', 'no']:
+                return False
+            else:
+                print 'please enter yes or no'
