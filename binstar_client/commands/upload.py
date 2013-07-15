@@ -1,14 +1,15 @@
-from binstar_client.utils import parse_specs, get_binstar
+from binstar_client.utils import parse_specs, get_binstar, bool_input
 import tarfile
 import json
 from warnings import warn
-from binstar_client import BinstarError, NotFound
+from binstar_client import BinstarError, NotFound, Conflict
 from os.path import exists
 import sys
 import time
 import yaml
 from os.path import basename
 from email.parser import Parser
+from os import path
 
 def detect_yaml_attrs(filename):
     tar = tarfile.open(filename)
@@ -39,7 +40,15 @@ def detect_pypi_attrs(filename):
     license = attrs.pop('License')
     attrs = {'dist':'sdist'}
     
-    return name, version, attrs, summary, description, license
+    filename = basename(filename)
+    return filename, name, version, attrs, summary, description, license
+
+arch_map = {('osx', 'x86_64'):'osx-64',
+            ('win', 'x86'):'win-32',
+            ('win', 'x86_64'):'win-64',
+            ('linux', 'x86'):'linux-32',
+            ('linux', 'x86_64'):'linux-64',
+           }
 
 def detect_conda_attrs(filename):
     
@@ -48,7 +57,9 @@ def detect_conda_attrs(filename):
     attrs = json.loads(obj.read())
     
     description, license = detect_yaml_attrs(filename)
-    return attrs['name'], attrs['version'], attrs, description, description, license
+    os_arch = arch_map[(attrs['platform'],attrs['arch'])]
+    filename = path.join(os_arch, basename(filename))
+    return filename, attrs['name'], attrs['version'], attrs, description, description, license
 
 detectors = {'conda':detect_conda_attrs,
              'pypi': detect_pypi_attrs,
@@ -57,7 +68,7 @@ detectors = {'conda':detect_conda_attrs,
 
 def detect_package_type(filename):
     
-    if filename.endswith('.tar.bz2'): #Could be a conda package
+    if filename.endswith('.tar.bz2'):  # Could be a conda package
         try:
             with tarfile.open(filename) as tf:
                 tf.getmember('info/index.json')
@@ -66,28 +77,14 @@ def detect_package_type(filename):
         else:
             return 'conda'
     
-    if filename.endswith('.tar.gz'): #Could be a setuptools sdist
+    if filename.endswith('.tar.gz'):  # Could be a setuptools sdist
         with tarfile.open(filename) as tf:
             if any(name.endswith('/PKG-INFO') for name in tf.getnames()):
                 return 'pypi' 
     
     raise BinstarError('Could not autodetect the package type of file %s' % filename) 
 
-def bool_input(prompt, default=True):
-        while 1:
-            inpt = raw_input('%s [Y|n]: ' % prompt)
-            if inpt.lower() in ['y', 'yes'] and not default:
-                return True
-            elif inpt.lower() in ['', 'n', 'no'] and not default:
-                return False
-            elif inpt.lower() in ['', 'y', 'yes']:
-                return True
-            elif inpt.lower() in ['n', 'no']:
-                return False
-            else:
-                print 'please enter yes or no'
-
-def create_package(binstar,username, package_name, summary, license):
+def create_package(binstar, username, package_name, summary, license):
     binstar.add_package(username, package_name,
                         summary,
                         license)
@@ -130,7 +127,7 @@ def create_release_interactive(binstar, username, package_name, version):
     else: 
         announce = ''
     
-    binstar.add_release(username, package_name, version, [], 
+    binstar.add_release(username, package_name, version, [],
                         announce, description)
 
 
@@ -142,12 +139,12 @@ def upload_print_callback():
     
         remain = total - curr
         if curr and remain:
-            eta =  1.0 * time_delta / curr * remain / 60.0
+            eta = 1.0 * time_delta / curr * remain / 60.0
         else:
             eta = 0 
     
-        curr_kb = curr//1024
-        total_kb = total//1024
+        curr_kb = curr // 1024
+        total_kb = total // 1024
         perc = 100.0 * curr / total if total else 0
     
         msg = '\r uploaded %(curr_kb)i of %(total_kb)iKb: %(perc).2f%% ETA: %(eta).1f minutes'
@@ -173,12 +170,12 @@ def main(args):
     for filename in args.files:
 
         if not exists(filename):
-            raise BinstarError('file %s does not exist' %(filename)) 
+            raise BinstarError('file %s does not exist' % (filename)) 
     
         if args.package_type:
             package_type = args.package_type
         else:
-            print 'detecting package type ...', 
+            print 'detecting package type ...',
             sys.stdout.flush()
             package_type = detect_package_type(filename)
             print package_type
@@ -192,7 +189,7 @@ def main(args):
         else:
             print 'extracting package attributes for upload ...',
             sys.stdout.flush()
-            package_name, version, attrs, summary, description, license = get_attrs(filename)
+            basefilename, package_name, version, attrs, summary, description, license = get_attrs(filename)
             print 'done'
 
         if args.package:
@@ -217,14 +214,27 @@ def main(args):
             else:
                 create_release(binstar, username, package_name, version, description)
 
-        basefilename = basename(filename)
-    
         with open(filename, 'rb') as fd:
             print '\nUploading file %s/%s/%s/%s ... ' % (username, package_name, version, basefilename)
             sys.stdout.flush()
-        
-            binstar.upload(username, package_name, version, basefilename, fd, package_type, args.description, attrs=attrs, 
-                       callback=upload_print_callback())
+            try:
+                binstar.distribution(username, package_name, version, basefilename)
+            except NotFound:
+                pass
+            else:
+                if args.mode == 'interactive':
+                    if bool_input('Distribution %s already exists. Would you like to replace it?' %(basefilename,)):
+                        binstar.remove_dist(username, package_name, version, basefilename)
+                    else:
+                        print 'Not replacing distribution %s' %(basefilename,)
+                        continue
+            try:
+                binstar.upload(username, package_name, version, basefilename, fd, package_type, args.description, attrs=attrs,
+                           callback=upload_print_callback())
+            except Conflict:
+                full_name = '%s/%s/%s/%s' % (username, package_name, version, basefilename)
+                print 'Distribution already exists. Please use the -i/--interactive option or `binstar delete %s`' % full_name
+                raise
 
             uploaded_packages.append(package_name)
 
@@ -246,13 +256,13 @@ def add_parser(subparsers):
     parser.add_argument('-p', '--package', help='Defaults to the packge name in the uploaded file')
     parser.add_argument('-v', '--version', help='Defaults to the packge version in the uploaded file')
     parser.add_argument('-t', '--package-type', help='Set the package type, defaults to autodetect')
-    parser.add_argument('-d','--description', help='description of the file(s)')
-    parser.add_argument('-m','--metadata', help='json encoded metadata default is to autodetect')
+    parser.add_argument('-d', '--description', help='description of the file(s)')
+    parser.add_argument('-m', '--metadata', help='json encoded metadata default is to autodetect')
     group = parser.add_mutually_exclusive_group()
-    group.add_argument('-i', '--interactive', action='store_const', help='Run an interactive prompt if any packages are missing', 
+    group.add_argument('-i', '--interactive', action='store_const', help='Run an interactive prompt if any packages are missing',
                         dest='mode', const='interactive')
-    group.add_argument('-f', '--fail', help='Fail if a package or release does not exist (default)', 
-                                        action='store_const', dest='mode', const='fail' )
+    group.add_argument('-f', '--fail', help='Fail if a package or release does not exist (default)',
+                                        action='store_const', dest='mode', const='fail')
     
     parser.set_defaults(main=main)
     

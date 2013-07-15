@@ -18,3 +18,4 @@ def user_list(lst, verbose=True):
     else:
         for user in lst:
             print '%-25s %s' % (user['login'], user['name']) 
+
