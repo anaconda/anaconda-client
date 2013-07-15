@@ -155,6 +155,8 @@ def upload_print_callback():
         sys.stdout.flush()
         if curr == total:
             print
+            
+    return callback
 
 def main(args):
     
