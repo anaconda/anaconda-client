@@ -1,12 +1,12 @@
-from .errors import BinstarError, Conflict, NotFound, Unauthorized
-from binstar_client.requests_ext import stream_multipart
-from binstar_client.utils import compute_hash
-from pkg_resources import parse_version as pv
 import base64
 import json
 import os
 import requests
 import warnings
+
+from .errors import BinstarError, Conflict, NotFound, Unauthorized
+from binstar_client.requests_ext import stream_multipart
+from binstar_client.utils import compute_hash
 
 
 __version__ = '0.2.1'
@@ -18,6 +18,9 @@ __version__ = '0.2.1'
 
 def jencode(payload):
     return base64.b64encode(json.dumps(payload))
+
+def pv(version):
+    return tuple(int(x) for x in version.split('.'))
 
 class Binstar():
     '''

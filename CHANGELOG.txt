@@ -1,13 +1,17 @@
+2013-07-18: 0.2.2:
+------------------
+  * remove steuptools run-time dependency
+
 2013-07-16: 0.2.1:
 ------------------
- * fixed windows upload
- * removed 32bit osx
- * added version check and warning
+  * fixed windows upload
+  * removed 32bit osx
+  * added version check and warning
 
 2013-07-014: 0.2.0:
 ------------------
- * allow uploading of source tarballs
- * updated upload api to version 0.2.0
+  * allow uploading of source tarballs
+  * updated upload api to version 0.2.0
 
 2013-07-01:  0.1.2:
 -------------------
