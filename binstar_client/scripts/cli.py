@@ -3,7 +3,7 @@ Binstar command line utility
 '''
 from argparse import ArgumentParser
 from binstar_client.commands import sub_commands
-from binstar_client import BinstarError
+from binstar_client.errors import BinstarError, ShowHelp
 import sys
 
 def main():
@@ -20,6 +20,9 @@ def main():
     
     try:
         return args.main(args)
+    except ShowHelp as err:
+        args.sub_parser.print_help()
+        raise SystemExit(-1)
     except BinstarError as err:
         if args.show_traceback:
             raise
