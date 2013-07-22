@@ -18,3 +18,9 @@ class NotFound(IndexError, BinstarError):
 
 class UserError(BinstarError):
     pass
+
+
+class ShowHelp(BinstarError):
+    pass
+
+
