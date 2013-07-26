@@ -41,7 +41,7 @@ This a small directory that looks like this:
 	package/
 		setup.py
 		test_package/
-  	       __init__.py
+  	           __init__.py
 		   hello.py
 		   bld.bat
 		   build.sh
