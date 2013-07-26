@@ -6,7 +6,7 @@
 Welcome to Binstar's documentation!
 =========================================
 
-Binstar is a package management that will maintain up to date mirrors of public package hosts (conda, pypi, ruby gem's, etc.)
+Binstar is a package management solution that will maintain up to date mirrors of public package hosts (conda, pypi, ruby gem's, etc.)
 
 
 Site Documentation
@@ -16,7 +16,7 @@ Site Documentation
     :maxdepth: 2
     
     getting_started
-    condarc
+    installing_packages
     pypi_to_binstar
     faq
     api
