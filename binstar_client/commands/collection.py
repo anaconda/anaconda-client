@@ -67,8 +67,15 @@ def main(args):
         raise BinstarError('invaid collection spec')
 
     if args.create:
+        public = True if args.public is None else args.public
+         
         binstar.add_collection(org, name, 
+                               public=public, description=args.description)
+        
+    if args.update:
+        binstar.update_collection(org, name, 
                                public=args.public, description=args.description)
+        
     if args.remove:
         binstar.remove_collection(org, name)
         
@@ -104,7 +111,7 @@ def add_parser(subparsers):
     parser.add_argument('spec', nargs=1, help='Collection or organization', type=collection_spec_opt)
     parser.add_argument('-d','--description', help='Set the description of a collection')
     parser.add_argument('--public', help='Set a the access of a collection to public',
-                        action='store_true', default=True)
+                        action='store_true', default=None)
     parser.add_argument('--private', help='Set a the access of a collection to private',
                         dest='public', action='store_false')
     
@@ -112,6 +119,7 @@ def add_parser(subparsers):
     group.add_argument('--show', help='Show the collection <NAME> in <ORG>', action='store_true')
     
     group.add_argument('--create', help='create the collection <NAME> in <ORG>', action='store_true')
+    group.add_argument('--update', help='update the collection <NAME> in <ORG>', action='store_true')
     group.add_argument('--remove', help='remove the collection <NAME> from <ORG>', action='store_true')
     
     group.add_argument('--add-package', metavar='OWNER/PACKAGE', help='add the package OWNER/PACKAGE to the collection ORG/NAME', type=package_spec)

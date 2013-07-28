@@ -70,7 +70,7 @@ class Binstar():
     def _check_response(self, res, allowed=[200]):
         api_version = res.headers.get('x-binstar-api-version', '0.2.1')
         if pv(api_version) > pv(__version__):
-            msg = ('The api server is running the binstar-api version %s. you are using %s\n' %(api_version, __version__)
+            msg = ('The api server is running the binstar-api version %s. you are using %s\n' % (api_version, __version__)
                    + 'Please update your client with pip install -U binstar or conda update binstar')
             warnings.warn(msg, stacklevel=4)
             
@@ -135,9 +135,27 @@ class Binstar():
         url = '%s/package/%s/%s' % (self.domain, login, package_name)
         res = self.session.get(url, verify=True)
         self._check_response(res)
-
         return res.json()
 
+    def package_add_collaborator(self, owner, package_name, collaborator):
+        url = '%s/packages/%s/%s/collaborators/%s' % (self.domain, owner, package_name, collaborator)
+        res = self.session.put(url, verify=True)
+        self._check_response(res, [201])
+        return
+
+    def package_remove_collaborator(self, owner, package_name, collaborator):
+        url = '%s/packages/%s/%s/collaborators/%s' % (self.domain, owner, package_name, collaborator)
+        res = self.session.delete(url, verify=True)
+        self._check_response(res, [201])
+        return
+
+    def package_collaborators(self, owner, package_name):
+        
+        url = '%s/packages/%s/%s/collaborators' % (self.domain, owner, package_name)
+        res = self.session.get(url, verify=True)
+        self._check_response(res, [200])
+        return res.json()
+    
     def all_packages(self, modified_after=None):
         '''
         '''
@@ -468,6 +486,17 @@ class Binstar():
         payload = dict(public=public, description=description)
         data = jencode(payload)
         res = self.session.post(url, data=data, verify=True)
+        self._check_response(res, [201])
+        
+    def update_collection(self, org, name, public=None, description=None):
+        '''
+        update a collection
+        '''
+        
+        url = '%s/collections/%s/%s' % (self.domain, org, name)
+        payload = dict(public=public, description=description)
+        data = jencode(payload)
+        res = self.session.patch(url, data=data, verify=True)
         self._check_response(res, [201])
 
     def remove_collection(self, org, name):
