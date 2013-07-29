@@ -4,6 +4,7 @@ Manage Authentication tokens
 from binstar_client.utils import get_binstar
 import getpass
 from dateutil.parser import parse as parse_date
+import sys
 
 
 def show_auths(authentications):
@@ -34,12 +35,15 @@ def main(args):
             
     if args.create:
         
-        username = raw_input('Username: ')
+        sys.stderr.write('Username: ')
+        sys.stderr.flush()
+        username = raw_input('')
         password = getpass.getpass()
         
         print binstar.authenticate(username, password, 
-                                   application='Binstar Cli', application_url='', 
-                                   scopes=['read','write'], resource=args.resource, max_age=args.max_age)
+                                   args.name, application_url=args.url, 
+                                   scopes=['read','write'], 
+                                   resource=args.resource, max_age=args.max_age)
         
     
     
@@ -48,14 +52,15 @@ def add_parser(subparsers):
     parser = subparsers.add_parser('auth',
                                     help='Manage Authorization Tokens',
                                     description=__doc__)
-    parser.add_argument('-n','--name')
-    parser.add_argument('--max-age', type=int)
-    parser.add_argument('--resource', default='api:**')
+    parser.add_argument('-n','--name', default='Binstar Cli', help='The name of the application that will use this token')
+    parser.add_argument('--url', default='http://binstar.org', help='The url of the application that will use this token')
+    parser.add_argument('--max-age', type=int, help='The maximum age in seconds that this token will be valid for')
+    parser.add_argument('--resource', default='api:**', help='The resource path that this token is valid')
     
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('-l', '--list', action='store_true')
-    group.add_argument('-r', '--remove', metavar='ID', nargs='+')
-    group.add_argument('-c', '--create', action='store_true')
+    group.add_argument('-l', '--list', action='store_true', help='list all user authentication tokens')
+    group.add_argument('-r', '--remove', metavar='ID', nargs='+', help='remove authentication tokens')
+    group.add_argument('-c', '--create', action='store_true', help='Create an authentication token')
     parser.set_defaults(main=main)
     
 
