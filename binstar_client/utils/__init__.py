@@ -5,7 +5,8 @@ Created on Apr 29, 2013
 '''
 
 from hashlib import md5
-from keyring import get_keyring
+from keyring import get_keyring, set_keyring
+from keyring.backends.file import PlaintextKeyring 
 from os.path import exists, join, dirname, expanduser
 import appdirs
 import base64
@@ -77,8 +78,14 @@ def parse_specs(spec):
 def get_binstar():
     from binstar_client import Binstar
     
+    config = get_config()
+    if config.get('keyring'):
+        if config['keyring'] == 'plain-text':
+            set_keyring(PlaintextKeyring())
+        
     kr = get_keyring()
     token = kr.get_password('binstar-token', getpass.getuser())
+    
     url = get_config().get('url', 'https://api.binstar.org')
     
     return Binstar(token, domain=url,)
