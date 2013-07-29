@@ -6,7 +6,7 @@ from binstar_client.utils import get_binstar
 from dateutil.parser import parse as parse_date
 
 def main(args):
-    binstar = get_binstar()
+    binstar = get_binstar(args)
     
     try:
         user = binstar.user()

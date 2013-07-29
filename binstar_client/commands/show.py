@@ -15,7 +15,7 @@ from binstar_client.utils import get_binstar, PackageSpec, parse_specs
 from argparse import FileType, RawTextHelpFormatter
 def main(args):
     
-    binstar = get_binstar()
+    binstar = get_binstar(args)
     
     spec = args.spec
     if spec._basename:

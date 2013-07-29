@@ -157,7 +157,7 @@ def upload_print_callback():
 
 def main(args):
     
-    binstar = get_binstar()
+    binstar = get_binstar(args)
     
     if args.user:
         username = args.user

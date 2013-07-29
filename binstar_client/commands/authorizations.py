@@ -25,7 +25,7 @@ def show_auths(authentications):
 
 
 def main(args):
-    binstar = get_binstar()
+    binstar = get_binstar(args)
     if args.list:
         show_auths(binstar.authentications())
     if args.remove:

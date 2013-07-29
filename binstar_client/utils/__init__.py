@@ -75,18 +75,22 @@ def parse_specs(spec):
     
     return PackageSpec(user, package, version, basename, attrs, spec)
 
-def get_binstar():
+def get_binstar(args=None):
     from binstar_client import Binstar
     
-    config = get_config()
-    if config.get('keyring'):
-        if config['keyring'] == 'plain-text':
-            set_keyring(PlaintextKeyring())
+    if args and args.token:
+        token = args.token
+    else:
+        config = get_config()
+        if config.get('keyring'):
+            if config['keyring'] == 'plain-text':
+                set_keyring(PlaintextKeyring())
+            
+        kr = get_keyring()
+        token = kr.get_password('binstar-token', getpass.getuser())
         
-    kr = get_keyring()
-    token = kr.get_password('binstar-token', getpass.getuser())
-    
     url = get_config().get('url', 'https://api.binstar.org')
+    
     
     return Binstar(token, domain=url,)
 

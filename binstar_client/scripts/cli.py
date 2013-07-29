@@ -12,6 +12,7 @@ def main():
     
     parser = ArgumentParser(description=__doc__)
     parser.add_argument('--show-traceback', action='store_true')
+    parser.add_argument('-t', '--token')
     subparsers = parser.add_subparsers(help='commands')
     for command in sub_commands():
         command.add_parser(subparsers)
@@ -33,5 +34,5 @@ def main():
     except BinstarError as err:
         if args.show_traceback:
             raise
-        sys.stderr.write('%s: %s\n' %(type(err).__name__, err.args[0]))
+        sys.stderr.write('%s: %s\n' % (type(err).__name__, err.args[0]))
         raise SystemExit(-1)

@@ -12,7 +12,7 @@ from argparse import FileType, RawTextHelpFormatter
 from binstar_client import NotFound
 def main(args):
     
-    binstar = get_binstar()
+    binstar = get_binstar(args)
     
     for spec in args.specs:
         try:
