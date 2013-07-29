@@ -3,8 +3,9 @@ Binstar command line utility
 '''
 from argparse import ArgumentParser
 from binstar_client.commands import sub_commands
-from binstar_client.errors import BinstarError, ShowHelp
+from binstar_client.errors import BinstarError, ShowHelp, Unauthorized
 import sys
+from binstar_client.commands.login import interactive_login
 
 def main():
     
@@ -19,7 +20,13 @@ def main():
     args = parser.parse_args()
     
     try:
-        return args.main(args)
+        try:
+            return args.main(args)
+        except Unauthorized as err:
+            print 'The action you are performing requires authentication, please sign in:'
+            interactive_login()
+            return args.main(args)
+    
     except ShowHelp as err:
         args.sub_parser.print_help()
         raise SystemExit(-1)
