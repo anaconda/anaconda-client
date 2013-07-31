@@ -9,7 +9,7 @@ from binstar_client.requests_ext import stream_multipart
 from binstar_client.utils import compute_hash
 
 
-__version__ = '0.2.1'
+__version__ = '0.3.0'
 
 # from poster.encode import multipart_encode
 # from poster.streaminghttp import register_openers
