@@ -18,7 +18,8 @@ def interactive_get_token():
         try:
             username = raw_input('Username: ')
             password = getpass.getpass(stream=sys.stderr)
-            token = bs.authenticate(username, password, 'Binstar-Cli', url, ['packages'])
+            token = bs.authenticate(username, password, 'Binstar-Cli', url, 
+                                    created_with=' '.join(sys.argv))
             break
         except Unauthorized:
             print 'Invalid Username password combination'

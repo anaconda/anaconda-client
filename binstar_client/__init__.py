@@ -42,6 +42,7 @@ class Binstar():
     def authenticate(self, username, password,
                      application, application_url=None,
                      scopes=['read', 'write', 'admin'],
+                     created_with=None,
                      resource='api:**', max_age=None):
         '''
         Use basic authentication to create an authentication token using the interface below.
@@ -59,7 +60,8 @@ class Binstar():
         payload = {"scopes": scopes, "note": application, "note_url": application_url,
                    'resource':resource,
                    'hostname':os.uname()[1],
-                   'max-age':max_age}
+                   'max-age':max_age,
+                   'created_with':None}
         
         data = base64.b64encode(json.dumps(payload))
         res = self.session.post(url, auth=(username, password), data=data, verify=True)

@@ -43,7 +43,8 @@ def main(args):
         print binstar.authenticate(username, password, 
                                    args.name, application_url=args.url, 
                                    scopes=['read','write'], 
-                                   resource=args.resource, max_age=args.max_age)
+                                   resource=args.resource, max_age=args.max_age,
+                                   created_with=' '.join(sys.argv))
         
     
     

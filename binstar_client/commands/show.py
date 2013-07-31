@@ -34,7 +34,7 @@ def main(args):
         print 'version', spec.version
         release = binstar.release(spec.user, spec.package, spec.version)
         for dist in release['distributions']:
-            print '   + %(basename)s' % dist, ' platform:%(platform)-10s arch:%(arch)-10s' % dist['attrs']
+            print '   + %(basename)s' % dist
         print 
         print '%(description)s' % release['public_attrs']
         
