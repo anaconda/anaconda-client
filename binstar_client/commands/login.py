@@ -6,6 +6,9 @@ import getpass
 from binstar_client.utils import get_config, get_binstar
 from binstar_client.errors import Unauthorized, BinstarError
 import sys
+import logging
+
+log = logging.getLogger('binstar.login')
 
 def interactive_get_token():
     bs = get_binstar()
@@ -22,7 +25,7 @@ def interactive_get_token():
                                     created_with=' '.join(sys.argv))
             break
         except Unauthorized:
-            print 'Invalid Username password combination'
+            log.error('Invalid Username password combination, please try again')
             continue
     
     if token is None:
