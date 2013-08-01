@@ -8,6 +8,7 @@ from .errors import BinstarError, Conflict, NotFound, Unauthorized
 from binstar_client.requests_ext import stream_multipart
 from binstar_client.utils import compute_hash, jencode, pv
 from binstar_client.mixins.publish import PublishMixin
+from binstar_client.mixins.build import BuildMixin
 
 
 __version__ = '0.2.1'
@@ -17,7 +18,7 @@ __version__ = '0.2.1'
 # import urllib2
 # register_openers()
 
-class Binstar(PublishMixin):
+class Binstar(PublishMixin, BuildMixin):
     '''
     An object that represents interfaces with the binstar.org restful API.
 
