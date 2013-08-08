@@ -9,7 +9,7 @@ from binstar_client.requests_ext import stream_multipart
 from binstar_client.utils import compute_hash
 
 
-__version__ = '0.2.1'
+__version__ = '0.3.0'
 
 # from poster.encode import multipart_encode
 # from poster.streaminghttp import register_openers
@@ -39,7 +39,11 @@ class Binstar():
 
         self.domain = domain
 
-    def authenticate(self, username, password, application, application_url=None, scopes=['package'],):
+    def authenticate(self, username, password,
+                     application, application_url=None,
+                     scopes=['read', 'write', 'admin'],
+                     created_with=None,
+                     resource='api:**', max_age=None):
         '''
         Use basic authentication to create an authentication token using the interface below.
         With this technique, a username and password need not be stored permanently, and the user can
@@ -53,7 +57,12 @@ class Binstar():
         '''
 
         url = '%s/authentications' % (self.domain)
-        payload = {"scopes": scopes, "note": application, "note_url": application_url}
+        payload = {"scopes": scopes, "note": application, "note_url": application_url,
+                   'resource':resource,
+                   'hostname':os.uname()[1],
+                   'max-age':max_age,
+                   'created_with':None}
+        
         data = base64.b64encode(json.dumps(payload))
         res = self.session.post(url, auth=(username, password), data=data, verify=True)
         self._check_response(res)
@@ -61,11 +70,30 @@ class Binstar():
         token = res['token']
         self.session.headers.update({'Authorization': 'token %s' % (token)})
         return token
-
-    def remove_authentication(self, token):
-        url = '%s/authentications' % (self.domain)
-        res = self.session.delete(url, verify=True)
+    
+    def authentication(self):
+        '''
+        Retrieve information on the current authentication token
+        '''
+        url = '%s/authentication' % (self.domain)
+        res = self.session.get(url, verify=True)
         self._check_response(res)
+        return res.json()
+    
+    def authentications(self):
+        '''
+        Get a list of the current authentication tokens
+        '''
+
+        url = '%s/authentications' % (self.domain)
+        res = self.session.get(url, verify=True)
+        self._check_response(res)
+        return res.json()
+    
+    def remove_authentication(self, auth_id):
+        url = '%s/authentications/%s' % (self.domain, auth_id)
+        res = self.session.delete(url, verify=True)
+        self._check_response(res, [201])
 
     def _check_response(self, res, allowed=[200]):
         api_version = res.headers.get('x-binstar-api-version', '0.2.1')

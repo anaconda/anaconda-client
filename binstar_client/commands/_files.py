@@ -28,7 +28,7 @@ def detect(binstar, user, package, file):
 
 def main(args):
     
-    binstar = get_binstar()
+    binstar = get_binstar(args)
     spec = args.spec
     if args.action == 'upload':
         for file in args.files:

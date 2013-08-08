@@ -10,6 +10,9 @@ import yaml
 from os.path import basename
 from email.parser import Parser
 from os import path
+import logging
+
+log = logging.getLogger('binstar.updload')
 
 def detect_yaml_attrs(filename):
     tar = tarfile.open(filename)
@@ -57,7 +60,7 @@ def detect_conda_attrs(filename):
     attrs = json.loads(obj.read())
     
     description, license = detect_yaml_attrs(filename)
-    os_arch = arch_map[(attrs['platform'],attrs['arch'])]
+    os_arch = arch_map[(attrs['platform'], attrs['arch'])]
     filename = path.join(os_arch, basename(filename))
     return filename, attrs['name'], attrs['version'], attrs, description, description, license
 
@@ -96,9 +99,9 @@ def create_release(binstar, username, package_name, version, description, announ
 
 def create_package_interactive(binstar, username, package_name):
     
-    print '\nThe package %s/%s does not exist' % (username, package_name)
+    log.info('\nThe package %s/%s does not exist' % (username, package_name))
     if not bool_input('Would you lke to create it now?'):
-        print 'goodbbye'
+        log.info('goodbbye')
         raise SystemExit(-1)
     
     summary = raw_input('Enter a short description of the package\nsummary: ')
@@ -114,13 +117,13 @@ def create_package_interactive(binstar, username, package_name):
 
 def create_release_interactive(binstar, username, package_name, version):
     
-    print '\nThe release %s/%s/%s does not exist' % (username, package_name, version)
+    log.info('\nThe release %s/%s/%s does not exist' % (username, package_name, version))
     if not bool_input('Would you like to create it now?'):
-        print 'good-bye'
+        log.info('good-bye')
         raise SystemExit(-1)
 
     description = raw_input('Enter a short description of the release:\n')    
-    print("\nAnnouncements are emailed to your package followers.")
+    log.info("\nAnnouncements are emailed to your package followers.")
     make_announcement = bool_input('Would you like to make an announcement to the package followers?', False)
     if make_announcement:
         announce = raw_input('Markdown Announcement:\n')
@@ -148,16 +151,16 @@ def upload_print_callback():
         perc = 100.0 * curr / total if total else 0
     
         msg = '\r uploaded %(curr_kb)i of %(total_kb)iKb: %(perc).2f%% ETA: %(eta).1f minutes'
-        print msg % locals(),
-        sys.stdout.flush()
+        sys.stderr.write(msg % locals())
+        sys.stderr.flush()
         if curr == total:
-            print
+            sys.stderr.write('\n')
             
     return callback
 
 def main(args):
     
-    binstar = get_binstar()
+    binstar = get_binstar(args)
     
     if args.user:
         username = args.user
@@ -175,10 +178,10 @@ def main(args):
         if args.package_type:
             package_type = args.package_type
         else:
-            print 'detecting package type ...',
+            log.info('detecting package type ...')
             sys.stdout.flush()
             package_type = detect_package_type(filename)
-            print package_type
+            log.info(package_type)
         
         get_attrs = detectors[package_type]
     
@@ -187,10 +190,10 @@ def main(args):
             package_name = args.package
             version = args.version
         else:
-            print 'extracting package attributes for upload ...',
+            log.info('extracting package attributes for upload ...')
             sys.stdout.flush()
             basefilename, package_name, version, attrs, summary, description, license = get_attrs(filename)
-            print 'done'
+            log.info('done')
 
         if args.package:
             package_name = args.package
@@ -215,7 +218,7 @@ def main(args):
                 create_release(binstar, username, package_name, version, description)
 
         with open(filename, 'rb') as fd:
-            print '\nUploading file %s/%s/%s/%s ... ' % (username, package_name, version, basefilename)
+            log.info('\nUploading file %s/%s/%s/%s ... ' % (username, package_name, version, basefilename))
             sys.stdout.flush()
             try:
                 binstar.distribution(username, package_name, version, basefilename)
@@ -223,25 +226,25 @@ def main(args):
                 pass
             else:
                 if args.mode == 'interactive':
-                    if bool_input('Distribution %s already exists. Would you like to replace it?' %(basefilename,)):
+                    if bool_input('Distribution %s already exists. Would you like to replace it?' % (basefilename,)):
                         binstar.remove_dist(username, package_name, version, basefilename)
                     else:
-                        print 'Not replacing distribution %s' %(basefilename,)
+                        log.info('Not replacing distribution %s' % (basefilename,))
                         continue
             try:
                 binstar.upload(username, package_name, version, basefilename, fd, package_type, args.description, attrs=attrs,
                            callback=upload_print_callback())
             except Conflict:
                 full_name = '%s/%s/%s/%s' % (username, package_name, version, basefilename)
-                print 'Distribution already exists. Please use the -i/--interactive option or `binstar delete %s`' % full_name
+                log.info('Distribution already exists. Please use the -i/--interactive option or `binstar delete %s`' % full_name)
                 raise
 
             uploaded_packages.append(package_name)
 
 
-    print("\n\nUpload(s) Complete\n")
+    log.info("\n\nUpload(s) Complete\n")
     for package in uploaded_packages:        
-        print("Package located at:\nhttps://binstar.org/%s/%s\n" % (username, package))
+        log.info("Package located at:\nhttps://binstar.org/%s/%s\n" % (username, package))
     
 
 def add_parser(subparsers):

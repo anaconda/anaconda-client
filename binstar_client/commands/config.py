@@ -9,29 +9,32 @@ from binstar_client.errors import ShowHelp
 from binstar_client.utils import get_config, set_config, SITE_CONFIG, \
     USER_CONFIG
 from pprint import pprint
+import logging
+
+log = logging.getLogger('binstar.config')
 
 def main(args):
     config = get_config()
     
     if args.show:
         fmt = ' + %s: %r'
-        print 'Site Config:', SITE_CONFIG
+        log.info('Site Config: %s' % SITE_CONFIG)
         for key_value in get_config(user=False).items():
             print fmt % key_value
-        print
-        print 'User Config:', USER_CONFIG
+        log.info()
+        log.info('User Config: %s' % USER_CONFIG)
         for key_value in get_config(site=False).items():
-            print fmt % key_value
-        print
+            log.info(fmt % key_value)
+        log.info()
         return
     
     if args.get:
-        print config[args.get]
+        log.info(config[args.get])
         return
     
     if args.files:
-        print 'User Config:', USER_CONFIG 
-        print 'Site Config:', SITE_CONFIG
+        log.info('User Config: %s' % USER_CONFIG) 
+        log.info('Site Config: %s' % SITE_CONFIG)
     
     config = get_config(args.user, not args.user)
     

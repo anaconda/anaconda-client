@@ -9,3 +9,4 @@ docutils==0.10
 keyring==1.5
 requests==1.2.3
 wsgiref==0.1.2
+python-dateutil==2.1
