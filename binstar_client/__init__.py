@@ -6,7 +6,8 @@ import warnings
 
 from .errors import BinstarError, Conflict, NotFound, Unauthorized
 from binstar_client.requests_ext import stream_multipart
-from binstar_client.utils import compute_hash
+from binstar_client.utils import compute_hash, jencode, pv
+from binstar_client.mixins.publish import PublishMixin
 
 
 __version__ = '0.3.0'
@@ -16,13 +17,7 @@ __version__ = '0.3.0'
 # import urllib2
 # register_openers()
 
-def jencode(payload):
-    return base64.b64encode(json.dumps(payload))
-
-def pv(version):
-    return tuple(int(x) for x in version.split('.'))
-
-class Binstar():
+class Binstar(PublishMixin):
     '''
     An object that represents interfaces with the binstar.org restful API.
 

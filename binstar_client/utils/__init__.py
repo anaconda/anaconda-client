@@ -17,6 +17,15 @@ import yaml
 import sys
 
 from ..errors import UserError
+import json
+
+
+
+def jencode(payload):
+    return base64.b64encode(json.dumps(payload))
+
+def pv(version):
+    return tuple(int(x) for x in version.split('.'))
 
 class PackageSpec(object):
     def __init__(self, user, package, version, basename, attrs, spec_str):
