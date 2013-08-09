@@ -29,7 +29,7 @@ def interactive_get_token():
             continue
     
     if token is None:
-        raise BinstarError('Sorry. Please try again')    
+        raise BinstarError('Sorry. Please try again (go to https://binstar.org/account/forgot_password to reset your password)')    
             
     return token
     

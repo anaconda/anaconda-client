@@ -17,8 +17,12 @@ def pprint_packages(packages):
     if packages:
         log.info('Packages:')
     for package in packages:
-        package['permission'] = 'public' if package['public'] else 'private'
-        log.info('   + %(name)25s: [%(permission)s] %(summary)s' % package)
+        if package.get('published'):
+            package['permission'] = '[published]'
+        else:
+            package['permission'] = '[public]' if package['public'] else '[private]'
+            
+        log.info('   + %(name)20s: %(permission)-12s | %(summary)s' % package)
 
 def pprint_user(user):
     user = user.copy()

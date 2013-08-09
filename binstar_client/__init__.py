@@ -10,6 +10,7 @@ from binstar_client.utils import compute_hash, jencode, pv
 from binstar_client.mixins.publish import PublishMixin
 from binstar_client.mixins.collections import CollectionsMixin
 from binstar_client.mixins.organizations import OrgMixin
+from binstar_client.utils.http_codes import STATUS_CODES
 
 
 __version__ = '0.3.0'
@@ -99,13 +100,18 @@ class Binstar(PublishMixin, CollectionsMixin, OrgMixin):
                    + 'Please update your client with pip install -U binstar or conda update binstar')
             warnings.warn(msg, stacklevel=4)
             
+        
+        
         if not res.status_code in allowed:
+            short, long = STATUS_CODES.get(res.status_code, ('?', 'Undefined error'))
+            msg = '%s: %s (status code: %s)' % (short, long, res.status_code)
             try:
                 data = res.json()
             except:
-                msg = 'Undefined server error (status code: %s)' % (res.status_code,)
+                pass
             else:
-                msg = data.get('error', 'Undefined server error (status code: %s)' % (res.status_code,))
+                msg = data.get('error', msg)
+                
             ErrCls = BinstarError
             if res.status_code == 401:
                 ErrCls = Unauthorized
@@ -195,9 +201,9 @@ class Binstar(PublishMixin, CollectionsMixin, OrgMixin):
                     summary=None,
                     license=None,
                     public=True,
+                    publish=True,
                     license_url=None,
-                    attrs=None,
-                    host_publicly=None):
+                    attrs=None):
         '''
         Add a new package to a users account
 
@@ -217,14 +223,23 @@ class Binstar(PublishMixin, CollectionsMixin, OrgMixin):
         attrs['summary'] = summary
         attrs['license'] = {'name':license, 'url':license_url}
 
-        payload = dict(public=public,
-                       public_attrs=attrs or {},
-                       host_publicly=host_publicly)
+        payload = dict(public=bool(public),
+                       publish=bool(publish),
+                       public_attrs=dict(attrs or {})
+                       )
 
         data = jencode(payload)
         res = self.session.post(url, verify=True, data=data)
         self._check_response(res)
         return res.json()
+
+    def remove_package(self, username, package_name):
+        
+        url = '%s/package/%s/%s' % (self.domain, username, package_name)
+        
+        res = self.session.delete(url, verify=True)
+        self._check_response(res, [201])
+        return
 
     def release(self, login, package_name, version):
         '''
@@ -237,6 +252,19 @@ class Binstar(PublishMixin, CollectionsMixin, OrgMixin):
         url = '%s/release/%s/%s/%s' % (self.domain, login, package_name, version)
         res = self.session.get(url, verify=True)
         self._check_response(res)
+        return res.json()
+
+    def remove_release(self, username, package_name, version):
+        '''
+        remove a release and all files under it
+
+        :param username: the login of the package owner
+        :param package_name: the name of the package
+        :param version: the name of the package
+        '''
+        url = '%s/release/%s/%s/%s' % (self.domain, username, package_name, version)
+        res = self.session.delete(url, verify=True)
+        self._check_response(res, [201])
         return res.json()
 
     def add_release(self, login, package_name, version, requirements, announce, description):
