@@ -15,6 +15,8 @@ from binstar_client.utils import get_binstar, PackageSpec, parse_specs
 from argparse import FileType, RawTextHelpFormatter
 
 import logging
+from binstar_client.utils.pprint import pprint_user, pprint_packages,\
+    pprint_orgs, pprint_collections
 
 log = logging.getLogger('binstar.show')
 
@@ -51,10 +53,14 @@ def main(args):
             log.info('   + %(version)s' % release)
             
     elif args.spec._user:
-        log.info(binstar.user(spec.user))
-        for package in binstar.user_packages(spec.user):
-            package['permission'] = 'public' if package['public'] else 'private'
-            log.info('   + %(name)25s: [%(permission)s] %(summary)s' % package)
+        user_info = binstar.user(spec.user)
+        pprint_user(user_info)
+        pprint_packages(binstar.user_packages(spec.user))
+        if user_info['user_type'] == 'user':
+            pprint_orgs(binstar.user_orgs(spec.user))
+        else:
+            pprint_collections(binstar.collections(spec.user))
+        
     else:
         log.info(args.spec)
 

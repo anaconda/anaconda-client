@@ -40,5 +40,5 @@ class MyStreamHandler(logging.Handler):
                 header = self.color_map(header, record.levelname)
             stream.write('%s %s\n' % (header, message))
         else:
-            stream.write('%s' % message)
+            stream.write('%s\n' % message)
 
