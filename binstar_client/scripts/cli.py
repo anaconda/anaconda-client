@@ -39,10 +39,12 @@ def main():
     parser = ArgumentParser(description=__doc__)
     parser.add_argument('--show-traceback', action='store_true')
     parser.add_argument('-t', '--token')
-    parser.add_argument('-v', '--verbose', 
+    parser.add_argument('-v', '--verbose',
                         action='store_const', help='print debug information ot the console',
                         dest='log_level',
                         default=logging.INFO, const=logging.DEBUG)
+    parser.add_argument('-V', '--version', action='version',
+                        version="%%(prog)s Command line client (version %s)" % (version,))
     subparsers = parser.add_subparsers(help='commands')
     
     for command in sub_commands():
