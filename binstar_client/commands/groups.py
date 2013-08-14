@@ -22,7 +22,7 @@ def group_spec(spec):
 
 def main(args):
     
-    binstar = get_binstar()
+    binstar = get_binstar(args)
 #    pprint(binstar.groups())
     
     if args.action == 'add':

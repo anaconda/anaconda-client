@@ -5,7 +5,8 @@ Created on Apr 29, 2013
 '''
 
 from hashlib import md5
-from keyring import get_keyring
+from keyring import get_keyring, set_keyring
+from keyring.backends.file import PlaintextKeyring 
 from os.path import exists, join, dirname, expanduser
 import appdirs
 import base64
@@ -16,6 +17,15 @@ import yaml
 import sys
 
 from ..errors import UserError
+import json
+
+
+
+def jencode(payload):
+    return base64.b64encode(json.dumps(payload))
+
+def pv(version):
+    return tuple(int(x) for x in version.split('.'))
 
 class PackageSpec(object):
     def __init__(self, user, package, version, basename, attrs, spec_str):
@@ -74,12 +84,22 @@ def parse_specs(spec):
     
     return PackageSpec(user, package, version, basename, attrs, spec)
 
-def get_binstar():
+def get_binstar(args=None):
     from binstar_client import Binstar
     
-    kr = get_keyring()
-    token = kr.get_password('binstar-token', getpass.getuser())
+    if args and args.token:
+        token = args.token
+    else:
+        config = get_config()
+        if config.get('keyring'):
+            if config['keyring'] == 'plain-text':
+                set_keyring(PlaintextKeyring())
+            
+        kr = get_keyring()
+        token = kr.get_password('binstar-token', getpass.getuser())
+        
     url = get_config().get('url', 'https://api.binstar.org')
+    
     
     return Binstar(token, domain=url,)
 
@@ -94,6 +114,8 @@ def load_config(config_file):
 
 SITE_CONFIG = join(appdirs.site_data_dir('binstar', 'ContinuumIO'), 'config.yaml')
 USER_CONFIG = join(appdirs.user_data_dir('binstar', 'ContinuumIO'), 'config.yaml')
+USER_LOGDIR = appdirs.user_log_dir('binstar', 'ContinuumIO')
+
 def get_config(user=True, site=True):
     
     config = {}
