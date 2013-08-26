@@ -1,6 +1,12 @@
+2013-8-26: 0.3.0:
+-----------------
+* added collections feature
+* updated client for public packages
+* updated authentication feature
+
 2013-07-18: 0.2.2:
 ------------------
-  * remove steuptools run-time dependency
+  * remove setuptools run-time dependency
 
 2013-07-16: 0.2.1:
 ------------------
