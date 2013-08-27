@@ -1,12 +1,5 @@
-Jinja2==2.7
-MarkupSafe==0.18
 PyYAML==3.10
 Pygments==1.6
 Sphinx==1.2b1
-binstar-client==0.1.0
-distribute==0.6.31
-docutils==0.10
 keyring==1.5
 requests==1.2.3
-wsgiref==0.1.2
-python-dateutil==2.1

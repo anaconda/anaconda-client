@@ -13,8 +13,7 @@ setup(
     packages=find_packages(),
     install_requires=['keyring', 
                       'requests>=1.0',
-                      'pyyaml',
-                      'python-dateutil'],
+                      'pyyaml'],
     entry_points={
           'console_scripts': [
               'binstar = binstar_client.scripts.cli:main',
