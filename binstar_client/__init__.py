@@ -54,12 +54,17 @@ class Binstar(PublishMixin, CollectionsMixin, OrgMixin):
         :param scopes: Scopes let you specify exactly what type of access you need. Scopes limit access for the tokens.
         '''
 
+        try:
+            hostname = os.uname()[1]
+        except AttributeError:
+            hostname = 'unknown'
+
         url = '%s/authentications' % (self.domain)
         payload = {"scopes": scopes, "note": application, "note_url": application_url,
-                   'resource':resource,
-                   'hostname':os.uname()[1],
-                   'max-age':max_age,
-                   'created_with':None}
+                   'resource': resource,
+                   'hostname': hostname,
+                   'max-age': max_age,
+                   'created_with': None}
 
         data = base64.b64encode(json.dumps(payload))
         res = self.session.post(url, auth=(username, password), data=data, verify=True)
