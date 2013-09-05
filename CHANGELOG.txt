@@ -1,4 +1,8 @@
-2013-8-26: 0.3.0:
+2013-09-05: 0.3.1:
+-----------------
+* fix attribute error on Windows
+
+2013-08-26: 0.3.0:
 -----------------
 * added collections feature
 * updated client for public packages
