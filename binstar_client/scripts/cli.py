@@ -17,25 +17,25 @@ from binstar_client.utils.handlers import MyStreamHandler
 logger = logging.getLogger('binstar')
 
 def setup_logging(args):
-    
+
     if not exists(USER_LOGDIR): makedirs(USER_LOGDIR)
-    
+
     logger = logging.getLogger('binstar')
     logger.setLevel(logging.DEBUG)
-    
+
     error_logfile = join(USER_LOGDIR, 'cli.log')
     hndlr = RotatingFileHandler(error_logfile, maxBytes=10 * (1024 ** 2), backupCount=5,)
     hndlr.setLevel(logging.INFO)
     logger.addHandler(hndlr)
-    
+
     shndlr = MyStreamHandler()
     shndlr.setLevel(args.log_level)
     logger.addHandler(shndlr)
 
 def main():
-    
-    
-    
+
+
+
     parser = ArgumentParser(description=__doc__)
     parser.add_argument('--show-traceback', action='store_true')
     parser.add_argument('-t', '--token')
@@ -46,12 +46,12 @@ def main():
     parser.add_argument('-V', '--version', action='version',
                         version="%%(prog)s Command line client (version %s)" % (version,))
     subparsers = parser.add_subparsers(help='commands')
-    
+
     for command in sub_commands():
         command.add_parser(subparsers)
-    
+
     args = parser.parse_args()
-    
+
     setup_logging(args)
     try:
         try:
@@ -62,8 +62,8 @@ def main():
                 interactive_login()
                 return args.main(args)
             else:
-                raise 
-    
+                raise
+
     except ShowHelp as err:
         args.sub_parser.print_help()
         raise SystemExit(-1)

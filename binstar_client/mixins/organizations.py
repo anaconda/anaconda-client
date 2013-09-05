@@ -1,19 +1,19 @@
 from binstar_client.utils import jencode
 
 class OrgMixin(object):
-    
+
     def user_orgs(self, username=None):
-        
+
         if username:
             url = '%s/users/%s/orgs' % (self.domain, username)
         else:
             url = '%s/user/orgs' % (self.domain)
-        
+
         res = self.session.get(url, verify=True)
         self._check_response(res)
 
         return res.json()
-    
+
     def groups(self, owner=None):
         if owner:
             url = '%s/groups/%s' % (self.domain, owner)
@@ -24,7 +24,7 @@ class OrgMixin(object):
         self._check_response(res)
 
         return res.json()
-    
+
     def group(self, owner, group_name):
         url = '%s/group/%s/%s' % (self.domain, owner, group_name)
         res = self.session.get(url, verify=True)
@@ -84,4 +84,4 @@ class OrgMixin(object):
         self._check_response(res, [204])
 
         return
-    
+

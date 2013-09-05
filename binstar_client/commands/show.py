@@ -8,8 +8,8 @@ example::
     * binstar show continuumio/python/2.7.5
 
     binstar show sean/meta/1.2.0/meta.tar.gz
-    
-     
+
+
 '''
 from binstar_client.utils import get_binstar, PackageSpec, parse_specs
 from argparse import FileType, RawTextHelpFormatter
@@ -21,9 +21,9 @@ from binstar_client.utils.pprint import pprint_user, pprint_packages,\
 log = logging.getLogger('binstar.show')
 
 def main(args):
-    
+
     binstar = get_binstar(args)
-    
+
     spec = args.spec
     if spec._basename:
         dist = binstar.distribution(spec.user, spec.package, spec.version, spec.basename)
@@ -36,7 +36,7 @@ def main(args):
         log.info('Metadata:')
         for key_value in metadata.items():
             log.info('    + %-25s: %r' % key_value)
-            
+
     elif args.spec._version:
         log.info('version %s' % spec.version)
         release = binstar.release(spec.user, spec.package, spec.version)
@@ -44,14 +44,14 @@ def main(args):
             log.info('   + %(basename)s' % dist)
         log.info()
         log.info('%(description)s' % release['public_attrs'])
-        
+
     elif args.spec._package:
         package = binstar.package(spec.user, spec.package)
         package['permission'] = 'public' if package['public'] else 'private'
         log.info('- %(name)s: [%(permission)s] %(summary)s' % package)
         for release in package['releases']:
             log.info('   + %(version)s' % release)
-            
+
     elif args.spec._user:
         user_info = binstar.user(spec.user)
         pprint_user(user_info)
@@ -60,16 +60,16 @@ def main(args):
             pprint_orgs(binstar.user_orgs(spec.user))
         else:
             pprint_collections(binstar.collections(spec.user))
-        
+
     else:
         log.info(args.spec)
 
 def add_parser(subparsers):
-    
+
     parser = subparsers.add_parser('show',
                                       help='Show information about an object',
                                       description=__doc__, formatter_class=RawTextHelpFormatter)
-    
+
     parser.add_argument('spec', help='Package written as <user>[/<package>[/<version>[/<filename>]]]', type=parse_specs)
-    
+
     parser.set_defaults(main=main)

@@ -10,7 +10,7 @@ import logging
 log = logging.getLogger('binstar.logout')
 
 def main(args):
-    
+
     bs = get_binstar()
     auth = bs.authentication()
     bs.remove_authentication(auth['id'])
@@ -19,8 +19,8 @@ def main(args):
     log.info("logout successful")
 
 def add_parser(subparsers):
-    subparser = subparsers.add_parser('logout', 
-                                      help='Log out from binstar', 
+    subparser = subparsers.add_parser('logout',
+                                      help='Log out from binstar',
                                       description=__doc__)
-    
+
     subparser.set_defaults(main=main)

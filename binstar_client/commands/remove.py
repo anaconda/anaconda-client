@@ -4,7 +4,7 @@ Remove an object from binstar:
 example::
 
     binstar remove sean/meta/1.2.0/meta.tar.gz
-     
+
 '''
 from binstar_client.utils import get_binstar, PackageSpec, parse_specs, \
     bool_input
@@ -15,9 +15,9 @@ import logging
 log = logging.getLogger('binstar.remove')
 
 def main(args):
-    
+
     binstar = get_binstar(args)
-    
+
     for spec in args.specs:
         try:
             if spec._basename:
@@ -38,23 +38,23 @@ def main(args):
                     binstar.remove_package(spec.user, spec.package)
                 else:
                     log.warn('Not removing release %s' % (spec))
-            
+
         except NotFound:
             if args.force:
                 continue
             else:
                 raise
-                 
-            
+
+
 def add_parser(subparsers):
-    
+
     parser = subparsers.add_parser('remove',
                                       help='Remove an object from binstar',
                                       description=__doc__, formatter_class=RawTextHelpFormatter)
-    
+
     parser.add_argument('specs', help='Package written as <user>[/<package>[/<version>[/<filename>]]]', type=parse_specs, nargs='+')
     parser.add_argument('-f', '--force', help='Do not prompt removal', action='store_true')
-    
-    
-    
+
+
+
     parser.set_defaults(main=main)

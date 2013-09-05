@@ -60,7 +60,7 @@ class Binstar(PublishMixin, CollectionsMixin, OrgMixin):
                    'hostname':os.uname()[1],
                    'max-age':max_age,
                    'created_with':None}
-        
+
         data = base64.b64encode(json.dumps(payload))
         res = self.session.post(url, auth=(username, password), data=data, verify=True)
         self._check_response(res)
@@ -68,7 +68,7 @@ class Binstar(PublishMixin, CollectionsMixin, OrgMixin):
         token = res['token']
         self.session.headers.update({'Authorization': 'token %s' % (token)})
         return token
-    
+
     def authentication(self):
         '''
         Retrieve information on the current authentication token
@@ -77,7 +77,7 @@ class Binstar(PublishMixin, CollectionsMixin, OrgMixin):
         res = self.session.get(url, verify=True)
         self._check_response(res)
         return res.json()
-    
+
     def authentications(self):
         '''
         Get a list of the current authentication tokens
@@ -87,7 +87,7 @@ class Binstar(PublishMixin, CollectionsMixin, OrgMixin):
         res = self.session.get(url, verify=True)
         self._check_response(res)
         return res.json()
-    
+
     def remove_authentication(self, auth_id):
         url = '%s/authentications/%s' % (self.domain, auth_id)
         res = self.session.delete(url, verify=True)
@@ -99,9 +99,9 @@ class Binstar(PublishMixin, CollectionsMixin, OrgMixin):
             msg = ('The api server is running the binstar-api version %s. you are using %s\n' % (api_version, __version__)
                    + 'Please update your client with pip install -U binstar or conda update binstar')
             warnings.warn(msg, stacklevel=4)
-            
-        
-        
+
+
+
         if not res.status_code in allowed:
             short, long = STATUS_CODES.get(res.status_code, ('?', 'Undefined error'))
             msg = '%s: %s (status code: %s)' % (short, long, res.status_code)
@@ -111,7 +111,7 @@ class Binstar(PublishMixin, CollectionsMixin, OrgMixin):
                 pass
             else:
                 msg = data.get('error', msg)
-                
+
             ErrCls = BinstarError
             if res.status_code == 401:
                 ErrCls = Unauthorized
@@ -181,12 +181,12 @@ class Binstar(PublishMixin, CollectionsMixin, OrgMixin):
         return
 
     def package_collaborators(self, owner, package_name):
-        
+
         url = '%s/packages/%s/%s/collaborators' % (self.domain, owner, package_name)
         res = self.session.get(url, verify=True)
         self._check_response(res, [200])
         return res.json()
-    
+
     def all_packages(self, modified_after=None):
         '''
         '''
@@ -234,9 +234,9 @@ class Binstar(PublishMixin, CollectionsMixin, OrgMixin):
         return res.json()
 
     def remove_package(self, username, package_name):
-        
+
         url = '%s/package/%s/%s' % (self.domain, username, package_name)
-        
+
         res = self.session.delete(url, verify=True)
         self._check_response(res, [201])
         return
@@ -294,7 +294,7 @@ class Binstar(PublishMixin, CollectionsMixin, OrgMixin):
         res = self.session.get(url, verify=True)
         self._check_response(res)
         return res.json()
-    
+
     def remove_dist(self, login, package_name, release, basename=None, _id=None):
 
         if basename:

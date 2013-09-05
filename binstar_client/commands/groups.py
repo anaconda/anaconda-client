@@ -17,14 +17,14 @@ def group_spec(spec):
     mat = pat.match(spec)
     if mat is None:
         raise ArgumentError('dfasdf')
-    
+
     return mat.groupdict()
 
 def main(args):
-    
+
     binstar = get_binstar(args)
 #    pprint(binstar.groups())
-    
+
     if args.action == 'add':
         result = binstar.add_group(args.spec['org'], args.spec['group_name'], args.perms)
         pprint(result)
@@ -35,7 +35,7 @@ def main(args):
         else:
             result = binstar.groups(args.spec['org'])
             pprint(result)
-            
+
     elif args.action == 'members':
         if not args.spec['group_name']:
             raise ArgumentError('must specify group_name in spec')
@@ -58,7 +58,7 @@ def main(args):
             raise ArgumentError('must specify group_name in spec')
         result = binstar.group_packages(args.spec['org'], args.spec['group_name'])
         package_list(result, args.verbose)
-            
+
     elif args.action == 'add_package':
         if not args.spec['group_name']:
             raise ArgumentError('must specify group_name in spec')
@@ -75,7 +75,7 @@ def main(args):
         raise NotImplementedError(args.action)
 
 def add_parser(subparsers):
-    
+
     parser = subparsers.add_parser('groups',
                                     help='Manage Groups',
                                     description=__doc__)
@@ -85,6 +85,6 @@ def add_parser(subparsers):
                                  'packages', 'add_package','remove_package'], nargs='?')
     parser.add_argument('spec', help=group_spec.__doc__, nargs='?', type=group_spec)
     parser.add_argument('--perms', help='group permissions', choices=['read', 'write', 'admin'], default='read')
-    
+
 
     parser.set_defaults(main=main)

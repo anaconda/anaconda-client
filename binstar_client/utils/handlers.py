@@ -13,10 +13,10 @@ class MyStreamHandler(logging.Handler):
                  'WARNING': '%s%s[%%s]%s' % (BOLD, WARNING, ENDC),
                  'DEBUG': '%s%s[%%s]%s' % (BOLD, OKBLUE, ENDC),
                  }
-    
+
     def color_map(self, header, level):
-        return self.COLOR_MAP.get(level,'[%s]') % header  
-    
+        return self.COLOR_MAP.get(level,'[%s]') % header
+
     def emit(self, record):
         if record.levelno == logging.INFO:
             header = None
@@ -34,7 +34,7 @@ class MyStreamHandler(logging.Handler):
             else:
                 header = record.levelname.lower()
                 message = record.getMessage()
-        
+
         if header:
             if stream.isatty() and not sys.platform.startswith('win'):
                 header = self.color_map(header, record.levelname)
