@@ -122,7 +122,6 @@ def create_package_interactive(binstar, username, package_name, public=True, pub
                     summary,
                     license,
                     license_url,
-                    public,
                     public=public,
                     publish=publish)
 
@@ -301,4 +300,3 @@ def add_parser(subparsers):
                                         action='store_const', dest='mode', const='fail')
 
     parser.set_defaults(main=main)
-
