@@ -252,7 +252,7 @@ def main(args):
                            callback=upload_print_callback())
             except Conflict:
                 full_name = '%s/%s/%s/%s' % (username, package_name, version, basefilename)
-                log.info('Distribution already exists. Please use the -i/--interactive option or `binstar delete %s`' % full_name)
+                log.info('Distribution already exists. Please use the -i/--interactive option or `binstar remove %s`' % full_name)
                 raise
 
             uploaded_packages.append(package_name)
@@ -301,4 +301,3 @@ def add_parser(subparsers):
                                         action='store_const', dest='mode', const='fail')
 
     parser.set_defaults(main=main)
-
