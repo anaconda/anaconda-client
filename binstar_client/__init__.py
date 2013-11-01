@@ -341,7 +341,7 @@ class Binstar(PublishMixin, CollectionsMixin, OrgMixin):
             return None
         elif res.status_code == 302:
             res2 = requests.get(res.headers['location'], stream=True, verify=True)
-            return res2.raw
+            return res2
 
 
     def upload(self, login, package_name, release, basename, fd, distribution_type,
