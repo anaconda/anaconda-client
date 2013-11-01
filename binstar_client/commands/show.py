@@ -42,7 +42,6 @@ def main(args):
         release = binstar.release(spec.user, spec.package, spec.version)
         for dist in release['distributions']:
             log.info('   + %(basename)s' % dist)
-        log.info()
         log.info('%(description)s' % release['public_attrs'])
 
     elif args.spec._package:
