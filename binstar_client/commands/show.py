@@ -29,7 +29,7 @@ def main(args):
         dist = binstar.distribution(spec.user, spec.package, spec.version, spec.basename)
         log.info(dist.pop('basename'))
         log.info(dist.pop('description') or 'no description')
-        log.info()
+        log.info('')
         metadata = dist.pop('attrs', {})
         for key_value in dist.items():
             log.info('%-25s: %r' % key_value)

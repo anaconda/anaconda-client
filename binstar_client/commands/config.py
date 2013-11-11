@@ -21,11 +21,11 @@ def main(args):
         log.info('Site Config: %s' % SITE_CONFIG)
         for key_value in get_config(user=False).items():
             print fmt % key_value
-        log.info()
+        log.info("")
         log.info('User Config: %s' % USER_CONFIG)
         for key_value in get_config(site=False).items():
             log.info(fmt % key_value)
-        log.info()
+        log.info("")
         return
 
     if args.get:
