@@ -38,13 +38,15 @@ def main(args):
                 binstar.upload(spec.user, spec.package, spec.version, basename(file), fd, args.description, **attrs)
         print '... done'
     elif args.action == 'download':
-        fd = binstar.download(spec.user, spec.package, spec.version, spec.basename)
+        requests_handle = binstar.download(spec.user, spec.package, spec.version, spec.basename)
 
         if args.files:
             fname = args.files[0]
-        data = fd.read()
+        
         with open(fname, 'w') as fdout:
-            fdout.write(data)
+            for chunk in requests.handle.iter_content(4096):
+                fdout.write(chunk)
+            
     elif args.action == 'list':
         release = binstar.release(spec.user, spec.package, spec.version)
         for dist in release.get('distributions',[]):
