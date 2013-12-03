@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Bistar Client documentation build configuration file, created by
+# Binstar Client documentation build configuration file, created by
 # sphinx-quickstart on Sat Mar 30 10:10:48 2013.
 #
 # This file is execfile()d with the current directory set to its containing dir.
@@ -40,7 +40,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Bistar Client'
+project = u'Binstar Client'
 copyright = u'2013, Sean Ross-Ross'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -164,7 +164,7 @@ html_static_path = ['_static']
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'BistarClientdoc'
+htmlhelp_basename = 'BinstarClientdoc'
 
 
 # -- Options for LaTeX output --------------------------------------------------
@@ -183,7 +183,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'BistarClient.tex', u'Bistar Client Documentation',
+  ('index', 'BinstarClient.tex', u'Binstar Client Documentation',
    u'Sean Ross-Ross', 'manual'),
 ]
 
@@ -213,7 +213,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'bistarclient', u'Bistar Client Documentation',
+    ('index', 'binstarclient', u'Binstar Client Documentation',
      [u'Sean Ross-Ross'], 1)
 ]
 
@@ -227,8 +227,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'BistarClient', u'Bistar Client Documentation',
-   u'Sean Ross-Ross', 'BistarClient', 'One line description of project.',
+  ('index', 'BinstarClient', u'Binstar Client Documentation',
+   u'Sean Ross-Ross', 'BinstarClient', 'One line description of project.',
    'Miscellaneous'),
 ]
 
