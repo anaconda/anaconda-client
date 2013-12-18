@@ -3,11 +3,12 @@ Manage Collections
 
 
 '''
-from binstar_client.utils import get_config, get_binstar
+from binstar_client.utils import get_binstar
 from collections import namedtuple
-from binstar_client.errors import BinstarError
+from binstar_client.errors import BinstarError, UserError
 from binstar_client.utils.pprint import pprint_packages
 import logging
+from argparse import FileType
 
 CollectionSpec = namedtuple('CollectionSpec', ('org', 'name'))
 
@@ -52,7 +53,7 @@ def package_spec(spec):
 def show_collections(binstar, spec):
     for collection in binstar.collections(spec.org):
         collection['access'] = '[public]' if collection['public'] else '[private]'
-        logger.info('%(access)9s %(owner)s/%(name)-15s - %(description)s' % collection)
+        log.info('%(access)9s %(owner)s/%(name)-15s - %(description)s' % collection)
 
 
 
@@ -67,6 +68,7 @@ def show_collection(binstar, spec):
         log.info('    This collection contains no packages. You can add a package with the binstar with the command')
         log.info('    binstar collection --add-package ORG/NAME OWNER/PACKAGE')
     log.info('')
+    
     package_types = {pt for p in collection['packages'] for pt in p.get('package_types')}
     for package_type in package_types:
         install_info(collection, package_type)
@@ -77,6 +79,17 @@ def show_collection(binstar, spec):
         log.info('    TOKEN=$(binstar auth --create --name <TOKEN-NAME>)')
         log.info('')
 
+def read_package_file(fd):
+    for lineno, line in enumerate(fd.readlines()):
+        line = line.split('#', 1)[0]
+        if not line.strip():
+            continue
+        try:
+            owner, package = line.strip().split('/', 1)
+        except ValueError:
+            msg = "Parse error from file: %s line: %i " % (fd.name, lineno + 1)
+            raise UserError(msg)
+        yield owner, package
 
 def main(args):
     binstar = get_binstar()
@@ -113,6 +126,9 @@ def main(args):
 
         binstar.collection_add_packages(org, name,
                                         owner=package.org, package=package.name)
+    if args.add_packages:
+        for owner, package in read_package_file(args.add_packages):
+            binstar.collection_add_packages(org, name, owner=owner, package=package)
 
     if args.remove_package:
         package = args.remove_package
@@ -151,11 +167,22 @@ def add_parser(subparsers):
     group.add_argument('--update', help='update the collection <NAME> in <ORG>', action='store_true')
     group.add_argument('--remove', help='remove the collection <NAME> from <ORG>', action='store_true')
 
-    group.add_argument('--add-package', metavar='OWNER/PACKAGE', help='add the package OWNER/PACKAGE to the collection ORG/NAME', type=package_spec)
-    group.add_argument('--remove-package', metavar='OWNER/PACKAGE', help='remove the package OWNER/PACKAGE from the collection ORG/NAME', type=package_spec)
+    group.add_argument('--add-package', metavar='OWNER/PACKAGE', 
+                       help='add the package OWNER/PACKAGE to the collection ORG/NAME', 
+                       type=package_spec)
+    group.add_argument('-f', '--add-packages', metavar='packages.txt', 
+                       help='Add or update the packages listed in pakages.txt', 
+                       type=FileType('r'))
+    group.add_argument('--remove-package', metavar='OWNER/PACKAGE', 
+                       help='remove the package OWNER/PACKAGE from the collection ORG/NAME', 
+                       type=package_spec)
 
-    group.add_argument('--clone-from', metavar='FROM/NAME', help='Create a collection by cloning another collection', type=collection_spec)
-    group.add_argument('--pull-from', metavar='FROM/NAME', help='Update this collection with another', type=collection_spec)
+    group.add_argument('--clone-from', metavar='FROM/NAME', 
+                       help='Create a collection by cloning another collection', 
+                       type=collection_spec)
+    group.add_argument('--pull-from', metavar='FROM/NAME', 
+                       help='Update this collection with another', 
+                       type=collection_spec)
 
 
     parser.set_defaults(main=main, sub_parser=parser)
