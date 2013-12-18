@@ -17,9 +17,11 @@ def interactive_get_token():
     url = config.get('url', 'https://api.binstar.org')
 
     token = None
+    username = raw_input('Username: ')
+    
     for _ in range(3):
         try:
-            username = raw_input('Username: ')
+            sys.stderr.write("%s's " % username)
             password = getpass.getpass(stream=sys.stderr)
             token = bs.authenticate(username, password, 'Binstar-Cli', url,
                                     created_with=' '.join(sys.argv))
