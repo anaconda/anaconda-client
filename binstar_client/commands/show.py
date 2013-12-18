@@ -87,6 +87,11 @@ def main(args):
         for package_type in package.get('package_types'):
             install_info(package, package_type)
             
+        if not package['public']:
+            log.info('To generate a $TOKEN run:')
+            log.info('    TOKEN=$(binstar auth --create --name <TOKEN-NAME>)')
+            
+            
 
     elif args.spec._user:
         user_info = binstar.user(spec.user)
