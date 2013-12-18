@@ -403,3 +403,10 @@ class Binstar(PublishMixin, CollectionsMixin, OrgMixin):
 
         return res.json()
 
+    def search(self, query, package_type=None):
+        url = '%s/search' % self.domain
+        res = self.session.get(url, params={'name':query, 'type':package_type}, 
+                               verify=True)
+        self._check_response(res)
+        return res.json()
+    
