@@ -91,7 +91,7 @@ def get_binstar(args=None):
         token = args.token
     else:
         config = get_config()
-        if config.get('keyring'):
+        if config.get('keyring', 'plain-text'):
             if config['keyring'] == 'plain-text':
                 set_keyring(PlaintextKeyring())
 
