@@ -15,10 +15,38 @@ from binstar_client.utils import get_binstar, PackageSpec, parse_specs
 from argparse import FileType, RawTextHelpFormatter
 
 import logging
-from binstar_client.utils.pprint import pprint_user, pprint_packages,\
+from binstar_client.utils.pprint import pprint_user, pprint_packages, \
     pprint_orgs, pprint_collections
 
 log = logging.getLogger('binstar.show')
+
+
+def install_info(package, package_type):
+    if package_type == 'pypi':
+        log.info('To install this package with %s run:' % package_type)
+        if package['public']:
+            url = 'https://pypi.binstar.org/%s/simple' % package['owner']['login']
+        else:
+            url = 'https://pypi.binstar.org/t/$TOKEN/%s/simple' % package['owner']['login']
+        
+        log.info('     pip install -i %s %s' % (url, package['name']))
+        if package.get('published'):
+            log.info('OR: (because it is published)')
+            url = 'https://pypi.binstar.org/public/simple'
+            log.info('     pip install -i %s %s' % (url, package['name']))
+    if package_type == 'conda':
+        log.info('To install this package with %s run:' % package_type)
+        if package['public']:
+            url = 'https://conda.binstar.org/%s' % package['owner']['login']
+        else:
+            url = 'https://conda.binstar.org/t/$TOKEN/%s' % package['owner']['login']
+        
+        log.info('     conda install --channel %s %s' % (url, package['name']))
+        if package.get('published'):
+            log.info('OR: (because it is published)')
+            url = 'https://conda.binstar.org/public'
+            log.info('     conda install --channel %s %s' % (url, package['name']))
+
 
 def main(args):
 
@@ -46,10 +74,19 @@ def main(args):
 
     elif args.spec._package:
         package = binstar.package(spec.user, spec.package)
-        package['permission'] = 'public' if package['public'] else 'private'
-        log.info('- %(name)s: [%(permission)s] %(summary)s' % package)
+        package['access'] = 'published' if package.get('published') else 'public' if package['public'] else 'private'
+        log.info('Name:    %(name)s' % package)
+        log.info('Summary: %(summary)s' % package)
+        log.info('Access:  %(access)s' % package)
+        log.info('Package Types:  %s' % ', '.join(package.get('package_types')))
+        log.info('Versions:' % package)
         for release in package['releases']:
             log.info('   + %(version)s' % release)
+        
+        log.info('')
+        for package_type in package.get('package_types'):
+            install_info(package, package_type)
+            
 
     elif args.spec._user:
         user_info = binstar.user(spec.user)

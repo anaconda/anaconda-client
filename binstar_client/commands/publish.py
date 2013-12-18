@@ -28,7 +28,7 @@ def publish(args):
             print 'Please add the following lines to your pip config file (%r)' % (pypirc,)
             print '''[install]
     find-links =
-        https://pypi.binstar.org/simple
+        https://pypi.binstar.org/public/simple
             '''
         if 'conda' in package['package_types']:
             print

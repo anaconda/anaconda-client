@@ -12,25 +12,32 @@ def pprint_orgs(orgs):
     for org in orgs:
         log.info('   + %(login)25s' % org)
 
+fmt = '     %(full_name)25s | %(access)-12s | %(package_types)-15s | %(summary)s'
+
+def pprint_package_header():
+    package_header = {'full_name':'Name', 'access': 'Access', 'package_types':'Package Types', 'summary':'Summary'}
+    log.info(fmt % package_header)
+
+def pprint_package(package):
+    package = package.copy()
+    package['access'] = 'published' if package.get('published') else 'public' if package['public'] else 'private'
+    if package.get('package_types'):
+        package['package_types'] = ', '.join(package['package_types'])
+    log.info(fmt % package)
+        
 def pprint_packages(packages):
     if packages:
         log.info('Packages:')
     else:
         log.info('No packages found')
-        
-    fmt = '     %(full_name)25s | %(access)-12s | %(package_types)-15s | %(summary)s'
-    package_header = {'full_name':'Name', 'access': 'Access', 'package_types':'Package Types', 'summary':'Summary'}
-    log.info(fmt % package_header)
+    
+    pprint_package_header()
+    
     package_header = {'full_name':'-' * 25, 'access': '-' * 12, 'package_types':'-' * 15, 'summary':'-' * 20}
     log.info(fmt % package_header)
+    
     for package in packages:
-        if package.get('published'):
-            package['access'] = 'published'
-        else:
-            package['access'] = 'public' if package['public'] else 'private'
-        if package.get('package_types'):
-            package['package_types'] = ', '.join(package['package_types'])
-        log.info(fmt % package)
+        pprint_package(package)
 
 def pprint_user(user):
     user = user.copy()
