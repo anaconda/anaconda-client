@@ -1,6 +1,16 @@
+2013-09-05: 0.3.1:
+-----------------
+* fix attribute error on Windows
+
+2013-08-26: 0.3.0:
+-----------------
+* added collections feature
+* updated client for public packages
+* updated authentication feature
+
 2013-07-18: 0.2.2:
 ------------------
-  * remove steuptools run-time dependency
+  * remove setuptools run-time dependency
 
 2013-07-16: 0.2.1:
 ------------------

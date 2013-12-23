@@ -4,23 +4,23 @@ Log out from binstar
 
 from keyring import get_keyring
 import getpass
-from binstar_client import Binstar
-from binstar_client.utils import get_config
+from binstar_client.utils import get_binstar
+
+import logging
+log = logging.getLogger('binstar.logout')
 
 def main(args):
-    
-    config = get_config()
+
+    bs = get_binstar()
+    auth = bs.authentication()
+    bs.remove_authentication(auth['id'])
     kr = get_keyring()
-    token = kr.get_password('binstar-token', getpass.getuser())
-    url = config.get('url', 'https://api.binstar.org')
-    bs = Binstar(token, domain=url)
-    bs.remove_authentication(token)
     kr.delete_password('binstar-token', getpass.getuser())
-    print("logout successful")
+    log.info("logout successful")
 
 def add_parser(subparsers):
-    subparser = subparsers.add_parser('logout', 
-                                      help='Log out from binstar', 
+    subparser = subparsers.add_parser('logout',
+                                      help='Log out from binstar',
                                       description=__doc__)
-    
+
     subparser.set_defaults(main=main)

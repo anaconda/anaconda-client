@@ -8,17 +8,21 @@ from .errors import BinstarError, Conflict, NotFound, Unauthorized
 from binstar_client.requests_ext import stream_multipart
 from binstar_client.utils import compute_hash, jencode, pv
 from binstar_client.mixins.publish import PublishMixin
+from binstar_client.mixins.collections import CollectionsMixin
+from binstar_client.mixins.organizations import OrgMixin
 from binstar_client.mixins.build import BuildMixin
+from binstar_client.utils.http_codes import STATUS_CODES
 
 
-__version__ = '0.2.1'
+
+__version__ = '0.3.0'
 
 # from poster.encode import multipart_encode
 # from poster.streaminghttp import register_openers
 # import urllib2
 # register_openers()
 
-class Binstar(PublishMixin, BuildMixin):
+class Binstar(PublishMixin, CollectionsMixin, OrgMixin, BuildMixin):
     '''
     An object that represents interfaces with the binstar.org restful API.
 
@@ -35,7 +39,11 @@ class Binstar(PublishMixin, BuildMixin):
 
         self.domain = domain
 
-    def authenticate(self, username, password, application, application_url=None, scopes=['package'],):
+    def authenticate(self, username, password,
+                     application, application_url=None,
+                     scopes=['read', 'write', 'admin'],
+                     created_with=None,
+                     resource='api:**', max_age=None):
         '''
         Use basic authentication to create an authentication token using the interface below.
         With this technique, a username and password need not be stored permanently, and the user can
@@ -48,8 +56,18 @@ class Binstar(PublishMixin, BuildMixin):
         :param scopes: Scopes let you specify exactly what type of access you need. Scopes limit access for the tokens.
         '''
 
+        try:
+            hostname = os.uname()[1]
+        except AttributeError:
+            hostname = 'unknown'
+
         url = '%s/authentications' % (self.domain)
-        payload = {"scopes": scopes, "note": application, "note_url": application_url}
+        payload = {"scopes": scopes, "note": application, "note_url": application_url,
+                   'resource': resource,
+                   'hostname': hostname,
+                   'max-age': max_age,
+                   'created_with': None}
+
         data = base64.b64encode(json.dumps(payload))
         res = self.session.post(url, auth=(username, password), data=data, verify=True)
         self._check_response(res)
@@ -58,25 +76,49 @@ class Binstar(PublishMixin, BuildMixin):
         self.session.headers.update({'Authorization': 'token %s' % (token)})
         return token
 
-    def remove_authentication(self, token):
-        url = '%s/authentications' % (self.domain)
-        res = self.session.delete(url, verify=True)
+    def authentication(self):
+        '''
+        Retrieve information on the current authentication token
+        '''
+        url = '%s/authentication' % (self.domain)
+        res = self.session.get(url, verify=True)
         self._check_response(res)
+        return res.json()
+
+    def authentications(self):
+        '''
+        Get a list of the current authentication tokens
+        '''
+
+        url = '%s/authentications' % (self.domain)
+        res = self.session.get(url, verify=True)
+        self._check_response(res)
+        return res.json()
+
+    def remove_authentication(self, auth_id):
+        url = '%s/authentications/%s' % (self.domain, auth_id)
+        res = self.session.delete(url, verify=True)
+        self._check_response(res, [201])
 
     def _check_response(self, res, allowed=[200]):
         api_version = res.headers.get('x-binstar-api-version', '0.2.1')
         if pv(api_version) > pv(__version__):
-            msg = ('The api server is running the binstar-api version %s. you are using %s\n' %(api_version, __version__)
+            msg = ('The api server is running the binstar-api version %s. you are using %s\n' % (api_version, __version__)
                    + 'Please update your client with pip install -U binstar or conda update binstar')
             warnings.warn(msg, stacklevel=4)
-            
+
+
+
         if not res.status_code in allowed:
+            short, long = STATUS_CODES.get(res.status_code, ('?', 'Undefined error'))
+            msg = '%s: %s (status code: %s)' % (short, long, res.status_code)
             try:
                 data = res.json()
             except:
-                msg = 'Undefined server error (status code: %s)' % (res.status_code,)
+                pass
             else:
-                msg = data.get('error', 'Undefined server error (status code: %s)' % (res.status_code,))
+                msg = data.get('error', msg)
+
             ErrCls = BinstarError
             if res.status_code == 401:
                 ErrCls = Unauthorized
@@ -131,7 +173,25 @@ class Binstar(PublishMixin, BuildMixin):
         url = '%s/package/%s/%s' % (self.domain, login, package_name)
         res = self.session.get(url, verify=True)
         self._check_response(res)
+        return res.json()
 
+    def package_add_collaborator(self, owner, package_name, collaborator):
+        url = '%s/packages/%s/%s/collaborators/%s' % (self.domain, owner, package_name, collaborator)
+        res = self.session.put(url, verify=True)
+        self._check_response(res, [201])
+        return
+
+    def package_remove_collaborator(self, owner, package_name, collaborator):
+        url = '%s/packages/%s/%s/collaborators/%s' % (self.domain, owner, package_name, collaborator)
+        res = self.session.delete(url, verify=True)
+        self._check_response(res, [201])
+        return
+
+    def package_collaborators(self, owner, package_name):
+
+        url = '%s/packages/%s/%s/collaborators' % (self.domain, owner, package_name)
+        res = self.session.get(url, verify=True)
+        self._check_response(res, [200])
         return res.json()
 
     def all_packages(self, modified_after=None):
@@ -148,9 +208,9 @@ class Binstar(PublishMixin, BuildMixin):
                     summary=None,
                     license=None,
                     public=True,
+                    publish=True,
                     license_url=None,
-                    attrs=None,
-                    host_publicly=None):
+                    attrs=None):
         '''
         Add a new package to a users account
 
@@ -170,14 +230,23 @@ class Binstar(PublishMixin, BuildMixin):
         attrs['summary'] = summary
         attrs['license'] = {'name':license, 'url':license_url}
 
-        payload = dict(public=public,
-                       public_attrs=attrs or {},
-                       host_publicly=host_publicly)
+        payload = dict(public=bool(public),
+                       publish=bool(publish),
+                       public_attrs=dict(attrs or {})
+                       )
 
         data = jencode(payload)
         res = self.session.post(url, verify=True, data=data)
         self._check_response(res)
         return res.json()
+
+    def remove_package(self, username, package_name):
+
+        url = '%s/package/%s/%s' % (self.domain, username, package_name)
+
+        res = self.session.delete(url, verify=True)
+        self._check_response(res, [201])
+        return
 
     def release(self, login, package_name, version):
         '''
@@ -190,6 +259,19 @@ class Binstar(PublishMixin, BuildMixin):
         url = '%s/release/%s/%s/%s' % (self.domain, login, package_name, version)
         res = self.session.get(url, verify=True)
         self._check_response(res)
+        return res.json()
+
+    def remove_release(self, username, package_name, version):
+        '''
+        remove a release and all files under it
+
+        :param username: the login of the package owner
+        :param package_name: the name of the package
+        :param version: the name of the package
+        '''
+        url = '%s/release/%s/%s/%s' % (self.domain, username, package_name, version)
+        res = self.session.delete(url, verify=True)
+        self._check_response(res, [201])
         return res.json()
 
     def add_release(self, login, package_name, version, requirements, announce, description):
@@ -219,7 +301,7 @@ class Binstar(PublishMixin, BuildMixin):
         res = self.session.get(url, verify=True)
         self._check_response(res)
         return res.json()
-    
+
     def remove_dist(self, login, package_name, release, basename=None, _id=None):
 
         if basename:
@@ -261,7 +343,7 @@ class Binstar(PublishMixin, BuildMixin):
             return None
         elif res.status_code == 302:
             res2 = requests.get(res.headers['location'], stream=True, verify=True)
-            return res2.raw
+            return res2
 
 
     def upload(self, login, package_name, release, basename, fd, distribution_type,
@@ -323,74 +405,10 @@ class Binstar(PublishMixin, BuildMixin):
 
         return res.json()
 
-
-    def groups(self, owner=None):
-        if owner:
-            url = '%s/groups/%s' % (self.domain, owner)
-        else:
-            url = '%s/groups' % (self.domain,)
-
-        res = self.session.get(url, verify=True)
-        self._check_response(res)
-
-        return res.json()
-
-    def group(self, owner, group_name):
-        url = '%s/group/%s/%s' % (self.domain, owner, group_name)
-        res = self.session.get(url, verify=True)
+    def search(self, query, package_type=None):
+        url = '%s/search' % self.domain
+        res = self.session.get(url, params={'name':query, 'type':package_type}, 
+                               verify=True)
         self._check_response(res)
         return res.json()
-
-    def group_members(self, org, name):
-        url = '%s/group/%s/%s/members' % (self.domain, org, name)
-        res = self.session.get(url, verify=True)
-        self._check_response(res)
-
-        return res.json()
-
-    def is_group_member(self, org, name, member):
-        url = '%s/group/%s/%s/members/%s' % (self.domain, org, name, member)
-        res = self.session.get(url, verify=True)
-        self._check_response(res, [204, 404])
-        return res.status_code == 204
-
-    def add_group_member(self, org, name, member):
-        url = '%s/group/%s/%s/members/%s' % (self.domain, org, name, member)
-        res = self.session.put(url, verify=True)
-        self._check_response(res, [204])
-        return
-
-    def remove_group_member(self, org, name, member):
-        url = '%s/group/%s/%s/members/%s' % (self.domain, org, name, member)
-        res = self.session.delete(url, verify=True)
-        self._check_response(res, [204])
-        return
-
-    def remove_group_package(self, org, name, package):
-        url = '%s/group/%s/%s/packages/%s' % (self.domain, org, name, package)
-        res = self.session.delete(url, verify=True)
-        self._check_response(res, [204])
-        return
-
-    def group_packages(self, org, name):
-        url = '%s/group/%s/%s/packages' % (self.domain, org, name)
-        res = self.session.get(url, verify=True)
-        self._check_response(res, [200])
-        return res.json()
-
-    def add_group_package(self, org, name, package):
-        url = '%s/group/%s/%s/packages/%s' % (self.domain, org, name, package)
-        res = self.session.put(url, verify=True)
-        self._check_response(res, [204])
-        return
-
-    def add_group(self, org, name, perms='read'):
-        url = '%s/group/%s/%s' % (self.domain, org, name)
-
-        payload = dict(perms=perms)
-        data = jencode(payload)
-
-        res = self.session.post(url, data=data, verify=True)
-        self._check_response(res, [204])
-
-        return
+    

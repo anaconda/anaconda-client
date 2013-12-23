@@ -47,9 +47,9 @@ def encode_multipart_formdata_stream(fields, boundary=None):
         if isinstance(item, basestring):
             item = BytesIO(item)
         body.append(item)
-        
+
     body_write_encode = lambda item: body.append(BytesIO(item.encode('utf-8')))
-    
+
     if boundary is None:
         boundary = choose_boundary()
 
@@ -64,7 +64,7 @@ def encode_multipart_formdata_stream(fields, boundary=None):
                 content_type = get_content_type(filename)
             body_write_encode('Content-Disposition: form-data; name="%s"; '
                                'filename="%s"\r\n' % (fieldname, filename))
-            body_write(b('Content-Type: %s\r\n\r\n' % 
+            body_write(b('Content-Type: %s\r\n\r\n' %
                        (content_type,)))
         else:
             data = value
@@ -89,40 +89,40 @@ def encode_multipart_formdata_stream(fields, boundary=None):
     return body, content_type
 
 class MultiPartIO(object):
-    
+
     def __init__(self, body, callback=None):
         self.to_read = body
         self.have_read = []
         self._total = 0
         self.callback = callback
-        
+
     def read(self, n=-1):
         if self.callback:
             self.callback(self.tell(), self._total)
-            
+
         if n == -1:
             return ''.join(fd.read() for fd in self.to_read)
-            
+
         if not self.to_read:
             return ''
 
-        while self.to_read: 
+        while self.to_read:
             data = self.to_read[0].read(n)
-            
+
             if data:
                 return data
-            
+
             fd = self.to_read.pop(0)
             self.have_read.append(fd)
-            
+
         return ''
-          
+
     def tell(self):
         cursor = sum(fd.tell() for fd in self.have_read)
         if self.to_read:
             cursor += self.to_read[0].tell()
         return cursor
-            
+
     def seek(self, pos, mode=0):
         assert pos == 0
         if mode is 0:
@@ -130,21 +130,21 @@ class MultiPartIO(object):
             self.have_read = []
             [fd.seek(pos, mode) for fd in self.to_read]
             self.cursor = 0
-            
-        elif mode is 2: 
+
+        elif mode is 2:
             self.have_read = self.have_read + self.to_read
             self.to_read = []
             [fd.seek(pos, mode) for fd in self.have_read]
             self._total = self.tell()
-        
- 
+
+
 def stream_multipart(data, files=None, callback=None):
     from itertools import chain
     if files:
         fields = chain(iter_fields(data), iter_fields(files))
     else:
         fields = data
-        
+
     body, content_type = encode_multipart_formdata_stream(fields)
     data = MultiPartIO(body, callback=callback)
     headers = {'Content-Type':content_type}
@@ -154,10 +154,10 @@ def stream_multipart(data, files=None, callback=None):
 def main():
     def callback(curr, total):
         print '\r%i of %iKb: %.2f%%' % (curr//1024, total//1024, 100.0 * curr / total),
-        
+
     data, headers = stream_multipart({'key1': 'value1', 'key2':'value2'},
                                      files={'file': ('README.md', open('./README.md')),
                                             'file2': ('mongodb-2.4.3-1.tar.bz2', open('mongodb-2.4.3-1.tar.bz2'))},
                                      callback=callback)
-    
+
     requests.post('http://localhost:3339', data=data, headers=headers)

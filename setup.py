@@ -6,12 +6,12 @@ from setuptools import setup, find_packages
 
 setup(
     name='binstar',
-    version="0.2.1",
+    version="0.3.0",
     author='Sean Ross-Ross',
     author_email='srossross@gmail.com',
     url='http://github.com/Binstar/binstar_client',
     packages=find_packages(),
-    install_requires=['keyring', 
+    install_requires=['keyring',
                       'requests>=1.0',
                       'pyyaml'],
     entry_points={

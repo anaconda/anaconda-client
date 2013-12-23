@@ -5,7 +5,7 @@ class PublishMixin(object):
     '''
     Add publish functionality to binstar client
     '''
-    
+
     def published(self, username, name):
         '''
         test if a package is published
@@ -14,7 +14,7 @@ class PublishMixin(object):
         res = self.session.get(url, verify=True)
         self._check_response(res)
         return res.json().get('published',False)
-    
+
     def publish(self, username, name):
         '''
         publish a package to the global repository

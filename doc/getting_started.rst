@@ -4,32 +4,30 @@ Uploading a Conda Package
 To get started you must have: 
 
 * Anaconda_ installed on your system 
-* Git clone of the conda_ and `conda recipes`_ repositories
 * Account on Binstar_
 
 .. _Anaconda: http://docs.continuum.io/anaconda/install.html
-
-.. _conda: https://github.com/continuumio/conda
-
-.. _`conda recipes`: https://github.com/ContinuumIO/conda-recipes
 
 .. _Binstar: https://binstar.org/
 
 If you are not using Anaconda 1.6+ install the binstar command line client::
 
-	$ [conda | pip] install binstar
+	$ conda install binstar
+	$ conda update binstar
 
-Login::
+If you are not using Anaconda the Binstar is also available on pypi::
+
+	$ pip install binstar
+
+Now we can login::
 
 	$ binstar login
-
-Add the API token::
-
-	$ binstar config
+	
 
 Test your login with the whoami command::
 
 	$ binstar whoami
+	
 
 We are going to be uploading a package with a simple 'hello world' function. To follow along start by getting my demonstration package repo from Github::
 
@@ -43,13 +41,13 @@ This a small directory that looks like this:
 	package/
 		setup.py
 		test_package/
-  	       __init__.py
+  	           __init__.py
 		   hello.py
 		   bld.bat
 		   build.sh
 		   meta.yaml
 
-Setup.py is the standard file holding the metadata and hello.py has our single ``hello_world()`` function. 
+Setup.py is the standard python build file and hello.py has our single ``hello_world()`` function. 
 
 The bld.bat, build.sh, and meta.yaml are scripts and metadata for the Conda package. You can read the `Conda build`_ page for more info on those three files and their purpose.
 
