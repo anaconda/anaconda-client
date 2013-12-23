@@ -1,0 +1,4 @@
+build:
+	- python setup.py sdist
+build-targets:
+	- dist/*
