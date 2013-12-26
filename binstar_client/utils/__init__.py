@@ -18,7 +18,31 @@ import sys
 
 from ..errors import UserError
 import json
+import time
 
+def upload_print_callback():
+    start_time = time.time()
+    def callback(curr, total):
+        curr_time = time.time()
+        time_delta = curr_time - start_time
+
+        remain = total - curr
+        if curr and remain:
+            eta = 1.0 * time_delta / curr * remain / 60.0
+        else:
+            eta = 0
+
+        curr_kb = curr // 1024
+        total_kb = total // 1024
+        perc = 100.0 * curr / total if total else 0
+
+        msg = '\r uploaded %(curr_kb)i of %(total_kb)iKb: %(perc).2f%% ETA: %(eta).1f minutes'
+        sys.stderr.write(msg % locals())
+        sys.stderr.flush()
+        if curr == total:
+            sys.stderr.write('\n')
+
+    return callback
 
 
 def jencode(payload):
@@ -49,6 +73,12 @@ class PackageSpec(object):
         return self._user
 
     @property
+    def name(self):
+        if self._package is None:
+            raise UserError('package not given in spec (got %r expected <username>/<package> )' %(self.spec_str, ))
+        return self._package
+    
+    @property
     def package(self):
         if self._package is None:
             raise UserError('package not given in spec (got %r expected <username>/<package> )' %(self.spec_str, ))
@@ -65,6 +95,17 @@ class PackageSpec(object):
         if self._basename is None:
             raise UserError('basename not given in spec (got %r expected <username>/<package>/<version>/<filename> )' %(self.spec_str, ))
         return self._basename
+
+def package_specs(spec):
+    user = spec
+    package = None
+    attrs = {}
+    if '/' in user:
+        user, package = user.split('/',1)
+    if '/' in package:
+        raise TypeError('invalid package spec')
+        
+    return PackageSpec(user, package, None, None, attrs, spec)
 
 def parse_specs(spec):
     user = spec

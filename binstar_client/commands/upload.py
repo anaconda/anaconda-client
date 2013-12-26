@@ -1,5 +1,5 @@
 from binstar_client.utils import parse_specs, get_binstar, bool_input,\
-    get_config
+    get_config, upload_print_callback
 import tarfile
 import json
 from warnings import warn
@@ -143,30 +143,6 @@ def create_release_interactive(binstar, username, package_name, version):
 
     binstar.add_release(username, package_name, version, [],
                         announce, description)
-
-def upload_print_callback():
-    start_time = time.time()
-    def callback(curr, total):
-        curr_time = time.time()
-        time_delta = curr_time - start_time
-
-        remain = total - curr
-        if curr and remain:
-            eta = 1.0 * time_delta / curr * remain / 60.0
-        else:
-            eta = 0
-
-        curr_kb = curr // 1024
-        total_kb = total // 1024
-        perc = 100.0 * curr / total if total else 0
-
-        msg = '\r uploaded %(curr_kb)i of %(total_kb)iKb: %(perc).2f%% ETA: %(eta).1f minutes'
-        sys.stderr.write(msg % locals())
-        sys.stderr.flush()
-        if curr == total:
-            sys.stderr.write('\n')
-
-    return callback
 
 def main(args):
 
