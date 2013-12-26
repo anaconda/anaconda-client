@@ -10,8 +10,7 @@ Created on Jun 6, 2013
 '''
 
 from io import BytesIO
-from requests.packages.urllib3.filepost import choose_boundary, iter_fields, \
-    get_content_type
+from requests.packages.urllib3.filepost import choose_boundary, iter_fields
 from requests.packages.urllib3.packages import six
 from requests.packages.urllib3.packages.six import b
 import codecs
@@ -61,7 +60,10 @@ def encode_multipart_formdata_stream(fields, boundary=None):
                 filename, data, content_type = value
             else:
                 filename, data = value
-                content_type = get_content_type(filename)
+                from mimetypes import guess_type
+                content_type, _ = guess_type(filename)
+                if content_type is None:
+                    content_type = 'application/octet-stream'
             body_write_encode('Content-Disposition: form-data; name="%s"; '
                                'filename="%s"\r\n' % (fieldname, filename))
             body_write(b('Content-Type: %s\r\n\r\n' %
