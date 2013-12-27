@@ -1,4 +1,11 @@
-build:
+os: 
+  - Linux
+machine:
+  - x86_64
+python: 
+  - 2.7
+  - 3.2
+script:
   - python setup.py sdist
 build-targets:
   - dist/*
