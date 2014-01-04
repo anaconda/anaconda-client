@@ -12,81 +12,9 @@ from os.path import basename
 from email.parser import Parser
 from os import path
 import logging
+from binstar_client.utils.detect import detect_package_type, get_attrs
 
 log = logging.getLogger('binstar.updload')
-
-def detect_yaml_attrs(filename):
-    tar = tarfile.open(filename)
-    obj = tar.extractfile('info/recipe/meta.yaml')
-    attrs = yaml.load(obj)
-    try:
-        description = attrs['about']['home']
-    except KeyError:
-        description = None
-    try:
-        license = attrs['about']['license']
-    except KeyError:
-        license = None
-
-    return description, license
-
-def detect_pypi_attrs(filename):
-
-    with tarfile.open(filename) as tf:
-        pkg_info = next(name for name in tf.getnames() if name.endswith('/PKG-INFO'))
-        fd = tf.extractfile(pkg_info)
-        attrs = dict(Parser().parse(fd).items())
-
-    name = attrs.pop('Name')
-    version = attrs.pop('Version')
-    summary = attrs.pop('Summary')
-    description = attrs.pop('Description')
-    license = attrs.pop('License')
-    attrs = {'dist':'sdist'}
-
-    filename = basename(filename)
-    return filename, name, version, attrs, summary, description, license
-
-arch_map = {('osx', 'x86_64'):'osx-64',
-            ('win', 'x86'):'win-32',
-            ('win', 'x86_64'):'win-64',
-            ('linux', 'x86'):'linux-32',
-            ('linux', 'x86_64'):'linux-64',
-           }
-
-def detect_conda_attrs(filename):
-
-    tar = tarfile.open(filename)
-    obj = tar.extractfile('info/index.json')
-    attrs = json.loads(obj.read())
-
-    description, license = detect_yaml_attrs(filename)
-    os_arch = arch_map[(attrs['platform'], attrs['arch'])]
-    filename = path.join(os_arch, basename(filename))
-    return filename, attrs['name'], attrs['version'], attrs, description, description, license
-
-detectors = {'conda':detect_conda_attrs,
-             'pypi': detect_pypi_attrs,
-             }
-
-
-def detect_package_type(filename):
-
-    if filename.endswith('.tar.bz2'):  # Could be a conda package
-        try:
-            with tarfile.open(filename) as tf:
-                tf.getmember('info/index.json')
-        except KeyError:
-            pass
-        else:
-            return 'conda'
-
-    if filename.endswith('.tar.gz'):  # Could be a setuptools sdist
-        with tarfile.open(filename) as tf:
-            if any(name.endswith('/PKG-INFO') for name in tf.getnames()):
-                return 'pypi'
-
-    raise BinstarError('Could not autodetect the package type of file %s' % filename)
 
 def create_package(binstar, username, package_name, summary, license, public=True, publish=True):
     binstar.add_package(username, package_name,
@@ -193,8 +121,6 @@ def main(args):
             package_type = detect_package_type(filename)
             log.info(package_type)
 
-        get_attrs = detectors[package_type]
-
         if args.metadata:
             attrs = json.loads(args.metadata)
             package_name = args.package
@@ -202,7 +128,7 @@ def main(args):
         else:
             log.info('extracting package attributes for upload ...')
             sys.stdout.flush()
-            basefilename, package_name, version, attrs, summary, description, license = get_attrs(filename)
+            basefilename, package_name, version, attrs, summary, description, license = get_attrs(package_type, filename)
             log.info('done')
 
         if args.package:
