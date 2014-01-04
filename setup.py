@@ -12,8 +12,9 @@ setup(
     url='http://github.com/Binstar/binstar_client',
     packages=find_packages(),
     install_requires=['keyring',
-                      'requests>=1.0',
-                      'pyyaml'],
+                      'requests>=2.0',
+                      'pyyaml',
+                      'python-dateutil'],
     entry_points={
           'console_scripts': [
               'binstar = binstar_client.scripts.cli:main',
