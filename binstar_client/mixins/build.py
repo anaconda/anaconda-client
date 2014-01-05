@@ -37,7 +37,7 @@ class BuildMixin(object):
         url = '%s/build/%s/%s/commit/%s' % (self.domain, username, package, obj['build_id'])
         res = self.session.post(url, verify=True)
         self._check_response(res, [201])
-        return obj['build_id']
+        return obj['build_no']
 
     def builds(self, username, package):
         url = '%s/build/%s/%s' % (self.domain, username, package)
@@ -50,6 +50,12 @@ class BuildMixin(object):
         res = self.session.post(url)
         self._check_response(res, [201])
         return
+    
+    def tail_build(self, username, package, build_id, limit='', after=''):
+        url = '%s/build/%s/%s/tail/%s' % (self.domain, username, package, build_id)
+        res = self.session.get(url, params={'limit':limit, 'after': after})
+        self._check_response(res, [200])
+        return res.json()
 
 
 
