@@ -45,8 +45,8 @@ def upload_print_callback():
     return callback
 
 
-def jencode(payload):
-    return base64.b64encode(json.dumps(payload))
+def jencode(*E, **F):
+    return base64.b64encode(json.dumps(dict(*E, **F)))
 
 def pv(version):
     return tuple(int(x) for x in version.split('.'))

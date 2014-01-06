@@ -1,7 +1,7 @@
 '''
 Build command
 '''
-from binstar_client.utils import get_binstar, parse_specs
+from binstar_client.utils import get_binstar
 import logging, yaml
 from os.path import abspath, join
 from binstar_client.errors import UserError
@@ -10,7 +10,6 @@ import tarfile
 from contextlib import contextmanager
 import os
 from binstar_client.utils import package_specs
-from argparse import ArgumentParser
 import time
 
 log = logging.getLogger('binstar.build')
@@ -34,7 +33,7 @@ def tail(binstar, args):
     last_entry = log_items['last_entry']
     while args.f and not log_items.get('finished'):
         time.sleep(4)
-        log_items = binstar.tail_build(args.package.user, args.package.name, args.tail, 
+        log_items = binstar.tail_build(args.package.user, args.package.name, args.tail,
                                        after=last_entry)
         for log_item in log_items['log']:
             print log_item.get('msg')
@@ -52,11 +51,20 @@ def tail(binstar, args):
 
 def list_builds(binstar, args):
     log.info('Getting builds:')
-    fmt = '%(build_no)24s | %(status)15s'
-    log.info(fmt % {'build_no':'Build #', 'status':'Status'})
-    log.info(fmt.replace('|', '+') % {'build_no':'-' * 24, 'status':'-' * 15})
+    fmt = '%(build_no)15s | %(status)15s | %(platform)15s | %(engine)15s | %(env)15s'
+    header = {'build_no':'Build #', 'status':'Status',
+              'platform':'Platform',
+              'engine':'Engine',
+              'env':'Env',
+              }
+    log.info(fmt % header)
+    
+    log.info(fmt.replace('|', '+') % dict.fromkeys(header, '-' * 15))
     for build in binstar.builds(args.package.user, args.package.name):
-        log.info(fmt % build)
+        for item in build['items']:
+            item.setdefault('status', build.get('status', '?'))
+            item['build_no'] = '%s.%s' % (build['build_no'], item['sub_build_no'])
+            log.info(fmt % item)
     log.info('')
     return
 
@@ -78,15 +86,23 @@ def submit_build(binstar, args):
         
     if 'script' not in data:
         raise UserError('build instruction is not specified in .binstar.yml')
-    if 'build-targets' not in data:    
-        raise UserError('build-targets instruction is not specified in .binstar.yml')
+#     if 'build-targets' not in data:    
+#         raise UserError('build-targets instruction is not specified in .binstar.yml')
+    
+    l = lambda item: item if isinstance(item, list) else [item]
+    
+    platforms = l(data.get('platform', []))
+    envs = l(data.get('env', []))
+    engines = l(data.get('engine', []))
     
     with mktemp() as tmp:
         with tarfile.open(tmp, mode='w|bz2') as tf:
             tf.add(path, '.')
             
         with open(tmp, mode='r') as fd:
-            build_no = binstar.submit_for_build(args.package.user, args.package.name, fd)
+            build_no = binstar.submit_for_build(args.package.user, args.package.name, fd,
+                                                platforms=platforms, envs=envs, engines=engines,
+                                                )
             
     log.info('Build %s submitted' % build_no)
 

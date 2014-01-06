@@ -12,9 +12,16 @@ class BuildMixin(object):
     Add build functionality to binstar client
     '''
     
-    def submit_for_build(self, username, package, fd, callback=None):
+    def submit_for_build(self, username, package, fd,
+                         platforms=None,
+                         envs=None,
+                         engines=None,
+                         callback=None):
+
         url = '%s/build/%s/%s/stage' % (self.domain, username, package)
-        res = self.session.post(url)
+        data = jencode(platforms=platforms, envs=envs, engines=engines)
+        
+        res = self.session.post(url, data=data)
         self._check_response(res)
         obj = res.json()
 
