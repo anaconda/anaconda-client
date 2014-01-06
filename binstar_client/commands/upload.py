@@ -17,7 +17,10 @@ log = logging.getLogger('binstar.updload')
 
 def detect_yaml_attrs(filename):
     tar = tarfile.open(filename)
-    obj = tar.extractfile('info/recipe/meta.yaml')
+    try:
+        obj = tar.extractfile('info/recipe/meta.yaml')
+    except KeyError:
+        return None, None
     attrs = yaml.load(obj)
     try:
         description = attrs['about']['home']
