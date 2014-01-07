@@ -27,14 +27,9 @@ def detect_yaml_attrs(filename):
         return None, None
 
     attrs = yaml.load(obj)
-    try:
-        description = attrs['about']['home']
-    except KeyError:
-        description = None
-    try:
-        license = attrs['about']['license']
-    except KeyError:
-        license = None
+    about = attrs.get('about')
+    description = about.get('home')
+    license = about.get('license')
 
     return description, license
 
@@ -116,25 +111,40 @@ detectors = {'conda':detect_conda_attrs,
              }
 
 
-def detect_package_type(filename):
-
+def is_conda(filename):
     if filename.endswith('.tar.bz2'):  # Could be a conda package
         try:
             with tarfile.open(filename) as tf:
                 tf.getmember('info/index.json')
         except KeyError:
-            pass
+            return False
         else:
-            return 'conda'
-
+            return True
+    
+def is_pypi(filename):
     if filename.endswith('.tar.gz') or filename.endswith('.tgz'):  # Could be a setuptools sdist or r source package
         with tarfile.open(filename) as tf:
             if any(name.endswith('/PKG-INFO') for name in tf.getnames()):
-                return 'pypi'
+                return True
+
+def is_r(filename):
+    if filename.endswith('.tar.gz') or filename.endswith('.tgz'):  # Could be a setuptools sdist or r source package
+        with tarfile.open(filename) as tf:
             
             if (any(name.endswith('/DESCRIPTION') for name in tf.getnames()) and 
                 any(name.endswith('/NAMESPACE') for name in tf.getnames())):
-                return 'r'
+                return True
+
+def detect_package_type(filename):
+    
+    if is_conda(filename):
+        return 'conda'
+    elif is_pypi(filename):
+        return 'pypi'
+    elif is_r(filename):
+        return 'r'
+    else:
+        return None
 
 
 def get_attrs(package_type, filename):
