@@ -132,9 +132,9 @@ def get_binstar(args=None):
         token = args.token
     else:
         config = get_config()
-        if config.get('keyring', 'plain-text'):
-            if config['keyring'] == 'plain-text':
-                set_keyring(PlaintextKeyring())
+        
+        if config.get('keyring', 'plain-text') == 'plain-text':
+            set_keyring(PlaintextKeyring())
 
         kr = get_keyring()
         token = kr.get_password('binstar-token', getpass.getuser())
