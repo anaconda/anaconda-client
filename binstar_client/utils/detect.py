@@ -3,20 +3,12 @@ Created on Jan 2, 2014
 
 @author: sean
 '''
-from binstar_client.utils import parse_specs, get_binstar, bool_input, \
-    get_config
 import tarfile
 import json
-from warnings import warn
-from binstar_client import BinstarError, NotFound, Conflict
-from os.path import exists
-import sys
-import time
 import yaml
 from os.path import basename
 from email.parser import Parser
 from os import path
-import logging
 
 def detect_yaml_attrs(filename):
     tar = tarfile.open(filename)
