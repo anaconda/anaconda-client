@@ -13,7 +13,7 @@ from binstar_client.mixins.organizations import OrgMixin
 from binstar_client.utils.http_codes import STATUS_CODES
 
 
-__version__ = '0.3.0'
+__version__ = '0.4.1'
 
 # from poster.encode import multipart_encode
 # from poster.streaminghttp import register_openers
