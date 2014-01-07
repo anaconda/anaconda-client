@@ -1,16 +1,10 @@
-from binstar_client.utils import parse_specs, get_binstar, bool_input,\
+from binstar_client.utils import get_binstar, bool_input, \
     get_config
-import tarfile
 import json
-from warnings import warn
 from binstar_client import BinstarError, NotFound, Conflict
 from os.path import exists
 import sys
 import time
-import yaml
-from os.path import basename
-from email.parser import Parser
-from os import path
 import logging
 from binstar_client.utils.detect import detect_package_type, get_attrs
 
@@ -119,6 +113,8 @@ def main(args):
             log.info('detecting package type ...')
             sys.stdout.flush()
             package_type = detect_package_type(filename)
+            if package_type is None:
+                raise BinstarError('Could not detect package type of file %r please specify package type with option --package-type' % filename)
             log.info(package_type)
 
         if args.metadata:
@@ -128,7 +124,15 @@ def main(args):
         else:
             log.info('extracting package attributes for upload ...')
             sys.stdout.flush()
-            basefilename, package_name, version, attrs, summary, description, license = get_attrs(package_type, filename)
+            try:
+                package_attrs = get_attrs(package_type, filename)
+            except Exception:
+                if args.show_traceback:
+                    raise
+                
+                raise BinstarError('Trouble reading metadata from %r. Please make sure this package is correct or specify the --metadata, --package and --version arguments' % (filename))
+                
+            basefilename, package_name, version, attrs, summary, description, license = package_attrs
             log.info('done')
 
         if args.package:
@@ -166,6 +170,10 @@ def main(args):
             except NotFound:
                 pass
             else:
+                
+                if args.mode == 'force':
+                    log.warning('Distribution %s already exists ... removing' % (basefilename,))
+                    binstar.remove_dist(username, package_name, version, basefilename)
                 if args.mode == 'interactive':
                     if bool_input('Distribution %s already exists. Would you like to replace it?' % (basefilename,)):
                         binstar.remove_dist(username, package_name, version, basefilename)
@@ -177,7 +185,7 @@ def main(args):
                            callback=upload_print_callback())
             except Conflict:
                 full_name = '%s/%s/%s/%s' % (username, package_name, version, basefilename)
-                log.info('Distribution already exists. Please use the -i/--interactive option or `binstar remove %s`' % full_name)
+                log.info('Distribution already exists. Please use the -i/--interactive or --force options or `binstar remove %s`' % full_name)
                 raise
 
             uploaded_packages.append(package_name)
@@ -224,5 +232,7 @@ def add_parser(subparsers):
                         dest='mode', const='interactive')
     group.add_argument('-f', '--fail', help='Fail if a package or release does not exist (default)',
                                         action='store_const', dest='mode', const='fail')
+    group.add_argument('--force', help='Force a package upload regardless of errors',
+                                        action='store_const', dest='mode', const='force')
 
     parser.set_defaults(main=main)
