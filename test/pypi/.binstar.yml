@@ -1,11 +1,11 @@
-os: 
-  - Linux
-machine:
-  - x86_64
-python: 
-  - 2.7
-  - 3.2
+platform: 
+  - Linux-64
+engine:
+  - python=2
+env:
+  - FOO=BAR
 script:
+  - printenv
   - python setup.py sdist
-build-targets:
-  - dist/*
+#build-targets:
+#  - dist/*
