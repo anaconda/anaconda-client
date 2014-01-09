@@ -6,15 +6,22 @@ from binstar_client.utils import get_binstar
 import getpass
 from dateutil.parser import parse as parse_date
 import sys
+import pytz
+
+def utcnow():
+    now = datetime.utcnow()
+    return now.replace(tzinfo=pytz.utc)
 
 def format_timedelta(date):
     if not date:
         return 'Never'
-
-    if date < datetime.now():
+    
+    now = utcnow()
+    
+    if date < utcnow():
         return  'expired'
 
-    delta = date - datetime.now()
+    delta = date - now
 
     if delta.days:
         days = (delta.days + (delta.seconds / (60. * 60. * 24.0)))
@@ -35,13 +42,12 @@ def show_auths(authentications):
     header = {'id': 'ID', 'application': 'Application',
               'remote_addr':'Remote Addr',
               'hostname':'Host',
-              'resource':'Resource',
               'expires':'Expires In'}
 
-    template = '%(id)-25s | %(application)-20s | %(remote_addr)-20s | %(hostname)-20s | %(resource)-20s | %(expires)-20s'
+    template = '%(id)-25s | %(application)-20s | %(remote_addr)-20s | %(hostname)-20s | %(expires)-20s'
     print
     print template % header
-    print '%s-+-%s-+-%s-+-%s-+-%s-+-%s' % ('-' * 25, '-' * 20, '-' * 20, '-' * 20, '-' * 20, '-' * 20)
+    print '%s-+-%s-+-%s-+-%s-+-%s' % ('-' * 25, '-' * 20, '-' * 20, '-' * 20, '-' * 20)
 
     for auth in authentications:
         if auth['expires']:
