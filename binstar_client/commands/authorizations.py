@@ -57,21 +57,31 @@ def main(args):
     binstar = get_binstar(args)
     if args.list:
         show_auths(binstar.authentications())
-    if args.remove:
+        return
+    elif args.remove:
         for auth_id in args.remove:
             binstar.remove_authentication(auth_id)
-
-    if args.create:
+        return
+    elif args.list_scopes:
+        scopes = binstar.list_scopes()
+        for key in sorted(scopes):
+            print key
+            print ' ', scopes[key]
+            print
+            
+    elif args.create:
 
         sys.stderr.write('Username: ')
         sys.stderr.flush()
         username = raw_input('')
         password = getpass.getpass()
-
+        
+        scopes = [scope for scopes in args.scopes for scope in scopes.split()]
         print binstar.authenticate(username, password,
                                    args.name, application_url=args.url,
-                                   scopes=['read', 'write'],
-                                   resource=args.resource, max_age=args.max_age,
+                                   scopes=scopes,
+                                   for_user=args.user,
+                                   max_age=args.max_age,
                                    created_with=' '.join(sys.argv))
 
 
@@ -85,8 +95,11 @@ def add_parser(subparsers):
     parser.add_argument('--url', default='http://binstar.org', help='The url of the application that will use this token')
     parser.add_argument('--max-age', type=int, help='The maximum age in seconds that this token will be valid for')
     parser.add_argument('--resource', default='api:**', help='The resource path that this token is valid')
+    parser.add_argument('-s', '--scopes', action='append', help='Scopes for token', default=[])
+    parser.add_argument('-u', '--user', help='Set the token owner (may be an organization)')
 
     group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('-x', '--list-scopes', action='store_true', help='list all authentication scopes')
     group.add_argument('-l', '--list', action='store_true', help='list all user authentication tokens')
     group.add_argument('-r', '--remove', metavar='ID', nargs='+', help='remove authentication tokens')
     group.add_argument('-c', '--create', action='store_true', help='Create an authentication token')
