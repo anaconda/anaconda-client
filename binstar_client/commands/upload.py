@@ -7,6 +7,7 @@ import sys
 import time
 import logging
 from binstar_client.utils.detect import detect_package_type, get_attrs
+from os.path import basename
 
 log = logging.getLogger('binstar.updload')
 
@@ -121,6 +122,8 @@ def main(args):
             attrs = json.loads(args.metadata)
             package_name = args.package
             version = args.version
+            description = ''
+            basefilename = basename(filename)
         else:
             log.info('extracting package attributes for upload ...')
             sys.stdout.flush()
