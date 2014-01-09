@@ -39,9 +39,10 @@ class Binstar(PublishMixin, CollectionsMixin, OrgMixin):
 
     def authenticate(self, username, password,
                      application, application_url=None,
-                     scopes=['read', 'write', 'admin'],
+                     for_user=None,
+                     scopes=None,
                      created_with=None,
-                     resource='api:**', max_age=None):
+                     max_age=None):
         '''
         Use basic authentication to create an authentication token using the interface below.
         With this technique, a username and password need not be stored permanently, and the user can
@@ -61,8 +62,8 @@ class Binstar(PublishMixin, CollectionsMixin, OrgMixin):
 
         url = '%s/authentications' % (self.domain)
         payload = {"scopes": scopes, "note": application, "note_url": application_url,
-                   'resource': resource,
                    'hostname': hostname,
+                   'user': for_user,
                    'max-age': max_age,
                    'created_with': None}
 
@@ -73,7 +74,13 @@ class Binstar(PublishMixin, CollectionsMixin, OrgMixin):
         token = res['token']
         self.session.headers.update({'Authorization': 'token %s' % (token)})
         return token
-
+    
+    def list_scopes(self):
+        url = '%s/scopes' % (self.domain)
+        res = requests.get(url)
+        self._check_response(res)
+        return res.json()
+    
     def authentication(self):
         '''
         Retrieve information on the current authentication token
