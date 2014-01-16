@@ -16,7 +16,7 @@ def detect_yaml_attrs(filename):
     try:
         obj = tar.extractfile('info/recipe/meta.yaml')
     except KeyError:
-        return None, None
+        return None, None, None, None
 
     attrs = yaml.load(obj)
     about = attrs.get('about', {})
