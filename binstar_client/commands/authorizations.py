@@ -1,12 +1,34 @@
 '''
 Manage Authentication tokens
 '''
+import socket
+
+
+SCOPE_EXAMPLES = '''
+
+Examples
+
+To allow access to only conda downloads from your account you can run:
+
+    binstar auth --create --scopes 'repos conda:download'
+
+To allow full access to your account:
+
+    binstar auth --create --scopes 'all'
+
+'''
+
 from datetime import datetime
 from binstar_client.utils import get_binstar
 import getpass
 from dateutil.parser import parse as parse_date
 import sys
 import pytz
+from binstar_client import errors
+import logging
+
+log = logging.getLogger('binstar.auth')
+
 
 def utcnow():
     now = datetime.utcnow()
@@ -71,25 +93,44 @@ def main(args):
     elif args.list_scopes:
         scopes = binstar.list_scopes()
         for key in sorted(scopes):
-            print key
-            print ' ', scopes[key]
-            print
+            log.info(key)
+            log.info('  ' + scopes[key])
+            log.info('')
+        log.info(SCOPE_EXAMPLES)
             
     elif args.create:
-
-        sys.stderr.write('Username: ')
-        sys.stderr.flush()
-        username = raw_input('')
-        password = getpass.getpass()
         
+        try:
+            current_user = binstar.user()
+            username = current_user['login']
+        except:
+            current_user = None
+            sys.stderr.write('Username: ')
+            sys.stderr.flush()
+            username = raw_input('')
+            
         scopes = [scope for scopes in args.scopes for scope in scopes.split()]
-        print binstar.authenticate(username, password,
-                                   args.name, application_url=args.url,
-                                   scopes=scopes,
-                                   for_user=args.user,
-                                   max_age=args.max_age,
-                                   created_with=' '.join(sys.argv))
-
+        if not scopes:
+            log.warn("You have not specified the scope of this token with the '--scopes' argument.")
+            log.warn("This token will grant full access to %s's account" % username)
+            log.warn("Use the --list-scopes option to see a listing of your options")
+        
+        for _ in range(3):
+            try:
+                sys.stderr.write("Please re-enter %s's " % username)
+                password = getpass.getpass()
+                
+                print binstar.authenticate(username, password,
+                                           args.name, application_url=args.url,
+                                           scopes=scopes,
+                                           for_user=args.organization,
+                                           max_age=args.max_age,
+                                           created_with=' '.join(sys.argv),
+                                           strength=args.strength)
+                break
+            except errors.Unauthorized:
+                log.error('Invalid Username password combination, please try again')
+                continue
 
 
 def add_parser(subparsers):
@@ -97,12 +138,20 @@ def add_parser(subparsers):
     parser = subparsers.add_parser('auth',
                                     help='Manage Authorization Tokens',
                                     description=__doc__)
-    parser.add_argument('-n', '--name', default='Binstar Cli', help='The name of the application that will use this token')
+    parser.add_argument('-n', '--name', default='binstar_token:%s' % (socket.gethostname()),
+                        help='A unique name so you can identify this token later. View your tokens at binstar.org/settings/access')
     parser.add_argument('--url', default='http://binstar.org', help='The url of the application that will use this token')
     parser.add_argument('--max-age', type=int, help='The maximum age in seconds that this token will be valid for')
-    parser.add_argument('--resource', default='api:**', help='The resource path that this token is valid')
-    parser.add_argument('-s', '--scopes', action='append', help='Scopes for token', default=[])
-    parser.add_argument('-u', '--user', help='Set the token owner (may be an organization)')
+    parser.add_argument('-s', '--scopes', action='append', help=('Scopes for token. '
+                                                                 'For example if you want to limit this token to conda downloads only you would use '
+                                                                 '--scopes "repo conda:download"'), default=[])
+    
+    g = parser.add_argument_group('Token Strength options')
+    g.add_argument('--strength', choices=['strong', 'weak'], default='strong', dest='strength')
+    g.add_argument('--strong', action='store_const', const='strong', dest='strength' , help='Create a longer token (default)')
+    g.add_argument('-w', '--weak', action='store_const', const='weak', dest='strength', help='Create a shorter token')
+    
+    parser.add_argument('-o', '--org', '--organization', help='Set the token owner (must be an organization)', dest='organization')
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('-x', '--list-scopes', action='store_true', help='list all authentication scopes')

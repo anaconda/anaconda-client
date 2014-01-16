@@ -42,7 +42,8 @@ class Binstar(PublishMixin, CollectionsMixin, OrgMixin):
                      for_user=None,
                      scopes=None,
                      created_with=None,
-                     max_age=None):
+                     max_age=None,
+                     strength='strong'):
         '''
         Use basic authentication to create an authentication token using the interface below.
         With this technique, a username and password need not be stored permanently, and the user can
@@ -65,7 +66,8 @@ class Binstar(PublishMixin, CollectionsMixin, OrgMixin):
                    'hostname': hostname,
                    'user': for_user,
                    'max-age': max_age,
-                   'created_with': None}
+                   'created_with': None,
+                   'strength': strength}
 
         data = base64.b64encode(json.dumps(payload))
         res = self.session.post(url, auth=(username, password), data=data, verify=True)
