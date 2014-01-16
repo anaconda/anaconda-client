@@ -6,7 +6,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='binstar',
-    version="0.4.1",
+    version="0.4.2",
     author='Sean Ross-Ross',
     author_email='srossross@gmail.com',
     url='http://github.com/Binstar/binstar_client',
