@@ -15,7 +15,8 @@ setup(
     install_requires=['keyring',
                       'requests>=2.0',
                       'pyyaml',
-                      'python-dateutil'],
+                      'python-dateutil',
+                      'pytz'],
     entry_points={
           'console_scripts': [
               'binstar = binstar_client.scripts.cli:main',
