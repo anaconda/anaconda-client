@@ -82,25 +82,25 @@ def submit_build(binstar, args):
     log.info('Getting build product: %s' % abspath(args.path))
     
     with open(join(path, '.binstar.yml')) as cfg:
-        data = yaml.load(cfg)
+        instructions = yaml.load(cfg)
         
-    if 'script' not in data:
+    if 'script' not in instructions:
         raise UserError('build instruction is not specified in .binstar.yml')
 #     if 'build-targets' not in data:    
 #         raise UserError('build-targets instruction is not specified in .binstar.yml')
     
     l = lambda item: item if isinstance(item, list) else [item]
     
-    platforms = l(data.get('platform', []))
-    envs = l(data.get('env', []))
-    engines = l(data.get('engine', []))
+    platforms = l(instructions.get('platform', []))
+    envs = l(instructions.get('env', []))
+    engines = l(instructions.get('engine', []))
     
     with mktemp() as tmp:
         with tarfile.open(tmp, mode='w|bz2') as tf:
             tf.add(path, '.')
             
         with open(tmp, mode='r') as fd:
-            build_no = binstar.submit_for_build(args.package.user, args.package.name, fd,
+            build_no = binstar.submit_for_build(args.package.user, args.package.name, fd, instructions,
                                                 platforms=platforms, envs=envs, engines=engines,
                                                 )
             
