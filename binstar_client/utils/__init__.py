@@ -5,9 +5,7 @@ Created on Apr 29, 2013
 '''
 
 from hashlib import md5
-from keyring import get_keyring, set_keyring
-from keyring.backends.file import PlaintextKeyring
-from os.path import exists, join, dirname, expanduser
+from os.path import exists, join, dirname, expanduser, isfile, isdir
 import appdirs
 import base64
 import getpass
@@ -18,6 +16,7 @@ import sys
 
 from ..errors import UserError
 import json
+import urllib
 
 
 
@@ -40,30 +39,30 @@ class PackageSpec(object):
         return self.spec_str
 
     def __repr__(self):
-        return '<PackageSpec %r>' %(self.spec_str)
+        return '<PackageSpec %r>' % (self.spec_str)
 
     @property
     def user(self):
         if self._user is None:
-            raise UserError('user not given (got %r expected <username> )' %(self.spec_str, ))
+            raise UserError('user not given (got %r expected <username> )' % (self.spec_str,))
         return self._user
 
     @property
     def package(self):
         if self._package is None:
-            raise UserError('package not given in spec (got %r expected <username>/<package> )' %(self.spec_str, ))
+            raise UserError('package not given in spec (got %r expected <username>/<package> )' % (self.spec_str,))
         return self._package
 
     @property
     def version(self):
         if self._version is None:
-            raise UserError('version not given in spec (got %r expected <username>/<package>/<version> )' %(self.spec_str, ))
+            raise UserError('version not given in spec (got %r expected <username>/<package>/<version> )' % (self.spec_str,))
         return self._version
 
     @property
     def basename(self):
         if self._basename is None:
-            raise UserError('basename not given in spec (got %r expected <username>/<package>/<version>/<filename> )' %(self.spec_str, ))
+            raise UserError('basename not given in spec (got %r expected <username>/<package>/<version>/<filename> )' % (self.spec_str,))
         return self._basename
 
 def parse_specs(spec):
@@ -71,7 +70,7 @@ def parse_specs(spec):
     package = version = basename = None
     attrs = {}
     if '/' in user:
-        user, package = user.split('/',1)
+        user, package = user.split('/', 1)
     if package and '/' in package:
         package, version = package.split('/', 1)
 
@@ -87,22 +86,44 @@ def parse_specs(spec):
 def get_binstar(args=None):
     from binstar_client import Binstar
 
+    config = get_config()
+    url = config.get('url', 'https://api.binstar.org')
+    
+    
     if args and args.token:
         token = args.token
     else:
-        config = get_config()
-        
-        if config.get('keyring', 'plain-text') == 'plain-text':
-            set_keyring(PlaintextKeyring())
-
-        kr = get_keyring()
-        token = kr.get_password('binstar-token', getpass.getuser())
-
-    url = get_config().get('url', 'https://api.binstar.org')
-
-
+        data_dir = appdirs.user_data_dir('binstar', 'ContinuumIO')
+        tokenfile = join(data_dir, '%s.token' % urllib.quote_plus(url))
+        if isfile(tokenfile):
+            with open(tokenfile) as fd:
+                token = fd.read()
+        else:
+            token = None
+            
     return Binstar(token, domain=url,)
 
+def store_token(token):
+    config = get_config()
+    url = config.get('url', 'https://api.binstar.org')
+
+    data_dir = appdirs.user_data_dir('binstar', 'ContinuumIO')
+    if not isdir(data_dir):
+        os.makedirs(data_dir)
+    tokenfile = join(data_dir, '%s.token' % urllib.quote_plus(url))
+    
+    with open(tokenfile, 'wb') as fd:
+        fd.write(token)
+
+def remove_token():
+    config = get_config()
+    url = config.get('url', 'https://api.binstar.org')
+    data_dir = appdirs.user_data_dir('binstar', 'ContinuumIO')
+    tokenfile = join(data_dir, '%s.token' % urllib.quote_plus(url))
+    
+    if isfile(tokenfile):
+        os.unlink(tokenfile)
+    
 def load_config(config_file):
     if exists(config_file):
         with open(config_file) as fd:
@@ -198,7 +219,7 @@ class IterableToFileAdapter(object):
         self.iterator = iter(iterable)
         self.length = len(iterable)
 
-    def read(self, size=-1): # TBD: add buffer for `len(data) > size` case
+    def read(self, size= -1):  # TBD: add buffer for `len(data) > size` case
         return next(self.iterator, b'')
 
     def __len__(self):
@@ -209,7 +230,7 @@ class IterableToFileAdapter(object):
 def bool_input(prompt, default=True):
         default_str = '[Y|n]' if default else '[y|N]'
         while 1:
-            inpt = raw_input('%s %s: ' % (prompt, default_str) )
+            inpt = raw_input('%s %s: ' % (prompt, default_str))
             if inpt.lower() in ['y', 'yes'] and not default:
                 return True
             elif inpt.lower() in ['', 'n', 'no'] and not default:
