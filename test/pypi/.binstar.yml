@@ -1,5 +1,4 @@
-platform: 
-  - Linux-64
+platform: Linux-64
 engine:
   - python=2
 env:
@@ -7,5 +6,22 @@ env:
 script:
   - printenv
   - python setup.py sdist
+---
+platform: 
+  - win-64
+  - win-32
+engine:
+  - python=2
+  - python=3
+env:
+  - FOO=BAR
+  - FOO=BAZ
+script:
+  - printenv
+  - python setup.py sdist
 #build-targets:
 #  - dist/*
+---
+{platform: win-32, engine: python=3, env: FOO=BAZ, exclude: true}
+
+

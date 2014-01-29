@@ -11,6 +11,7 @@ from contextlib import contextmanager
 import os
 from binstar_client.utils import package_specs
 import time
+from itertools import product
 
 log = logging.getLogger('binstar.build')
 
@@ -77,33 +78,55 @@ def halt_build(binstar, args):
     return
 
 
+def expand_build_matrix(instruction_set):
+    instruction_set = instruction_set.copy()
+    
+    platforms = instruction_set.pop('platform', ['linux-64']) or [None]
+    if not isinstance(platforms, list): platforms = [platforms] 
+    envs = instruction_set.pop('env', [None]) or [None]
+    if not isinstance(envs, list): envs = [envs] 
+    engines = instruction_set.pop('engine', ['python=2']) or [None]
+    if not isinstance(engines, list): engines = [engines] 
+    
+    for platform, env, engine in product(platforms, envs, engines):
+        build = instruction_set.copy()
+        build.update(platform=platform, env=env, engine=engine)
+        yield build
+
+def serialize_builds(instruction_sets):
+    builds = {}
+    for instruction_set in instruction_sets:
+        for build in expand_build_matrix(instruction_set):
+            k = '%s::%s::%s' % (build['platform'], build['engine'], build['env'])
+            bld = builds.setdefault(k, build)
+            bld.update(build)
+            
+    for k, value in sorted(builds.items()):
+        if value.get('exclude'): continue
+        yield value
+    
+
 def submit_build(binstar, args):
+    print 'submit_build'
     path = abspath(args.path)
     log.info('Getting build product: %s' % abspath(args.path))
     
     with open(join(path, '.binstar.yml')) as cfg:
-        instructions = yaml.load(cfg)
+        build_matrix = list(yaml.load_all(cfg))
         
-    if 'script' not in instructions:
-        raise UserError('build instruction is not specified in .binstar.yml')
-#     if 'build-targets' not in data:    
-#         raise UserError('build-targets instruction is not specified in .binstar.yml')
-    
-    l = lambda item: item if isinstance(item, list) else [item]
-    
-    platforms = l(instructions.get('platform', []))
-    envs = l(instructions.get('env', []))
-    engines = l(instructions.get('engine', []))
+    builds = list(serialize_builds(build_matrix))
+    log.info('Submitting %i sub builds' % len(builds))
+    for i, build in enumerate(builds):
+        log.info(' %i)' % i + ' %(platform)-10s  %(engine)-15s  %(env)-15s' % build)
     
     with mktemp() as tmp:
         with tarfile.open(tmp, mode='w|bz2') as tf:
             tf.add(path, '.')
-            
+             
         with open(tmp, mode='r') as fd:
-            build_no = binstar.submit_for_build(args.package.user, args.package.name, fd, instructions,
-                                                platforms=platforms, envs=envs, engines=engines,
-                                                )
-            
+            pass
+            build_no = binstar.submit_for_build(args.package.user, args.package.name, fd, builds)
+             
     log.info('Build %s submitted' % build_no)
 
 
@@ -127,7 +150,10 @@ def main(args):
     if args.halt:
         return halt_build(binstar, args)
     
-    submit_build(binstar, args)
+    if args.submit: 
+        submit_build(binstar, args)
+        
+        
     
 def add_parser(subparsers):
     
@@ -140,11 +166,13 @@ def add_parser(subparsers):
                        help='build to the package OWNER/PACKAGE',
                        type=package_specs)
     
-    group = parser.add_mutually_exclusive_group()
+    group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('-l', '--list', action='store_true',
                        help='List all builds for this package')
     group.add_argument('-t', '--tail',
                        help='Tail the build output')
+    group.add_argument('-s', '--submit',
+                       help='Submit the build', action='store_true')
     
     
     
