@@ -149,12 +149,12 @@ def main(args):
         except NotFound:
             if args.mode == 'interactive':
                 create_package_interactive(binstar, username, package_name,
-                                           public=args.public,
-                                           publish=args.publish)
+                                           public=args.access != 'private',
+                                           publish=args.access == 'publish')
             else:
                 create_package(binstar, username, package_name, summary, license,
-                               public=args.public,
-                               publish=args.publish)
+                               public=args.access != 'private',
+                               publish=args.access == 'publish')
 
 
         try:
@@ -218,18 +218,27 @@ def add_parser(subparsers):
     parser.add_argument('-m', '--metadata', help='json encoded metadata default is to autodetect')
 
     perms = parser.add_mutually_exclusive_group()
+    
+    package_access = config.get('package_access', 'personal')
     perms.desciption = 'The package permissions'
-    perms.add_argument('--public', action='store_true', default=config.get('public') or config.get('publish', True),
-                       help='Set the permissions of the package to public (if it does not exist) (default %(default)s)')
-    perms.add_argument('--private', action='store_false', dest='public',
+    
+    perms.add_argument('--private', action='store_const',
+                       dest='access', const='private',
+                       default=package_access == 'private',
                        help='Set the permissions of the package to private (if it does not exist)')
-    perms.add_argument('--publish', action='store_true', default=config.get('publish', True),
+    
+    perms.add_argument('--publish', action='store_const',
+                       dest='access', const='publish',
+                       default=package_access == 'publish',
                        help=('Set the permissions of the package to public and '
                              'publish this package to the global public repositories - if it does not exist. '
                             '(default %(default)s)'))
-    perms.add_argument('--personal', action='store_false', dest='publish',
+    perms.add_argument('--personal', action='store_const',
+                       dest='access', const='personal',
+                       default=package_access == 'personal',
                        help=('Set the permissions of the package to public. '
                              'Do not publish this to the global public repo. This package will be kept in you user repository.'))
+    
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-i', '--interactive', action='store_const', help='Run an interactive prompt if any packages are missing',
                         dest='mode', const='interactive')
