@@ -202,7 +202,7 @@ def add_parser(subparsers):
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('-l', '--list', default=True, type=int,
                        help='List the sub builds for this package')
-    group.add_argument('--list-all', action='store_true',
+    group.add_argument('-a', '--list-all', action='store_true',
                        help='List all the builds and sub-builds for this package',
                        dest='list')
     group.add_argument('-t', '--tail',
