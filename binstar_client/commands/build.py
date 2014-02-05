@@ -12,6 +12,7 @@ import os
 from binstar_client.utils import package_specs
 import time
 from itertools import product
+from binstar_client import errors
 
 log = logging.getLogger('binstar.build')
 
@@ -171,7 +172,12 @@ def main(args):
         if not package_name:
             raise UserError("You must specify the package name in the .bisntar.yml file or the command line")
     
-    _ = binstar.package(user_name, package_name)
+    try:
+        _ = binstar.package(user_name, package_name)
+    except errors.NotFound:
+        log.error("The package %s/%s does not exist." % (user_name, package_name))
+        log.error("Run: 'binstar package --create %s/%s' to create this package" % (user_name, package_name))
+        raise errors.NotFound('Package %s/%s' % (user_name, package_name))
     args.package = PackageSpec(user_name, package_name)
         
     if args.tail:
