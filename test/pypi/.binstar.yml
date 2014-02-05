@@ -1,27 +1,37 @@
-platform: Linux-64
+package: test_package34
+platform: linux-64
 engine:
-  - python=2
+  - python=2  
 env:
   - FOO=BAR
+before_script:
+  - echo "before_script!"
 script:
   - printenv
   - python setup.py sdist
----
-platform: 
-  - win-64
-  - win-32
-engine:
-  - python=2
-  - python=3
-env:
-  - FOO=BAR
-  - FOO=BAZ
-script:
-  - printenv
-  - python setup.py sdist
-#build-targets:
-#  - dist/*
----
-{platform: win-32, engine: python=3, env: FOO=BAZ, exclude: true}
+after_script:
+  - echo "after_script! $BINSTAR_BUILD_RESULT"
+after_success:
+  - echo "after_success!"
+after_failure:
+  - echo "after_success!"
+
+# ---
+# platform: 
+#   - win-64
+#   - win-32
+# engine:
+#   - python=2
+#   - python=3
+# env:
+#   - FOO=BAR
+#   - FOO=BAZ
+# script:
+#   - printenv
+#   - python setup.py sdist
+# #build-targets:
+# #  - dist/*
+# ---
+# {platform: win-32, engine: python=3, env: FOO=BAZ, exclude: true}
 
 

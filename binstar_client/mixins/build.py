@@ -43,8 +43,11 @@ class BuildMixin(object):
         self._check_response(res, [201])
         return obj['build_no']
 
-    def builds(self, username, package):
-        url = '%s/build/%s/%s' % (self.domain, username, package)
+    def builds(self, username, package, build_no=None):
+        if build_no:
+            url = '%s/build/%s/%s/%s' % (self.domain, username, package, build_no)
+        else:
+            url = '%s/build/%s/%s' % (self.domain, username, package)
         res = self.session.get(url)
         self._check_response(res)
         return res.json()

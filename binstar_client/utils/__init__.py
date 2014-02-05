@@ -52,7 +52,7 @@ def pv(version):
     return tuple(int(x) for x in version.split('.'))
 
 class PackageSpec(object):
-    def __init__(self, user, package, version, basename, attrs, spec_str):
+    def __init__(self, user, package, version=None, basename=None, attrs=None, spec_str=None):
         self._user = user
         self._package = package
         self._version = version
