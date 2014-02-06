@@ -9,5 +9,4 @@ requirements:
   run:
     - python
 about:
-  home: This is a simple meta-package
-  
+  summary: This is a simple meta-package

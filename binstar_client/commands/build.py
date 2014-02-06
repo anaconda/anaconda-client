@@ -25,24 +25,24 @@ def mktemp(suffix=".tar.gz", prefix='binstar', dir=None):
     finally:
         log.debug('Removing temp file: %s' % tmp)
         os.unlink(tmp)
-        
-    
+
+
 def tail(binstar, args):
     log_items = binstar.tail_build(args.package.user, args.package.name, args.tail, limit=args.n)
     for log_item in log_items['log']:
         log.info(log_item.get('msg'))
-        
+
     last_entry = log_items['last_entry']
-    
+
     while args.f and not log_items.get('finished'):
         time.sleep(4)
         log_items = binstar.tail_build(args.package.user, args.package.name, args.tail,
                                        after=last_entry)
         for log_item in log_items['log']:
             log.info(log_item.get('msg'))
-        
+
         last_entry = log_items['last_entry'] or last_entry
-    
+
     if log_items.get('finished'):
         if log_items['failed']:
             log.error('Build Failed')
@@ -50,22 +50,22 @@ def tail(binstar, args):
             log.info('Build Succedded')
     else:
         log.info('... Build still running ...')
-    
+
 
 def list_builds(binstar, args):
-    
+
     log.info('Getting builds:')
-    
+
     fmt = '%(build_no)15s | %(status)15s | %(platform)15s | %(engine)15s | %(env)15s'
-    
+
     header = {'build_no':'Build #', 'status':'Status',
               'platform':'Platform',
               'engine':'Engine',
               'env':'Env',
               }
-    
+
     log.info(fmt % header)
-    
+
     log.info(fmt.replace('|', '+') % dict.fromkeys(header, '-' * 15))
     build_no = None if args.list is True else args.list
     for build in binstar.builds(args.package.user, args.package.name, build_no):
@@ -87,14 +87,14 @@ def halt_build(binstar, args):
 
 def expand_build_matrix(instruction_set):
     instruction_set = instruction_set.copy()
-    
+
     platforms = instruction_set.pop('platform', ['linux-64']) or [None]
-    if not isinstance(platforms, list): platforms = [platforms] 
+    if not isinstance(platforms, list): platforms = [platforms]
     envs = instruction_set.pop('env', [None]) or [None]
-    if not isinstance(envs, list): envs = [envs] 
+    if not isinstance(envs, list): envs = [envs]
     engines = instruction_set.pop('engine', ['python=2']) or [None]
-    if not isinstance(engines, list): engines = [engines] 
-    
+    if not isinstance(engines, list): engines = [engines]
+
     for platform, env, engine in product(platforms, envs, engines):
         build = instruction_set.copy()
         build.update(platform=platform, env=env, engine=engine)
@@ -107,31 +107,31 @@ def serialize_builds(instruction_sets):
             k = '%s::%s::%s' % (build['platform'], build['engine'], build['env'])
             bld = builds.setdefault(k, build)
             bld.update(build)
-            
+
     for k, value in sorted(builds.items()):
         if value.get('exclude'): continue
         yield value
-    
+
 
 def submit_build(binstar, args):
     path = abspath(args.path)
     log.info('Getting build product: %s' % abspath(args.path))
-    
+
     with open(join(path, '.binstar.yml')) as cfg:
         build_matrix = list(yaml.load_all(cfg))
-        
+
     builds = list(serialize_builds(build_matrix))
     log.info('Submitting %i sub builds' % len(builds))
     for i, build in enumerate(builds):
         log.info(' %i)' % i + ' %(platform)-10s  %(engine)-15s  %(env)-15s' % build)
-    
+
     if not args.dry_run:
         with mktemp() as tmp:
             with tarfile.open(tmp, mode='w|bz2') as tf:
                 tf.add(path, '.')
-                 
-            with open(tmp, mode='r') as fd:
-                
+
+            with open(tmp, mode='rb') as fd:
+
                 build_no = binstar.submit_for_build(args.package.user, args.package.name, fd, builds)
         log.info('Build %s submitted' % build_no)
     else:
@@ -145,19 +145,19 @@ def resubmit_build(binstar, args):
 
 
 def main(args):
-    
+
     binstar = get_binstar()
-    
+
     # Force user auth
     user = binstar.user()
-    
+
     package_name = None
     user_name = None
-    
+
     binstar_yml = join(args.path, '.binstar.yml')
     if not isfile(binstar_yml):
         raise UserError("file %s does not exist" % binstar_yml)
-    
+
     with open(binstar_yml) as cfg:
         for build in yaml.load_all(cfg):
             package_name = build.get('package')
@@ -176,7 +176,7 @@ def main(args):
             user_name = user['login']
         if not package_name:
             raise UserError("You must specify the package name in the .bisntar.yml file or the command line")
-    
+
     try:
         _ = binstar.package(user_name, package_name)
     except errors.NotFound:
@@ -191,31 +191,29 @@ def main(args):
     
     if args.tail:
         return tail(binstar, args)
-    
+
     if args.halt:
         return halt_build(binstar, args)
-    
-    if args.submit or args.dry_run: 
+
+    if args.submit or args.dry_run:
         return submit_build(binstar, args)
     
     if args.list:
         return list_builds(binstar, args)
-    
-        
-    
+
 def add_parser(subparsers):
-    
+
     parser = subparsers.add_parser('build',
                                       help='Build command',
-                                      
+
                                       description=__doc__)
-    
+
     parser.add_argument('path', default='.', nargs='?')
     parser.add_argument('package', metavar='OWNER/PACKAGE',
                        help='build to the package OWNER/PACKAGE',
                        nargs='?',
                        type=package_specs)
-    
+
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('-l', '--list', default=True, type=int,
                        help='List the sub builds for this package')
@@ -230,13 +228,13 @@ def add_parser(subparsers):
                        help='Res-ubmit an old sub build', type=float)
     group.add_argument('--dry-run',
                        help="Parse the build file but don't submit", action='store_true')
-    
-    
+
+
     group.add_argument('--halt', '--stop', metavar='build_id', dest='halt',
                        help='Stop a build for this package')
     group.add_argument('--halt-all', '--stop-all', action='store_const', const='all', dest='halt',
                        help='Stop all builds')
-    
+
 
     group = parser.add_argument_group('Tail Options')
     group.add_argument('-n', metavar='#', type=int,
@@ -247,4 +245,4 @@ def add_parser(subparsers):
                        )
 
     parser.set_defaults(main=main)
-    
+
