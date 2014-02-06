@@ -1,4 +1,4 @@
-## The package attribure specifies a binstar package namespace to build the package to. 
+## The package attribute specifies a binstar package namespace to build the package to. 
 ## This can be specified here or on the command line
 package: conda_build_test
 
@@ -29,8 +29,8 @@ platform:
 #  - MY_ENV=B
 
 #===============================================================================
-# Scrip options
-# Thes options may be broken out into the before_script, script and after_script
+# Script options
+# These options may be broken out into the before_script, script and after_script
 # or not, that is up to you 
 #===============================================================================
 
@@ -45,11 +45,11 @@ script:
 #===============================================================================
 # Build Results
 # Build results are split into two categories: artifacts and targets
-# You may omit either key and stiff have a successfull build
+# You may omit either key and still have a successfull build
 # They may be a string, list and contain any bash glob
 #===============================================================================
 
-## Build Targets: Upload these files to your bunstar package
+## Build Targets: Upload these files to your binstar package
 build_targets:
   - dist/*
 
