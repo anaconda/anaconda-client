@@ -64,5 +64,11 @@ class BuildMixin(object):
         self._check_response(res, [200])
         return res.json()
 
+    def resubmit_build(self, username, package, build_id):
+        url = '%s/build/%s/%s/resubmit/%s' % (self.domain, username, package, build_id)
+        res = self.session.post(url)
+        self._check_response(res, [201])
+        return
+
 
 

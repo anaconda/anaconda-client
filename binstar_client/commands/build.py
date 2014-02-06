@@ -139,6 +139,11 @@ def submit_build(binstar, args):
 
 
 
+def resubmit_build(binstar, args):
+    binstar.resubmit_build(args.package.user, args.package.name, args.resubmit)
+    
+
+
 def main(args):
     
     binstar = get_binstar()
@@ -180,6 +185,10 @@ def main(args):
         raise errors.NotFound('Package %s/%s' % (user_name, package_name))
     args.package = PackageSpec(user_name, package_name)
         
+    if args.resubmit:
+        log.info("Re submit build %s", args.resubmit)
+        return resubmit_build(binstar, args)
+    
     if args.tail:
         return tail(binstar, args)
     
@@ -188,9 +197,11 @@ def main(args):
     
     if args.submit or args.dry_run: 
         return submit_build(binstar, args)
+    
     if args.list:
         return list_builds(binstar, args)
-
+    
+        
     
 def add_parser(subparsers):
     
@@ -215,6 +226,8 @@ def add_parser(subparsers):
                        help='Tail the build output')
     group.add_argument('-s', '--submit',
                        help='Submit the build', action='store_true')
+    group.add_argument('--resubmit',
+                       help='Res-ubmit an old sub build', type=float)
     group.add_argument('--dry-run',
                        help="Parse the build file but don't submit", action='store_true')
     
