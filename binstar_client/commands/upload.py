@@ -1,3 +1,14 @@
+'''
+Upload a file to binstar. 
+
+This command must be run after 'binstar register' if the package namespace does
+not exist on binstar.
+
+eg:
+    binstar register CONDA_PACKAGE_1.bz2
+    binstar upload CONDA_PACKAGE_1.bz2
+
+'''
 from binstar_client.utils import get_binstar, bool_input, \
     get_config
 import json
@@ -8,46 +19,15 @@ import time
 import logging
 from binstar_client.utils.detect import detect_package_type, get_attrs
 from os.path import basename
+from binstar_client.errors import UserError
+import argparse
 
 log = logging.getLogger('binstar.updload')
 
-def create_package(binstar, username, package_name, summary, license, public=True, publish=True):
-    binstar.add_package(username, package_name,
-                        summary,
-                        license,
-                        public=public,
-                        publish=publish)
 
 def create_release(binstar, username, package_name, version, description, announce=None):
     binstar.add_release(username, package_name, version, [],
                         announce, description)
-
-
-def create_package_interactive(binstar, username, package_name, public=True, publish=True):
-
-    log.info('\nThe package %s/%s does not exist' % (username, package_name))
-    if not bool_input('Would you lke to create it now?'):
-        log.info('goodbbye')
-        raise SystemExit(-1)
-
-    summary = raw_input('Enter a short description of the package\nsummary: ')
-    license = raw_input('Enter the name of the license (default:BSD)\nlicense: ')
-    license_url = raw_input('Enter the url of the license (optional)\nlicense url: ')
-    public = bool_input('\nDo you want to make this package public?', public)
-    if public:
-        publish = bool_input('\nDo you want to make publish this package?\n'
-                             'When published it will be added to the global public repositories.',
-                             public)
-    else:
-        publish = False
-
-    binstar.add_package(username, package_name,
-                    summary,
-                    license,
-                    license_url,
-                    public=public,
-                    publish=publish)
-
 
 def create_release_interactive(binstar, username, package_name, version):
 
@@ -135,7 +115,7 @@ def main(args):
                 
                 raise BinstarError('Trouble reading metadata from %r. Please make sure this package is correct or specify the --metadata, --package and --version arguments' % (filename))
                 
-            basefilename, package_name, version, attrs, summary, description, license = package_attrs
+            basefilename, package_name, version, attrs, _, description, license = package_attrs
             log.info('done')
 
         if args.package:
@@ -147,14 +127,8 @@ def main(args):
         try:
             binstar.package(username, package_name)
         except NotFound:
-            if args.mode == 'interactive':
-                create_package_interactive(binstar, username, package_name,
-                                           public=args.access != 'private',
-                                           publish=args.access == 'publish')
-            else:
-                create_package(binstar, username, package_name, summary, license,
-                               public=args.access != 'private',
-                               publish=args.access == 'publish')
+            raise UserError('Binstar package %s/%s does not exist. '
+                            'Please run "binstar register" to create this package namespace in the cloud.' % (username, package_name))
 
 
         try:
@@ -205,8 +179,9 @@ def add_parser(subparsers):
     config = get_config()
 
     parser = subparsers.add_parser('upload',
-                                      help='Upload a file to binstar',
-                                      description=__doc__)
+                                   formatter_class=argparse.RawDescriptionHelpFormatter,
+                                   help='Upload a file to binstar',
+                                   description=__doc__)
 
     parser.add_argument('files', nargs='*', help='Distributions to upload', default=[])
 
@@ -217,28 +192,6 @@ def add_parser(subparsers):
     parser.add_argument('-d', '--description', help='description of the file(s)')
     parser.add_argument('-m', '--metadata', help='json encoded metadata default is to autodetect')
 
-    perms = parser.add_mutually_exclusive_group()
-    
-    package_access = config.get('package_access', 'personal')
-    perms.desciption = 'The package permissions'
-    
-    perms.add_argument('--private', action='store_const',
-                       dest='access', const='private',
-                       default=package_access == 'private',
-                       help='Set the permissions of the package to private (if it does not exist)')
-    
-    perms.add_argument('--publish', action='store_const',
-                       dest='access', const='publish',
-                       default=package_access == 'publish',
-                       help=('Set the permissions of the package to public and '
-                             'publish this package to the global public repositories - if it does not exist. '
-                            '(default %(default)s)'))
-    perms.add_argument('--personal', action='store_const',
-                       dest='access', const='personal',
-                       default=package_access == 'personal',
-                       help=('Set the permissions of the package to public. '
-                             'Do not publish this to the global public repo. This package will be kept in you user repository.'))
-    
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-i', '--interactive', action='store_const', help='Run an interactive prompt if any packages are missing',
                         dest='mode', const='interactive')
