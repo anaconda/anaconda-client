@@ -183,7 +183,7 @@ def add_parser(subparsers):
                                    help='Upload a file to binstar',
                                    description=__doc__)
 
-    parser.add_argument('files', nargs='*', help='Distributions to upload', default=[])
+    parser.add_argument('files', nargs='+', help='Distributions to upload', default=[])
 
     parser.add_argument('-u', '--user', help='User account, defaults to the current user')
     parser.add_argument('-p', '--package', help='Defaults to the packge name in the uploaded file')
