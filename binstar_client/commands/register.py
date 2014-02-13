@@ -33,16 +33,13 @@ def main(args):
     if not exists(args.filename):
         raise BinstarError('file %s does not exist' % (args.filename))
 
-    if args.package_type:
-        package_type = args.package_type
-    else:
-        log.info('detecting package type ...')
-        sys.stdout.flush()
-        package_type = detect_package_type(args.filename)
-        if package_type is None:
-            raise UserError('Could not detect package type of file %r' % args.filename)
-        
-        log.info(package_type)
+    log.info('detecting package type ...')
+    sys.stdout.flush()
+    package_type = detect_package_type(args.filename)
+    if package_type is None:
+        raise UserError('Could not detect package type of file %r' % args.filename)
+    
+    log.info(package_type)
 
     log.info('extracting package attributes ...')
     sys.stdout.flush()
@@ -54,7 +51,7 @@ def main(args):
         
         raise BinstarError('Trouble reading metadata from %r. Please make sure this package is correct.' % (args.filename))
         
-    _, package_name, _, _, summary, _, _ = package_attrs
+    _, package_name, _, _, summary, _, license = package_attrs
     
     if args.summary:
         summary = args.summary
