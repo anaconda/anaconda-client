@@ -54,7 +54,9 @@ def pprint_packages(packages, access=True, full_name=True, revisions=False):
     
     log.info(fmt % package_header)
     
-    for package in packages:
+    key = lambda pkg: pkg['full_name'] if full_name else pkg['name']
+    
+    for package in sorted(packages, key=key):
         pprint_package(package, access, full_name, revision=revisions)
 
 def pprint_user(user):
