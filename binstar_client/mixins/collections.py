@@ -40,6 +40,7 @@ class CollectionsMixin(object):
         data = jencode(payload)
         res = self.session.put(url, data=data, verify=True)
         self._check_response(res, [201])
+        return res.json()
 
 
     def collection_remove_packages(self, org, name, owner_package_data=(), owner=None, package=None):
@@ -82,6 +83,17 @@ class CollectionsMixin(object):
         data = jencode(payload)
         res = self.session.patch(url, data=data, verify=True)
         self._check_response(res, [201])
+
+    def collection_sync(self, org, name):
+        '''
+        update a collection
+        '''
+
+        url = '%s/collections/%s/%s/sync' % (self.domain, org, name)
+        res = self.session.post(url, verify=True)
+        self._check_response(res, [201])
+        return res.json()
+         
 
     def remove_collection(self, org, name):
         '''

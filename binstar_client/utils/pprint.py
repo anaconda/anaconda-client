@@ -12,15 +12,19 @@ def pprint_orgs(orgs):
     for org in orgs:
         log.info('   + %(login)25s' % org)
 
-fmt_access = '     %(full_name)25s | %(access)-12s | %(package_types)-15s | %(summary)s'
-fmt_no_access = '     %(full_name)25s | %(package_types)-15s | %(summary)s'
+fmt_access = '     %(full_name)25s | %(access)-12s | %(package_types)-15s | %(summary)-20s'
+fmt_no_access = '     %(full_name)25s | %(package_types)-15s | %(summary)-20s'
 
-def pprint_package_header(access=True):
-    package_header = {'full_name':'Name', 'access': 'Access', 'package_types':'Package Types', 'summary':'Summary'}
+def pprint_package_header(access=True, revisions=False):
+    package_header = {'full_name':'Name', 'access': 'Access', 'package_types':'Package Types', 'summary':'Summary',
+                      'revision':'Rev'}
     fmt = fmt_access if access else fmt_no_access
+    if revisions:
+        fmt = '%(revision)-6s | ' + fmt
+
     log.info(fmt % package_header)
 
-def pprint_package(package, access=True, full_name=True):
+def pprint_package(package, access=True, full_name=True, revision=False):
     package = package.copy()
     if not full_name:
         package['full_name'] = package['name']
@@ -28,22 +32,30 @@ def pprint_package(package, access=True, full_name=True):
     if package.get('package_types'):
         package['package_types'] = ', '.join(package['package_types'])
     fmt = fmt_access if access else fmt_no_access
+    
+    if revision:
+        fmt = '%(revision)-6s | ' + fmt
+
     log.info(fmt % package)
         
-def pprint_packages(packages, access=True, full_name=True):
+def pprint_packages(packages, access=True, full_name=True, revisions=False):
     if packages:
         log.info('Packages:')
     else:
         log.info('No packages found')
     
     fmt = fmt_access if access else fmt_no_access
-    pprint_package_header(access)
+    if revisions:
+        fmt = '%(revision)-6s | ' + fmt
+    pprint_package_header(access, revisions=revisions)
     
-    package_header = {'full_name':'-' * 25, 'access': '-' * 12, 'package_types':'-' * 15, 'summary':'-' * 20}
+    package_header = {'full_name':'-' * 25, 'access': '-' * 12, 'package_types':'-' * 15, 'summary':'-' * 20,
+                      'revision': '-' * 6}
     
     log.info(fmt % package_header)
+    
     for package in packages:
-        pprint_package(package, access, full_name)
+        pprint_package(package, access, full_name, revision=revisions)
 
 def pprint_user(user):
     user = user.copy()
