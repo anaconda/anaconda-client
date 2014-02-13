@@ -63,7 +63,7 @@ def show_collection(binstar, spec):
     print '[%(access)s] %(owner)s/%(name)-15s - %(description)s' % collection
     
     if collection['packages']:
-        pprint_packages(collection['packages'], access=False, full_name=False)
+        pprint_packages(collection['packages'], access=False, full_name=False, revisions=True)
     else:
         log.info('    This collection contains no packages. You can add a package with the binstar with the command')
         log.info('    binstar collection --add-package ORG/NAME OWNER/PACKAGE')
@@ -99,10 +99,7 @@ def main(args):
     name = spec.name
 
     if args.show:
-        if name:
-            show_collection(binstar, spec)
-        else:
-            show_collections(binstar, spec)
+        show_collection(binstar, spec)
         return
 
     if not name:
@@ -124,11 +121,20 @@ def main(args):
     if args.add_package:
         package = args.add_package
 
-        binstar.collection_add_packages(org, name,
-                                        owner=package.org, package=package.name)
+        data = binstar.collection_add_packages(org, name,
+                                               owner=package.org, package=package.name)
+        if data[package.name]['before'] == data[package.name]['after']:
+            log.info('Package %s is already at the latest revision (%s)' % (package.name, data[package.name]['after']))
+        else:
+            log.info('Updated package %s from revision %s to %s' % (package.name, data[package.name]['before'], data[package.name]['after']))
+            
     if args.add_packages:
         for owner, package in read_package_file(args.add_packages):
-            binstar.collection_add_packages(org, name, owner=owner, package=package)
+            data = binstar.collection_add_packages(org, name, owner=owner, package=package)
+            if data[package]['before'] == data[package]['after']:
+                log.info('Package %s is already at the latest revision (%s)' % (package, data[package]['after']))
+            else:
+                log.info('Updated package %s from revision %s to %s' % (package.name, data[package]['before'], data[package]['after']))
 
     if args.remove_package:
         package = args.remove_package
@@ -143,7 +149,16 @@ def main(args):
         binstar.collection_pull(args.pull_from.org, args.pull_from.name,
                                  org, name)
 
-
+    if args.sync:
+        sync_data = binstar.collection_sync(org, name)
+        updated = {key:value for (key,value) in sync_data.items() if value['after'] != value['before']}
+        if updated:
+            for package_name, info in updated.items():
+                log.info('Updated package %s from revision %s to %s' % (package_name, info['before'], info['after']))
+        else:
+            log.info('All packages are up to date')
+        
+        
 def show(args):
     print 'show'
 
@@ -165,23 +180,24 @@ def add_parser(subparsers):
 
     group.add_argument('--create', help='create the collection <NAME> in <ORG>', action='store_true')
     group.add_argument('--update', help='update the collection <NAME> in <ORG>', action='store_true')
+    group.add_argument('--sync', help='Update all of the packages in the collection to the latest revisions', action='store_true')
     group.add_argument('--remove', help='remove the collection <NAME> from <ORG>', action='store_true')
 
-    group.add_argument('--add-package', metavar='OWNER/PACKAGE', 
-                       help='add the package OWNER/PACKAGE to the collection ORG/NAME', 
+    group.add_argument('--add-package', '--sync-package', metavar='OWNER/PACKAGE',
+                       help='Add or update the package OWNER/PACKAGE to the collection ORG/NAME',
                        type=package_spec)
-    group.add_argument('-f', '--add-packages', metavar='packages.txt', 
-                       help='Add or update the packages listed in pakages.txt', 
+    group.add_argument('-f', '--add-packages', metavar='packages.txt',
+                       help='Add or update the packages listed in pakages.txt',
                        type=FileType('r'))
-    group.add_argument('--remove-package', metavar='OWNER/PACKAGE', 
-                       help='remove the package OWNER/PACKAGE from the collection ORG/NAME', 
+    group.add_argument('--remove-package', metavar='OWNER/PACKAGE',
+                       help='remove the package OWNER/PACKAGE from the collection ORG/NAME',
                        type=package_spec)
 
-    group.add_argument('--clone-from', metavar='FROM/NAME', 
-                       help='Create a collection by cloning another collection', 
+    group.add_argument('--clone-from', metavar='FROM/NAME',
+                       help='Create a collection by cloning another collection',
                        type=collection_spec)
-    group.add_argument('--pull-from', metavar='FROM/NAME', 
-                       help='Update this collection with another', 
+    group.add_argument('--pull-from', metavar='FROM/NAME',
+                       help='Update this collection with another',
                        type=collection_spec)
 
 

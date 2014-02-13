@@ -4,9 +4,10 @@
 
 from setuptools import setup, find_packages
 
+import binstar_client
 setup(
     name='binstar',
-    version="0.4.1",
+    version=binstar_client.__version__,
     author='Sean Ross-Ross',
     author_email='srossross@gmail.com',
     url='http://github.com/Binstar/binstar_client',
@@ -14,7 +15,8 @@ setup(
     install_requires=['keyring',
                       'requests>=2.0',
                       'pyyaml',
-                      'python-dateutil'],
+                      'python-dateutil',
+                      'pytz'],
     entry_points={
           'console_scripts': [
               'binstar = binstar_client.scripts.cli:main',

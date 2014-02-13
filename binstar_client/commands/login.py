@@ -1,12 +1,12 @@
 '''
 Authenticate a user
 '''
-from keyring import get_keyring
 import getpass
-from binstar_client.utils import get_config, get_binstar
+from binstar_client.utils import get_config, get_binstar, store_token
 from binstar_client.errors import Unauthorized, BinstarError
 import sys
 import logging
+import socket
 
 log = logging.getLogger('binstar.login')
 
@@ -23,7 +23,7 @@ def interactive_get_token():
         try:
             sys.stderr.write("%s's " % username)
             password = getpass.getpass(stream=sys.stderr)
-            token = bs.authenticate(username, password, 'Binstar-Cli', url,
+            token = bs.authenticate(username, password, 'binstar_client:%s' % (socket.gethostname()), url,
                                     created_with=' '.join(sys.argv))
             break
         except Unauthorized:
@@ -38,9 +38,7 @@ def interactive_get_token():
 def interactive_login():
 
     token = interactive_get_token()
-
-    kr = get_keyring()
-    kr.set_password('binstar-token', getpass.getuser(), token)
+    store_token(token)
     print 'login successful'
 
 def main(args):

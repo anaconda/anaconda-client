@@ -16,14 +16,16 @@ def detect_yaml_attrs(filename):
     try:
         obj = tar.extractfile('info/recipe/meta.yaml')
     except KeyError:
-        return None, None
+        return None, None, None, None
 
     attrs = yaml.load(obj)
-    about = attrs.get('about')
-    description = about.get('home')
+    about = attrs.get('about', {})
+    summary = about.get('summary')
+    home_page = about.get('home')
+    description = about.get('description')
     license = about.get('license')
 
-    return description, license
+    return summary, description, home_page, license
 
 def detect_pypi_attrs(filename):
 
@@ -55,10 +57,11 @@ def detect_conda_attrs(filename):
     obj = tar.extractfile('info/index.json')
     attrs = json.loads(obj.read())
 
-    description, license = detect_yaml_attrs(filename)
+    summary, description, home_page, license = detect_yaml_attrs(filename)
+    attrs['home_page'] = home_page
     os_arch = arch_map[(attrs['platform'], attrs['arch'])]
     filename = path.join(os_arch, basename(filename))
-    return filename, attrs['name'], attrs['version'], attrs, description, description, license
+    return filename, attrs['name'], attrs['version'], attrs, summary, description, license
 
 def detect_r_attrs(filename):
 
