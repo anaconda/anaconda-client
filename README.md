@@ -1,21 +1,30 @@
 Binstar Client
 ==============
 
-This is a command line client that provides an interface to the Binstar restful API.
+This is a command line client that provides an interface to [binstar.org](https://binstar.org).
 
-Quickstart:
+## Quickstart:
+
+### Create an account:
 
 First create an account on [binstar.org](https://binstar.org)
 
-If you are not using Anaconda 1.6+ install the client:
+### Install the client:
+
+#### With Conda:
 
 ``` 
     $ conda install binstar
-      #then update it for good measure
-    $ conda update binstar
 ```
 
-Login:
+#### Or pip:
+
+```
+   $ pip install binstar
+```
+
+### Login
+
 
 ` $ binstar login`
 

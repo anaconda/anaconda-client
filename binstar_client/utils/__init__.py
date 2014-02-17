@@ -18,9 +18,15 @@ from ..errors import UserError
 import json
 import time
 import urllib
+import logging
 
-def upload_print_callback():
+def upload_print_callback(args):
+    
     start_time = time.time()
+    
+    if args.no_progress or args.log_level >= logging.INFO:
+        return lambda curr, total: None
+    
     def callback(curr, total):
         curr_time = time.time()
         time_delta = curr_time - start_time
