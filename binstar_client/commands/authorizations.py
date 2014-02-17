@@ -2,6 +2,7 @@
 Manage Authentication tokens
 '''
 import socket
+from pprint import pprint
 
 
 SCOPE_EXAMPLES = '''
@@ -83,6 +84,10 @@ def show_auths(authentications):
 
 def main(args):
     binstar = get_binstar(args)
+    if args.info:
+        data = binstar.authentication()
+        log.info('Name: %s' % data['application'])
+        log.info('Id: %s' % data['id'])
     if args.list:
         show_auths(binstar.authentications())
         return
@@ -158,6 +163,8 @@ def add_parser(subparsers):
     group.add_argument('-l', '--list', action='store_true', help='list all user authentication tokens')
     group.add_argument('-r', '--remove', metavar='ID', nargs='+', help='remove authentication tokens')
     group.add_argument('-c', '--create', action='store_true', help='Create an authentication token')
+    group.add_argument('-i', '--info', '--current-info', dest='info',
+                       action='store_true', help='Show information about the current authentication token')
     parser.set_defaults(main=main)
 
 
