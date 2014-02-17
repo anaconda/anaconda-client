@@ -47,8 +47,11 @@ def create_release_interactive(binstar, username, package_name, version):
     binstar.add_release(username, package_name, version, [],
                         announce, description)
 
-def upload_print_callback():
+def upload_print_callback(args):
     start_time = time.time()
+    if args.no_progress or args.log_level >= logging.INFO:
+        return lambda curr, total: None
+    
     def callback(curr, total):
         curr_time = time.time()
         time_delta = curr_time - start_time
@@ -72,6 +75,10 @@ def upload_print_callback():
     return callback
 
 def main(args):
+    for item in args.depricated:
+        log.warn('Argument %s has been depricated and is no longer used. '
+                 'Please see the command "binstar register" for details' %item)
+        
 
     binstar = get_binstar(args)
 
@@ -159,7 +166,7 @@ def main(args):
                         continue
             try:
                 binstar.upload(username, package_name, version, basefilename, fd, package_type, args.description, attrs=attrs,
-                           callback=upload_print_callback())
+                           callback=upload_print_callback(args))
             except Conflict:
                 full_name = '%s/%s/%s/%s' % (username, package_name, version, basefilename)
                 log.info('Distribution already exists. Please use the -i/--interactive or --force options or `binstar remove %s`' % full_name)
@@ -186,12 +193,17 @@ def add_parser(subparsers):
     parser.add_argument('files', nargs='+', help='Distributions to upload', default=[])
 
     parser.add_argument('-u', '--user', help='User account, defaults to the current user')
+    parser.add_argument('--no-progress', help="Don't show upload progress", action='store_true' )
     parser.add_argument('-p', '--package', help='Defaults to the packge name in the uploaded file')
     parser.add_argument('-v', '--version', help='Defaults to the packge version in the uploaded file')
     parser.add_argument('-t', '--package-type', help='Set the package type, defaults to autodetect')
     parser.add_argument('-d', '--description', help='description of the file(s)')
     parser.add_argument('-m', '--metadata', help='json encoded metadata default is to autodetect')
-
+    
+    for depricated in ['--public', '--private', '--personal', '--publish']: 
+        parser.add_argument(depricated, action='append_const', const=depricated, 
+                            dest='depricated')
+        
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-i', '--interactive', action='store_const', help='Run an interactive prompt if any packages are missing',
                         dest='mode', const='interactive')
