@@ -1,7 +1,22 @@
 '''
-Binstar command line utility
+Binstar Build command
+
+Initialize the build directory:
+
+    binstar-build init
+    
+This will create a default .binstar.yml file in the current directory
+  
+Submit a build:
+
+    binstar-build submit
+    
+Tail the output of a build untill it is complete:
+
+    binstar-build tail user/package 1.0
+    
 '''
-from argparse import ArgumentParser
+from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from binstar_client.build_commands import sub_commands
 from binstar_client.errors import BinstarError, ShowHelp, Unauthorized
 from binstar_client.commands.login import interactive_login
@@ -35,7 +50,8 @@ def main():
 
 
 
-    parser = ArgumentParser(description=__doc__)
+    parser = ArgumentParser(description=__doc__,
+                            formatter_class=RawDescriptionHelpFormatter)
     parser.add_argument('--show-traceback', action='store_true')
     parser.add_argument('-t', '--token')
     parser.add_argument('-v', '--verbose',
