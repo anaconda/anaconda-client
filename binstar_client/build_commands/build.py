@@ -1,9 +1,25 @@
 '''
 Build command
+
+Initialize the build directory:
+
+    binstar build --init
+    
+This will create a default .binstar.yml file in the current directory
+  
+Submit a build:
+
+    binstar build --submit
+    
+Tail the output of a build untill it is complete:
+
+    binstar build --tail 1.0
+    
 '''
-from binstar_client.utils import get_binstar, PackageSpec
+
+from binstar_client.utils import get_binstar, PackageSpec, bool_input
 import logging, yaml
-from os.path import abspath, join, isfile
+from os.path import abspath, join, isfile, dirname, basename
 from binstar_client.errors import UserError
 import tempfile
 import tarfile
@@ -13,6 +29,9 @@ from binstar_client.utils import package_specs
 import time
 from itertools import product
 from binstar_client import errors
+import argparse
+from binstar_client.utils.build_file import initial_build_config
+import sys
 
 log = logging.getLogger('binstar.build')
 
@@ -144,6 +163,37 @@ def resubmit_build(binstar, args):
     
 
 
+
+def init_build(binstar, user, args):
+    binstar_yml = join(args.path, '.binstar.yml')
+    
+    if os.path.exists(binstar_yml):
+        result = bool_input("The file '%s' already exists. Would you like to overwrite it?" % binstar_yml,
+                            default=False)
+        if not result:
+            log.error('goodby')
+            sys.exit(1)
+    
+    if args.package:
+        package_name = args.package
+    else:
+        name = basename(abspath(args.path))
+        package_name = raw_input('Please choose a name for this package: (default %s)\n> ' % name)
+        package_name = package_name or name
+    
+          
+    with open(binstar_yml, 'w') as fd:
+        fd.write(initial_build_config % dict(PACKAGE_NAME=package_name))
+    log.info("Wrote file '%s'" % binstar_yml)
+    
+    try:
+        _ = binstar.package(user['login'], package_name)
+    except errors.NotFound:
+        log.warn('The package %(username)s/%(name)s does not exist\n'
+                 'Please run:\n   binstar package %(username)s/%(name)s --create' % dict(username=user['login'], name=package_name))
+    log.info("Run 'binstar build --submit' to submit your first build")
+    return
+
 def main(args):
 
     binstar = get_binstar()
@@ -155,6 +205,10 @@ def main(args):
     user_name = None
 
     binstar_yml = join(args.path, '.binstar.yml')
+    if args.init:
+        init_build(binstar, user, args)
+        return
+     
     if not isfile(binstar_yml):
         raise UserError("file %s does not exist" % binstar_yml)
 
@@ -202,26 +256,30 @@ def main(args):
         return list_builds(binstar, args)
 
 def add_parser(subparsers):
-
     parser = subparsers.add_parser('build',
                                       help='Build command',
-
-                                      description=__doc__)
+                                      description=__doc__,
+                                      formatter_class=argparse.RawDescriptionHelpFormatter,
+                                      )
 
     parser.add_argument('path', default='.', nargs='?')
     parser.add_argument('package', metavar='OWNER/PACKAGE',
                        help='build to the package OWNER/PACKAGE',
                        nargs='?',
                        type=package_specs)
-
+    parser.add_argument('--test-only', '--no-upload', action='store_true',
+                        help="Don't upload the build targets to binstar, but run everything else")
+    
     group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('--init', action='store_true',
+                       help='Create a default .binstar.yml file')
     group.add_argument('-l', '--list', default=True, type=int,
                        help='List the sub builds for this package')
     group.add_argument('-a', '--list-all', action='store_true',
                        help='List all the builds and sub-builds for this package',
                        dest='list')
-    group.add_argument('-t', '--tail',
-                       help='Tail the build output')
+    group.add_argument('-t', '--tail', metavar='X.Y',
+                       help='Tail the build output of build number X.Y')
     group.add_argument('-s', '--submit',
                        help='Submit the build', action='store_true')
     group.add_argument('--resubmit',

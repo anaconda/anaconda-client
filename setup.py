@@ -20,6 +20,7 @@ setup(
     entry_points={
           'console_scripts': [
               'binstar = binstar_client.scripts.cli:main',
+              'binstar-build = binstar_client.scripts.build:main',
               ]
                  },
 
