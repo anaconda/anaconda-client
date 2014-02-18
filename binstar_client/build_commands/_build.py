@@ -132,7 +132,10 @@ def serialize_builds(instruction_sets):
         yield value
 
 
-def submit_build(binstar, args):
+def submit_build(args):
+    
+    binstar = get_binstar(args)
+    
     path = abspath(args.path)
     log.info('Getting build product: %s' % abspath(args.path))
 
@@ -164,7 +167,13 @@ def resubmit_build(binstar, args):
 
 
 
-def init_build(binstar, user, args):
+def init_build(args):
+    
+    binstar = get_binstar()
+
+    # Force user auth
+    user = binstar.user()
+    
     binstar_yml = join(args.path, '.binstar.yml')
     
     if os.path.exists(binstar_yml):
@@ -174,12 +183,9 @@ def init_build(binstar, user, args):
             log.error('goodby')
             sys.exit(1)
     
-    if args.package:
-        package_name = args.package
-    else:
-        name = basename(abspath(args.path))
-        package_name = raw_input('Please choose a name for this package: (default %s)\n> ' % name)
-        package_name = package_name or name
+    name = basename(abspath(args.path))
+    package_name = raw_input('Please choose a name for this package: (default %s)\n> ' % name)
+    package_name = package_name or name
     
           
     with open(binstar_yml, 'w') as fd:
@@ -205,10 +211,7 @@ def main(args):
     user_name = None
 
     binstar_yml = join(args.path, '.binstar.yml')
-    if args.init:
-        init_build(binstar, user, args)
-        return
-     
+
     if not isfile(binstar_yml):
         raise UserError("file %s does not exist" % binstar_yml)
 
@@ -249,13 +252,11 @@ def main(args):
     if args.halt:
         return halt_build(binstar, args)
 
-    if args.submit or args.dry_run:
-        return submit_build(binstar, args)
-    
     if args.list:
         return list_builds(binstar, args)
 
 def add_parser(subparsers):
+
     parser = subparsers.add_parser('build',
                                       help='Build command',
                                       description=__doc__,
@@ -271,8 +272,6 @@ def add_parser(subparsers):
                         help="Don't upload the build targets to binstar, but run everything else")
     
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('--init', action='store_true',
-                       help='Create a default .binstar.yml file')
     group.add_argument('-l', '--list', default=True, type=int,
                        help='List the sub builds for this package')
     group.add_argument('-a', '--list-all', action='store_true',
