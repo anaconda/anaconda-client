@@ -90,7 +90,7 @@ def submit_build(args):
 
             with open(tmp, mode='rb') as fd:
 
-                build_no = binstar.submit_for_build(args.package.user, args.package.name, fd, builds)
+                build_no = binstar.submit_for_build(args.package.user, args.package.name, fd, builds, args.test_only)
         log.info('Build %s submitted' % build_no)
     else:
         log.info('Build not submitted (dry-run)')
@@ -149,7 +149,9 @@ def add_parser(subparsers):
                                       )
     
     parser.add_argument('path', default='.', nargs='?')
+    
     parser.add_argument('--test-only', '--no-upload', action='store_true',
+                        dest='test_only',
                         help="Don't upload the build targets to binstar, but run everything else")
     
     parser.add_argument('-p', '--package',

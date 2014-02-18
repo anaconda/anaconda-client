@@ -13,10 +13,10 @@ class BuildMixin(object):
     '''
     
     def submit_for_build(self, username, package, fd, instructions,
-                         callback=None):
+                         callback=None, test_only=False):
 
         url = '%s/build/%s/%s/stage' % (self.domain, username, package)
-        data = jencode(instructions=instructions)
+        data = jencode(instructions=instructions, test_only=test_only)
         
         res = self.session.post(url, data=data)
         self._check_response(res)
