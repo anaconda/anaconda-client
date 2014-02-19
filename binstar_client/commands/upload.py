@@ -166,7 +166,8 @@ def main(args):
                         continue
             try:
                 binstar.upload(username, package_name, version, basefilename, fd, package_type, args.description, attrs=attrs,
-                           callback=upload_print_callback(args))
+                               tags=[t for tg in args.tag for t in tg],
+                               callback=upload_print_callback(args))
             except Conflict:
                 full_name = '%s/%s/%s/%s' % (username, package_name, version, basefilename)
                 log.info('Distribution already exists. Please use the -i/--interactive or --force options or `binstar remove %s`' % full_name)
@@ -192,6 +193,9 @@ def add_parser(subparsers):
 
     parser.add_argument('files', nargs='+', help='Distributions to upload', default=[])
 
+    parser.add_argument('--tag', action='append', nargs='+', default=[],
+                        help='Tag this file. Warning: if the file TAGS do not include "prod", the file will not show up in your user channel', )
+    
     parser.add_argument('-u', '--user', help='User account, defaults to the current user')
     parser.add_argument('--no-progress', help="Don't show upload progress", action='store_true' )
     parser.add_argument('-p', '--package', help='Defaults to the packge name in the uploaded file')
