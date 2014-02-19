@@ -34,7 +34,7 @@ def create_release_interactive(binstar, username, package_name, version):
     log.info('\nThe release %s/%s/%s does not exist' % (username, package_name, version))
     if not bool_input('Would you like to create it now?'):
         log.info('good-bye')
-        raise SystemExit(-1)
+        raise SystemExit(1)
 
     description = raw_input('Enter a short description of the release:\n')
     log.info("\nAnnouncements are emailed to your package followers.")

@@ -69,9 +69,9 @@ def main():
 
     except ShowHelp as err:
         args.sub_parser.print_help()
-        raise SystemExit(-1)
+        raise SystemExit(1)
     except (BinstarError, KeyboardInterrupt) as err:
         if args.show_traceback:
             raise
         logger.exception(err.message)
-        raise SystemExit(-1)
+        raise SystemExit(1)
