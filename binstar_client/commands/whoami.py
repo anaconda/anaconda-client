@@ -12,7 +12,7 @@ def main(args):
         user = binstar.user()
     except Unauthorized:
         print 'Anonymous User'
-        return -1
+        return 1
 
     pprint_user(user)
 
