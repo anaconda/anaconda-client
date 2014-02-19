@@ -12,6 +12,23 @@ class BuildMixin(object):
     Add build functionality to binstar client
     '''
     
+    def set_keyfile(self, username, package, filename, content):
+        url = '%s/build/%s/%s/keyfile' % (self.domain, username, package)
+        data = jencode(filename=filename, content=content)
+        res = self.session.post(url, data=data)
+        self._check_response(res, [201])
+    def remove_keyfile(self, username, package, filename):
+        url = '%s/build/%s/%s/keyfile' % (self.domain, username, package)
+        params = dict(filename=filename)
+        res = self.session.delete(url, params=params)
+        self._check_response(res, [201])
+        
+    def keyfiles(self, username, package):
+        url = '%s/build/%s/%s/keyfiles' % (self.domain, username, package)
+        res = self.session.get(url)
+        self._check_response(res)
+        return res.json()
+        
     def submit_for_build(self, username, package, fd, instructions,
                          callback=None, test_only=False):
 
