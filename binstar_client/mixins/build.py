@@ -30,7 +30,7 @@ class BuildMixin(object):
         return res.json()
         
     def submit_for_build(self, username, package, fd, instructions,
-                         callback=None, test_only=False):
+                         test_only=False, callback=None):
 
         url = '%s/build/%s/%s/stage' % (self.domain, username, package)
         data = jencode(instructions=instructions, test_only=test_only)

@@ -36,7 +36,7 @@ def tail(args):
 
     while args.f and not log_items.get('finished'):
         time.sleep(4)
-        log_items = binstar.tail_build(args.package.user, args.package.name, args.tail,
+        log_items = binstar.tail_build(args.package.user, args.package.name, args.build_no,
                                        after=last_entry)
         for log_item in log_items['log']:
             log.info(log_item.get('msg'))

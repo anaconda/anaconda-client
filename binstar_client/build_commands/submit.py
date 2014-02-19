@@ -90,7 +90,8 @@ def submit_build(args):
 
             with open(tmp, mode='rb') as fd:
 
-                build_no = binstar.submit_for_build(args.package.user, args.package.name, fd, builds, args.test_only)
+                build_no = binstar.submit_for_build(args.package.user, args.package.name, fd, builds, 
+                                                    test_only=args.test_only)
         log.info('Build %s submitted' % build_no)
     else:
         log.info('Build not submitted (dry-run)')
