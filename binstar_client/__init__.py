@@ -29,14 +29,20 @@ class Binstar(PublishMixin, CollectionsMixin, OrgMixin):
     '''
 
     def __init__(self, token=None, domain='https://api.binstar.org'):
-        self.session = requests.Session()
-        self.session.headers['x-binstar-api-version'] = __version__
+        
+        self._session = requests.Session()
+        self._session.headers['x-binstar-api-version'] = __version__
         self.token = token
+        
         if token:
-            self.session.headers.update({'Authorization': 'token %s' % (token)})
+            self._session.headers.update({'Authorization': 'token %s' % (token)})
 
         self.domain = domain
-
+        
+    @property
+    def session(self):
+        return self._session
+    
     def authenticate(self, username, password,
                      application, application_url=None,
                      for_user=None,

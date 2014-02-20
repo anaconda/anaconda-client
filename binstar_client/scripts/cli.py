@@ -17,7 +17,6 @@ from binstar_client.utils.handlers import MyStreamHandler
 logger = logging.getLogger('binstar')
 
 def setup_logging(args):
-
     if not exists(USER_LOGDIR): makedirs(USER_LOGDIR)
 
     logger = logging.getLogger('binstar')
@@ -32,10 +31,9 @@ def setup_logging(args):
     shndlr.setLevel(args.log_level)
     logger.addHandler(shndlr)
 
-def main():
-
-
-
+def main(args=None, exit=True):
+    
+    
     parser = ArgumentParser(description=__doc__)
     parser.add_argument('--show-traceback', action='store_true')
     parser.add_argument('-t', '--token')
@@ -53,7 +51,7 @@ def main():
     for command in sub_commands():
         command.add_parser(subparsers)
 
-    args = parser.parse_args()
+    args = parser.parse_args(args)
 
     setup_logging(args)
     try:
@@ -69,9 +67,17 @@ def main():
 
     except ShowHelp as err:
         args.sub_parser.print_help()
-        raise SystemExit(-1)
+        if exit:
+            raise SystemExit(1)
+        else:
+            return 1
+        
     except (BinstarError, KeyboardInterrupt) as err:
         if args.show_traceback:
             raise
         logger.exception(err.message)
-        raise SystemExit(-1)
+        if exit:
+            raise SystemExit(1)
+        else:
+            return 1 
+        
