@@ -4,6 +4,9 @@ Print the information of the current user
 from binstar_client import Unauthorized
 from binstar_client.utils import get_binstar
 from binstar_client.utils.pprint import pprint_user
+import logging
+
+log = logging.getLogger('binstar.whoami')
 
 def main(args):
     binstar = get_binstar(args)
@@ -11,7 +14,7 @@ def main(args):
     try:
         user = binstar.user()
     except Unauthorized:
-        print 'Anonymous User'
+        log.info('Anonymous User')
         return 1
 
     pprint_user(user)

@@ -175,7 +175,7 @@ def add_parser(subparsers):
     
     for depricated in ['--public', '--private', '--personal', '--publish']: 
         parser.add_argument(depricated, action='append_const', const=depricated, 
-                            dest='depricated')
+                            dest='depricated', default=[])
         
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-i', '--interactive', action='store_const', help='Run an interactive prompt if any packages are missing',

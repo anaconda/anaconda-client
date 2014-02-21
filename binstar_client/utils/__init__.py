@@ -130,12 +130,12 @@ def parse_specs(spec):
 
     return PackageSpec(user, package, version, basename, attrs, spec)
 
+
 def get_binstar(args=None):
     from binstar_client import Binstar
 
     config = get_config()
     url = config.get('url', 'https://api.binstar.org')
-    
     
     if args and args.token:
         token = args.token
