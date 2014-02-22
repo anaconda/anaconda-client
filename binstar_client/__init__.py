@@ -354,7 +354,7 @@ class Binstar(PublishMixin, CollectionsMixin, OrgMixin):
 
 
     def upload(self, login, package_name, release, basename, fd, distribution_type,
-               description='', md5=None, size=None, attrs=None, tags=('prod',), callback=None):
+               description='', md5=None, size=None, attrs=None, channels=('main',), callback=None):
         '''
         Upload a new distribution to a package release.
 
@@ -373,7 +373,7 @@ class Binstar(PublishMixin, CollectionsMixin, OrgMixin):
         if not isinstance(attrs, dict):
             raise TypeError('argument attrs must be a dictionary')
 
-        payload = dict(distribution_type=distribution_type, description=description, attrs=attrs, tags=tags)
+        payload = dict(distribution_type=distribution_type, description=description, attrs=attrs, channels=channels)
         data = jencode(payload)
         res = self.session.post(url, data=data, verify=True)
         self._check_response(res)
