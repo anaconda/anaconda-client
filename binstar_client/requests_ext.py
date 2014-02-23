@@ -152,14 +152,3 @@ def stream_multipart(data, files=None, callback=None):
     headers = {'Content-Type':content_type}
     return data, headers
 
-
-def main():
-    def callback(curr, total):
-        print '\r%i of %iKb: %.2f%%' % (curr//1024, total//1024, 100.0 * curr / total),
-
-    data, headers = stream_multipart({'key1': 'value1', 'key2':'value2'},
-                                     files={'file': ('README.md', open('./README.md')),
-                                            'file2': ('mongodb-2.4.3-1.tar.bz2', open('mongodb-2.4.3-1.tar.bz2'))},
-                                     callback=callback)
-
-    requests.post('http://localhost:3339', data=data, headers=headers)
