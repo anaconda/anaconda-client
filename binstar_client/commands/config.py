@@ -5,6 +5,7 @@ Get, Set, Remove or Show the binstar configuration.
 
 
 '''
+from __future__ import print_function
 from binstar_client.errors import ShowHelp
 from binstar_client.utils import get_config, set_config, SITE_CONFIG, \
     USER_CONFIG
@@ -20,7 +21,7 @@ def main(args):
         fmt = ' + %s: %r'
         log.info('Site Config: %s' % SITE_CONFIG)
         for key_value in get_config(user=False).items():
-            print fmt % key_value
+            log.info(fmt % key_value)
         log.info("")
         log.info('User Config: %s' % USER_CONFIG)
         for key_value in get_config(site=False).items():

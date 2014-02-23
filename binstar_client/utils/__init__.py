@@ -6,22 +6,28 @@ Created on Apr 29, 2013
 
 from hashlib import md5
 from os.path import exists, join, dirname, expanduser, isfile, isdir
-import appdirs
+from binstar_client.utils import appdirs
 import base64
 import getpass
 import os
-import urlparse
+try:
+    import urlparse
+    from urllib import quote_plus
+except ImportError:
+    from urllib import parse as urlparse
+    from urllib.parse import quote_plus
+    
 import yaml
 import sys
 
 from ..errors import UserError
 import json
-import urllib
+
 
 
 
 def jencode(payload):
-    return base64.b64encode(json.dumps(payload))
+    return base64.b64encode(json.dumps(payload).encode()).decode()
 
 def pv(version):
     return tuple(int(x) for x in version.split('.'))
@@ -83,18 +89,18 @@ def parse_specs(spec):
 
     return PackageSpec(user, package, version, basename, attrs, spec)
 
+
 def get_binstar(args=None):
     from binstar_client import Binstar
 
     config = get_config()
     url = config.get('url', 'https://api.binstar.org')
     
-    
     if args and args.token:
         token = args.token
     else:
         data_dir = appdirs.user_data_dir('binstar', 'ContinuumIO')
-        tokenfile = join(data_dir, '%s.token' % urllib.quote_plus(url))
+        tokenfile = join(data_dir, '%s.token' % quote_plus(url))
         if isfile(tokenfile):
             with open(tokenfile) as fd:
                 token = fd.read()
@@ -110,16 +116,16 @@ def store_token(token):
     data_dir = appdirs.user_data_dir('binstar', 'ContinuumIO')
     if not isdir(data_dir):
         os.makedirs(data_dir)
-    tokenfile = join(data_dir, '%s.token' % urllib.quote_plus(url))
+    tokenfile = join(data_dir, '%s.token' % quote_plus(url))
     
-    with open(tokenfile, 'wb') as fd:
+    with open(tokenfile, 'w') as fd:
         fd.write(token)
 
 def remove_token():
     config = get_config()
     url = config.get('url', 'https://api.binstar.org')
     data_dir = appdirs.user_data_dir('binstar', 'ContinuumIO')
-    tokenfile = join(data_dir, '%s.token' % urllib.quote_plus(url))
+    tokenfile = join(data_dir, '%s.token' % quote_plus(url))
     
     if isfile(tokenfile):
         os.unlink(tokenfile)
@@ -195,7 +201,7 @@ class upload_in_chunks(object):
         self.readsofar = 0
 
     def __iter__(self):
-        print 'Progress:'
+        sys.stderr.write('Progress:\n')
         while True:
             data = self.fd.read(self.chunksize)
             if not data:
@@ -240,4 +246,8 @@ def bool_input(prompt, default=True):
             elif inpt.lower() in ['n', 'no']:
                 return False
             else:
-                print 'please enter yes or no'
+                sys.stderr.write('please enter yes or no\n')
+
+
+
+

@@ -1,6 +1,7 @@
 '''
 Manage Authentication tokens
 '''
+from __future__ import print_function
 import socket
 from pprint import pprint
 
@@ -30,6 +31,10 @@ import logging
 
 log = logging.getLogger('binstar.auth')
 
+try: 
+    input = raw_input
+except NameError: 
+    pass # Python 3
 
 def utcnow():
     now = datetime.utcnow()
@@ -68,9 +73,9 @@ def show_auths(authentications):
               'expires':'Expires In'}
 
     template = '%(id)-25s | %(application)-20s | %(remote_addr)-20s | %(hostname)-20s | %(expires)-20s'
-    print
-    print template % header
-    print '%s-+-%s-+-%s-+-%s-+-%s' % ('-' * 25, '-' * 20, '-' * 20, '-' * 20, '-' * 20)
+    log.info('')
+    log.info(template % header)
+    log.info('%s-+-%s-+-%s-+-%s-+-%s' % ('-' * 25, '-' * 20, '-' * 20, '-' * 20, '-' * 20))
 
     for auth in authentications:
         if auth['expires']:
@@ -79,7 +84,7 @@ def show_auths(authentications):
             expires = None
         auth['expires'] = format_timedelta(expires)
 
-        print template % auth
+        log.info(template % auth)
 
 
 def main(args):
@@ -112,7 +117,7 @@ def main(args):
             current_user = None
             sys.stderr.write('Username: ')
             sys.stderr.flush()
-            username = raw_input('')
+            username = input('')
             
         scopes = [scope for scopes in args.scopes for scope in scopes.split()]
         if not scopes:
@@ -125,13 +130,14 @@ def main(args):
                 sys.stderr.write("Please re-enter %s's " % username)
                 password = getpass.getpass()
                 
-                print binstar.authenticate(username, password,
+                token = binstar.authenticate(username, password,
                                            args.name, application_url=args.url,
                                            scopes=scopes,
                                            for_user=args.organization,
                                            max_age=args.max_age,
                                            created_with=' '.join(sys.argv),
                                            strength=args.strength)
+                sys.stdout.write(token)
                 break
             except errors.Unauthorized:
                 log.error('Invalid Username password combination, please try again')

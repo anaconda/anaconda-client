@@ -1,8 +1,11 @@
 '''
 Binstar package utilities
 '''
+from __future__ import print_function
 from binstar_client.utils import get_binstar, parse_specs
+import logging
 
+log = logging.getLogger('binstar.package')
 def main(args):
 
     binstar = get_binstar()
@@ -16,9 +19,9 @@ def main(args):
         binstar.package_add_collaborator(owner, package, collaborator)
         args.add_collaborator
     if args.list_collaborators:
-        print ':Collaborators:'
+        log.info(':Collaborators:')
         for collab in binstar.package_collaborators(owner, package):
-            print '   +', collab['login']
+            log.info('   +', collab['login'])
 
 def add_parser(subparsers):
 

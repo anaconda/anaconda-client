@@ -3,6 +3,7 @@ Created on Jan 2, 2014
 
 @author: sean
 '''
+from __future__ import print_function
 import tarfile
 import json
 import yaml
@@ -69,7 +70,6 @@ def detect_r_attrs(filename):
         pkg_info = next(name for name in tf.getnames() if name.endswith('/DESCRIPTION'))
         fd = tf.extractfile(pkg_info)
         raw_attrs = dict(Parser().parse(fd).items())
-    print raw_attrs.keys()
     
     name = raw_attrs.pop('Package')
     version = raw_attrs.pop('Version')
