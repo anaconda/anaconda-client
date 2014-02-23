@@ -89,6 +89,15 @@ def parse_specs(spec):
 
     return PackageSpec(user, package, version, basename, attrs, spec)
 
+def load_token(url):
+    data_dir = appdirs.user_data_dir('binstar', 'ContinuumIO')
+    tokenfile = join(data_dir, '%s.token' % quote_plus(url))
+    if isfile(tokenfile):
+        with open(tokenfile) as fd:
+            token = fd.read()
+    else:
+        token = None
+    return token
 
 def get_binstar(args=None):
     from binstar_client import Binstar
@@ -99,14 +108,8 @@ def get_binstar(args=None):
     if args and args.token:
         token = args.token
     else:
-        data_dir = appdirs.user_data_dir('binstar', 'ContinuumIO')
-        tokenfile = join(data_dir, '%s.token' % quote_plus(url))
-        if isfile(tokenfile):
-            with open(tokenfile) as fd:
-                token = fd.read()
-        else:
-            token = None
-            
+        token = load_token(url)
+    
     return Binstar(token, domain=url,)
 
 def store_token(token):

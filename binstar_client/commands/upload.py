@@ -9,6 +9,8 @@ eg:
     binstar upload CONDA_PACKAGE_1.bz2
 
 '''
+from __future__ import unicode_literals
+
 from binstar_client.utils import get_binstar, bool_input, \
     get_config
 import json

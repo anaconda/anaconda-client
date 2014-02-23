@@ -1,6 +1,7 @@
 '''
 Print the information of the current user
 '''
+from __future__ import unicode_literals
 from binstar_client import Unauthorized
 from binstar_client.utils import get_binstar
 from binstar_client.utils.pprint import pprint_user

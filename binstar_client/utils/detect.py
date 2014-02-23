@@ -56,7 +56,7 @@ def detect_conda_attrs(filename):
 
     tar = tarfile.open(filename)
     obj = tar.extractfile('info/index.json')
-    attrs = json.loads(obj.read())
+    attrs = json.loads(obj.read().decode())
 
     summary, description, home_page, license = detect_yaml_attrs(filename)
     attrs['home_page'] = home_page

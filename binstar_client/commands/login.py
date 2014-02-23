@@ -1,6 +1,7 @@
 '''
 Authenticate a user
 '''
+from __future__ import unicode_literals
 import getpass
 from binstar_client.utils import get_config, get_binstar, store_token
 from binstar_client.errors import Unauthorized, BinstarError
