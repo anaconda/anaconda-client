@@ -18,6 +18,25 @@ def filter_request(m, prepared_request):
     
     return True
     
+class Responses(object):
+    def __init__(self):
+        self._resps = []
+        
+    def append(self, res):
+        self._resps.append(res)
+    
+    @property
+    def called(self):
+        return bool(len(self._resps))
+
+    @property
+    def req(self):
+        if self._resps:
+            return self._resps[0][1]
+        
+    def assertCalled(self):
+        assert self.called, "The url was not called"
+        
 class Registry(object):
     def __init__(self):
         self._map = []
@@ -33,23 +52,27 @@ class Registry(object):
         return 
 
     def mock_send(self, prepared_request, *args, **kwargs):
-        print 'prepared_request', prepared_request.method
         
         rule = next((m for m in self._map[::-1] if filter_request(m, prepared_request)), None)
 
         if rule is None:
-            raise Exception('No matching rule found for url [%s] %s' %(prepared_request.method,
-                                                                          prepared_request.url, 
+            raise Exception('No matching rule found for url [%s] %s' % (prepared_request.method,
+                                                                          prepared_request.url,
                                                                           ))
         
         res = requests.models.Response()
-        res.status_code = rule[-2]
+        res.status_code = rule[-3]
         res._content_consumed = True
-        res._content = rule[-1]
+        res._content = rule[-2]
+        
+        rule[-1].append((res, prepared_request))
         return res
     
     def register(self, url=None, path=None, method=None, status=200, content=''):
-        self._map.append((url, path, method, status, content))
+        res = Responses() 
+        self._map.append((url, path, method, status, content, res))
+        return res
+         
         
 def urlpatch(func):
     @wraps(func)

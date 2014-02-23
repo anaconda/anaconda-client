@@ -3,7 +3,7 @@ Created on Jan 2, 2014
 
 @author: sean
 '''
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 import tarfile
 import json
 import yaml
