@@ -20,7 +20,7 @@ class Test(CLITestCase):
         input.return_value = 'test_user'
         getpass.return_value = 'password'
         
-        auth = urls.register(path='/authentications', content='{"token": "a-token"}')
+        auth = urls.register(method='POST', path='/authentications', content='{"token": "a-token"}')
         main(['--show-traceback', 'login'], False)
         self.assertIn('login successful', self.stream.getvalue()) 
         

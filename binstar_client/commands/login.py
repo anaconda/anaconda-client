@@ -14,7 +14,7 @@ log = logging.getLogger('binstar.login')
 try: 
     input = raw_input
 except NameError: 
-    pass
+    input = input
 
 def interactive_get_token():
     bs = get_binstar()

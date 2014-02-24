@@ -71,10 +71,10 @@ class Registry(object):
                                                                           ))
             
         content = rule[-2]
-        if isinstance(content, unicode):
-            content = content.encode()
         if isinstance(content, dict):
             content = json.dumps(content)
+        if isinstance(content, unicode):
+            content = content.encode()
             
         res = requests.models.Response()
         res.status_code = rule[-3]
