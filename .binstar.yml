@@ -34,6 +34,7 @@ engine:
 # or not, that is up to you 
 #===============================================================================
 install:
+  - python -V
   - pip install coverage mock
 
 ## Run before the script
