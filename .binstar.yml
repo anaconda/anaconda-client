@@ -36,7 +36,7 @@ engine:
 install:
   - echo $PATH
   - python -V
-  - pip install coverage mock
+  - pip setuptools install coverage mock
 
 ## Run before the script
 # before_script:
