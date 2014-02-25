@@ -34,6 +34,7 @@ engine:
 # or not, that is up to you 
 #===============================================================================
 install:
+  - echo $PATH
   - python -V
   - pip install coverage mock
 
