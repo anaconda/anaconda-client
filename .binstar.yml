@@ -36,8 +36,8 @@ engine:
 install:
   - echo $PATH
   - python -V
-  - conda install pip setuptools
-  - pip install coverage mock
+  - conda install --quiet pip setuptools pyyaml requests mock pytz
+  - pip install coverage python-dateutil
 
 ## Run before the script
 # before_script:
