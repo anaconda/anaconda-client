@@ -43,6 +43,9 @@ install:
 # before_script:
 #   - echo "before_script!"
 ## Put your main computations here!  
+before_script:
+  - which python 
+  - which pip
 script:
   - python setup.py develop
   - python binstar_client/tests/runtests.py
