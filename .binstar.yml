@@ -12,9 +12,3 @@ test:
 
 script:
   - conda build .
-
-build_targets:
-  channels: 
-    - dev
-    - "%(branch)s"
-  files: dist/*.tar.bz2
