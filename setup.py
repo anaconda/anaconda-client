@@ -4,10 +4,13 @@
 
 from setuptools import setup, find_packages
 
-import binstar_client
+ctx = {}
+exec(open('binstar_client/_version.py'), ctx)
+version = ctx.get('__version__', 'dev')
+
 setup(
     name='binstar',
-    version=binstar_client.__version__,
+    version=version,
     author='Sean Ross-Ross',
     author_email='srossross@gmail.com',
     url='http://github.com/Binstar/binstar_client',

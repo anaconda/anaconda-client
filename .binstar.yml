@@ -2,17 +2,19 @@ package: binstar
 engine:
  - python=2
  - python=3
+
 install:
-  - echo $PATH
-  - python -V
-  - conda install --quiet pip setuptools
-  - pip install coverage mock
   - pip install -r requirements.txt
-before_script:
-  - which python 
-  - which pip
+  - pip install coverage mock
 test:
   - python setup.py develop
   - python binstar_client/tests/runtests.py
+
 script:
-  - python setup.py sdist
+  - conda build .
+
+build_targets:
+  channels: 
+    - dev
+    - %(branch)s
+  files: dist/*.tar.bz2
