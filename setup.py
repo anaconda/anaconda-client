@@ -5,7 +5,7 @@
 from setuptools import setup, find_packages
 
 ctx = {}
-exec(open('binstar_client/_version.py'), ctx)
+exec(open('binstar_client/_version.py').read(), ctx)
 version = ctx.get('__version__', 'dev')
 
 setup(
