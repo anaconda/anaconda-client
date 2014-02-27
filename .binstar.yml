@@ -11,7 +11,7 @@ test:
   - python binstar_client/tests/runtests.py
 
 before_script:
-  - conda install jinja2
+  - CONDA_DEFAULT_ENV="" conda install jinja2
 
 script:
   - conda build .
