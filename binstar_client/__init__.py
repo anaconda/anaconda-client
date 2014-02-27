@@ -16,7 +16,7 @@ import logging
 
 log = logging.getLogger('binstar')
 
-from _version import __version__
+from ._version import __version__
 # from poster.encode import multipart_encode
 # from poster.streaminghttp import register_openers
 # import urllib2
