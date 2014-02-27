@@ -16,5 +16,5 @@ script:
 build_targets:
   channels: 
     - dev
-    - %(branch)s
+    - "%(branch)s"
   files: dist/*.tar.bz2
