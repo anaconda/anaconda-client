@@ -1,0 +1,5 @@
+{% extends "setuptools.yaml" %}
+
+{% block build_number -%}
+    {{environ.get('BINSTAR_BUILD', 1)}}
+{%- endblock %}
