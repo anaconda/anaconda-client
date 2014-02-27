@@ -1,7 +1,7 @@
 package: binstar
 engine:
- - python=2
- - python=3
+ - python=2.7
+ - python=3.3
 
 install:
   - pip install -r requirements.txt
@@ -9,6 +9,9 @@ install:
 test:
   - python setup.py develop
   - python binstar_client/tests/runtests.py
+
+before_script:
+  - conda install jinja2
 
 script:
   - conda build .
