@@ -77,8 +77,8 @@ def upload_print_callback(args):
     return callback
 
 def main(args):
-    for item in args.depricated:
-        log.warn('Argument %s has been depricated and is no longer used. '
+    for item in args.deprecated:
+        log.warn('Argument %s has been deprecated and is no longer used. '
                  'Please see the command "binstar register" for details' %item)
         
 
@@ -124,7 +124,7 @@ def main(args):
                 
                 raise BinstarError('Trouble reading metadata from %r. Please make sure this package is correct or specify the --metadata, --package and --version arguments' % (filename))
                 
-            basefilename, package_name, version, attrs, _, description, license = package_attrs
+            basefilename, package_name, version, attrs, summary, description, license = package_attrs
             log.info('done')
 
         if args.package:
@@ -136,9 +136,12 @@ def main(args):
         try:
             binstar.package(username, package_name)
         except NotFound:
-            raise UserError('Binstar package %s/%s does not exist. '
-                            'Please run "binstar register" to create this package namespace in the cloud.' % (username, package_name))
-
+            if args.no_register:
+                raise UserError('Binstar package %s/%s does not exist. '
+                                'Please run "binstar register" to create this package namespace in the cloud.' % (username, package_name))
+            else:
+                binstar.add_package(username, package_name, summary, license,
+                                    public=True, publish=False)
 
         try:
             binstar.release(username, package_name, version)
@@ -206,10 +209,12 @@ def add_parser(subparsers):
     parser.add_argument('-d', '--description', help='description of the file(s)')
     parser.add_argument('-m', '--metadata', help='json encoded metadata default is to autodetect')
     
-    for depricated in ['--public', '--private', '--personal', '--publish']: 
-        parser.add_argument(depricated, action='append_const', const=depricated, 
-                            dest='depricated', default=[])
-        
+    for deprecated in ['--public', '--private', '--personal', '--publish']: 
+        parser.add_argument(deprecated, action='append_const', const=deprecated, 
+                            dest='deprecated', default=[])
+    
+    parser.add_argument("--no-register", action="store_true", default=False)
+    
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-i', '--interactive', action='store_const', help='Run an interactive prompt if any packages are missing',
                         dest='mode', const='interactive')
