@@ -12,15 +12,19 @@ try:
     unicode
 except NameError:
     unicode = str
-    
+
+from collections import namedtuple
+
+rule = namedtuple('rule', ('url', 'path', 'method', 'status', 'content', 'side_effect', 'res'))
+
 def filter_request(m, prepared_request):
-    if m[0] and  m[0] != prepared_request.url:
+    if m.url and  m.url != prepared_request.url:
         return False
     
-    if m[1] and  m[1] != prepared_request.path_url:
+    if m.path and  m.path != prepared_request.path_url:
         return False
 
-    if m[2] and m[2] != prepared_request.method:
+    if m.method and m.method != prepared_request.method:
         return False
     
     return True
@@ -41,11 +45,11 @@ class Responses(object):
         if self._resps:
             return self._resps[0][1]
         
-    def assertCalled(self):
-        assert self.called, "The url was not called"
+    def assertCalled(self, url=''):
+        assert self.called, "The url %s was not called" % url
         
-    def assertNotCalled(self):
-        assert not self.called, "The url was called"
+    def assertNotCalled(self, url=''):
+        assert not self.called, "The url %s was called" % url
         
 class Registry(object):
     def __init__(self):
@@ -70,25 +74,33 @@ class Registry(object):
                                                                           prepared_request.url,
                                                                           ))
             
-        content = rule[-2]
+        content = rule.content
         if isinstance(content, dict):
             content = json.dumps(content)
         if isinstance(content, unicode):
             content = content.encode()
             
         res = requests.models.Response()
-        res.status_code = rule[-3]
+        res.status_code = rule.status
         res._content_consumed = True
         res._content = content
         res.encoding = 'utf-8'
-        rule[-1].append((res, prepared_request))
+        rule.res.append((res, prepared_request))
+        
+        if rule.side_effect:
+            rule.side_effect()
+            
         return res
     
-    def register(self, url=None, path=None, method='GET', status=200, content=b''):
+    def register(self, url=None, path=None, method='GET', status=200, content=b'', side_effect=None):
         res = Responses() 
-        self._map.append((url, path, method, status, content, res))
+        self._map.append(rule(url, path, method, status, content, side_effect, res))
         return res
-         
+    
+    def assertAllCalled(self):
+        for item in self._map:
+            res = item.res
+            res.assertCalled('[%s] %s%s' % (item.method or 'any', item.url or 'http://<any>', item.path))
         
 def urlpatch(func):
     @wraps(func)
