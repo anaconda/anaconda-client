@@ -1,5 +1,4 @@
-PyYAML==3.10
-Pygments==1.6
-Sphinx==1.2b1
-keyring==1.5
-requests==1.2.3
+PyYAML
+requests
+python-dateutil
+pytz

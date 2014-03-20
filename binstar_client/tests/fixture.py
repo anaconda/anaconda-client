@@ -1,0 +1,51 @@
+'''
+Created on Feb 22, 2014
+
+@author: sean
+'''
+import logging
+import io
+import mock
+import unittest
+from binstar_client import tests
+from os.path import join, dirname
+
+test_data = join(dirname(tests.__file__), 'data')
+
+class CLITestCase(unittest.TestCase):
+    
+    def data_dir(self, filename):
+        return join(test_data, filename)
+    
+    def setUp(self):
+        
+        self.get_config_patch = mock.patch('binstar_client.utils.get_config')
+        self.get_config = self.get_config_patch.start()
+        self.get_config.return_value = {}
+
+        self.load_token_patch = mock.patch('binstar_client.utils.load_token')
+        self.load_token = self.load_token_patch.start()
+        self.load_token.return_value = '123'
+        
+        self.store_token_patch = mock.patch('binstar_client.utils.store_token')
+        self.store_token = self.store_token_patch.start()
+        
+        self.setup_logging_patch = mock.patch('binstar_client.scripts.cli.setup_logging')
+        self.setup_logging_patch.start()
+        
+        self.logger = logger = logging.getLogger('binstar')
+        logger.setLevel(logging.INFO)
+        self.stream = io.StringIO()
+        self.hndlr = hndlr = logging.StreamHandler(stream=self.stream)
+        hndlr.setLevel(logging.INFO)
+        logger.addHandler(hndlr)
+        
+        
+    def tearDown(self):
+        self.setup_logging_patch.stop()
+        self.get_config_patch.stop()
+        self.load_token_patch.stop()
+        self.store_token_patch.stop()
+
+        self.logger.removeHandler(self.hndlr)
+

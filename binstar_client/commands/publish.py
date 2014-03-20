@@ -1,17 +1,18 @@
 '''
 Publish your packages to a common repository
 '''
-from binstar_client import Unauthorized
 from binstar_client.utils import get_binstar, parse_specs
 import logging
 import sys
+
+log = logging.getLogger('binstar.publish')
 
 def publish(args):
 
     binstar = get_binstar()
     spec = args.spec[0]
     if args.test:
-        print binstar.published(spec.user, spec.package)
+        log.info(binstar.published(spec.user, spec.package))
         return
 
     binstar.publish(spec.user, spec.package)
@@ -23,18 +24,18 @@ def publish(args):
                 pypirc = '%HOME%\pip\pip.ini'
             else:
                 pypirc = '$HOME/.pip/pip.conf'
-            print
-            print 'Package is added to public pypi repository:'
-            print 'Please add the following lines to your pip config file (%r)' % (pypirc,)
-            print '''[install]
+            log.info('')
+            log.info('Package is added to public pypi repository:')
+            log.info('Please add the following lines to your pip config file (%r)' % (pypirc,))
+            log.info('''[install]
     find-links =
         https://pypi.binstar.org/public/simple
-            '''
+            ''')
         if 'conda' in package['package_types']:
-            print
-            print 'Package is added to public conda repository:'
-            print 'Please run the following command to add the public chanel to your conda search path'
-            print 'conda config --add channel https://conda.binstar.org/public'
+            log.info('')
+            log.info('Package is added to public conda repository:')
+            log.info('Please run the following command to add the public chanel to your conda search path')
+            log.info('conda config --add channel https://conda.binstar.org/public')
 
 def unpublish(args):
 

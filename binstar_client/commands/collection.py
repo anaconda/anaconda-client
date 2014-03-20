@@ -3,6 +3,7 @@ Manage Collections
 
 
 '''
+from __future__ import print_function
 from binstar_client.utils import get_binstar
 from collections import namedtuple
 from binstar_client.errors import BinstarError, UserError
@@ -60,7 +61,7 @@ def show_collections(binstar, spec):
 def show_collection(binstar, spec):
     collection = binstar.collection(spec.org, spec.name)
     collection['access'] = 'public' if collection['public'] else 'private'
-    print '[%(access)s] %(owner)s/%(name)-15s - %(description)s' % collection
+    log.info('[%(access)s] %(owner)s/%(name)-15s - %(description)s' % collection)
     
     if collection['packages']:
         pprint_packages(collection['packages'], access=False, full_name=False, revisions=True)
@@ -159,9 +160,6 @@ def main(args):
             log.info('All packages are up to date')
         
         
-def show(args):
-    print 'show'
-
 def add_parser(subparsers):
 
     parser = subparsers.add_parser('collections',

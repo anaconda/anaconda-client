@@ -1,18 +1,19 @@
 '''
 Binstar command line utility
 '''
+from __future__ import print_function, unicode_literals
 from argparse import ArgumentParser
-from binstar_client.commands import sub_commands
-from binstar_client.errors import BinstarError, ShowHelp, Unauthorized
-import sys
-from binstar_client.commands.login import interactive_login
 from binstar_client import __version__ as version
-import logging
+from binstar_client.commands import sub_commands
+from binstar_client.commands.login import interactive_login
+from binstar_client.errors import BinstarError, ShowHelp, Unauthorized
 from binstar_client.utils import USER_LOGDIR
-from os.path import join, exists
-from os import makedirs
-from logging.handlers import RotatingFileHandler
 from binstar_client.utils.handlers import MyStreamHandler
+from logging.handlers import RotatingFileHandler
+from os import makedirs
+from os.path import join, exists
+import logging
+
 
 logger = logging.getLogger('binstar')
 
@@ -59,7 +60,7 @@ def main(args=None, exit=True):
             return args.main(args)
         except Unauthorized as err:
             if not args.token:
-                print 'The action you are performing requires authentication, please sign in:'
+                logger.info('The action you are performing requires authentication, please sign in:')
                 interactive_login()
                 return args.main(args)
             else:
@@ -75,7 +76,12 @@ def main(args=None, exit=True):
     except (BinstarError, KeyboardInterrupt) as err:
         if args.show_traceback:
             raise
-        logger.exception(err.message)
+        if hasattr(err,'message'):
+            logger.exception(err.message)
+        elif hasattr(err,'args'):
+            logger.exception(err.args[0] if err.args else '')
+        else:
+            logger.exception(str(err))
         if exit:
             raise SystemExit(1)
         else:

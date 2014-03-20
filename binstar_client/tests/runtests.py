@@ -7,8 +7,8 @@ from __future__ import print_function
 import unittest
 from os.path import dirname,join
 from argparse import ArgumentParser
-from runner import ColorTextTestRunner
-from coverage_report import report
+from binstar_client.tests.runner import ColorTextTestRunner
+from binstar_client.tests.coverage_report import report
 
 def main():
     
@@ -18,13 +18,8 @@ def main():
     args = parser.parse_args()
     
     import coverage
-    cov = coverage.coverage(include='**%s**' % args.source_dir if args.source_dir else '**/woc/**',
+    cov = coverage.coverage(include='**%s**' % args.source_dir if args.source_dir else '**/binstar_client/**',
                             omit=['**/lib/python2.7/**', '**/site-packages/**', '**/tests/**',
-                                  '**/woc/tools/provisioner_mixins/**',
-                                  '**/woc/tools/connection**',
-                                  '**/woc/plugins/providers/enterprise/provisioner**',
-                                  '**/woc/plugins/providers/aws/provisioner**',
-                                  '**/woc/plugins/providers/aws/botomixin**',
                                   ])
     
     cov.start()
@@ -44,7 +39,7 @@ def main():
     
     runner.write_end(result, total)
     
-    exit(0 if result.wasSuccessful() else 1)
+    exit(0 if result.wasSuccessful() else -1)
     
     
 if __name__ == '__main__':

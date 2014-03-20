@@ -3,18 +3,13 @@ Created on Jun 6, 2013
 
 @author: sean
 '''
-'''
-Created on Jun 6, 2013
+from __future__ import unicode_literals
 
-@author: sean
-'''
-
-from io import BytesIO
+from io import BytesIO, StringIO
 from requests.packages.urllib3.filepost import choose_boundary, iter_fields
 from requests.packages.urllib3.packages import six
 from requests.packages.urllib3.packages.six import b
 import codecs
-import requests
 
 encoder = codecs.lookup('utf-8')[0]
 
@@ -22,6 +17,15 @@ def writer(lst):
     encoder()
     pass
 
+try: 
+    long
+except NameError:
+    long = int
+try: 
+    unicode
+except NameError:
+    unicode = str
+    
 def encode_multipart_formdata_stream(fields, boundary=None):
     """
     Encode a dictionary of ``fields`` using the multipart/form-data MIME format.
@@ -43,8 +47,10 @@ def encode_multipart_formdata_stream(fields, boundary=None):
     """
     body = []
     def body_write(item):
-        if isinstance(item, basestring):
+        if isinstance(item, bytes):
             item = BytesIO(item)
+        elif isinstance(item, (str, unicode)):
+            item = StringIO(item)
         body.append(item)
 
     body_write_encode = lambda item: body.append(BytesIO(item.encode('utf-8')))
@@ -66,7 +72,7 @@ def encode_multipart_formdata_stream(fields, boundary=None):
                     content_type = 'application/octet-stream'
             body_write_encode('Content-Disposition: form-data; name="%s"; '
                                'filename="%s"\r\n' % (fieldname, filename))
-            body_write(b('Content-Type: %s\r\n\r\n' %
+            body_write(b('Content-Type: %s\r\n\r\n' % 
                        (content_type,)))
         else:
             data = value
@@ -98,7 +104,7 @@ class MultiPartIO(object):
         self._total = 0
         self.callback = callback
 
-    def read(self, n=-1):
+    def read(self, n= -1):
         if self.callback:
             self.callback(self.tell(), self._total)
 
@@ -152,14 +158,3 @@ def stream_multipart(data, files=None, callback=None):
     headers = {'Content-Type':content_type}
     return data, headers
 
-
-def main():
-    def callback(curr, total):
-        print '\r%i of %iKb: %.2f%%' % (curr//1024, total//1024, 100.0 * curr / total),
-
-    data, headers = stream_multipart({'key1': 'value1', 'key2':'value2'},
-                                     files={'file': ('README.md', open('./README.md')),
-                                            'file2': ('mongodb-2.4.3-1.tar.bz2', open('mongodb-2.4.3-1.tar.bz2'))},
-                                     callback=callback)
-
-    requests.post('http://localhost:3339', data=data, headers=headers)

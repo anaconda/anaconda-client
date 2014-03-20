@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import base64
 import json
 import os
@@ -12,10 +13,11 @@ from binstar_client.mixins.collections import CollectionsMixin
 from binstar_client.mixins.organizations import OrgMixin
 from binstar_client.mixins.build import BuildMixin
 from binstar_client.utils.http_codes import STATUS_CODES
+import logging
 
+log = logging.getLogger('binstar')
 
-__version__ = '0.4.3'
-
+from ._version import __version__
 # from poster.encode import multipart_encode
 # from poster.streaminghttp import register_openers
 # import urllib2
@@ -76,7 +78,7 @@ class Binstar(PublishMixin, CollectionsMixin, OrgMixin, BuildMixin):
                    'created_with': None,
                    'strength': strength}
 
-        data = base64.b64encode(json.dumps(payload))
+        data = jencode(payload)
         res = self.session.post(url, auth=(username, password), data=data, verify=True)
         self._check_response(res)
         res = res.json()
@@ -361,7 +363,7 @@ class Binstar(PublishMixin, CollectionsMixin, OrgMixin, BuildMixin):
 
 
     def upload(self, login, package_name, release, basename, fd, distribution_type,
-               description='', md5=None, size=None, attrs=None, callback=None):
+               description='', md5=None, size=None, attrs=None, channels=('main',), callback=None):
         '''
         Upload a new distribution to a package release.
 
@@ -380,7 +382,7 @@ class Binstar(PublishMixin, CollectionsMixin, OrgMixin, BuildMixin):
         if not isinstance(attrs, dict):
             raise TypeError('argument attrs must be a dictionary')
 
-        payload = dict(distribution_type=distribution_type, description=description, attrs=attrs)
+        payload = dict(distribution_type=distribution_type, description=description, attrs=attrs, channels=channels)
         data = jencode(payload)
         res = self.session.post(url, data=data, verify=True)
         self._check_response(res)
@@ -406,9 +408,9 @@ class Binstar(PublishMixin, CollectionsMixin, OrgMixin, BuildMixin):
         s3res = requests.post(s3url, data=data_stream, verify=True, timeout=10 * 60 * 60, headers=headers)
 
         if s3res.status_code != 201:
-            print s3res.text
-            print
-            print
+            log.info(s3res.text)
+            log.info('')
+            log.info('')
             raise BinstarError('Error uploading to s3', s3res.status_code)
 
         url = '%s/commit/%s/%s/%s/%s' % (self.domain, login, package_name, release, basename)

@@ -8,6 +8,7 @@ eg:
     binstar register CONDA_PACKAGE_1.bz2
     binstar upload CONDA_PACKAGE_1.bz2
 '''
+from __future__ import unicode_literals
 from binstar_client.utils import get_binstar, get_config
 from binstar_client import BinstarError, NotFound
 from os.path import exists

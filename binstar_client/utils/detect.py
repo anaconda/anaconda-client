@@ -3,6 +3,7 @@ Created on Jan 2, 2014
 
 @author: sean
 '''
+from __future__ import print_function, unicode_literals
 import tarfile
 import json
 import yaml
@@ -55,7 +56,7 @@ def detect_conda_attrs(filename):
 
     tar = tarfile.open(filename)
     obj = tar.extractfile('info/index.json')
-    attrs = json.loads(obj.read())
+    attrs = json.loads(obj.read().decode())
 
     summary, description, home_page, license = detect_yaml_attrs(filename)
     attrs['home_page'] = home_page
@@ -69,7 +70,6 @@ def detect_r_attrs(filename):
         pkg_info = next(name for name in tf.getnames() if name.endswith('/DESCRIPTION'))
         fd = tf.extractfile(pkg_info)
         raw_attrs = dict(Parser().parse(fd).items())
-    print raw_attrs.keys()
     
     name = raw_attrs.pop('Package')
     version = raw_attrs.pop('Version')
