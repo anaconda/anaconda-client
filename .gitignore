@@ -37,3 +37,4 @@ nosetests.xml
 
 # Docs html test files
 doc/_build/
+.DS_Store

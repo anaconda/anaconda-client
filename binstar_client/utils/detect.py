@@ -6,26 +6,28 @@ Created on Jan 2, 2014
 from __future__ import print_function, unicode_literals
 import tarfile
 import json
-import yaml
 from os.path import basename
 from email.parser import Parser
 from os import path
 
-def detect_yaml_attrs(filename):
+def detect_recipe_attrs(filename):
+    print('detect_recipe_attrs')
     tar = tarfile.open(filename)
 
     try:
-        obj = tar.extractfile('info/recipe/meta.yaml')
+        obj = tar.extractfile('info/recipe.json')
     except KeyError:
         return None, None, None, None
 
-    attrs = yaml.load(obj)
+    attrs = json.load(obj)
+    
     about = attrs.get('about', {})
     summary = about.get('summary')
     home_page = about.get('home')
     description = about.get('description')
     license = about.get('license')
 
+    print("attrs:", summary, description, home_page, license)
     return summary, description, home_page, license
 
 def detect_pypi_attrs(filename):
@@ -58,7 +60,7 @@ def detect_conda_attrs(filename):
     obj = tar.extractfile('info/index.json')
     attrs = json.loads(obj.read().decode())
 
-    summary, description, home_page, license = detect_yaml_attrs(filename)
+    summary, description, home_page, license = detect_recipe_attrs(filename)
     attrs['home_page'] = home_page
     os_arch = arch_map[(attrs['platform'], attrs['arch'])]
     filename = path.join(os_arch, basename(filename))
