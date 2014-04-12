@@ -54,7 +54,7 @@ def main(args):
 
 def add_parser(subparsers):
     parser = subparsers.add_parser('config',
-                                      help='Bisntar configuration',
+                                      help='Binstar configuration',
                                       description=__doc__)
 
     parser.add_argument('--type', type=eval, default=str, help='The type of the values in the set commands')
