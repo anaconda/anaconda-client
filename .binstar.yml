@@ -12,9 +12,6 @@ test:
 
 script:
   - conda build .
+  - python setup.py sidst
 
-build_targets:
-  channels: 
-    - dev
-    - "%(branch)s"
-  files: dist/*.tar.bz2
+build_targets: [conda, pypi]
