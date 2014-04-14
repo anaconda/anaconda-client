@@ -19,8 +19,8 @@ def detect_recipe_attrs(filename):
     except KeyError:
         return None, None, None, None
 
-    attrs = json.load(obj)
-    
+    attrs = json.loads(obj.read().decode())
+
     about = attrs.get('about', {})
     summary = about.get('summary')
     home_page = about.get('home')
@@ -72,20 +72,20 @@ def detect_r_attrs(filename):
         pkg_info = next(name for name in tf.getnames() if name.endswith('/DESCRIPTION'))
         fd = tf.extractfile(pkg_info)
         raw_attrs = dict(Parser().parse(fd).items())
-    
+
     name = raw_attrs.pop('Package')
     version = raw_attrs.pop('Version')
     summary = raw_attrs.pop('Title', None)
     description = raw_attrs.pop('Description', None)
     license = raw_attrs.pop('License', None)
-    
+
     attrs = {}
     attrs['NeedsCompilation'] = raw_attrs.get('NeedsCompilation', 'no')
     attrs['depends'] = raw_attrs.get('Depends', '').split(',')
     attrs['suggests'] = raw_attrs.get('Suggests', '').split(',')
-    
+
     built = raw_attrs.get('Built')
-    
+
     if built:
         r, _, date, platform = built.split(';')
         r_version = r.strip('R ')
@@ -94,12 +94,12 @@ def detect_r_attrs(filename):
         attrs['type'] = 'package'
     else:
         attrs['type'] = 'source'
-    
+
     return filename, name, version, attrs, summary, description, license
 
 
 #===============================================================================
-# 
+#
 #===============================================================================
 
 detectors = {'conda':detect_conda_attrs,
@@ -117,7 +117,7 @@ def is_conda(filename):
             return False
         else:
             return True
-    
+
 def is_pypi(filename):
     if filename.endswith('.tar.gz') or filename.endswith('.tgz'):  # Could be a setuptools sdist or r source package
         with tarfile.open(filename) as tf:
@@ -127,13 +127,13 @@ def is_pypi(filename):
 def is_r(filename):
     if filename.endswith('.tar.gz') or filename.endswith('.tgz'):  # Could be a setuptools sdist or r source package
         with tarfile.open(filename) as tf:
-            
-            if (any(name.endswith('/DESCRIPTION') for name in tf.getnames()) and 
+
+            if (any(name.endswith('/DESCRIPTION') for name in tf.getnames()) and
                 any(name.endswith('/NAMESPACE') for name in tf.getnames())):
                 return True
 
 def detect_package_type(filename):
-    
+
     if is_conda(filename):
         return 'conda'
     elif is_pypi(filename):

@@ -6,12 +6,13 @@ engine:
 install:
   - pip install -r requirements.txt
   - pip install coverage mock
+
 test:
   - python setup.py develop
   - python binstar_client/tests/runtests.py
 
 script:
   - conda build .
-  - python setup.py sidst
+  - python setup.py sdist
 
 build_targets: [conda, pypi]
