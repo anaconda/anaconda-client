@@ -13,6 +13,13 @@ test:
 
 script:
   - conda build .
-  - python setup.py sdist
 
 build_targets: [conda, pypi]
+
+---
+# Upload python sdist for python2 only since it does not depend on the python version
+engine: python=2.7
+script:
+  - conda build .
+  - python setup.py sdist
+
