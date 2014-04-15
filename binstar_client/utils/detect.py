@@ -34,7 +34,7 @@ def detect_pypi_attrs(filename):
 
     with tarfile.open(filename) as tf:
         pkg_info = next(name for name in tf.getnames() if name.endswith('/PKG-INFO'))
-        fd = tf.extractfile(pkg_info)
+        fd = tf.extractfile(pkg_info.read().decode())
         attrs = dict(Parser().parse(fd).items())
 
     name = attrs.pop('Name')
