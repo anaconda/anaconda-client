@@ -11,7 +11,6 @@ from email.parser import Parser
 from os import path
 
 def detect_recipe_attrs(filename):
-    print('detect_recipe_attrs')
     tar = tarfile.open(filename)
 
     try:
@@ -27,7 +26,6 @@ def detect_recipe_attrs(filename):
     description = about.get('description')
     license = about.get('license')
 
-    print("attrs:", summary, description, home_page, license)
     return summary, description, home_page, license
 
 def detect_pypi_attrs(filename):
