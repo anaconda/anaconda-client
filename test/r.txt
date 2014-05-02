@@ -1,0 +1,7 @@
+PyYAML==3.10
+pycrypto==2.6.1
+python-dateutil==2.2
+pytz==2013.9
+requests==2.2.1
+six==1.5.2
+wsgiref==0.1.2

@@ -1,0 +1,12 @@
+package:
+  name: conda_build_test
+  version: 1.1.0
+
+build:
+  number: 1
+
+requirements:
+  run:
+    - python
+about:
+  summary: This is a simple meta-package

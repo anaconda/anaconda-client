@@ -11,6 +11,7 @@ from binstar_client.utils import compute_hash, jencode, pv
 from binstar_client.mixins.publish import PublishMixin
 from binstar_client.mixins.collections import CollectionsMixin
 from binstar_client.mixins.organizations import OrgMixin
+from binstar_client.mixins.build import BuildMixin
 from binstar_client.utils.http_codes import STATUS_CODES
 import logging
 
@@ -22,7 +23,7 @@ from ._version import __version__
 # import urllib2
 # register_openers()
 
-class Binstar(PublishMixin, CollectionsMixin, OrgMixin):
+class Binstar(PublishMixin, CollectionsMixin, OrgMixin, BuildMixin):
     '''
     An object that represents interfaces with the binstar.org restful API.
 

@@ -1,0 +1,63 @@
+## The package attribute specifies a binstar package namespace to build the package to.
+## This can be specified here or on the command line
+package: conda_build_test
+
+## You can also specify the account to upload to,
+## you must be an admin of that account, this
+## defaults to your user account
+# user: USERNAME
+
+#===============================================================================
+# Build Matrix Options
+# Thes options may be a single item, a list or empty
+# The resulting number of builds is [platform * engine * env]
+#===============================================================================
+
+## The platforms to build on.
+## platform defaults to linux-64
+platform:
+  - linux-64
+  - linux-32
+
+## The engine are the inital conda packages you want to run with
+# engine:
+#  - python=2
+#  - python=3 # Python3 is Broken-ish
+## The env param is an environment variable list
+# engine:
+#  - MY_ENV=A CC=gcc
+#  - MY_ENV=B
+
+#===============================================================================
+# Script options
+# These options may be broken out into the before_script, script and after_script
+# or not, that is up to you
+#===============================================================================
+
+# Put your main computations here!
+script:
+  - conda build .
+
+  # Must do this otherwise we don't have controll over the build targets
+  - mkdir dist
+  - cp `conda build . --output` dist/
+
+#===============================================================================
+# Build Results
+# Build results are split into two categories: artifacts and targets
+# You may omit either key and still have a successfull build
+# They may be a string, list and contain any bash glob
+#===============================================================================
+
+## Build Targets: Upload these files to your binstar package
+build_targets:
+  - dist/*
+
+## Build Artifacts: upload anything you want!
+## Your build artifacts will be put into the website
+## http://artifacts.build.binstar.info/USERNAME/PACKGE_NAME/BUILD_NO
+## You can store all logs or any derived data here
+## Remember, the site http://artifacts.build.binstar.info is NOT secure and does not
+## require a user to log in to view
+#build_artifacts:
+#  - artifact1.txt

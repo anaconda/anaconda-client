@@ -1,0 +1,63 @@
+[private] wakari/dev             - Wakari Enterprise Channel
+Packages:
+Rev    |                           Name | Package Types   | Summary             
+------ |      ------------------------- | --------------- | --------------------
+0      |                aaa_wakari-base | conda           | https://github.com/ContinuumIO/wakari-app-manager
+0      |                     cakehelper | conda           | https://npmjs.org/package/cakehelper
+5      |                         cloud9 | conda           | None                
+0      |                  coffee-script | conda           | http://coffeescript.org/
+0      |                       conda-mi | []              | conda make installer tool
+0      |                       coverage | conda           | http://nedbatchelder.com/code/coverage
+0      |                         django | conda           | http://www.djangoproject.com/
+2      |                           doto | conda           | https://github.com/quasiben/doto
+0      |                          ecdsa | conda           | http://github.com/warner/python-ecdsa
+0      |                       elfinder | conda           | https://github.com/ContinuumIO/elfinder
+0      |                    flask-login | conda           | https://github.com/maxcountryman/flask-login
+0      |                 flask-oauthlib | conda           | https://github.com/lepture/flask-oauthlib
+0      |                      flask-wtf | conda           | http://github.com/ajford/flask-wtf
+0      |                        forever | conda           | https://github.com/nodejitsu/forever
+0      |                      grunt-cli | conda           | https://npmjs.org/package/cakehelper
+0      |                       gunicorn | conda           | http://gunicorn.org 
+0      |                         hoover | conda           | http://www.github.com/loggly/hoover
+11     |                     ipython-we | conda           | https://github.com/ContinuumIO/ipythonprivate/tree/feature/we
+14     |                 ipythonprivate | conda           | https://github.com/ContinuumIO/ipythonprivate/tree/ipython1x
+0      |                      markdown2 | conda           | https://github.com/trentm/python-markdown2
+0      |                          meld3 | conda           | https://github.com/supervisor/meld3
+0      |                           mock | conda           | http://www.voidspace.org.uk/python/mock/
+0      |                      mongomock | conda           | https://pypi.python.org/pypi/mongomock
+0      |                            mtq | conda           | https://github.com/srossross/mtq.git
+2      |                         nodejs | conda           | http://nodejs.org/dist
+0      |                       oauthlib | conda           | https://github.com/idan/oauthlib
+0      |                       paramiko | conda           | https://github.com/paramiko/paramiko/
+0      |                          paste | conda           | http://pythonpaste.org
+0      |                   paste.deploy | conda           | http://pythonpaste.org/deploy/
+0      |                         pyasn1 | conda           | https://github.com/filippog/pyasn1
+0      |                        pymongo | conda           | http://github.com/mongodb/mongo-python-driver
+0      |                          s3cmd | conda           | conda               
+0      |                          scons | conda           | http://www.scons.org
+0      |                      sentinels | conda           | https://pypi.python.org/pypi/sentinels
+0      |                    stage1.vbox | vbox            | Virtualbox image    
+0      |                         stripe | conda           | https://stripe.com/ 
+0      |                     supervisor | conda           | http://supervisord.org/
+2      |                  supervisor-we | conda           | http://supervisord.org/
+30     |                         tty.js | conda           | https://github.com/ContinuumIO/tty.js
+12     |             wakari-app-manager | conda           | https://github.com/ContinuumIO/wakari-app-manager
+4      |      wakari-authentication-proxy | conda           | https://github.com/ContinuumIO/wakari-authentication-proxy
+1      |                    wakari-base | conda           | https://github.com/ContinuumIO/wakari-app-manager
+2      |              wakari-datacenter | conda           | Meta-package for wakari data-center
+4      |              wakari-enterprise | conda           | Wakari Enterprise   
+21     |           wakari-file-xfer-app | conda           |                     
+11     |                    wakari-node | conda           | Meta-package for wakari compute node
+9      |                  wakari-server | conda           | Meta-package for wakari server
+2      |                  wakari-static | conda           | https://github.com/ContinuumIO/wakari-frontend
+18     |                      wk-viewer | conda           | https://github.com/ContinuumIO/wakari-viewer-app
+17     |                            woc | conda           | https://github.com/ContinuumIO/wakari-operation-center
+0      |                      workbench | conda           |                     
+0      |                        wtforms | conda           | http://wtforms.simplecodes.com/
+
+To a package with conda run:
+     conda install --channel https://conda.binstar.org/t/$TOKEN/wakari/dev <PACKAGE>
+
+To generate a $TOKEN run:
+    TOKEN=$(binstar auth --create --name <TOKEN-NAME>)
+
