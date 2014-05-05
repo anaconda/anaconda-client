@@ -21,6 +21,8 @@ class ChannelsMixin(object):
         elif version or filename:
             raise BinstarError("package can not be none if version or filename is given")
 
+        return url
+
     def add_channel(self, channel, owner, package=None, version=None, filename=None):
         '''
         Add a channel to the specified files
