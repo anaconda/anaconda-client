@@ -28,7 +28,7 @@ def install_info(package, package_type):
             url = 'https://pypi.binstar.org/%s/simple' % package['owner']['login']
         else:
             url = 'https://pypi.binstar.org/t/$TOKEN/%s/simple' % package['owner']['login']
-        
+
         log.info('     pip install -i %s %s' % (url, package['name']))
         if package.get('published'):
             log.info('OR: (because it is published)')
@@ -40,7 +40,7 @@ def install_info(package, package_type):
             url = 'https://conda.binstar.org/%s' % package['owner']['login']
         else:
             url = 'https://conda.binstar.org/t/$TOKEN/%s' % package['owner']['login']
-        
+
         log.info('     conda install --channel %s %s' % (url, package['name']))
         if package.get('published'):
             log.info('OR: (because it is published)')
@@ -70,7 +70,7 @@ def main(args):
         release = binstar.release(spec.user, spec.package, spec.version)
         for dist in release['distributions']:
             log.info('   + %(basename)s' % dist)
-        log.info('%(description)s' % release['public_attrs'])
+        log.info('%s' % release.get('public_attrs', {}).get('description'))
 
     elif args.spec._package:
         package = binstar.package(spec.user, spec.package)
@@ -82,16 +82,16 @@ def main(args):
         log.info('Versions:' % package)
         for release in package['releases']:
             log.info('   + %(version)s' % release)
-        
+
         log.info('')
         for package_type in package.get('package_types'):
             install_info(package, package_type)
-            
+
         if not package['public']:
             log.info('To generate a $TOKEN run:')
             log.info('    TOKEN=$(binstar auth --create --name <TOKEN-NAME>)')
-            
-            
+
+
 
     elif args.spec._user:
         user_info = binstar.user(spec.user)
