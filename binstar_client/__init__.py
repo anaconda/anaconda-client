@@ -6,12 +6,16 @@ import requests
 import warnings
 
 from .errors import BinstarError, Conflict, NotFound, Unauthorized
-from binstar_client.requests_ext import stream_multipart
-from binstar_client.utils import compute_hash, jencode, pv
-from binstar_client.mixins.publish import PublishMixin
-from binstar_client.mixins.collections import CollectionsMixin
-from binstar_client.mixins.organizations import OrgMixin
-from binstar_client.utils.http_codes import STATUS_CODES
+from .requests_ext import stream_multipart
+
+from .utils import compute_hash, jencode, pv
+from .utils.http_codes import STATUS_CODES
+
+from .mixins.publish import PublishMixin
+from .mixins.collections import CollectionsMixin
+from .mixins.organizations import OrgMixin
+from .mixins.channels import ChannelsMixin
+
 import logging
 
 log = logging.getLogger('binstar')
@@ -22,7 +26,7 @@ from ._version import __version__
 # import urllib2
 # register_openers()
 
-class Binstar(PublishMixin, CollectionsMixin, OrgMixin):
+class Binstar(PublishMixin, CollectionsMixin, OrgMixin, ChannelsMixin):
     '''
     An object that represents interfaces with the binstar.org restful API.
 
@@ -31,20 +35,20 @@ class Binstar(PublishMixin, CollectionsMixin, OrgMixin):
     '''
 
     def __init__(self, token=None, domain='https://api.binstar.org'):
-        
+
         self._session = requests.Session()
         self._session.headers['x-binstar-api-version'] = __version__
         self.token = token
-        
+
         if token:
             self._session.headers.update({'Authorization': 'token %s' % (token)})
 
         self.domain = domain
-        
+
     @property
     def session(self):
         return self._session
-    
+
     def authenticate(self, username, password,
                      application, application_url=None,
                      for_user=None,
@@ -84,13 +88,13 @@ class Binstar(PublishMixin, CollectionsMixin, OrgMixin):
         token = res['token']
         self.session.headers.update({'Authorization': 'token %s' % (token)})
         return token
-    
+
     def list_scopes(self):
         url = '%s/scopes' % (self.domain)
         res = requests.get(url)
         self._check_response(res)
         return res.json()
-    
+
     def authentication(self):
         '''
         Retrieve information on the current authentication token
@@ -422,8 +426,8 @@ class Binstar(PublishMixin, CollectionsMixin, OrgMixin):
 
     def search(self, query, package_type=None):
         url = '%s/search' % self.domain
-        res = self.session.get(url, params={'name':query, 'type':package_type}, 
+        res = self.session.get(url, params={'name':query, 'type':package_type},
                                verify=True)
         self._check_response(res)
         return res.json()
-    
+
