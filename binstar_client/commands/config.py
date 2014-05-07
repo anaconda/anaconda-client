@@ -36,6 +36,7 @@ def main(args):
     if args.files:
         log.info('User Config: %s' % USER_CONFIG)
         log.info('Site Config: %s' % SITE_CONFIG)
+        return
 
     config = get_config(args.user, not args.user)
 
