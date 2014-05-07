@@ -67,15 +67,17 @@ def format_timedelta(date):
 
 
 def show_auths(authentications):
-    header = {'id': 'ID', 'application': 'Application',
+    header = {'id': 'ID',
+              'application': 'Application',
               'remote_addr':'Remote Addr',
               'hostname':'Host',
-              'expires':'Expires In'}
+              'expires':'Expires In',
+              'scopes':'Scopes'}
 
-    template = '%(id)-25s | %(application)-20s | %(remote_addr)-20s | %(hostname)-20s | %(expires)-20s'
+    template = '%(id)-25s | %(application)-35s | %(remote_addr)-20s | %(hostname)-25s | %(expires)-15s | %(scopes)-25s'
     log.info('')
     log.info(template % header)
-    log.info('%s-+-%s-+-%s-+-%s-+-%s' % ('-' * 25, '-' * 20, '-' * 20, '-' * 20, '-' * 20))
+    log.info('%s-+-%s-+-%s-+-%s-+-%s-+-%s' % ('-' * 25, '-' * 35, '-' * 20, '-' * 25, '-' * 15, '-' * 25))
 
     for auth in authentications:
         if auth['expires']:
@@ -84,7 +86,25 @@ def show_auths(authentications):
             expires = None
         auth['expires'] = format_timedelta(expires)
 
-        log.info(template % auth)
+        first_time = True
+        scope_items = auth['scopes']
+        if scope_items:
+            for scope in scope_items:
+                if first_time:
+                    auth['scopes'] = scope
+                    log.info(template % auth)
+                    first_time = False
+                else:
+                    auth['id'] = ''
+                    auth['application'] = ''
+                    auth['remote_addr'] = ''
+                    auth['hostname'] = ''
+                    auth['expires'] = ''
+                    auth['scopes'] = scope
+                    log.info(template % auth)
+        else:
+            auth['scopes'] = 'NO_SCOPE'
+            log.info(template % auth)
 
 
 def main(args):
