@@ -16,14 +16,12 @@ try:
 except ImportError:
     from urllib import parse as urlparse
     from urllib.parse import quote_plus
-    
+
 import yaml
 import sys
 
 from ..errors import UserError
 import json
-
-
 
 
 def jencode(payload):
@@ -54,6 +52,12 @@ class PackageSpec(object):
         return self._user
 
     @property
+    def name(self):
+        if self._package is None:
+            raise UserError('package not given in spec (got %r expected <username>/<package> )' % (self.spec_str,))
+        return self._package
+
+    @property
     def package(self):
         if self._package is None:
             raise UserError('package not given in spec (got %r expected <username>/<package> )' % (self.spec_str,))
@@ -70,6 +74,17 @@ class PackageSpec(object):
         if self._basename is None:
             raise UserError('basename not given in spec (got %r expected <username>/<package>/<version>/<filename> )' % (self.spec_str,))
         return self._basename
+
+def package_specs(spec):
+    user = spec
+    package = None
+    attrs = {}
+    if '/' in user:
+        user, package = user.split('/', 1)
+    if '/' in package:
+        raise TypeError('invalid package spec')
+
+    return PackageSpec(user, package, None, None, attrs, spec)
 
 def parse_specs(spec):
     user = spec
@@ -99,18 +114,19 @@ def load_token(url):
         token = None
     return token
 
-def get_binstar(args=None):
-    from binstar_client import Binstar
-
+def get_binstar(args=None, cls=None):
+    if not cls:
+        from binstar_client import Binstar
+        cls = Binstar
     config = get_config()
     url = config.get('url', 'https://api.binstar.org')
-    
+
     if args and args.token:
         token = args.token
     else:
         token = load_token(url)
-    
-    return Binstar(token, domain=url,)
+
+    return cls(token, domain=url,)
 
 def store_token(token):
     config = get_config()
@@ -120,7 +136,7 @@ def store_token(token):
     if not isdir(data_dir):
         os.makedirs(data_dir)
     tokenfile = join(data_dir, '%s.token' % quote_plus(url))
-    
+
     with open(tokenfile, 'w') as fd:
         fd.write(token)
 
@@ -129,10 +145,10 @@ def remove_token():
     url = config.get('url', 'https://api.binstar.org')
     data_dir = appdirs.user_data_dir('binstar', 'ContinuumIO')
     tokenfile = join(data_dir, '%s.token' % quote_plus(url))
-    
+
     if isfile(tokenfile):
         os.unlink(tokenfile)
-    
+
 def load_config(config_file):
     if exists(config_file):
         with open(config_file) as fd:
@@ -187,7 +203,7 @@ def compute_hash(fp, buf_size=8192, size=None, hash_algorithm=md5):
         else:
             s = fp.read(buf_size)
     hex_digest = hash_obj.hexdigest()
-    
+
     b64encode = getattr(base64, 'encodebytes', base64.encodestring)
     base64_digest = b64encode(hash_obj.digest())
     if base64_digest[-1] == '\n':
