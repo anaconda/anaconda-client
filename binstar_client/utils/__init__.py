@@ -24,14 +24,15 @@ from ..errors import UserError
 import json
 
 
-def jencode(payload):
+def jencode(*E, **F):
+    payload = dict(*E, **F)
     return base64.b64encode(json.dumps(payload).encode()).decode()
 
 def pv(version):
     return tuple(int(x) for x in version.split('.'))
 
 class PackageSpec(object):
-    def __init__(self, user, package, version, basename, attrs, spec_str):
+    def __init__(self, user, package=None, version=None, basename=None, attrs=None, spec_str=None):
         self._user = user
         self._package = package
         self._version = version
