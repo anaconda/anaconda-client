@@ -169,7 +169,7 @@ def main(args):
                         continue
             try:
                 if args.build_id:
-                    attrs['binstar_build_id'] = args.build_id
+                    attrs['binstar_build'] = args.build_id
                 binstar.upload(username, package_name, version, basefilename, fd, package_type, args.description, attrs=attrs,
                                channels=args.channels,
                                callback=upload_print_callback(args))
