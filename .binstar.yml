@@ -19,6 +19,7 @@ build_targets: [conda]
 ---
 # Upload python sdist for python2 only since it does not depend on the python version
 engine: python=2.7
+build_artifacts: dist/binstar*.tar.gz
 build_targets: [conda, pypi]
 script:
   - conda build .
