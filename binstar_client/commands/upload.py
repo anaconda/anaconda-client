@@ -10,19 +10,17 @@ eg:
 
 '''
 from __future__ import unicode_literals
-
-from binstar_client.utils import get_binstar, bool_input, \
-    get_config
-import json
 from binstar_client import BinstarError, NotFound, Conflict
-from os.path import exists
+from binstar_client.errors import UserError
+from binstar_client.utils import get_binstar, bool_input
+from binstar_client.utils.detect import detect_package_type, get_attrs
+from os.path import basename, exists
+import argparse
+import json
+import logging
 import sys
 import time
-import logging
-from binstar_client.utils.detect import detect_package_type, get_attrs
-from os.path import basename
-from binstar_client.errors import UserError
-import argparse
+
 
 log = logging.getLogger('binstar.updload')
 
@@ -53,7 +51,7 @@ def upload_print_callback(args):
     start_time = time.time()
     if args.no_progress or args.log_level >= logging.INFO:
         return lambda curr, total: None
-    
+
     def callback(curr, total):
         curr_time = time.time()
         time_delta = curr_time - start_time
@@ -79,8 +77,8 @@ def upload_print_callback(args):
 def main(args):
     for item in args.deprecated:
         log.warn('Argument %s has been deprecated and is no longer used. '
-                 'Please see the command "binstar register" for details' %item)
-        
+                 'Please see the command "binstar register" for details' % item)
+
 
     binstar = get_binstar(args)
 
@@ -121,9 +119,9 @@ def main(args):
             except Exception:
                 if args.show_traceback:
                     raise
-                
+
                 raise BinstarError('Trouble reading metadata from %r. Please make sure this package is correct or specify the --metadata, --package and --version arguments' % (filename))
-                
+
             basefilename, package_name, version, attrs, summary, description, license = package_attrs
             log.info('done')
 
@@ -159,7 +157,7 @@ def main(args):
             except NotFound:
                 pass
             else:
-                
+
                 if args.mode == 'force':
                     log.warning('Distribution %s already exists ... removing' % (basefilename,))
                     binstar.remove_dist(username, package_name, version, basefilename)
@@ -170,6 +168,8 @@ def main(args):
                         log.info('Not replacing distribution %s' % (basefilename,))
                         continue
             try:
+                if args.build_id:
+                    attrs['binstar_build_id'] = args.build_id
                 binstar.upload(username, package_name, version, basefilename, fd, package_type, args.description, attrs=attrs,
                                channels=args.channels,
                                callback=upload_print_callback(args))
@@ -189,8 +189,6 @@ def main(args):
 
 def add_parser(subparsers):
 
-    config = get_config()
-
     parser = subparsers.add_parser('upload',
                                    formatter_class=argparse.RawDescriptionHelpFormatter,
                                    help='Upload a file to binstar',
@@ -200,21 +198,22 @@ def add_parser(subparsers):
 
     parser.add_argument('-c', '--channel', action='append', default=[], dest='channels',
                         help='Add this file to a specific channel. Warning: if the file Channels do not include "main", the file will not show up in your user channel')
-    
+
     parser.add_argument('-u', '--user', help='User account, defaults to the current user')
-    parser.add_argument('--no-progress', help="Don't show upload progress", action='store_true' )
+    parser.add_argument('--no-progress', help="Don't show upload progress", action='store_true')
     parser.add_argument('-p', '--package', help='Defaults to the packge name in the uploaded file')
     parser.add_argument('-v', '--version', help='Defaults to the packge version in the uploaded file')
     parser.add_argument('-t', '--package-type', help='Set the package type, defaults to autodetect')
     parser.add_argument('-d', '--description', help='description of the file(s)')
     parser.add_argument('-m', '--metadata', help='json encoded metadata default is to autodetect')
-    
-    for deprecated in ['--public', '--private', '--personal', '--publish']: 
-        parser.add_argument(deprecated, action='append_const', const=deprecated, 
+
+    for deprecated in ['--public', '--private', '--personal', '--publish']:
+        parser.add_argument(deprecated, action='append_const', const=deprecated,
                             dest='deprecated', default=[])
-    
+
     parser.add_argument("--no-register", action="store_true", default=False)
-    
+    parser.add_argument('--build-id', help='Binstar-Build ID (internal only)')
+
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-i', '--interactive', action='store_const', help='Run an interactive prompt if any packages are missing',
                         dest='mode', const='interactive')
