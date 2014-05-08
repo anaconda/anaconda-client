@@ -1,5 +1,25 @@
-{% extends "setuptools.yaml" %}
+{% set data = load_setuptools()%}
+package:
+  name: binstar
+  version: {{data.get('version')}}
 
-{% block build_number -%}
-    {{environ.get('BINSTAR_BUILD', 1)}}
-{%- endblock %}
+build:
+  number: {{environ.get('BINSTAR_BUILD', 1)}}
+  script:
+    - cd $RECIPE_DIR
+    - $PYTHON setup.py install --single-version-externally-managed --record=record.txt
+
+requirements:
+  build:
+    - python
+    - setuptools
+  run:
+    - python
+    - requests
+    - pyyaml
+    - dateutil
+    - pytz
+
+about:
+  home: {{data.get('url')}}
+  license: {{data.get('license')}}
