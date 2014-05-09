@@ -16,6 +16,7 @@ test:
   - python binstar_client/tests/runtests.py
 
 script:
+  - touch build.sh # FIX: for conda issue
   - conda build .
 
 build_targets: [conda]
