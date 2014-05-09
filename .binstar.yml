@@ -1,7 +1,11 @@
 package: binstar
+
+platform:
+  - linux-64
+  - osx-64
+
 engine:
  - python=2.7
- - python=3.3
 
 install:
   - pip install -r requirements.txt
@@ -19,7 +23,7 @@ build_targets: [conda]
 ---
 # Upload python sdist for python2 only since it does not depend on the python version
 engine: python=2.7
-build_artifacts: dist/binstar*.tar.gz
+platform: linux-64
 build_targets: [conda]
 script:
   - conda build .
