@@ -15,6 +15,7 @@ requirements:
     - setuptools
   run:
     - python
+    - setuptools
     - requests
     - pyyaml
     - dateutil
