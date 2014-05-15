@@ -17,15 +17,15 @@ def writer(lst):
     encoder()
     pass
 
-try: 
+try:
     long
 except NameError:
     long = int
-try: 
+try:
     unicode
 except NameError:
     unicode = str
-    
+
 def encode_multipart_formdata_stream(fields, boundary=None):
     """
     Encode a dictionary of ``fields`` using the multipart/form-data MIME format.
@@ -72,7 +72,7 @@ def encode_multipart_formdata_stream(fields, boundary=None):
                     content_type = 'application/octet-stream'
             body_write_encode('Content-Disposition: form-data; name="%s"; '
                                'filename="%s"\r\n' % (fieldname, filename))
-            body_write(b('Content-Type: %s\r\n\r\n' % 
+            body_write(b('Content-Type: %s\r\n\r\n' %
                        (content_type,)))
         else:
             data = value

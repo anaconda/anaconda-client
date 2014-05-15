@@ -12,14 +12,13 @@ eg:
 from __future__ import unicode_literals
 from binstar_client import BinstarError, NotFound, Conflict
 from binstar_client.errors import UserError
-from binstar_client.utils import get_binstar, bool_input
+from binstar_client.utils import get_binstar, bool_input, upload_print_callback
 from binstar_client.utils.detect import detect_package_type, get_attrs
 from os.path import basename, exists
 import argparse
 import json
 import logging
 import sys
-import time
 
 
 log = logging.getLogger('binstar.updload')
@@ -47,32 +46,6 @@ def create_release_interactive(binstar, username, package_name, version):
     binstar.add_release(username, package_name, version, [],
                         announce, description)
 
-def upload_print_callback(args):
-    start_time = time.time()
-    if args.no_progress or args.log_level >= logging.INFO:
-        return lambda curr, total: None
-
-    def callback(curr, total):
-        curr_time = time.time()
-        time_delta = curr_time - start_time
-
-        remain = total - curr
-        if curr and remain:
-            eta = 1.0 * time_delta / curr * remain / 60.0
-        else:
-            eta = 0
-
-        curr_kb = curr // 1024
-        total_kb = total // 1024
-        perc = 100.0 * curr / total if total else 0
-
-        msg = '\r uploaded %(curr_kb)i of %(total_kb)iKb: %(perc).2f%% ETA: %(eta).1f minutes'
-        sys.stderr.write(msg % locals())
-        sys.stderr.flush()
-        if curr == total:
-            sys.stderr.write('\n')
-
-    return callback
 
 def main(args):
     for item in args.deprecated:

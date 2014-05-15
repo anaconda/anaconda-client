@@ -10,6 +10,8 @@ from binstar_client.utils import appdirs
 import base64
 import getpass
 import os
+import time
+import logging
 try:
     import urlparse
     from urllib import quote_plus
@@ -271,5 +273,29 @@ def bool_input(prompt, default=True):
                 sys.stderr.write('please enter yes or no\n')
 
 
+def upload_print_callback(args):
+    start_time = time.time()
+    if args.no_progress or args.log_level > logging.INFO:
+        return lambda curr, total: None
 
+    def callback(curr, total):
+        curr_time = time.time()
+        time_delta = curr_time - start_time
 
+        remain = total - curr
+        if curr and remain:
+            eta = 1.0 * time_delta / curr * remain / 60.0
+        else:
+            eta = 0
+
+        curr_kb = curr // 1024
+        total_kb = total // 1024
+        perc = 100.0 * curr / total if total else 0
+
+        msg = '\r uploaded %(curr_kb)i of %(total_kb)iKb: %(perc).2f%% ETA: %(eta).1f minutes'
+        sys.stderr.write(msg % locals())
+        sys.stderr.flush()
+        if curr == total:
+            sys.stderr.write('\n')
+
+    return callback
