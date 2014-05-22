@@ -22,7 +22,7 @@ def install_info(collection, package_type):
             url = 'https://pypi.binstar.org/t/$TOKEN/%(owner)s/%(name)s/simple' % collection
         else:
             url = 'https://pypi.binstar.org/%(owner)s/%(name)s/simple' % collection
-        
+
         log.info('     pip install -i %s <PACKAGE>' % url)
 
     if package_type == 'conda':
@@ -31,7 +31,7 @@ def install_info(collection, package_type):
             url = 'https://conda.binstar.org/%(owner)s/%(name)s' % collection
         else:
             url = 'https://conda.binstar.org/t/$TOKEN/%(owner)s/%(name)s' % collection
-         
+
         log.info('     conda install --channel %s <PACKAGE>' % (url,))
 
 
@@ -62,18 +62,18 @@ def show_collection(binstar, spec):
     collection = binstar.collection(spec.org, spec.name)
     collection['access'] = 'public' if collection['public'] else 'private'
     log.info('[%(access)s] %(owner)s/%(name)-15s - %(description)s' % collection)
-    
+
     if collection['packages']:
         pprint_packages(collection['packages'], access=False, full_name=False, revisions=True)
     else:
         log.info('    This collection contains no packages. You can add a package with the binstar with the command')
         log.info('    binstar collection --add-package ORG/NAME OWNER/PACKAGE')
     log.info('')
-    
+
     package_types = {pt for p in collection['packages'] for pt in p.get('package_types')}
     for package_type in package_types:
         install_info(collection, package_type)
-        
+
     log.info('')
     if not collection['public']:
         log.info('To generate a $TOKEN run:')
@@ -128,7 +128,7 @@ def main(args):
             log.info('Package %s is already at the latest revision (%s)' % (package.name, data[package.name]['after']))
         else:
             log.info('Updated package %s from revision %s to %s' % (package.name, data[package.name]['before'], data[package.name]['after']))
-            
+
     if args.add_packages:
         for owner, package in read_package_file(args.add_packages):
             data = binstar.collection_add_packages(org, name, owner=owner, package=package)
@@ -152,18 +152,18 @@ def main(args):
 
     if args.sync:
         sync_data = binstar.collection_sync(org, name)
-        updated = {key:value for (key,value) in sync_data.items() if value['after'] != value['before']}
+        updated = {key:value for (key, value) in sync_data.items() if value['after'] != value['before']}
         if updated:
             for package_name, info in updated.items():
                 log.info('Updated package %s from revision %s to %s' % (package_name, info['before'], info['after']))
         else:
             log.info('All packages are up to date')
-        
-        
+
+
 def add_parser(subparsers):
 
     parser = subparsers.add_parser('collections',
-                                    help='Manage Collections',
+                                    help='[DEPRICATED] Manage Collections',
                                     description=__doc__)
 
     parser.add_argument('spec', nargs=1, help='Collection or organization', type=collection_spec_opt)
