@@ -20,6 +20,11 @@ import json
 import logging
 import sys
 
+try:
+    input = raw_input
+except NameError: 
+    input = input
+
 
 log = logging.getLogger('binstar.updload')
 
@@ -35,11 +40,11 @@ def create_release_interactive(binstar, username, package_name, version):
         log.info('good-bye')
         raise SystemExit(-1)
 
-    description = raw_input('Enter a short description of the release:\n')
+    description = input('Enter a short description of the release:\n')
     log.info("\nAnnouncements are emailed to your package followers.")
     make_announcement = bool_input('Would you like to make an announcement to the package followers?', False)
     if make_announcement:
-        announce = raw_input('Markdown Announcement:\n')
+        announce = input('Markdown Announcement:\n')
     else:
         announce = ''
 
