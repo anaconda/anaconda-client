@@ -25,6 +25,10 @@ import sys
 from ..errors import UserError
 import json
 
+try: 
+    input = raw_input
+except NameError: 
+    input = input
 
 def jencode(*E, **F):
     payload = dict(*E, **F)
