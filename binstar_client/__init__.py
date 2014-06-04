@@ -291,7 +291,7 @@ class Binstar(PublishMixin, CollectionsMixin, OrgMixin, ChannelsMixin):
         url = '%s/release/%s/%s/%s' % (self.domain, username, package_name, version)
         res = self.session.delete(url, verify=True)
         self._check_response(res, [201])
-        return res.json()
+        return
 
     def add_release(self, login, package_name, version, requirements, announce, description):
         '''
