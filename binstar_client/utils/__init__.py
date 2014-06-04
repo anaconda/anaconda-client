@@ -25,6 +25,10 @@ import sys
 from ..errors import UserError
 import json
 
+try: 
+    input = raw_input
+except NameError: 
+    input = input
 
 def jencode(*E, **F):
     payload = dict(*E, **F)
@@ -260,7 +264,7 @@ class IterableToFileAdapter(object):
 def bool_input(prompt, default=True):
         default_str = '[Y|n]' if default else '[y|N]'
         while 1:
-            inpt = raw_input('%s %s: ' % (prompt, default_str))
+            inpt = input('%s %s: ' % (prompt, default_str))
             if inpt.lower() in ['y', 'yes'] and not default:
                 return True
             elif inpt.lower() in ['', 'n', 'no'] and not default:

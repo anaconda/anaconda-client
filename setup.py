@@ -14,6 +14,7 @@ setup(
     author='Sean Ross-Ross',
     author_email='srossross@gmail.com',
     url='http://github.com/Binstar/binstar_client',
+    description='Binstar Client Library',
     packages=find_packages(),
     install_requires=['requests>=2.0',
                       'pyyaml',
