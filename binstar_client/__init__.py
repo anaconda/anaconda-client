@@ -15,6 +15,7 @@ from .mixins.publish import PublishMixin
 from .mixins.collections import CollectionsMixin
 from .mixins.organizations import OrgMixin
 from .mixins.channels import ChannelsMixin
+from .mixins.package import PackageMixin
 
 import logging
 
@@ -26,7 +27,7 @@ from ._version import __version__
 # import urllib2
 # register_openers()
 
-class Binstar(PublishMixin, CollectionsMixin, OrgMixin, ChannelsMixin):
+class Binstar(PublishMixin, CollectionsMixin, OrgMixin, ChannelsMixin, PackageMixin):
     '''
     An object that represents interfaces with the binstar.org restful API.
 
