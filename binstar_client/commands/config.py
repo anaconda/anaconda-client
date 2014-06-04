@@ -1,5 +1,5 @@
 '''
-Bisntar configuration
+Binstar configuration
 
 Get, Set, Remove or Show the binstar configuration.
 
