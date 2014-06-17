@@ -53,8 +53,8 @@ def create_release_interactive(binstar, username, package_name, version):
 
 
 def main(args):
-    for item in args.deprecated:
-        log.warn('Argument %s has been deprecated and is no longer used. '
+    for item in args.deprecated_register_args:
+        raise UserError('Argument %s has been deprecated and is no longer used. '
                  'Please see the command "binstar register" for details' % item)
 
 
@@ -187,7 +187,7 @@ def add_parser(subparsers):
 
     for deprecated in ['--public', '--private', '--personal', '--publish']:
         parser.add_argument(deprecated, action='append_const', const=deprecated,
-                            dest='deprecated', default=[])
+                            dest='deprecated_register_args', default=[])
 
     parser.add_argument("--no-register", action="store_true", default=False)
     parser.add_argument('--build-id', help='Binstar-Build ID (internal only)')
