@@ -26,7 +26,7 @@ except NameError:
     input = input
 
 
-log = logging.getLogger('binstar.updload')
+log = logging.getLogger('binstar.upload')
 
 
 def create_release(binstar, username, package_name, version, description, announce=None):
