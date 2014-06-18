@@ -14,23 +14,23 @@ First create an account on [binstar.org](https://binstar.org)
 #### With Conda:
 
 ``` 
-    $ conda install binstar
+$ conda install binstar
 ```
 
 #### Or pip:
 
 ```
-   $ pip install binstar
+$ pip install binstar
 ```
 
 ### Login
 
 
-` $ binstar login`
+`$ binstar login`
 
 Test your login with the whoami command:
 
-` $ binstar whoami`
+`$ binstar whoami`
 
 For a complete tutorial on building and uploading Conda packages to Binstar read the [Getting Started Guide](https://binstar-client.readthedocs.org/en/latest/getting_started.html).
 
