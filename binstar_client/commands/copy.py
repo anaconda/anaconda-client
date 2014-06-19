@@ -1,7 +1,7 @@
 '''
 Copy packages from one account to another
 '''
-from __future__ import unicode_literals
+from __future__ import unicode_literals, print_function
 from binstar_client.utils import get_binstar, parse_specs
 import logging
 
@@ -12,9 +12,10 @@ def main(args):
 
     spec = args.spec
 
-    result = bs.copy(spec.user, spec.package, spec.version, spec._basename,
-                     to_owner=args.to_owner, from_channel=args.from_channel, to_channel=args.to_channel)
-    print result
+    bs.copy(spec.user, spec.package, spec.version, spec._basename,
+            to_owner=args.to_owner, from_channel=args.from_channel, to_channel=args.to_channel)
+
+    log.info("File was copied successfully")
 
 
 def add_parser(subparsers):
