@@ -8,20 +8,26 @@ from binstar_client.utils import jencode
 from binstar_client.errors import BinstarError
 
 class ChannelsMixin(object):
-    def _mk_channel_url(self, channel, owner, package=None, version=None, filename=None):
-        url = '%s/channel/%s/%s' % (self.domain, channel, owner)
-        if package:
-            url += '/%s' % package
-            if version:
-                url += '/%s' % version
-                if filename:
-                    url += '/%s' % filename
-            elif filename:
-                raise BinstarError("version can not be none if filename is given")
-        elif version or filename:
-            raise BinstarError("package can not be none if version or filename is given")
 
-        return url
+    def list_channels(self, owner):
+        '''List the channels for owner
+        If owner is none, the currently logged in user is used
+        '''
+        url = '%s/channels/%s' % (self.domain, owner)
+
+        res = self.session.get(url)
+        self._check_response(res, [200])
+        return res.json()
+
+    def show_channel(self, channel, owner):
+        '''List the channels for owner
+        If owner is none, the currently logged in user is used
+        '''
+        url = '%s/channels/%s/%s' % (self.domain, owner, channel)
+
+        res = self.session.get(url)
+        self._check_response(res, [200])
+        return res.json()
 
     def add_channel(self, channel, owner, package=None, version=None, filename=None):
         '''
@@ -34,8 +40,10 @@ class ChannelsMixin(object):
         :param filename: The exact file to add the channel to
         
         '''
-        url = self._mk_channel_url(channel, owner, package, version, filename)
-        res = self.session.post(url)
+        url = '%s/channels/%s/%s' % (self.domain, owner, channel)
+        data = jencode(package=package, version=version, basename=filename)
+
+        res = self.session.post(url, data=data)
         self._check_response(res, [201])
 
     def remove_channel(self, channel, owner, package=None, version=None, filename=None):
@@ -49,8 +57,10 @@ class ChannelsMixin(object):
         :param filename: The exact file to remove the channel from
         
         '''
-        url = self._mk_channel_url(channel, owner, package, version, filename)
-        res = self.session.delete(url)
+        url = '%s/channels/%s/%s' % (self.domain, channel, owner)
+        data = jencode(package=package, version=version, basename=filename)
+
+        res = self.session.delete(url, data=data)
         self._check_response(res, [201])
 
     def copy_channel(self, channel, owner, to_channel):
@@ -62,7 +72,33 @@ class ChannelsMixin(object):
         :param to_channel: Destination name (may be a channel that already exists)
         
         '''
-        url = '%s/copy-channel/%s/%s/%s' % (self.domain, channel, owner, to_channel)
+        url = '%s/channels/%s/%s/copy/%s' % (self.domain, owner, channel, to_channel)
+        res = self.session.post(url)
+        self._check_response(res, [201])
+
+    def lock_channel(self, channel, owner):
+        '''
+        Tag all files in channel <channel> also as channel <to_channel> 
+        
+        :param channel: channel to copy
+        :param owner: Perform this operation on all packages of this user
+        :param to_channel: Destination name (may be a channel that already exists)
+        
+        '''
+        url = '%s/channels/%s/%s/lock' % (self.domain, owner, channel)
+        res = self.session.post(url)
+        self._check_response(res, [201])
+
+    def unlock_channel(self, channel, owner):
+        '''
+        Tag all files in channel <channel> also as channel <to_channel> 
+        
+        :param channel: channel to copy
+        :param owner: Perform this operation on all packages of this user
+        :param to_channel: Destination name (may be a channel that already exists)
+        
+        '''
+        url = '%s/channels/%s/%s/lock' % (self.domain, owner, channel)
         res = self.session.delete(url)
         self._check_response(res, [201])
 
