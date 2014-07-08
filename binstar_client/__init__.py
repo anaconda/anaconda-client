@@ -409,7 +409,7 @@ class Binstar(PublishMixin, CollectionsMixin, OrgMixin, ChannelsMixin, PackageMi
         data_stream, headers = stream_multipart(s3data, files={'file':(basename, fd)},
                                                 callback=callback)
 
-        s3res = requests.post(s3url, data=data_stream, verify=True, timeout=10 * 60 * 60, headers=headers)
+        s3res = self.session.post(s3url, data=data_stream, verify=True, timeout=10 * 60 * 60, headers=headers)
 
         if s3res.status_code != 201:
             log.info(s3res.text)
