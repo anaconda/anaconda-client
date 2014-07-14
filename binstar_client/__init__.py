@@ -42,7 +42,8 @@ class Binstar(PublishMixin, CollectionsMixin, OrgMixin, ChannelsMixin, PackageMi
         self.token = token
 
         if token:
-            self._session.headers.update({'Authorization': 'token %s' % (token)})
+            self._session.headers.update({'Authorization': 'token %s' % (token),
+                                          'User-Agent': 'Binstar/%s (+https://binstar.org)' % __version__})
 
         self.domain = domain
 
