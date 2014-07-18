@@ -78,9 +78,9 @@ class OrgMixin(object):
         url = '%s/group/%s/%s' % (self.domain, org, name)
 
         payload = dict(perms=perms)
-        data = jencode(payload)
+        data, headers = jencode(payload)
 
-        res = self.session.post(url, data=data, verify=True)
+        res = self.session.post(url, data=data, headers=headers)
         self._check_response(res, [204])
 
         return

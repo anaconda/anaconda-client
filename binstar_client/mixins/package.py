@@ -14,8 +14,8 @@ class PackageMixin(object):
             url += '/%s' % basename
 
         payload = dict(to_owner=to_owner, from_channel=from_channel, to_channel=to_channel)
-        data = jencode(payload)
-        res = self.session.post(url, data=data)
+        data, headers = jencode(payload)
+        res = self.session.post(url, data=data, headers=headers)
         self._check_response(res)
         return res.json()
 

@@ -37,8 +37,8 @@ class CollectionsMixin(object):
         else:
             raise TypeError('collection_add_packages must spesify argument "owner_package_data"')
 
-        data = jencode(payload)
-        res = self.session.put(url, data=data, verify=True)
+        data, headers = jencode(payload)
+        res = self.session.put(url, data=data, verify=True, headers=headers)
         self._check_response(res, [201])
         return res.json()
 
@@ -53,8 +53,8 @@ class CollectionsMixin(object):
         else:
             raise TypeError('collection_add_packages must spesify argument "owner_package_data"')
 
-        data = jencode(payload)
-        res = self.session.delete(url, data=data, verify=True)
+        data, headers = jencode(payload)
+        res = self.session.delete(url, data=data, verify=True, headers=headers)
         self._check_response(res, [201])
 
     def add_collection(self, org, name, public=True, description=''):
@@ -69,8 +69,8 @@ class CollectionsMixin(object):
 
         url = '%s/collections/%s/%s' % (self.domain, org, name)
         payload = dict(public=public, description=description)
-        data = jencode(payload)
-        res = self.session.post(url, data=data, verify=True)
+        data, headers = jencode(payload)
+        res = self.session.post(url, data=data, headers=headers)
         self._check_response(res, [201])
 
     def update_collection(self, org, name, public=None, description=None):
@@ -80,8 +80,8 @@ class CollectionsMixin(object):
 
         url = '%s/collections/%s/%s' % (self.domain, org, name)
         payload = dict(public=public, description=description)
-        data = jencode(payload)
-        res = self.session.patch(url, data=data, verify=True)
+        data, headers = jencode(payload)
+        res = self.session.patch(url, data=data, headers=headers)
         self._check_response(res, [201])
 
     def collection_sync(self, org, name):
@@ -93,7 +93,7 @@ class CollectionsMixin(object):
         res = self.session.post(url, verify=True)
         self._check_response(res, [201])
         return res.json()
-         
+
 
     def remove_collection(self, org, name):
         '''
@@ -112,8 +112,8 @@ class CollectionsMixin(object):
 
         url = '%s/collections/%s/%s' % (self.domain, to_org, to_name)
         payload = dict(clone={'owner': from_org, 'collection': from_name})
-        data = jencode(payload)
-        res = self.session.post(url, data=data, verify=True)
+        data, headers = jencode(payload)
+        res = self.session.post(url, data=data, headers=headers)
         self._check_response(res, [201])
 
     def collection_pull(self, from_org, from_name,
@@ -121,8 +121,8 @@ class CollectionsMixin(object):
 
         url = '%s/collections/%s/%s/pull' % (self.domain, to_org, to_name)
         payload = {'from_owner': from_org, 'from_name': from_name}
-        data = jencode(payload)
-        res = self.session.patch(url, data=data, verify=True)
+        data, headers = jencode(payload)
+        res = self.session.patch(url, data=data, headers=headers)
         self._check_response(res, [201])
 
 

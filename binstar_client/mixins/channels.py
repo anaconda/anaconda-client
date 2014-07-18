@@ -41,9 +41,9 @@ class ChannelsMixin(object):
         
         '''
         url = '%s/channels/%s/%s' % (self.domain, owner, channel)
-        data = jencode(package=package, version=version, basename=filename)
+        data, headers = jencode(package=package, version=version, basename=filename)
 
-        res = self.session.post(url, data=data)
+        res = self.session.post(url, data=data, headers=headers)
         self._check_response(res, [201])
 
     def remove_channel(self, channel, owner, package=None, version=None, filename=None):
@@ -58,9 +58,9 @@ class ChannelsMixin(object):
         
         '''
         url = '%s/channels/%s/%s' % (self.domain, channel, owner)
-        data = jencode(package=package, version=version, basename=filename)
+        data, headers = jencode(package=package, version=version, basename=filename)
 
-        res = self.session.delete(url, data=data)
+        res = self.session.delete(url, data=data, headers=headers)
         self._check_response(res, [201])
 
     def copy_channel(self, channel, owner, to_channel):

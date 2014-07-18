@@ -1,5 +1,4 @@
 
-from binstar_client.utils import jencode
 
 class PublishMixin(object):
     '''
@@ -13,7 +12,7 @@ class PublishMixin(object):
         url = '%s/publish/%s/%s' % (self.domain, username, name)
         res = self.session.get(url, verify=True)
         self._check_response(res)
-        return res.json().get('published',False)
+        return res.json().get('published', False)
 
     def publish(self, username, name):
         '''

@@ -25,14 +25,14 @@ import sys
 from ..errors import UserError
 import json
 
-try: 
+try:
     input = raw_input
-except NameError: 
+except NameError:
     input = input
 
 def jencode(*E, **F):
     payload = dict(*E, **F)
-    return base64.b64encode(json.dumps(payload).encode()).decode()
+    return json.dumps(payload), {'Content-Type': 'application/json'}
 
 def pv(version):
     return tuple(int(x) for x in version.split('.'))

@@ -22,10 +22,6 @@ import logging
 log = logging.getLogger('binstar')
 
 from ._version import __version__
-# from poster.encode import multipart_encode
-# from poster.streaminghttp import register_openers
-# import urllib2
-# register_openers()
 
 class Binstar(PublishMixin, CollectionsMixin, OrgMixin, ChannelsMixin, PackageMixin):
     '''
@@ -83,8 +79,8 @@ class Binstar(PublishMixin, CollectionsMixin, OrgMixin, ChannelsMixin, PackageMi
                    'created_with': None,
                    'strength': strength}
 
-        data = jencode(payload)
-        res = self.session.post(url, auth=(username, password), data=data, verify=True)
+        data, headers = jencode(payload)
+        res = self.session.post(url, auth=(username, password), data=data, headers=headers)
         self._check_response(res)
         res = res.json()
         token = res['token']
@@ -256,8 +252,8 @@ class Binstar(PublishMixin, CollectionsMixin, OrgMixin, ChannelsMixin, PackageMi
                        public_attrs=dict(attrs or {})
                        )
 
-        data = jencode(payload)
-        res = self.session.post(url, verify=True, data=data)
+        data, headers = jencode(payload)
+        res = self.session.post(url, data=data, headers=headers)
         self._check_response(res)
         return res.json()
 
@@ -310,8 +306,8 @@ class Binstar(PublishMixin, CollectionsMixin, OrgMixin, ChannelsMixin, PackageMi
         url = '%s/release/%s/%s/%s' % (self.domain, login, package_name, version)
 
         payload = {'requirements':requirements, 'announce':announce, 'description':description}
-        data = jencode(payload)
-        res = self.session.post(url, data=data, verify=True)
+        data, headers = jencode(payload)
+        res = self.session.post(url, data=data, headers=headers)
         self._check_response(res)
         return res.json()
 
@@ -388,13 +384,13 @@ class Binstar(PublishMixin, CollectionsMixin, OrgMixin, ChannelsMixin, PackageMi
             raise TypeError('argument attrs must be a dictionary')
 
         payload = dict(distribution_type=distribution_type, description=description, attrs=attrs, channels=channels)
-        data = jencode(payload)
-        res = self.session.post(url, data=data, verify=True)
+        data, headers = jencode(payload)
+        res = self.session.post(url, data=data, headers=headers)
         self._check_response(res)
         obj = res.json()
 
-        s3url = obj['s3_url']
-        s3data = obj['s3form_data']
+        s3url = obj['post_url']
+        s3data = obj['form_data']
 
         if md5 is None:
             _hexmd5, b64md5, size = compute_hash(fd, size=size)
@@ -416,12 +412,12 @@ class Binstar(PublishMixin, CollectionsMixin, OrgMixin, ChannelsMixin, PackageMi
             log.info(s3res.text)
             log.info('')
             log.info('')
-            raise BinstarError('Error uploading to s3', s3res.status_code)
+            raise BinstarError('Error uploading package', s3res.status_code)
 
         url = '%s/commit/%s/%s/%s/%s' % (self.domain, login, package_name, release, basename)
         payload = dict(dist_id=obj['dist_id'])
-        data = jencode(payload)
-        res = self.session.post(url, data=data, verify=True)
+        data, headers = jencode(payload)
+        res = self.session.post(url, data=data, headers=headers)
         self._check_response(res)
 
         return res.json()
