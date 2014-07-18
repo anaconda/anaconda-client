@@ -12,69 +12,40 @@ import json
 import unittest
 
 class Test(CLITestCase):
-        
+
     @urlpatch
     def test_register_public(self, registry):
-        
+
         r1 = registry.register(method='GET', path='/user', content='{"login": "eggs"}')
         r2 = registry.register(method='GET', path='/package/eggs/foo', status=404)
         r3 = registry.register(method='POST', path='/package/eggs/foo', status=200, content='{"login": "eggs"}')
-        
+
         main(['--show-traceback', 'register', self.data_dir('foo-0.1-0.tar.bz2')], False)
-        
+
         r1.assertCalled()
         r2.assertCalled()
         r3.assertCalled()
-        
+
         data = json.loads(base64.b64decode(r3.req.body).decode())
         self.assertTrue(data['public'])
-        self.assertFalse(data['publish'])
 
     @urlpatch
     def test_register_private(self, registry):
-        
+
         r1 = registry.register(method='GET', path='/user', content='{"login": "eggs"}')
         r2 = registry.register(method='GET', path='/package/eggs/foo', status=404)
         r3 = registry.register(method='POST', path='/package/eggs/foo', status=200, content='{"login": "eggs"}')
-        
+
         main(['--show-traceback', 'register', '--private', self.data_dir('foo-0.1-0.tar.bz2')], False)
-        
+
         r1.assertCalled()
         r2.assertCalled()
         r3.assertCalled()
-        
+
         data = json.loads(base64.b64decode(r3.req.body).decode())
         self.assertFalse(data['public'])
-        self.assertFalse(data['publish'])
-        
-    @urlpatch
-    def test_register_publish(self, registry):
-        r1 = registry.register(method='GET', path='/user', content=b'{"login": "eggs"}')
-        r2 = registry.register(method='GET', path='/package/eggs/foo', status=404)
-        r3 = registry.register(method='POST', path='/package/eggs/foo', status=200, content=b'{"login": "eggs"}')
-        
-        main(['--show-traceback', 'register', '--publish', self.data_dir('foo-0.1-0.tar.bz2')], False)
-        
-        r1.assertCalled()
-        r2.assertCalled()
-        r3.assertCalled()
 
-        data = json.loads(base64.b64decode(r3.req.body).decode())
-        
-        self.assertTrue(data['public'])
-        self.assertTrue(data['publish'])
 
-    @urlpatch
-    def test_register_bad_args(self, registry):
-        
-        r1 = registry.register()
-        
-        with self.assertRaises(SystemExit):
-            main(['--show-traceback', 'register', '--publish', '--private',
-                  self.data_dir('foo-0.1-0.tar.bz2')], False)
-            
-        r1.assertNotCalled()
-        
-        
+
 if __name__ == '__main__':
     unittest.main()

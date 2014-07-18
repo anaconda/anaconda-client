@@ -25,9 +25,8 @@ def main(args):
             log.info('   +', collab['login'])
     elif args.create:
         public = args.access != 'private'
-        publish = args.access == 'publish'
-        bs.add_package(args.spec.user, args.spec.package, args.summary,  
-                       public=public, publish=publish, 
+        bs.add_package(args.spec.user, args.spec.package, args.summary,
+                       public=public,
                        license=args.license, license_url=args.license_url)
         log.info('Package created!')
 
@@ -42,16 +41,12 @@ def add_parser(subparsers):
     group.add_argument('--add-collaborator', metavar='user', help='username of the collaborator you want to add')
     group.add_argument('--list-collaborators', action='store_true', help='list all of the collaborators in a package')
     group.add_argument('--create', action='store_true', help='Create a package')
-    
+
     parser.add_argument('--summary', help='Set the package short summary')
     parser.add_argument('--license', help='Set the package license')
     parser.add_argument('--license-url', help='Set the package license url')
-    
+
     group = parser.add_mutually_exclusive_group(required=False)
-    group.add_argument('--publish', action='store_const', const='publish', dest='access',
-                       help=('Set the package access to published. '
-                             'The package name must not conflict with any other published package')
-                       )
     group.add_argument('--personal', action='store_const', const='personal', dest='access',
                        help=('Set the package access to personal '
                              'This package will be available only on your personal regitries'))

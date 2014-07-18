@@ -11,8 +11,6 @@ from .requests_ext import stream_multipart
 from .utils import compute_hash, jencode, pv
 from .utils.http_codes import STATUS_CODES
 
-from .mixins.publish import PublishMixin
-from .mixins.collections import CollectionsMixin
 from .mixins.organizations import OrgMixin
 from .mixins.channels import ChannelsMixin
 from .mixins.package import PackageMixin
@@ -23,7 +21,7 @@ log = logging.getLogger('binstar')
 
 from ._version import __version__
 
-class Binstar(PublishMixin, CollectionsMixin, OrgMixin, ChannelsMixin, PackageMixin):
+class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
     '''
     An object that represents interfaces with the binstar.org restful API.
 
@@ -225,7 +223,6 @@ class Binstar(PublishMixin, CollectionsMixin, OrgMixin, ChannelsMixin, PackageMi
                     summary=None,
                     license=None,
                     public=True,
-                    publish=True,
                     license_url=None,
                     attrs=None):
         '''
@@ -239,7 +236,6 @@ class Binstar(PublishMixin, CollectionsMixin, OrgMixin, ChannelsMixin, PackageMi
         :param license_url: the url of the package license
         :param public: if true then the package will be hosted publicly
         :param attrs: A dictionary of extra attributes for this package
-        :param host_publicly: TODO: describe
         '''
         url = '%s/package/%s/%s' % (self.domain, login, package_name)
 
@@ -248,7 +244,7 @@ class Binstar(PublishMixin, CollectionsMixin, OrgMixin, ChannelsMixin, PackageMi
         attrs['license'] = {'name':license, 'url':license_url}
 
         payload = dict(public=bool(public),
-                       publish=bool(publish),
+                       publish=False,
                        public_attrs=dict(attrs or {})
                        )
 

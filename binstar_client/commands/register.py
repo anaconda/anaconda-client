@@ -39,7 +39,7 @@ def main(args):
     package_type = detect_package_type(args.filename)
     if package_type is None:
         raise UserError('Could not detect package type of file %r' % args.filename)
-    
+
     log.info(package_type)
 
     log.info('extracting package attributes ...')
@@ -49,14 +49,14 @@ def main(args):
     except Exception:
         if args.show_traceback:
             raise
-        
+
         raise BinstarError('Trouble reading metadata from %r. Please make sure this package is correct.' % (args.filename))
-        
+
     _, package_name, _, _, summary, _, license = package_attrs
-    
+
     if args.summary:
         summary = args.summary
-        
+
     if args.package:
         package_name = args.package
 
@@ -66,8 +66,7 @@ def main(args):
         binstar.add_package(username, package_name,
                             summary,
                             license,
-                            public=args.access != 'private',
-                            publish=args.access == 'publish')
+                            public=args.access != 'private')
         log.info('Created package %s/%s' % (username, package_name))
     else:
         raise UserError('Package %s/%s already exists' % (username, package_name))
@@ -89,21 +88,15 @@ def add_parser(subparsers):
     parser.add_argument('-s', '--summary', help='Summary of the package')
 
     perms = parser.add_mutually_exclusive_group()
-    
+
     package_access = config.get('package_access', 'personal')
     perms.desciption = 'The package permissions'
-    
+
     perms.add_argument('--private', action='store_const',
                        dest='access', const='private',
                        default=package_access == 'private',
                        help='Set the permissions of the package to private (if it does not exist)')
-    
-    perms.add_argument('--publish', action='store_const',
-                       dest='access', const='publish',
-                       default=package_access == 'publish',
-                       help=('Set the permissions of the package to public and '
-                             'publish this package to the global public repositories - if it does not exist. '
-                            '(default %(default)s)'))
+
     perms.add_argument('--personal', action='store_const',
                        dest='access', const='personal',
                        default=package_access == 'personal',

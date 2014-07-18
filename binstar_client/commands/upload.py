@@ -22,7 +22,7 @@ import sys
 
 try:
     input = raw_input
-except NameError: 
+except NameError:
     input = input
 
 
@@ -53,10 +53,6 @@ def create_release_interactive(binstar, username, package_name, version):
 
 
 def main(args):
-    for item in args.deprecated_register_args:
-        raise UserError('Argument %s has been deprecated and is no longer used. '
-                 'Please see the command "binstar register" for details' % item)
-
 
     binstar = get_binstar(args)
 
@@ -117,7 +113,7 @@ def main(args):
                                 'Please run "binstar register" to create this package namespace in the cloud.' % (username, package_name))
             else:
                 binstar.add_package(username, package_name, summary, license,
-                                    public=True, publish=False)
+                                    public=True)
 
         try:
             binstar.release(username, package_name, version)
@@ -184,10 +180,6 @@ def add_parser(subparsers):
     parser.add_argument('-t', '--package-type', help='Set the package type, defaults to autodetect')
     parser.add_argument('-d', '--description', help='description of the file(s)')
     parser.add_argument('-m', '--metadata', help='json encoded metadata default is to autodetect')
-
-    for deprecated in ['--public', '--private', '--personal', '--publish']:
-        parser.add_argument(deprecated, action='append_const', const=deprecated,
-                            dest='deprecated_register_args', default=[])
 
     parser.add_argument("--no-register", action="store_true", default=False)
     parser.add_argument('--build-id', help='Binstar-Build ID (internal only)')
