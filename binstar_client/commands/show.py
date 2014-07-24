@@ -11,12 +11,12 @@ example::
 
 
 '''
-from binstar_client.utils import get_binstar, PackageSpec, parse_specs
-from argparse import FileType, RawTextHelpFormatter
-
-import logging
+from argparse import RawTextHelpFormatter
+from binstar_client.utils import get_binstar, parse_specs
 from binstar_client.utils.pprint import pprint_user, pprint_packages, \
     pprint_orgs, pprint_collections
+import logging
+
 
 log = logging.getLogger('binstar.show')
 
@@ -91,8 +91,6 @@ def main(args):
         pprint_packages(binstar.user_packages(spec.user))
         if user_info['user_type'] == 'user':
             pprint_orgs(binstar.user_orgs(spec.user))
-        else:
-            pprint_collections(binstar.collections(spec.user))
 
     else:
         log.info(args.spec)

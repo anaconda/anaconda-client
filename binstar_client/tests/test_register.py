@@ -26,7 +26,7 @@ class Test(CLITestCase):
         r2.assertCalled()
         r3.assertCalled()
 
-        data = json.loads(base64.b64decode(r3.req.body).decode())
+        data = json.loads(r3.req.body)
         self.assertTrue(data['public'])
 
     @urlpatch
@@ -42,7 +42,7 @@ class Test(CLITestCase):
         r2.assertCalled()
         r3.assertCalled()
 
-        data = json.loads(base64.b64decode(r3.req.body).decode())
+        data = json.loads(r3.req.body)
         self.assertFalse(data['public'])
 
 

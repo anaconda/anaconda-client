@@ -4,6 +4,7 @@ Copy packages from one account to another
 from __future__ import unicode_literals, print_function
 from binstar_client.utils import get_binstar, parse_specs
 import logging
+from binstar_client import errors
 
 log = logging.getLogger('binstar.whoami')
 
@@ -11,11 +12,18 @@ def main(args):
     bs = get_binstar(args)
 
     spec = args.spec
+    channels = bs.list_channels(spec.user)
+    if args.from_channel not in channels:
+        raise errors.UserError("Channel %s does not exist\n\tplease choose from: %s" % (args.from_channel, ', '.join(channels)))
+    files = bs.copy(spec.user, spec.package, spec.version, spec._basename,
+                    to_owner=args.to_owner, from_channel=args.from_channel, to_channel=args.to_channel)
+    for binstar_file in files:
+        print("Copied file: %(basename)s" % binstar_file)
 
-    bs.copy(spec.user, spec.package, spec.version, spec._basename,
-            to_owner=args.to_owner, from_channel=args.from_channel, to_channel=args.to_channel)
-
-    log.info("File was copied successfully")
+    if files:
+        log.info("Copied %i files" % len(files))
+    else:
+        log.warning("Did not copy any files. Please check your inputs with\n\n\tbinstar show %s" % spec)
 
 
 def add_parser(subparsers):
