@@ -51,7 +51,10 @@ arch_map = {('osx', 'x86_64'):'osx-64',
             ('win', 'x86_64'):'win-64',
             ('linux', 'x86'):'linux-32',
             ('linux', 'x86_64'):'linux-64',
+            (None, None): 'any-any',
            }
+
+os_map = {'osx':'darwin', 'win':'win32'}
 
 def detect_conda_attrs(filename):
 
@@ -62,6 +65,13 @@ def detect_conda_attrs(filename):
     summary, description, home_page, license = detect_recipe_attrs(filename)
     attrs['home_page'] = home_page
     os_arch = arch_map[(attrs['platform'], attrs['arch'])]
+    machine = attrs['arch']
+
+    # See LLVM target triplet
+    #
+    attrs['operatingsystem'] = operatingsystem = os_map.get(attrs['platform'], attrs['platform'])
+    attrs['machine'] = machine
+    attrs['target-triplet'] = '%s-any-%s' % (machine, operatingsystem)
     filename = path.join(os_arch, basename(filename))
     return filename, attrs['name'], attrs['version'], attrs, summary, description, license
 
