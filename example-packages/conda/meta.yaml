@@ -1,0 +1,12 @@
+package:
+  name: conda_gc_test
+  version: 1.2.1
+
+build:
+  number: 3
+
+requirements:
+  run:
+    - python
+about:
+  summary: This is a simple meta-package
