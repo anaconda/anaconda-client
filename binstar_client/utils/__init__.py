@@ -44,7 +44,18 @@ class PackageSpec(object):
         self._version = version
         self._basename = basename
         self.attrs = attrs
-        self.spec_str = spec_str
+        if spec_str:
+            self.spec_str = spec_str
+        else:
+            spec_str = str(user)
+            if package:
+                spec_str = '%s/%s' % (spec_str, package)
+            if version:
+                spec_str = '%s/%s' % (spec_str, version)
+            if basename:
+                spec_str = '%s/%s' % (spec_str, basename)
+
+
 
     def __str__(self):
         return self.spec_str
