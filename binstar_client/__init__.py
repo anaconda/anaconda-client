@@ -39,6 +39,8 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
             self._session.headers.update({'Authorization': 'token %s' % (token),
                                           'User-Agent': 'Binstar/%s (+https://binstar.org)' % __version__})
 
+        if domain.endswith('/'):
+            domain = domain[:-1]
         self.domain = domain
 
     @property
