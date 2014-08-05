@@ -9,14 +9,14 @@ eg:
     binstar upload CONDA_PACKAGE_1.bz2
 '''
 from __future__ import unicode_literals
-from binstar_client.utils import get_binstar, get_config
 from binstar_client import BinstarError, NotFound
-from os.path import exists
-import sys
-import logging
-from binstar_client.utils.detect import detect_package_type, get_attrs
 from binstar_client.errors import UserError
+from binstar_client.utils import get_binstar, get_config
+from binstar_client.utils.detect import detect_package_type, get_attrs
+from os.path import exists
 import argparse
+import logging
+import sys
 
 log = logging.getLogger('binstar.register')
 
@@ -45,20 +45,24 @@ def main(args):
     log.info('extracting package attributes ...')
     sys.stdout.flush()
     try:
-        package_attrs = get_attrs(package_type, args.filename)
+        package_attrs, _, _ = get_attrs(package_type, args.filename)
     except Exception:
         if args.show_traceback:
             raise
 
         raise BinstarError('Trouble reading metadata from %r. Please make sure this package is correct.' % (args.filename))
 
-    _, package_name, _, _, summary, _, license = package_attrs
-
     if args.summary:
         summary = args.summary
+    else:
+        package_attrs['summary']
 
     if args.package:
+        if package_attrs['name'].lower() != args.package.lower():
+            raise BinstarError('Package name on the command line does not match the package name in the file "%s"' % args.filename)
         package_name = args.package
+    else:
+        package_name = package_attrs['name']
 
     try:
         binstar.package(username, package_name)

@@ -10,13 +10,13 @@ eg:
 
 '''
 from __future__ import unicode_literals
+
 from binstar_client import BinstarError, NotFound, Conflict
 from binstar_client.errors import UserError
 from binstar_client.utils import get_binstar, bool_input, upload_print_callback
 from binstar_client.utils.detect import detect_package_type, get_attrs
-from os.path import basename, exists
+from os.path import exists
 import argparse
-import json
 import logging
 import sys
 
