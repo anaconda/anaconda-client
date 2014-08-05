@@ -11,9 +11,9 @@ import socket
 
 log = logging.getLogger('binstar.login')
 
-try: 
+try:
     input = raw_input
-except NameError: 
+except NameError:
     input = input
 
 def interactive_get_token():
@@ -24,7 +24,7 @@ def interactive_get_token():
 
     token = None
     username = input('Username: ')
-    
+
     for _ in range(3):
         try:
             sys.stderr.write("%s's " % username)
@@ -42,7 +42,6 @@ def interactive_get_token():
     return token
 
 def interactive_login():
-
     token = interactive_get_token()
     store_token(token)
     log.info('login successful')

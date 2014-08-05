@@ -79,31 +79,27 @@ def main(args):
                 raise BinstarError('Could not detect package type of file %r please specify package type with option --package-type' % filename)
             log.info(package_type)
 
-        if args.metadata:
-            attrs = json.loads(args.metadata)
-            package_name = args.package
-            version = args.version
-            description = ''
-            basefilename = basename(filename)
-        else:
-            log.info('extracting package attributes for upload ...')
-            sys.stdout.flush()
-            try:
-                package_attrs = get_attrs(package_type, filename)
-            except Exception:
-                if args.show_traceback:
-                    raise
+        log.info('extracting package attributes for upload ...')
+        sys.stdout.flush()
+        try:
+            package_attrs, release_attrs, file_attrs = get_attrs(package_type, filename)
+        except Exception:
+            if args.show_traceback:
+                raise
 
-                raise BinstarError('Trouble reading metadata from %r. Please make sure this package is correct or specify the --metadata, --package and --version arguments' % (filename))
+            raise BinstarError('Trouble reading metadata from %r. Is this a valid %s package' % (filename, package_type))
 
-            basefilename, package_name, version, attrs, summary, description, license = package_attrs
-            log.info('done')
+        log.info('done')
 
         if args.package:
+            if package_attrs['name'].lower() != args.package.lower():
+                raise BinstarError('Package name on the command line does not match the package name in the file "%s"' % filename)
             package_name = args.package
+        else:
+            package_name = package_attrs['name']
 
-        if args.version:
-            version = args.version
+#         if args.version:
+#             version = args.version
 
         try:
             binstar.package(username, package_name)
@@ -112,43 +108,47 @@ def main(args):
                 raise UserError('Binstar package %s/%s does not exist. '
                                 'Please run "binstar register" to create this package namespace in the cloud.' % (username, package_name))
             else:
-                binstar.add_package(username, package_name, summary, license,
+                binstar.add_package(username, package_name, package_attrs['summary'], license,
                                     public=True)
 
         try:
-            binstar.release(username, package_name, version)
+            binstar.release(username, package_name, release_attrs['version'])
         except NotFound:
             if args.mode == 'interactive':
-                create_release_interactive(binstar, username, package_name, version)
+                create_release_interactive(binstar, username, package_name, release_attrs['version'])
             else:
-                create_release(binstar, username, package_name, version, description)
+                create_release(binstar, username, package_name, release_attrs['version'], release_attrs['description'])
 
         with open(filename, 'rb') as fd:
-            log.info('\nUploading file %s/%s/%s/%s ... ' % (username, package_name, version, basefilename))
+            log.info('\nUploading file %s/%s/%s/%s ... ' % (username, package_name, release_attrs['version'], file_attrs['basename']))
             sys.stdout.flush()
             try:
-                binstar.distribution(username, package_name, version, basefilename)
+                binstar.distribution(username, package_name, release_attrs['version'], file_attrs['basename'])
             except NotFound:
                 pass
             else:
 
                 if args.mode == 'force':
-                    log.warning('Distribution %s already exists ... removing' % (basefilename,))
-                    binstar.remove_dist(username, package_name, version, basefilename)
+                    log.warning('Distribution %s already exists ... removing' % (file_attrs['basename'],))
+                    binstar.remove_dist(username, package_name, release_attrs['version'], file_attrs['basename'])
                 if args.mode == 'interactive':
-                    if bool_input('Distribution %s already exists. Would you like to replace it?' % (basefilename,)):
-                        binstar.remove_dist(username, package_name, version, basefilename)
+                    if bool_input('Distribution %s already exists. Would you like to replace it?' % (file_attrs['basename'],)):
+                        binstar.remove_dist(username, package_name, release_attrs['version'], file_attrs['basename'])
                     else:
-                        log.info('Not replacing distribution %s' % (basefilename,))
+                        log.info('Not replacing distribution %s' % (file_attrs['basename'],))
                         continue
             try:
                 if args.build_id:
-                    attrs['binstar_build'] = args.build_id
-                binstar.upload(username, package_name, version, basefilename, fd, package_type, args.description, attrs=attrs,
+                    file_attrs['attrs']['binstar_build'] = args.build_id
+                binstar.upload(username, package_name, release_attrs['version'], file_attrs['basename'],
+                               fd, package_type,
+                               args.description,
+                               dependencies=file_attrs.get('dependencies'),
+                               attrs=file_attrs['attrs'],
                                channels=args.channels,
                                callback=upload_print_callback(args))
             except Conflict:
-                full_name = '%s/%s/%s/%s' % (username, package_name, version, basefilename)
+                full_name = '%s/%s/%s/%s' % (username, package_name, release_attrs['version'], file_attrs['basename'])
                 log.info('Distribution already exists. Please use the -i/--interactive or --force options or `binstar remove %s`' % full_name)
                 raise
 
@@ -179,7 +179,6 @@ def add_parser(subparsers):
     parser.add_argument('-v', '--version', help='Defaults to the packge version in the uploaded file')
     parser.add_argument('-t', '--package-type', help='Set the package type, defaults to autodetect')
     parser.add_argument('-d', '--description', help='description of the file(s)')
-    parser.add_argument('-m', '--metadata', help='json encoded metadata default is to autodetect')
 
     parser.add_argument("--no-register", action="store_true", default=False)
     parser.add_argument('--build-id', help='Binstar-Build ID (internal only)')

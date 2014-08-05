@@ -1,119 +1,17 @@
-'''
-Created on Jan 2, 2014
-
-@author: sean
-'''
 from __future__ import print_function, unicode_literals
+
+from binstar_client.inspect_package.conda import inspect_conda_package
+from binstar_client.inspect_package.pypi import inspect_pypi_package
+from binstar_client.inspect_package.r import inspect_r_package
 import tarfile
-import json
-from os.path import basename
-from email.parser import Parser
-from os import path
-
-def detect_recipe_attrs(filename):
-    tar = tarfile.open(filename)
-
-    try:
-        obj = tar.extractfile('info/recipe.json')
-    except KeyError:
-        return None, None, None, None
-
-    attrs = json.loads(obj.read().decode())
-
-    about = attrs.get('about', {})
-    summary = about.get('summary')
-    home_page = about.get('home')
-    description = about.get('description')
-    license = about.get('license')
-
-    return summary, description, home_page, license
-
-def detect_pypi_attrs(filename):
-
-    with tarfile.open(filename) as tf:
-        pkg_info = next(name for name in tf.getnames() if name.endswith('/PKG-INFO'))
-        fd = tf.extractfile(pkg_info.decode())
-        data = fd.read().decode()
-        attrs = dict(Parser().parsestr(data).items())
-
-    name = attrs.pop('Name')
-    version = attrs.pop('Version')
-    summary = attrs.pop('Summary')
-    description = attrs.pop('Description')
-    license = attrs.pop('License')
-    attrs = {'dist':'sdist'}
-
-    filename = basename(filename)
-    return filename, name, version, attrs, summary, description, license
-
-arch_map = {('osx', 'x86_64'):'osx-64',
-            ('win', 'x86'):'win-32',
-            ('win', 'x86_64'):'win-64',
-            ('linux', 'x86'):'linux-32',
-            ('linux', 'x86_64'):'linux-64',
-            (None, None): 'any-any',
-           }
-
-os_map = {'osx':'darwin', 'win':'win32'}
-
-def detect_conda_attrs(filename):
-
-    tar = tarfile.open(filename)
-    obj = tar.extractfile('info/index.json')
-    attrs = json.loads(obj.read().decode())
-
-    summary, description, home_page, license = detect_recipe_attrs(filename)
-    attrs['home_page'] = home_page
-    os_arch = arch_map[(attrs['platform'], attrs['arch'])]
-    machine = attrs['arch']
-
-    # See LLVM target triplet
-    #
-    attrs['operatingsystem'] = operatingsystem = os_map.get(attrs['platform'], attrs['platform'])
-    attrs['machine'] = machine
-    attrs['target-triplet'] = '%s-any-%s' % (machine, operatingsystem)
-    filename = path.join(os_arch, basename(filename))
-    return filename, attrs['name'], attrs['version'], attrs, summary, description, license
-
-def detect_r_attrs(filename):
-
-    with tarfile.open(filename) as tf:
-        pkg_info = next(name for name in tf.getnames() if name.endswith('/DESCRIPTION'))
-        fd = tf.extractfile(pkg_info)
-        raw_attrs = dict(Parser().parse(fd).items())
-
-    name = raw_attrs.pop('Package')
-    version = raw_attrs.pop('Version')
-    summary = raw_attrs.pop('Title', None)
-    description = raw_attrs.pop('Description', None)
-    license = raw_attrs.pop('License', None)
-
-    attrs = {}
-    attrs['NeedsCompilation'] = raw_attrs.get('NeedsCompilation', 'no')
-    attrs['depends'] = raw_attrs.get('Depends', '').split(',')
-    attrs['suggests'] = raw_attrs.get('Suggests', '').split(',')
-
-    built = raw_attrs.get('Built')
-
-    if built:
-        r, _, date, platform = built.split(';')
-        r_version = r.strip('R ')
-        attrs['R'] = r_version
-        attrs['os'] = platform.strip()
-        attrs['type'] = 'package'
-    else:
-        attrs['type'] = 'source'
-
-    return filename, name, version, attrs, summary, description, license
-
 
 #===============================================================================
 #
 #===============================================================================
 
-detectors = {'conda':detect_conda_attrs,
-             'pypi': detect_pypi_attrs,
-             'r': detect_r_attrs,
+detectors = {'conda':inspect_conda_package,
+             'pypi': inspect_pypi_package,
+             'r': inspect_r_package,
              }
 
 
@@ -128,6 +26,8 @@ def is_conda(filename):
             return True
 
 def is_pypi(filename):
+    if filename.endswith('.whl'):
+        return True
     if filename.endswith('.tar.gz') or filename.endswith('.tgz'):  # Could be a setuptools sdist or r source package
         with tarfile.open(filename) as tf:
             if any(name.endswith('/PKG-INFO') for name in tf.getnames()):
@@ -154,4 +54,5 @@ def detect_package_type(filename):
 
 
 def get_attrs(package_type, filename):
-    return detectors[package_type](filename)
+    with open(filename) as fileobj:
+        return detectors[package_type](filename, fileobj)
