@@ -53,7 +53,8 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
                      scopes=None,
                      created_with=None,
                      max_age=None,
-                     strength='strong'):
+                     strength='strong',
+                     fail_if_already_exists=False):
         '''
         Use basic authentication to create an authentication token using the interface below.
         With this technique, a username and password need not be stored permanently, and the user can
@@ -77,7 +78,8 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
                    'user': for_user,
                    'max-age': max_age,
                    'created_with': None,
-                   'strength': strength}
+                   'strength': strength,
+                   'fail-if-exists': fail_if_already_exists}
 
         data, headers = jencode(payload)
         res = self.session.post(url, auth=(username, password), data=data, headers=headers)
@@ -112,8 +114,8 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         self._check_response(res)
         return res.json()
 
-    def remove_authentication(self, auth_id):
-        url = '%s/authentications/%s' % (self.domain, auth_id)
+    def remove_authentication(self, auth_name):
+        url = '%s/authentications/name/%s' % (self.domain, auth_name)
         res = self.session.delete(url, verify=True)
         self._check_response(res, [201])
 

@@ -31,10 +31,10 @@ import logging
 
 log = logging.getLogger('binstar.auth')
 
-try: 
+try:
     input = raw_input
-except NameError: 
-    pass # Python 3
+except NameError:
+    pass  # Python 3
 
 def utcnow():
     now = datetime.utcnow()
@@ -43,9 +43,9 @@ def utcnow():
 def format_timedelta(date):
     if not date:
         return 'Never'
-    
+
     now = utcnow()
-    
+
     if date < utcnow():
         return  'expired'
 
@@ -117,8 +117,9 @@ def main(args):
         show_auths(binstar.authentications())
         return
     elif args.remove:
-        for auth_id in args.remove:
-            binstar.remove_authentication(auth_id)
+        for auth_name in args.remove:
+            binstar.remove_authentication(auth_name)
+            log.info("Removed token %s" % auth_name)
         return
     elif args.list_scopes:
         scopes = binstar.list_scopes()
@@ -127,9 +128,9 @@ def main(args):
             log.info('  ' + scopes[key])
             log.info('')
         log.info(SCOPE_EXAMPLES)
-            
+
     elif args.create:
-        
+
         try:
             current_user = binstar.user()
             username = current_user['login']
@@ -138,25 +139,26 @@ def main(args):
             sys.stderr.write('Username: ')
             sys.stderr.flush()
             username = input('')
-            
+
         scopes = [scope for scopes in args.scopes for scope in scopes.split()]
         if not scopes:
             log.warn("You have not specified the scope of this token with the '--scopes' argument.")
             log.warn("This token will grant full access to %s's account" % username)
             log.warn("Use the --list-scopes option to see a listing of your options")
-        
+
         for _ in range(3):
             try:
                 sys.stderr.write("Please re-enter %s's " % username)
                 password = getpass.getpass()
-                
+
                 token = binstar.authenticate(username, password,
                                            args.name, application_url=args.url,
                                            scopes=scopes,
                                            for_user=args.organization,
                                            max_age=args.max_age,
                                            created_with=' '.join(sys.argv),
-                                           strength=args.strength)
+                                           strength=args.strength,
+                                           fail_if_already_exists=True)
                 sys.stdout.write(token)
                 break
             except errors.Unauthorized:
@@ -176,18 +178,18 @@ def add_parser(subparsers):
     parser.add_argument('-s', '--scopes', action='append', help=('Scopes for token. '
                                                                  'For example if you want to limit this token to conda downloads only you would use '
                                                                  '--scopes "repo conda:download"'), default=[])
-    
+
     g = parser.add_argument_group('Token Strength options')
     g.add_argument('--strength', choices=['strong', 'weak'], default='strong', dest='strength')
     g.add_argument('--strong', action='store_const', const='strong', dest='strength' , help='Create a longer token (default)')
     g.add_argument('-w', '--weak', action='store_const', const='weak', dest='strength', help='Create a shorter token')
-    
+
     parser.add_argument('-o', '--org', '--organization', help='Set the token owner (must be an organization)', dest='organization')
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('-x', '--list-scopes', action='store_true', help='list all authentication scopes')
     group.add_argument('-l', '--list', action='store_true', help='list all user authentication tokens')
-    group.add_argument('-r', '--remove', metavar='ID', nargs='+', help='remove authentication tokens')
+    group.add_argument('-r', '--remove', metavar='NAME', nargs='+', help='remove authentication tokens')
     group.add_argument('-c', '--create', action='store_true', help='Create an authentication token')
     group.add_argument('-i', '--info', '--current-info', dest='info',
                        action='store_true', help='Show information about the current authentication token')
