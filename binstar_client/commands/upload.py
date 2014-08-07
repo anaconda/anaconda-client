@@ -140,13 +140,13 @@ def main(args):
             try:
                 if args.build_id:
                     file_attrs['attrs']['binstar_build'] = args.build_id
-                binstar.upload(username, package_name, release_attrs['version'], file_attrs['basename'],
-                               fd, package_type,
-                               args.description,
-                               dependencies=file_attrs.get('dependencies'),
-                               attrs=file_attrs['attrs'],
-                               channels=args.channels,
-                               callback=upload_print_callback(args))
+                upload_info = binstar.upload(username, package_name, release_attrs['version'], file_attrs['basename'],
+                                             fd, package_type,
+                                             args.description,
+                                             dependencies=file_attrs.get('dependencies'),
+                                             attrs=file_attrs['attrs'],
+                                             channels=args.channels,
+                                             callback=upload_print_callback(args))
             except Conflict:
                 full_name = '%s/%s/%s/%s' % (username, package_name, release_attrs['version'], file_attrs['basename'])
                 log.info('Distribution already exists. Please use the -i/--interactive or --force options or `binstar remove %s`' % full_name)
@@ -157,8 +157,8 @@ def main(args):
 
 
     for package in uploaded_packages:
-        log.info("Package located at:\nhttps://binstar.org/%s/%s\n" % (username, package))
-
+        package_url = upload_info.get('url', 'https://binstar.org/%s/%s' % (username, package))
+        log.info("Package located at:\n%s\n" % package_url)
 
 
 def add_parser(subparsers):
