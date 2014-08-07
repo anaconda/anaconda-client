@@ -24,7 +24,7 @@ def transform_conda_deps(deps):
         dep = dep.strip()
         name_spec = dep.split(' ', 1)
         if len(name_spec) == 1:
-            name = name_spec
+            name, = name_spec
             depends[name] = []
         elif len(name_spec) == 2:
             name, spec = name_spec
@@ -68,6 +68,7 @@ def inspect_conda_package(filename, fileobj):
     release_data = {
                     'version': index.pop('version'),
                     'home_page': about.get('home'),
+                    'description': '',
                     }
     file_data = {
                 'basename': path.join(os_arch, path.basename(filename)),
