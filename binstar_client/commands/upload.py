@@ -108,7 +108,7 @@ def main(args):
                 raise UserError('Binstar package %s/%s does not exist. '
                                 'Please run "binstar register" to create this package namespace in the cloud.' % (username, package_name))
             else:
-                binstar.add_package(username, package_name, package_attrs['summary'], license,
+                binstar.add_package(username, package_name, package_attrs['summary'], package_attrs['license'],
                                     public=True)
 
         try:

@@ -55,7 +55,7 @@ def main(args):
     if args.summary:
         summary = args.summary
     else:
-        package_attrs['summary']
+        summary = package_attrs['summary']
 
     if args.package:
         if package_attrs['name'].lower() != args.package.lower():
@@ -69,7 +69,7 @@ def main(args):
     except NotFound:
         binstar.add_package(username, package_name,
                             summary,
-                            license,
+                            package_attrs['license'],
                             public=args.access != 'private')
         log.info('Created package %s/%s' % (username, package_name))
     else:
