@@ -57,7 +57,7 @@ def main(args=None, exit=True):
     setup_logging(args)
     try:
         try:
-            return args.main(args, unknown)
+            return args.main(args)
         except Unauthorized as err:
             if not args.token:
                 logger.info('The action you are performing requires authentication, please sign in:')
