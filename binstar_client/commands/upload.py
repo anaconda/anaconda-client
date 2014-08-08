@@ -209,7 +209,6 @@ def main(args):
         package_url = upload_info.get('url', 'https://binstar.org/%s/%s' % (username, package))
         log.info("Package located at:\n%s\n" % package_url)
 
-main.__allow_unknown_args__ = True
 
 def add_parser(subparsers):
 
