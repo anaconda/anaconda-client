@@ -30,6 +30,8 @@ try:
 except NameError:
     input = input
 
+log = logging.getLogger('binstar')
+
 def jencode(*E, **F):
     payload = dict(*E, **F)
     return json.dumps(payload), {'Content-Type': 'application/json'}
@@ -138,7 +140,7 @@ def get_binstar(args=None, cls=None):
         cls = Binstar
     config = get_config()
     url = config.get('url', 'https://api.binstar.org')
-
+    log.info("Using binstar api site %s" % url)
     if args and args.token:
         token = args.token
     else:
