@@ -33,8 +33,8 @@ def setup_logging(args):
     logger.addHandler(shndlr)
 
 def main(args=None, exit=True):
-    
-    
+
+
     parser = ArgumentParser(description=__doc__)
     parser.add_argument('--show-traceback', action='store_true')
     parser.add_argument('-t', '--token')
@@ -52,12 +52,12 @@ def main(args=None, exit=True):
     for command in sub_commands():
         command.add_parser(subparsers)
 
-    args = parser.parse_args(args)
+    args, unknown = parser.parse_known_args(args)
 
     setup_logging(args)
     try:
         try:
-            return args.main(args)
+            return args.main(args, unknown)
         except Unauthorized as err:
             if not args.token:
                 logger.info('The action you are performing requires authentication, please sign in:')
@@ -72,18 +72,18 @@ def main(args=None, exit=True):
             raise SystemExit(1)
         else:
             return 1
-        
+
     except (BinstarError, KeyboardInterrupt) as err:
         if args.show_traceback:
             raise
-        if hasattr(err,'message'):
+        if hasattr(err, 'message'):
             logger.exception(err.message)
-        elif hasattr(err,'args'):
+        elif hasattr(err, 'args'):
             logger.exception(err.args[0] if err.args else '')
         else:
             logger.exception(str(err))
         if exit:
             raise SystemExit(1)
         else:
-            return 1 
-        
+            return 1
+
