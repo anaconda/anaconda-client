@@ -52,7 +52,7 @@ def main(args=None, exit=True):
     for command in sub_commands():
         command.add_parser(subparsers)
 
-    args, unknown = parser.parse_known_args(args)
+    args = parser.parse_args(args)
 
     setup_logging(args)
     try:
