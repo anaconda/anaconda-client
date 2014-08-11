@@ -140,7 +140,8 @@ def get_binstar(args=None, cls=None):
         cls = Binstar
     config = get_config()
     url = config.get('url', 'https://api.binstar.org')
-    log.info("Using binstar api site %s" % url)
+    if getattr(args, 'log_level', 0) >= logging.INFO:
+        sys.stderr.write("Using binstar api site %s\n" % url)
     if args and args.token:
         token = args.token
     else:
