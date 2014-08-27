@@ -2,18 +2,20 @@
 Binstar command line utility
 '''
 from __future__ import print_function, unicode_literals
+
 from argparse import ArgumentParser
+import logging
+from logging.handlers import RotatingFileHandler
+from os import makedirs
+from os.path import join, exists
+import platform
+
 from binstar_client import __version__ as version
 from binstar_client.commands import sub_commands
 from binstar_client.commands.login import interactive_login
 from binstar_client.errors import BinstarError, ShowHelp, Unauthorized
 from binstar_client.utils import USER_LOGDIR
 from binstar_client.utils.handlers import MyStreamHandler, syslog_handler
-from logging.handlers import RotatingFileHandler
-from os import makedirs
-from os.path import join, exists
-import logging
-import platform
 
 
 logger = logging.getLogger('binstar')
