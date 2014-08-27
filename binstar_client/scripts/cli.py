@@ -3,7 +3,7 @@ Binstar command line utility
 '''
 from __future__ import print_function, unicode_literals
 
-from argparse import ArgumentParser
+from argparse import ArgumentParser, RawDescriptionHelpFormatter
 import logging
 from logging.handlers import RotatingFileHandler
 from os import makedirs
@@ -44,7 +44,8 @@ def setup_logging(args):
 
 def binstar_main(get_sub_commands, args=None, exit=True, description=None, version=None):
 
-    parser = ArgumentParser(description=description)
+    parser = ArgumentParser(description=description,
+                            formatter_class=RawDescriptionHelpFormatter)
     parser.add_argument('--show-traceback', action='store_true')
     parser.add_argument('-t', '--token')
     parser.add_argument('-v', '--verbose',
