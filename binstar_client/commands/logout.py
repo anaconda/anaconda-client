@@ -12,7 +12,9 @@ def main(args):
 
     bs = get_binstar()
     auth = bs.authentication()
-    bs.remove_authentication(auth['id'])
+    # TODO: named 'application' because I was using the github model
+    # Change it to name once we release the latest version of binstar server
+    bs.remove_authentication(auth['application'])
     remove_token()
     log.info("logout successful")
 
