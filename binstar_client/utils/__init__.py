@@ -137,7 +137,7 @@ def get_binstar(args=None, cls=None):
     if not cls:
         from binstar_client import Binstar
         cls = Binstar
-    config = get_config(remote_site=args.site)
+    config = get_config(remote_site=args and args.site)
     url = config.get('url', DEFAULT_URL)
     if getattr(args, 'log_level', 0) >= logging.INFO:
         sys.stderr.write("Using binstar api site %s\n" % url)
@@ -149,7 +149,7 @@ def get_binstar(args=None, cls=None):
     return cls(token, domain=url,)
 
 def store_token(token, args):
-    config = get_config(remote_site=args.site)
+    config = get_config(remote_site=args and args.site)
 
     url = config.get('url', DEFAULT_URL)
 
@@ -162,7 +162,7 @@ def store_token(token, args):
         fd.write(token)
 
 def remove_token(args):
-    config = get_config(remote_site=args.site)
+    config = get_config(remote_site=args and args.site)
     url = config.get('url', DEFAULT_URL)
     data_dir = appdirs.user_data_dir('binstar', 'ContinuumIO')
     tokenfile = join(data_dir, '%s.token' % quote_plus(url))
