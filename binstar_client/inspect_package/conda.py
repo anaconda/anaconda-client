@@ -5,6 +5,7 @@ import sys
 import tarfile
 
 arch_map = {('osx', 'x86_64'):'osx-64',
+            ('osx', 'x86'):'osx-32',
             ('win', 'x86'):'win-32',
             ('win', 'x86_64'):'win-64',
             ('linux', 'x86'):'linux-32',
