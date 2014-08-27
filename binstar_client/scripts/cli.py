@@ -8,14 +8,16 @@ from binstar_client.commands import sub_commands
 from binstar_client.commands.login import interactive_login
 from binstar_client.errors import BinstarError, ShowHelp, Unauthorized
 from binstar_client.utils import USER_LOGDIR
-from binstar_client.utils.handlers import MyStreamHandler
+from binstar_client.utils.handlers import MyStreamHandler, syslog_handler
 from logging.handlers import RotatingFileHandler
 from os import makedirs
 from os.path import join, exists
 import logging
+import platform
 
 
 logger = logging.getLogger('binstar')
+
 
 def setup_logging(args):
     if not exists(USER_LOGDIR): makedirs(USER_LOGDIR)
@@ -31,6 +33,13 @@ def setup_logging(args):
     shndlr = MyStreamHandler()
     shndlr.setLevel(args.log_level)
     logger.addHandler(shndlr)
+
+    if platform.system().lower() != 'windows':
+        hndlr = syslog_handler('binstar-client')
+        binstar_logger = logging.getLogger()
+        binstar_logger.setLevel(logging.INFO)
+        binstar_logger.addHandler(hndlr)
+
 
 def main(args=None, exit=True):
 
@@ -86,4 +95,5 @@ def main(args=None, exit=True):
             raise SystemExit(1)
         else:
             return 1
+
 
