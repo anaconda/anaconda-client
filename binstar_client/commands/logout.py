@@ -15,7 +15,7 @@ def main(args):
     # TODO: named 'application' because I was using the github model
     # Change it to name once we release the latest version of binstar server
     bs.remove_authentication(auth['application'])
-    remove_token()
+    remove_token(args)
     log.info("logout successful")
 
 def add_parser(subparsers):

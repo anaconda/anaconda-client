@@ -54,6 +54,8 @@ def main(args=None, exit=True):
     parser.add_argument('-q', '--quiet',
                         action='store_const', help='Only show warnings or errors the console',
                         dest='log_level', const=logging.WARNING)
+    parser.add_argument('-s', '--site',
+                        help='select the binstar site to use', default=None)
     parser.add_argument('-V', '--version', action='version',
                         version="%%(prog)s Command line client (version %s)" % (version,))
     subparsers = parser.add_subparsers(help='commands')

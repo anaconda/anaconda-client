@@ -41,13 +41,13 @@ def interactive_get_token():
 
     return token
 
-def interactive_login():
+def interactive_login(args):
     token = interactive_get_token()
-    store_token(token)
+    store_token(token, args)
     log.info('login successful')
 
 def main(args):
-    interactive_login()
+    interactive_login(args)
 
 def add_parser(subparsers):
     subparser = subparsers.add_parser('login',

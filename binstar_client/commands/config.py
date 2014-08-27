@@ -6,13 +6,40 @@ Get, Set, Remove or Show the binstar configuration.
 
 '''
 from __future__ import print_function
+
+from ast import literal_eval
+import logging
+from pprint import pprint
+
 from binstar_client.errors import ShowHelp
 from binstar_client.utils import get_config, set_config, SITE_CONFIG, \
     USER_CONFIG
-from pprint import pprint
-import logging
 
 log = logging.getLogger('binstar.config')
+
+def try_eval(item):
+    try:
+        return literal_eval(item)
+    except SyntaxError:
+        return item
+
+def recursive_set(config_data, key, value, ty):
+    while '.' in key:
+        prefix, key = key.split('.', 1)
+        config_data = config_data.setdefault(prefix, {})
+
+    config_data[key] = ty(value)
+
+def recursive_remove(config_data, key):
+    while '.' in key:
+        if not config_data:
+            return
+        prefix, key = key.split('.', 1)
+        config_data = config_data.get(prefix, {})
+
+    del config_data[key]
+
+
 
 def main(args):
     config = get_config()
@@ -41,11 +68,14 @@ def main(args):
     config = get_config(args.user, not args.user)
 
     for key, value in args.set:
+        recursive_set(config, key, value, args.type)
         config[key] = args.type(value)
 
     for key in args.remove:
-        if key in config:
-            del config[key]
+        try:
+            recursive_remove(config, key)
+        except KeyError:
+            log.error("Key %s does not exist" % key)
 
     if not (args.set or args.remove):
         raise ShowHelp()
@@ -58,7 +88,7 @@ def add_parser(subparsers):
                                       help='Binstar configuration',
                                       description=__doc__)
 
-    parser.add_argument('--type', type=eval, default=str, help='The type of the values in the set commands')
+    parser.add_argument('--type', type=try_eval, default=str, help='The type of the values in the set commands')
     parser.add_argument('--set', nargs=2, action='append', default=[], help='sets a new variable: name value', metavar=('name', 'value'))
     parser.add_argument('--get', help='get value: name', metavar='name')
     parser.add_argument('--remove', action='append', default=[], help='removes a variable')

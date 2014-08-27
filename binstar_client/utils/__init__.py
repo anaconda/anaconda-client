@@ -1,17 +1,20 @@
-'''
-Created on Apr 29, 2013
-
-@author: sean
-'''
-
-from hashlib import md5
-from os.path import exists, join, dirname, expanduser, isfile, isdir
-from binstar_client.utils import appdirs
 import base64
+import collections
 import getpass
-import os
-import time
+from hashlib import md5
+import json
 import logging
+import os
+from os.path import exists, join, dirname, expanduser, isfile, isdir
+import sys
+import time
+
+from binstar_client.utils import appdirs
+import yaml
+
+from ..errors import UserError
+
+
 try:
     import urlparse
     from urllib import quote_plus
@@ -19,11 +22,7 @@ except ImportError:
     from urllib import parse as urlparse
     from urllib.parse import quote_plus
 
-import yaml
-import sys
 
-from ..errors import UserError
-import json
 
 try:
     input = raw_input
@@ -138,8 +137,8 @@ def get_binstar(args=None, cls=None):
     if not cls:
         from binstar_client import Binstar
         cls = Binstar
-    config = get_config()
-    url = config.get('url', 'https://api.binstar.org')
+    config = get_config(remote_site=args.site)
+    url = config.get('url', DEFAULT_URL)
     if getattr(args, 'log_level', 0) >= logging.INFO:
         sys.stderr.write("Using binstar api site %s\n" % url)
     if args and args.token:
@@ -149,9 +148,10 @@ def get_binstar(args=None, cls=None):
 
     return cls(token, domain=url,)
 
-def store_token(token):
-    config = get_config()
-    url = config.get('url', 'https://api.binstar.org')
+def store_token(token, args):
+    config = get_config(remote_site=args.site)
+
+    url = config.get('url', DEFAULT_URL)
 
     data_dir = appdirs.user_data_dir('binstar', 'ContinuumIO')
     if not isdir(data_dir):
@@ -161,9 +161,9 @@ def store_token(token):
     with open(tokenfile, 'w') as fd:
         fd.write(token)
 
-def remove_token():
-    config = get_config()
-    url = config.get('url', 'https://api.binstar.org')
+def remove_token(args):
+    config = get_config(remote_site=args.site)
+    url = config.get('url', DEFAULT_URL)
     data_dir = appdirs.user_data_dir('binstar', 'ContinuumIO')
     tokenfile = join(data_dir, '%s.token' % quote_plus(url))
 
@@ -183,13 +183,39 @@ SITE_CONFIG = join(appdirs.site_data_dir('binstar', 'ContinuumIO'), 'config.yaml
 USER_CONFIG = join(appdirs.user_data_dir('binstar', 'ContinuumIO'), 'config.yaml')
 USER_LOGDIR = appdirs.user_log_dir('binstar', 'ContinuumIO')
 
-def get_config(user=True, site=True):
+def recursive_update(d, u):
+    for k, v in u.iteritems():
+        if isinstance(v, collections.Mapping):
+            r = recursive_update(d.get(k, {}), v)
+            d[k] = r
+        else:
+            d[k] = u[k]
+    return d
 
-    config = {}
+DEFAULT_URL = 'https://api.binstar.org'
+ALPHA_URL = 'http://api.alpha.binstar.org'
+DEFAULT_CONFIG = {
+                  'sites': {'binstar': {'url': DEFAULT_URL},
+                            'alpha': {'url': ALPHA_URL},
+                            }
+                  }
+
+def get_config(user=True, site=True, remote_site=None):
+
+    config = DEFAULT_CONFIG.copy()
     if site:
-        config.update(load_config(SITE_CONFIG))
+        recursive_update(config, load_config(SITE_CONFIG))
     if user:
-        config.update(load_config(USER_CONFIG))
+        recursive_update(config, load_config(USER_CONFIG))
+
+    remote_site = config.get('default_site', remote_site)
+    sites = config.get('sites', {})
+
+    if remote_site:
+        if remote_site not in sites:
+            raise UserError("Remote site alias %s does not exist in the config file" % remote_site)
+
+        recursive_update(config, sites.get(remote_site, {}))
 
     return config
 
@@ -267,7 +293,7 @@ class IterableToFileAdapter(object):
         self.iterator = iter(iterable)
         self.length = len(iterable)
 
-    def read(self, size= -1):  # TBD: add buffer for `len(data) > size` case
+    def read(self, size=-1):  # TBD: add buffer for `len(data) > size` case
         return next(self.iterator, b'')
 
     def __len__(self):
