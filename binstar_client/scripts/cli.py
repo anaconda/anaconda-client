@@ -40,11 +40,9 @@ def setup_logging(args):
         binstar_logger.setLevel(logging.INFO)
         binstar_logger.addHandler(hndlr)
 
+def binstar_main(get_sub_commands, args=None, exit=True, description=None, version=None):
 
-def main(args=None, exit=True):
-
-
-    parser = ArgumentParser(description=__doc__)
+    parser = ArgumentParser(description=description)
     parser.add_argument('--show-traceback', action='store_true')
     parser.add_argument('-t', '--token')
     parser.add_argument('-v', '--verbose',
@@ -60,7 +58,7 @@ def main(args=None, exit=True):
                         version="%%(prog)s Command line client (version %s)" % (version,))
     subparsers = parser.add_subparsers(help='commands')
 
-    for command in sub_commands():
+    for command in get_sub_commands():
         command.add_parser(subparsers)
 
     args = parser.parse_args(args)
@@ -98,4 +96,8 @@ def main(args=None, exit=True):
         else:
             return 1
 
+
+def main(args=None, exit=True):
+    binstar_main(sub_commands, args, exit,
+                 description=__doc__, version=version)
 
