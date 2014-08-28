@@ -201,14 +201,13 @@ DEFAULT_CONFIG = {
                   }
 
 def get_config(user=True, site=True, remote_site=None):
-
     config = DEFAULT_CONFIG.copy()
     if site:
         recursive_update(config, load_config(SITE_CONFIG))
     if user:
         recursive_update(config, load_config(USER_CONFIG))
 
-    remote_site = config.get('default_site', remote_site)
+    remote_site = remote_site or config.get('default_site')
     sites = config.get('sites', {})
 
     if remote_site:

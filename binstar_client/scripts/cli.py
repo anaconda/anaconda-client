@@ -73,7 +73,7 @@ def binstar_main(get_sub_commands, args=None, exit=True, description=None, versi
         except Unauthorized as err:
             if not args.token:
                 logger.info('The action you are performing requires authentication, please sign in:')
-                interactive_login()
+                interactive_login(args)
                 return args.main(args)
             else:
                 raise

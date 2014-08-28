@@ -16,9 +16,9 @@ try:
 except NameError:
     input = input
 
-def interactive_get_token():
-    bs = get_binstar()
-    config = get_config()
+def interactive_get_token(args):
+    bs = get_binstar(args)
+    config = get_config(remote_site=args.site)
 
     url = config.get('url', 'https://api.binstar.org')
 
@@ -42,7 +42,7 @@ def interactive_get_token():
     return token
 
 def interactive_login(args):
-    token = interactive_get_token()
+    token = interactive_get_token(args)
     store_token(token, args)
     log.info('login successful')
 
