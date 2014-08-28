@@ -12,6 +12,7 @@ import getpass
 import os
 import time
 import logging
+import stat
 try:
     import urlparse
     from urllib import quote_plus
@@ -160,6 +161,8 @@ def store_token(token):
 
     with open(tokenfile, 'w') as fd:
         fd.write(token)
+    os.chmod(tokenfile, stat.S_IRUSR)
+
 
 def remove_token():
     config = get_config()
@@ -267,7 +270,7 @@ class IterableToFileAdapter(object):
         self.iterator = iter(iterable)
         self.length = len(iterable)
 
-    def read(self, size= -1):  # TBD: add buffer for `len(data) > size` case
+    def read(self, size=-1):  # TBD: add buffer for `len(data) > size` case
         return next(self.iterator, b'')
 
     def __len__(self):
