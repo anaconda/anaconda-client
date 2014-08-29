@@ -6,6 +6,7 @@ import json
 import logging
 import os
 from os.path import exists, join, dirname, expanduser, isfile, isdir
+import stat
 import sys
 import time
 
@@ -160,6 +161,8 @@ def store_token(token, args):
 
     with open(tokenfile, 'w') as fd:
         fd.write(token)
+    os.chmod(tokenfile, stat.S_IRUSR)
+
 
 def remove_token(args):
     config = get_config(remote_site=args and args.site)

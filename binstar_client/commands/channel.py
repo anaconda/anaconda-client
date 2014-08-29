@@ -55,17 +55,17 @@ def add_parser(subparsers):
                            help="Manage an organizations channels")
 
     group = subparser.add_mutually_exclusive_group(required=True)
-    group.add_argument('--copy', nargs=2, metavar='SRC DEST')
+    group.add_argument('--copy', nargs=2, metavar='CHANNEL')
     group.add_argument('--list', action='store_true',
                        help="list all channels for a user")
-    group.add_argument('--show',
+    group.add_argument('--show', metavar='CHANNEL',
                        help="Show all of the files in a channel")
-    group.add_argument('--lock',
+    group.add_argument('--lock', metavar='CHANNEL',
                        help="Lock a channel")
-    group.add_argument('--unlock',
+    group.add_argument('--unlock', metavar='CHANNEL',
                        help="Unlock a channel")
 
-    group.add_argument('--remove',
+    group.add_argument('--remove', metavar='CHANNEL',
                        help="Remove a channel")
 
     subparser.set_defaults(main=main)
