@@ -16,15 +16,24 @@ from binstar_client.commands.login import interactive_login
 from binstar_client.errors import BinstarError, ShowHelp, Unauthorized
 from binstar_client.utils import USER_LOGDIR
 from binstar_client.utils.handlers import MyStreamHandler, syslog_handler
+import traceback
+import sys
 
 
 logger = logging.getLogger('binstar')
+
+def handle_exception(*exc_info):
+    """ handle all exceptions """
+
+    logger.error('', exc_info=exc_info)
+    logger.error('\n' + ''.join(traceback.format_exception(*exc_info)))
+    # print("".join(traceback.format_exception(*exc_info)))
+    sys.exit(1)
 
 
 def setup_logging(args):
     if not exists(USER_LOGDIR): makedirs(USER_LOGDIR)
 
-    logger = logging.getLogger('binstar')
     logger.setLevel(logging.DEBUG)
 
     error_logfile = join(USER_LOGDIR, 'cli.log')
@@ -41,6 +50,8 @@ def setup_logging(args):
         binstar_logger = logging.getLogger()
         binstar_logger.setLevel(logging.INFO)
         binstar_logger.addHandler(hndlr)
+
+    sys.excepthook = handle_exception
 
 def binstar_main(get_sub_commands, args=None, exit=True, description=None, version=None):
 
