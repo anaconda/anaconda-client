@@ -159,7 +159,8 @@ def store_token(token, args):
         os.makedirs(data_dir)
     tokenfile = join(data_dir, '%s.token' % quote_plus(url))
 
-    os.unlink(tokenfile)
+    if isfile(tokenfile):
+        os.unlink(tokenfile)
     with open(tokenfile, 'w') as fd:
         fd.write(token)
     os.chmod(tokenfile, stat.S_IRUSR)
