@@ -91,7 +91,7 @@ def format_wheel_json_metadata(data, filename, zipfile):
                     'summary': pop_key(data, 'summary', None),
                     'license': pop_key(data, 'license', None),
                     }
-    description_doc = pop_key(data.get('document_names'), 'description', None)
+    description_doc = pop_key(data.get('document_names') or {}, 'description', None)
 
     if description_doc:
         description = extract_first(zipfile, '*.dist-info/%s' % description_doc)
@@ -112,7 +112,7 @@ def format_wheel_json_metadata(data, filename, zipfile):
     file_data = {
                  'basename': path.basename(filename),
                  'attrs': data,
-                 'dependencies':format_requires_metadata(data['run_requires']),
+                 'dependencies':format_requires_metadata(data.get('run_requires', {})),
                  }
 
     return package_data, release_data, file_data
@@ -248,8 +248,8 @@ def inspect_pypi_package_zip(filename, fileobj):
 
     attrs = dict(Parser().parsestr(data).items())
     package_data = {'name': pop_key(attrs, 'Name'),
-                    'summary': pop_key(attrs, 'Summary'),
-                    'license': pop_key(attrs, 'License'),
+                    'summary': pop_key(attrs, 'Summary', None),
+                    'license': pop_key(attrs, 'License', None),
                     }
     release_data = {
                     'version': pop_key(attrs, 'Version'),

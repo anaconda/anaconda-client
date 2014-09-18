@@ -17,7 +17,7 @@ def zipfile_match_and_extract(zf, pat):
     item_name = next((i.filename for i in zf.infolist() if m(i.filename)), None)
     if item_name is None:
         return None
-    return zf.read(item_name).decode()
+    return zf.read(item_name).decode(errors='ignore')
 
 def tarfile_match_and_extract(tf, pat):
     m = lambda fn: fnmatch(fn, pat)
@@ -26,7 +26,7 @@ def tarfile_match_and_extract(tf, pat):
         return None
 
     fd = tf.extractfile(item_name.decode())
-    return fd.read().decode()
+    return fd.read().decode(errors='ignore')
 
 def safe(version):
     return version.replace('\n', '-').replace('\\', '-').replace('#', '-')
