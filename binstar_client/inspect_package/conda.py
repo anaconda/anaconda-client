@@ -89,9 +89,9 @@ def main():
     with open(filename) as fileobj:
         package_data, release_data, file_data = inspect_conda_package(filename, fileobj)
     pprint(package_data)
-    print '--'
+    print('--')
     pprint(release_data)
-    print '--'
+    print('--')
     pprint(file_data)
 
 if __name__ == '__main__':
