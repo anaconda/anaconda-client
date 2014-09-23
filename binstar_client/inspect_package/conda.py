@@ -1,8 +1,11 @@
+from __future__ import print_function
+
+import json
 from os import path
 from pprint import pprint
-import json
 import sys
 import tarfile
+
 
 arch_map = {('osx', 'x86_64'):'osx-64',
             ('osx', 'x86'):'osx-32',
@@ -39,7 +42,7 @@ def transform_conda_deps(deps):
             depends[name] = [['==', '%s+%s' % (spec, build_str)]]
 
     return {'depends': depends,
-            'depends_index': depends.keys(), }
+            'depends_index': list(depends.keys()), }
 
 
 
@@ -89,9 +92,9 @@ def main():
     with open(filename) as fileobj:
         package_data, release_data, file_data = inspect_conda_package(filename, fileobj)
     pprint(package_data)
-    print '--'
+    print('--')
     pprint(release_data)
-    print '--'
+    print('--')
     pprint(file_data)
 
 if __name__ == '__main__':

@@ -1,14 +1,18 @@
-from binstar_client import errors
-from binstar_client.inspect_package.uitls import extract_first, pop_key
+from __future__ import print_function
+
 from email.parser import Parser
+import json
 from os import path
 from os.path import basename
 from pprint import pprint
-import json
-import pkg_resources
 import sys
 import tarfile
 import zipfile
+
+from binstar_client import errors
+from binstar_client.inspect_package.uitls import extract_first, pop_key
+import pkg_resources
+
 
 def parse_requirement(line, deps, extras, extra):
     req = pkg_resources.Requirement.parse(line)
@@ -40,7 +44,7 @@ def parse_requires_txt(requires_txt):
             error = True
 
     return {'has_dep_errors': error, 'depends': deps, 'extras':extras,
-            'depends_index': deps.keys(),
+            'depends_index': list(deps.keys()),
             'optional_depends_index': [d for extra in extras.values() for d in extra.keys()]
             }
 
@@ -80,7 +84,7 @@ def format_requires_metadata(run_requires):
 
     attrs = {'has_dep_errors': False, 'depends': deps, 'extra_depends':extras,
              'environment_depends': environments,
-            'depends_index': deps.keys(),
+            'depends_index': list(deps.keys()),
             'optional_depends_index': optional,
              }
 
@@ -324,9 +328,9 @@ def main():
     with open(filename) as fileobj:
         package_data, release_data, file_data = inspect_pypi_package(filename, fileobj)
     pprint(package_data)
-    print '--'
+    print('--')
     pprint(release_data)
-    print '--'
+    print('--')
     pprint(file_data)
 
 if __name__ == '__main__':
