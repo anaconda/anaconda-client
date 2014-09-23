@@ -189,7 +189,7 @@ USER_CONFIG = join(appdirs.user_data_dir('binstar', 'ContinuumIO'), 'config.yaml
 USER_LOGDIR = appdirs.user_log_dir('binstar', 'ContinuumIO')
 
 def recursive_update(d, u):
-    for k, v in u.iteritems():
+    for k, v in u.items():
         if isinstance(v, collections.Mapping):
             r = recursive_update(d.get(k, {}), v)
             d[k] = r
