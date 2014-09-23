@@ -80,6 +80,9 @@ def binstar_main(get_sub_commands, args=None, exit=True, description=None, versi
     setup_logging(args)
     try:
         try:
+            if not hasattr(args, 'main'):
+                parser.error("A sub command must be given. To show all available sub commands, run:\n\n\t binstar -h\n")
+
             return args.main(args)
         except Unauthorized as err:
             if not args.token:
