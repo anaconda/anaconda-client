@@ -202,7 +202,7 @@ def inspect_pypi_package_egg(filename, fileobj):
 
     data = extract_first(tf, 'EGG-INFO/PKG-INFO')
     if data is None:
-        raise errors.BinstarError("Could not find EGG-INFO/PKG-INFO file in pypi sdist")
+        raise errors.NoMetadataError("Could not find EGG-INFO/PKG-INFO file in pypi sdist")
 
     attrs = dict(Parser().parsestr(data).items())
 
@@ -323,8 +323,8 @@ def inspect_pypi_package(filename, fileobj):
     if filename.endswith('.rpm'):
         return inspect_pypi_package_rpm(filename, fileobj)
 
-    name, etx = path.splitext(filename)
-    raise TypeError("Can not inspect pypi package with file extension %s" % etx)
+    _, etx = path.splitext(filename)
+    raise errors.NoMetadataError("Can not inspect pypi package with file extension %s" % etx)
 
 def main():
     filename = sys.argv[1]
