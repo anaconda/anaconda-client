@@ -310,7 +310,7 @@ def inspect_pypi_package_rpm(filename, fileobj):
 
 
 def inspect_pypi_package(filename, fileobj):
-    if filename.endswith('.tar.gz'):
+    if filename.endswith('.tar.gz') or filename.endswith('.tar.bz2'):
         return inspect_pypi_package_sdist(filename, fileobj)
     if filename.endswith('.whl'):
         return inspect_pypi_package_whl(filename, fileobj)
@@ -322,6 +322,9 @@ def inspect_pypi_package(filename, fileobj):
         return inspect_pypi_package_exe(filename, fileobj)
     if filename.endswith('.rpm'):
         return inspect_pypi_package_rpm(filename, fileobj)
+
+    name, etx = path.splitext(filename)
+    raise TypeError("Can not inspect pypi package with file extension %s" % etx)
 
 def main():
     filename = sys.argv[1]
