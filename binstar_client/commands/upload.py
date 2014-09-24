@@ -11,15 +11,18 @@ eg:
 '''
 from __future__ import unicode_literals
 
+import argparse
+from glob import glob
+import logging
+import os
+from os.path import exists
+import sys
+
 from binstar_client import BinstarError, NotFound, Conflict
 from binstar_client.errors import UserError
 from binstar_client.utils import get_binstar, bool_input, upload_print_callback
 from binstar_client.utils.detect import detect_package_type, get_attrs
-from os.path import exists
-import argparse
-import logging
-import sys
-import re
+
 
 # Python 3 Support
 try:
@@ -210,6 +213,11 @@ def main(args):
         log.info("Package located at:\n%s\n" % package_url)
 
 
+def windows_glob(item):
+    if os.name == 'nt' and '*' in item:
+        item = glob(item)
+    return item
+
 def add_parser(subparsers):
 
     parser = subparsers.add_parser('upload',
@@ -217,7 +225,7 @@ def add_parser(subparsers):
                                    help='Upload a file to binstar',
                                    description=__doc__)
 
-    parser.add_argument('files', nargs='+', help='Distributions to upload', default=[])
+    parser.add_argument('files', nargs='+', help='Distributions to upload', default=[], type=windows_glob)
 
     parser.add_argument('-c', '--channel', action='append', default=[], dest='channels',
                         help='Add this file to a specific channel. Warning: if the file Channels do not include "main", the file will not show up in your user channel')
