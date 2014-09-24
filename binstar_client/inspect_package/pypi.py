@@ -13,8 +13,6 @@ from binstar_client import errors
 from binstar_client.inspect_package.uitls import extract_first, pop_key
 import pkg_resources
 
-class NoMetadataError(errors.BinstarError):
-    pass
 
 def parse_requirement(line, deps, extras, extra):
     req = pkg_resources.Requirement.parse(line)
@@ -164,7 +162,7 @@ def inspect_pypi_package_sdist(filename, fileobj):
         data = extract_first(tf, '*/PKG-INFO')
         distrubite = True
         if data is None:
-            raise NoMetadataError("Could not find *.egg-info/PKG-INFO file in pypi sdist")
+            raise errors.NoMetadataError("Could not find *.egg-info/PKG-INFO file in pypi sdist")
 
     attrs = dict(Parser().parsestr(data).items())
     package_data = {'name': pop_key(attrs, 'Name'),
@@ -250,7 +248,7 @@ def inspect_pypi_package_zip(filename, fileobj):
 
     data = extract_first(tf, '*/PKG-INFO')
     if data is None:
-        raise NoMetadataError("Could not find EGG-INFO/PKG-INFO file in pypi sdist")
+        raise errors.NoMetadataError("Could not find EGG-INFO/PKG-INFO file in pypi sdist")
 
     attrs = dict(Parser().parsestr(data).items())
     package_data = {'name': pop_key(attrs, 'Name'),
