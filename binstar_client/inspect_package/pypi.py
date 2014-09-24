@@ -145,6 +145,7 @@ def inspect_pypi_package_whl(filename, fileobj):
     if platform == 'any': platform = None
     if abi == 'none': abi = None
 
+    file_data.setdefault('attrs', {})
     file_data['attrs'].update(build_no=build_no, python_version=python_version, abi=abi,
                               packagetype='bdist_wheel')
     file_data.update(platform=platform)
