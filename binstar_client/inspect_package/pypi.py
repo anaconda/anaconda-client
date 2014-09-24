@@ -207,8 +207,8 @@ def inspect_pypi_package_egg(filename, fileobj):
     attrs = dict(Parser().parsestr(data).items())
 
     package_data = {'name': pop_key(attrs, 'Name'),
-                    'summary': pop_key(attrs, 'Summary'),
-                    'license': pop_key(attrs, 'License'),
+                    'summary': pop_key(attrs, 'Summary', None),
+                    'license': pop_key(attrs, 'License', None),
                     }
     release_data = {
                     'version': pop_key(attrs, 'Version'),
