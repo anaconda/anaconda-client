@@ -18,6 +18,7 @@ from binstar_client.utils import USER_LOGDIR
 from binstar_client.utils.handlers import MyStreamHandler, syslog_handler
 import traceback
 import sys
+from logging.handlers import NTEventLogHandler
 
 
 logger = logging.getLogger('binstar')
@@ -45,11 +46,15 @@ def setup_logging(args):
     shndlr.setLevel(args.log_level)
     logger.addHandler(shndlr)
 
-    if platform.system().lower() != 'windows':
+    if platform.system().lower() == 'windows':
+        hndlr = NTEventLogHandler('binstar-client')
+        hndlr.setLevel(logging.INFO)
+    else:
         hndlr = syslog_handler('binstar-client')
-        binstar_logger = logging.getLogger()
-        binstar_logger.setLevel(logging.INFO)
-        binstar_logger.addHandler(hndlr)
+
+    binstar_logger = logging.getLogger()
+    binstar_logger.setLevel(logging.INFO)
+    binstar_logger.addHandler(hndlr)
 
     sys.excepthook = handle_exception
 
