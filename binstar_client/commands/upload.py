@@ -154,7 +154,10 @@ def main(args):
 
     uploaded_packages = []
 
-    for filename in args.files:
+    # Flatten file list because of 'windows_glob' function
+    files = [f for fglob in args.files for f in fglob]
+
+    for filename in files:
 
         if not exists(filename):
             raise BinstarError('file %s does not exist' % (filename))
@@ -215,8 +218,9 @@ def main(args):
 
 def windows_glob(item):
     if os.name == 'nt' and '*' in item:
-        item = glob(item)
-    return item
+        return glob(item)
+    else:
+        return [item]
 
 def add_parser(subparsers):
 
