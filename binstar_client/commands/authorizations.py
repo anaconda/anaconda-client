@@ -40,14 +40,19 @@ def utcnow():
     now = datetime.utcnow()
     return now.replace(tzinfo=pytz.utc)
 
-def format_timedelta(date):
+def format_timedelta(date, expired=True):
     if not date:
         return 'Never'
 
     now = utcnow()
 
-    if date < utcnow():
-        return  'expired'
+    if date < now:
+        if expired:
+            return  'expired'
+        else:
+            tmp = date
+            date = now
+            now = tmp
 
     delta = date - now
 
