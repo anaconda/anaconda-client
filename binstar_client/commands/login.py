@@ -3,11 +3,12 @@ Authenticate a user
 '''
 from __future__ import unicode_literals
 import getpass
-from binstar_client.utils import get_config, get_binstar, store_token
-from binstar_client.errors import Unauthorized, BinstarError
+from binstar_client.utils import get_config, get_binstar, store_token, \
+    bool_input
 import sys
 import logging
 import socket
+from binstar_client import errors
 
 log = logging.getLogger('binstar.login')
 
@@ -25,19 +26,38 @@ def interactive_get_token(args):
     token = None
     username = input('Username: ')
 
+    auth_name = 'binstar_client:%s' % (socket.gethostname())
+    password = None
     for _ in range(3):
         try:
             sys.stderr.write("%s's " % username)
-            password = getpass.getpass(stream=sys.stderr)
-            token = bs.authenticate(username, password, 'binstar_client:%s' % (socket.gethostname()), url,
-                                    created_with=' '.join(sys.argv))
+
+            if password is None:
+                password = getpass.getpass(stream=sys.stderr)
+
+            token = bs.authenticate(username, password, auth_name, url,
+                                    created_with=' '.join(sys.argv),
+                                    fail_if_already_exists=True)
             break
-        except Unauthorized:
+
+        except errors.Unauthorized:
             log.error('Invalid Username password combination, please try again')
+            password = None
             continue
 
+        except errors.BinstarError as err:
+            if err.args[1] == 400:
+                log.error('It appears you are already logged in from host %s' % socket.gethostname())
+                log.error('Logging in again will remove the previous token.')
+                if bool_input("Would you like to continue"):
+                    bs.remove_authentication(auth_name)
+                    continue
+                else:
+                    raise
+
+
     if token is None:
-        raise BinstarError('Sorry. Please try again (go to https://binstar.org/account/forgot_password to reset your password)')
+        raise errors.BinstarError('Sorry. Please try again (go to https://binstar.org/account/forgot_password to reset your password)')
 
     return token
 
