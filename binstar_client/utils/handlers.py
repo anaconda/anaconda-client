@@ -4,6 +4,7 @@ import logging
 import traceback
 import json
 import os
+import socket
 
 class MyStreamHandler(logging.Handler):
     WARNING = '\033[93m'
@@ -90,13 +91,21 @@ class JSONSysLogFormatter(JSONFormatter):
 
 
 def syslog_handler(app_name='binstar-client'):
-    kw = {}
-    if os.path.exists('/dev/log'):
-        kw['address'] = '/dev/log'
-    elif os.path.exists('/var/run/syslog'):
-        kw['address'] = '/var/run/syslog'
 
-    hdlr = logging.handlers.SysLogHandler(**kw)
+    address = None
+    if os.path.exists('/dev/log'):
+        address = '/dev/log'
+    elif os.path.exists('/var/run/syslog'):
+        address = '/var/run/syslog'
+    else:
+        address = ('localhost', 514)
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            s.connect(address)
+        except:
+            return logging.NullHandler()
+
+    hdlr = logging.handlers.SysLogHandler(address=address)
     hdlr.setLevel(logging.INFO)
     hdlr.setFormatter(JSONSysLogFormatter(app_name))
     return hdlr

@@ -46,11 +46,7 @@ def setup_logging(args):
     shndlr.setLevel(args.log_level)
     logger.addHandler(shndlr)
 
-    if platform.system().lower() == 'windows':
-        hndlr = NTEventLogHandler('binstar-client')
-        hndlr.setLevel(logging.INFO)
-    else:
-        hndlr = syslog_handler('binstar-client')
+    hndlr = syslog_handler('binstar-client')
 
     binstar_logger = logging.getLogger()
     binstar_logger.setLevel(logging.INFO)
