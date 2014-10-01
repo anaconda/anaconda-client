@@ -56,6 +56,7 @@ class PackageSpec(object):
                 spec_str = '%s/%s' % (spec_str, version)
             if basename:
                 spec_str = '%s/%s' % (spec_str, basename)
+            self.spec_str = spec_str
 
 
 

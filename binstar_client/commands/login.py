@@ -2,13 +2,16 @@
 Authenticate a user
 '''
 from __future__ import unicode_literals
+
 import getpass
-from binstar_client.utils import get_config, get_binstar, store_token, \
-    bool_input
-import sys
 import logging
 import socket
+import sys
+
 from binstar_client import errors
+from binstar_client.utils import get_config, get_binstar, store_token, \
+    bool_input
+
 
 log = logging.getLogger('binstar.login')
 
@@ -57,7 +60,10 @@ def interactive_get_token(args):
 
 
     if token is None:
-        raise errors.BinstarError('Sorry. Please try again (go to https://binstar.org/account/forgot_password to reset your password)')
+        msg = ('Sorry. Please try again '
+               '(go to https://binstar.org/account/forgot_password '
+               'to reset your password)')
+        raise errors.BinstarError(msg)
 
     return token
 

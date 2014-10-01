@@ -8,7 +8,7 @@ import logging
 log = logging.getLogger('binstar.package')
 def main(args):
 
-    bs = get_binstar()
+    bs = get_binstar(args)
     spec = args.spec
 
     owner = spec.user

@@ -3,8 +3,10 @@ Created on Jul 15, 2013
 
 @author: sean
 '''
+from clyent.errors import ClyentError
 
-class BinstarError(Exception):
+class BinstarError(ClyentError):
+
     def __init__(self, *args, **kwargs):
         Exception.__init__(self, *args, **kwargs)
 
@@ -17,8 +19,13 @@ class Unauthorized(BinstarError):
 class Conflict(BinstarError):
     pass
 
-class NotFound(IndexError, BinstarError):
-    pass
+class NotFound(BinstarError, IndexError):
+
+    def __init__(self, *args, **kwargs):
+        BinstarError.__init__(self, *args, **kwargs)
+        IndexError.__init__(self, *args, **kwargs)
+
+        self.message = args[0]
 
 class UserError(BinstarError):
     pass

@@ -1,5 +1,4 @@
 '''
-@author: sean
 '''
 
 from setuptools import setup, find_packages
@@ -14,9 +13,10 @@ setup(
     author='Sean Ross-Ross',
     author_email='srossross@gmail.com',
     url='http://github.com/Binstar/binstar_client',
-    description='Binstar Client Library',
+    description='Binstar command line client library',
     packages=find_packages(),
-    install_requires=['requests>=2.0',
+    install_requires=['clyent',
+                      'requests>=2.0',
                       'pyyaml',
                       'python-dateutil',
                       'pytz'],
