@@ -134,10 +134,9 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
             warnings.warn(msg, stacklevel=4)
 
 
-
         if not res.status_code in allowed:
             short, long = STATUS_CODES.get(res.status_code, ('?', 'Undefined error'))
-            msg = '%s: %s (status code: %s)' % (short, long, res.status_code)
+            msg = '%s: %s ([%s] %s -> %s)' % (short, long, res.request.method, res.request.url, res.status_code)
             try:
                 data = res.json()
             except:
