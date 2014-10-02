@@ -45,7 +45,7 @@ def binstar_main(sub_command_module, args=None, exit=True, description=None, ver
     if not exists(USER_LOGDIR): makedirs(USER_LOGDIR)
     logfile = join(USER_LOGDIR, 'cli.log')
 
-    args = parser.parse_args()
+    args = parser.parse_args(args)
 
     setup_logging(logger, args.log_level, use_color=args.color,
                   logfile=logfile, show_tb=args.show_traceback)
