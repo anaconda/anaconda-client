@@ -8,6 +8,7 @@ engine:
  - python=2.7
 
 install:
+  - conda install pip setuptools
   - pip install -r requirements.txt
   - pip install coverage mock
 
