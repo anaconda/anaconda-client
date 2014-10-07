@@ -16,6 +16,7 @@ requirements:
   run:
     - python
     - setuptools
+    - clyent
     - requests
     - pyyaml
     - dateutil

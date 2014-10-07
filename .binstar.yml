@@ -3,24 +3,21 @@ package: binstar
 platform:
   - linux-64
   - osx-64
+  - win-64
 
 engine:
  - python=2.7
 
 install:
   - conda install pip setuptools
-  - pip install -r requirements.txt
   - pip install coverage mock
+  - python setup.py develop
 
 test:
-  - python setup.py develop
   - python binstar_client/tests/runtests.py
 
-before_script:
-  - touch build.sh # FIX: for conda issue
-
 script:
-  - conda build .
+  - conda build conda.recipe
 
 build_targets: [conda]
 
@@ -28,8 +25,8 @@ build_targets: [conda]
 # Upload python sdist for python2 only since it does not depend on the python version
 engine: python=2.7
 platform: linux-64
-build_targets: [conda]
+env: PYPI=1
+build_targets: [pypi]
 script:
   - conda build .
   - python setup.py sdist
-
