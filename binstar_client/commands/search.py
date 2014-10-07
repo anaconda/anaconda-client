@@ -7,8 +7,9 @@ import logging
 log = logging.getLogger('binstar.search')
 
 def search(args):
-    
-    binstar = get_binstar()
+
+    binstar = get_binstar(args)
+
     log.info("Run 'binstar show <USER/PACKAGE>' to get more details:")
     packages = binstar.search(args.name, package_type=args.package_type)
     pprint_packages(packages)
