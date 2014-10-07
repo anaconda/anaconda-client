@@ -19,7 +19,10 @@ import logging
 
 log = logging.getLogger('binstar')
 
-from ._version import __version__
+try:
+    from ._version import __version__
+except:
+    __version__ = '0.8'
 
 class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
     '''

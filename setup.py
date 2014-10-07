@@ -4,8 +4,12 @@
 from setuptools import setup, find_packages
 
 ctx = {}
-exec(open('binstar_client/_version.py').read(), ctx)
-version = ctx.get('__version__', 'dev')
+try:
+    with open('binstar_client/_version.py') as fd:
+        exec(open('binstar_client/_version.py').read(), ctx)
+    version = ctx.get('__version__', 'dev')
+except IOError:
+    version = 'dev'
 
 setup(
     name='binstar',
