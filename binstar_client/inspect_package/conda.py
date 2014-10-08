@@ -75,7 +75,7 @@ def inspect_conda_package(filename, fileobj):
                     'description': '',
                     }
     file_data = {
-                'basename': path.join(os_arch, path.basename(filename)),
+                'basename': '%s/%s' % (os_arch, path.basename(filename)),
                 'attrs':{
                         'operatingsystem': operatingsystem,
                         'machine': machine,
