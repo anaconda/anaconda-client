@@ -24,7 +24,6 @@ except ImportError:
     from urllib.parse import quote_plus
 
 
-
 try:
     input = raw_input
 except NameError:
@@ -36,8 +35,7 @@ def jencode(*E, **F):
     payload = dict(*E, **F)
     return json.dumps(payload), {'Content-Type': 'application/json'}
 
-def pv(version):
-    return tuple(int(x) for x in version.split('.'))
+from pkg_resources import parse_version as pv
 
 class PackageSpec(object):
     def __init__(self, user, package=None, version=None, basename=None, attrs=None, spec_str=None):
