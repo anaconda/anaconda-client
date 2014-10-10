@@ -9,7 +9,7 @@ engine:
  - python=2.7
 
 install:
-  - conda install pip setuptools pywin32
+  - conda install pip setuptools clyent
   - pip install coverage mock
   - python setup.py develop
 
