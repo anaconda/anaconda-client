@@ -9,7 +9,7 @@ engine:
  - python=2.7
 
 install:
-  - conda install pip setuptools
+  - conda install pip setuptools pywin32
   - pip install coverage mock
   - python setup.py develop
 
@@ -21,12 +21,12 @@ script:
 
 build_targets: [conda]
 
----
+# ---
 # Upload python sdist for python2 only since it does not depend on the python version
-engine: python=2.7
-platform: linux-64
-env: PYPI=1
-build_targets: [pypi]
-script:
-  - conda build .
-  - python setup.py sdist
+# engine: python=2.7
+# platform: linux-64
+# env: PYPI=1
+# build_targets: [pypi]
+# script:
+#   - conda build .
+#   - python setup.py sdist
