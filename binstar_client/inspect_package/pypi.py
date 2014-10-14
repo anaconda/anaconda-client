@@ -3,7 +3,7 @@ from __future__ import print_function
 from email.parser import Parser
 import json
 from os import path
-from os.path import basename
+from os.path import basename, splitext
 from pprint import pprint
 import sys
 import tarfile
@@ -12,6 +12,7 @@ import zipfile
 from binstar_client import errors
 from binstar_client.inspect_package.uitls import extract_first, pop_key
 import pkg_resources
+import re
 
 
 def parse_requirement(line, deps, extras, extra):
@@ -29,6 +30,9 @@ def parse_requires_txt(requires_txt):
 
     for line in requires_txt.split('\n'):
         line = line.strip()
+
+        if not line: continue
+
         if line.startswith('[') and line.endswith(']'):
             extra = line[1:-1]
             if extra == 'all':
@@ -40,7 +44,7 @@ def parse_requires_txt(requires_txt):
             continue
         try:
             parse_requirement(line, deps, extras, extra)
-        except ValueError:
+        except ValueError as err:
             error = True
 
     return {'has_dep_errors': error, 'depends': deps, 'extras':extras,
@@ -48,7 +52,25 @@ def parse_requires_txt(requires_txt):
             'optional_depends_index': [d for extra in extras.values() for d in extra.keys()]
             }
 
-def format_requires_metadata(run_requires):
+def format_rqeuirements(requires):
+    obj = {}
+    for req in requires:
+        req = req.strip()
+        req_spec = req.split(' ', 1)
+        if len(req_spec) == 1:
+            obj[req] = []
+        else:
+            req, spec = req_spec
+            spec = spec.strip()
+            if spec[0] == '(': spec = spec[1:]
+            if spec[-1] == ')': spec = spec[:-1]
+
+            req = pkg_resources.Requirement.parse('%s %s' % (req, spec))
+            obj[req.key] = req.specs
+
+    return obj
+
+def format_run_requires_metadata(run_requires):
     deps = {}
     extras = {}
     environments = {}
@@ -64,19 +86,39 @@ def format_requires_metadata(run_requires):
         else:
             obj = extras.setdefault(extra, {})
 
-        for req in requires:
-            req = req.strip()
-            req_spec = req.split(' ', 1)
-            if len(req_spec) == 1:
-                obj[req] = []
-            else:
-                req, spec = req_spec
-                spec = spec.strip()
-                if spec[0] == '(': spec = spec[1:]
-                if spec[-1] == ')': spec = spec[:-1]
+        obj.update(format_rqeuirements(requires))
 
-                req = pkg_resources.Requirement.parse('%s %s' % (req, spec))
-                obj[req.key] = req.specs
+    optional = []
+    optional += [d for extra in extras.values() for d in extra.keys()]
+    optional += [d for extra in environments.values() for d in extra.keys()]
+
+    attrs = {'has_dep_errors': False, 'depends': deps, 'extra_depends':extras,
+             'environment_depends': environments,
+            'depends_index': list(deps.keys()),
+            'optional_depends_index': optional,
+             }
+
+    return attrs
+
+def format_requires_metadata(run_requires):
+    deps = {}
+    extras = {}
+    environments = {}
+
+    extras_re = re.compile('extra == [\'\"](.*)[\'\"]')
+    for key, requirements in run_requires.items():
+        is_extra = extras_re.match(key)
+        if is_extra:
+            extra = is_extra.groups()[0]
+            if extra is None or extra == 'all':
+                obj = deps
+            else:
+                obj = extras.setdefault(extra, {})
+
+        else:
+            obj = environments.setdefault(key, {})
+
+        obj.update(format_rqeuirements(requirements))
 
     optional = []
     optional += [d for extra in extras.values() for d in extra.keys()]
@@ -112,11 +154,14 @@ def format_wheel_json_metadata(data, filename, zipfile):
                  'packagetype': 'bdist_wheel',
                  'python_version':'source',
                  })
-
+    if data.get('run_requires', {}):
+        dependencies = format_run_requires_metadata(data['run_requires'])
+    else:
+        dependencies = format_requires_metadata(data.get('requires', {}))
     file_data = {
                  'basename': path.basename(filename),
                  'attrs': data,
-                 'dependencies':format_requires_metadata(data.get('run_requires', {})),
+                 'dependencies': dependencies,
                  }
 
     return package_data, release_data, file_data
@@ -152,6 +197,15 @@ def inspect_pypi_package_whl(filename, fileobj):
     return package_data, release_data, file_data
 
 
+def disutils_dependencies(config_items):
+        requirements = [v for k, v in config_items if k == 'Requires']
+        depends = format_rqeuirements(requirements)
+        return {'depends':depends,
+                'depends_index': list(depends.keys()),
+                'extras': {},
+                'has_dep_errors': False,
+                'optional_depends_index': []
+                }
 def inspect_pypi_package_sdist(filename, fileobj):
 
     tf = tarfile.open(filename, fileobj=fileobj)
@@ -165,8 +219,14 @@ def inspect_pypi_package_sdist(filename, fileobj):
         if data is None:
             raise errors.NoMetadataError("Could not find *.egg-info/PKG-INFO file in pypi sdist")
 
-    attrs = dict(Parser().parsestr(data).items())
-    package_data = {'name': pop_key(attrs, 'Name'),
+    config_items = Parser().parsestr(data).items()
+    attrs = dict(config_items)
+    name = pop_key(attrs, 'Name', None)
+
+    if name is None:
+        name = filename.split('-', 1)[0]
+
+    package_data = {'name': name,
                     'summary': pop_key(attrs, 'Summary', None),
                     'license': pop_key(attrs, 'License', None),
                     }
@@ -183,7 +243,8 @@ def inspect_pypi_package_sdist(filename, fileobj):
 
 
     if distrubite:  # Distrubite does not create dep files
-        file_data.update(dependencies={'has_dep_errors': True})
+        file_data.update(dependencies=disutils_dependencies(config_items))
+
     requires_txt = extract_first(tf, '*.egg-info/requires.txt')
     if requires_txt:
         file_data.update(dependencies=parse_requires_txt(requires_txt))
