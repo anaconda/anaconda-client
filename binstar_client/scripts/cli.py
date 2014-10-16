@@ -6,17 +6,18 @@ from __future__ import print_function, unicode_literals
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 import logging
 from os import makedirs
-from os.path import join, exists
+from os.path import join, exists, isfile
 
 from binstar_client import __version__ as version
 from binstar_client import commands as command_module
 from binstar_client.commands.login import interactive_login
-from binstar_client.errors import ShowHelp, Unauthorized
+from binstar_client import errors
 from binstar_client.utils import USER_LOGDIR
 from binstar_client.utils.handlers import syslog_handler
 
 from clyent import add_default_arguments, add_subparser_modules
 from clyent.logs import setup_logging
+import sys
 
 
 logger = logging.getLogger('binstar')
@@ -29,6 +30,16 @@ def add_syslog_handler():
     binstar_logger.setLevel(logging.INFO)
     binstar_logger.addHandler(hndlr)
 
+def file_or_token(value):
+
+    if isfile(value):
+        with open(value) as fd:
+            return fd.read().strip()
+    if any(char in value for char in '/\\.'):
+        # This chars will never be in a token value, but may be in a path
+        # The error message will be handled by the parser
+        raise ValueError()
+    return value
 
 def binstar_main(sub_command_module, args=None, exit=True, description=None, version=None):
 
@@ -36,7 +47,9 @@ def binstar_main(sub_command_module, args=None, exit=True, description=None, ver
                             formatter_class=RawDescriptionHelpFormatter)
 
     add_default_arguments(parser, version)
-    parser.add_argument('-t', '--token')
+    parser.add_argument('-t', '--token', type=file_or_token,
+                        help="Authentication token to use. "
+                             "May be a token or a path to a file containing a token")
     parser.add_argument('-s', '--site',
                         help='select the binstar site to use', default=None)
 
@@ -57,7 +70,7 @@ def binstar_main(sub_command_module, args=None, exit=True, description=None, ver
             if not hasattr(args, 'main'):
                 parser.error("A sub command must be given. To show all available sub commands, run:\n\n\t binstar -h\n")
             return args.main(args)
-        except Unauthorized:
+        except errors.Unauthorized:
             if not args.token:
                 logger.info('The action you are performing requires authentication, please sign in:')
                 interactive_login(args)
@@ -65,7 +78,7 @@ def binstar_main(sub_command_module, args=None, exit=True, description=None, ver
             else:
                 raise
 
-    except ShowHelp:
+    except errors.ShowHelp:
         args.sub_parser.print_help()
         if exit:
             raise SystemExit(1)
