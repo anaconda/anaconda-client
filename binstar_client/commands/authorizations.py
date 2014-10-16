@@ -3,7 +3,7 @@ Manage Authentication tokens
 '''
 from __future__ import print_function
 import socket
-from pprint import pprint
+from argparse import FileType
 
 
 SCOPE_EXAMPLES = '''
@@ -164,7 +164,7 @@ def main(args):
                                            created_with=' '.join(sys.argv),
                                            strength=args.strength,
                                            fail_if_already_exists=True)
-                sys.stdout.write(token)
+                args.out.write(token)
                 break
             except errors.Unauthorized:
                 log.error('Invalid Username password combination, please try again')
@@ -189,6 +189,9 @@ def add_parser(subparsers):
     g.add_argument('--strong', action='store_const', const='strong', dest='strength' , help='Create a longer token (default)')
     g.add_argument('-w', '--weak', action='store_const', const='weak', dest='strength', help='Create a shorter token')
 
+    parser.add_argument('--out', default=sys.stdout,
+                        type=FileType('w'))
+
     parser.add_argument('-o', '--org', '--organization', help='Set the token owner (must be an organization)', dest='organization')
 
     group = parser.add_mutually_exclusive_group(required=True)
@@ -198,6 +201,7 @@ def add_parser(subparsers):
     group.add_argument('-c', '--create', action='store_true', help='Create an authentication token')
     group.add_argument('-i', '--info', '--current-info', dest='info',
                        action='store_true', help='Show information about the current authentication token')
+
     parser.set_defaults(main=main)
 
 
