@@ -30,7 +30,7 @@ def interactive_get_token(args):
     token = None
     username = input('Username: ')
 
-    auth_name = 'binstar_client:%s' % (socket.gethostname())
+    auth_name = 'binstar_client:%s@%s' % (getpass.getuser(), args.hostname)
     password = None
     for _ in range(3):
         try:
