@@ -16,6 +16,7 @@ from .mixins.channels import ChannelsMixin
 from .mixins.package import PackageMixin
 
 import logging
+import platform
 
 log = logging.getLogger('binstar')
 
@@ -57,7 +58,8 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
                      created_with=None,
                      max_age=None,
                      strength='strong',
-                     fail_if_already_exists=False):
+                     fail_if_already_exists=False,
+                     hostname=platform.node()):
         '''
         Use basic authentication to create an authentication token using the interface below.
         With this technique, a username and password need not be stored permanently, and the user can
@@ -69,11 +71,6 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         :param application_url: The application's home page
         :param scopes: Scopes let you specify exactly what type of access you need. Scopes limit access for the tokens.
         '''
-
-        try:
-            hostname = os.uname()[1]
-        except AttributeError:
-            hostname = 'unknown'
 
         url = '%s/authentications' % (self.domain)
         payload = {"scopes": scopes, "note": application, "note_url": application_url,
