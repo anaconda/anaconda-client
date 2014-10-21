@@ -82,5 +82,7 @@ def add_parser(subparsers):
     subparser = subparsers.add_parser('login',
                                       help='Authenticate a user',
                                       description=__doc__)
-    subparser.add_argument('--hostname', default=platform.node())
+    subparser.add_argument('--hostname', default=platform.node(),
+                           help="Specify the host name of this login, this should be unique (default: %(default)s)"
+                           )
     subparser.set_defaults(main=main)
