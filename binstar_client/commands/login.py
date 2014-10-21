@@ -11,6 +11,7 @@ import sys
 from binstar_client import errors
 from binstar_client.utils import get_config, get_binstar, store_token, \
     bool_input
+import platform
 
 
 log = logging.getLogger('binstar.login')
@@ -40,7 +41,8 @@ def interactive_get_token(args):
 
             token = bs.authenticate(username, password, auth_name, url,
                                     created_with=' '.join(sys.argv),
-                                    fail_if_already_exists=True)
+                                    fail_if_already_exists=True,
+                                    hostname=args.hostname)
             break
 
         except errors.Unauthorized:
@@ -52,6 +54,7 @@ def interactive_get_token(args):
             if err.args[1] == 400:
                 log.error('It appears you are already logged in from host %s' % socket.gethostname())
                 log.error('Logging in again will remove the previous token.')
+                log.error('Otherwise you can login again and specify a different hostname with "--hostname"')
                 if bool_input("Would you like to continue"):
                     bs.remove_authentication(auth_name)
                     continue
@@ -79,5 +82,5 @@ def add_parser(subparsers):
     subparser = subparsers.add_parser('login',
                                       help='Authenticate a user',
                                       description=__doc__)
-
+    subparser.add_argument('--hostname', default=platform.node())
     subparser.set_defaults(main=main)
