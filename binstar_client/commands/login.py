@@ -30,7 +30,14 @@ def interactive_get_token(args):
     token = None
     username = input('Username: ')
 
-    auth_name = 'binstar_client:%s@%s' % (getpass.getuser(), args.hostname)
+    auth_name = 'binstar_client:'
+    site = args.site or config.get('default_site')
+    if site and site != 'binstar':
+        # For testing with binstar alpha site
+        auth_name += '%s:' % site
+
+    auth_name += '%s@%s' % (getpass.getuser(), args.hostname)
+
     password = None
     for _ in range(3):
         try:
@@ -54,7 +61,8 @@ def interactive_get_token(args):
             if err.args[1] == 400:
                 log.error('It appears you are already logged in from host %s' % socket.gethostname())
                 log.error('Logging in again will remove the previous token.')
-                log.error('Otherwise you can login again and specify a different hostname with "--hostname"')
+                log.error('Otherwise you can login again and specify a '
+                          'different hostname with "--hostname"')
                 if bool_input("Would you like to continue"):
                     bs.remove_authentication(auth_name)
                     continue
@@ -83,6 +91,7 @@ def add_parser(subparsers):
                                       help='Authenticate a user',
                                       description=__doc__)
     subparser.add_argument('--hostname', default=platform.node(),
-                           help="Specify the host name of this login, this should be unique (default: %(default)s)"
+                           help="Specify the host name of this login, "
+                                "this should be unique (default: %(default)s)"
                            )
     subparser.set_defaults(main=main)
