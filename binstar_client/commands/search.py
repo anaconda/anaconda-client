@@ -12,7 +12,7 @@ def search(args):
 
     log.info("Run 'binstar show <USER/PACKAGE>' to get more details:")
     packages = binstar.search(args.name, package_type=args.package_type)
-    pprint_packages(packages)
+    pprint_packages(packages, access=False)
     log.info("Found %i packages" % len(packages))
 
 
