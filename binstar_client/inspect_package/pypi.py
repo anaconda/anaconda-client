@@ -3,7 +3,7 @@ from __future__ import print_function
 from email.parser import Parser
 import json
 from os import path
-from os.path import basename, splitext
+from os.path import basename
 from pprint import pprint
 import sys
 import tarfile
@@ -35,11 +35,7 @@ def parse_requires_txt(requires_txt):
 
         if line.startswith('[') and line.endswith(']'):
             extra = line[1:-1]
-            if extra == 'all':
-                extra = None
-            else:
-                extras.setdefault(extra, {})
-
+            extras.setdefault(extra, {})
             # Dont parse this requirement
             continue
         try:
@@ -81,7 +77,7 @@ def format_run_requires_metadata(run_requires):
 
         if env:
             obj = environments.setdefault(env, {})
-        elif extra is None or extra == 'all':
+        elif extra is None:
             obj = deps
         else:
             obj = extras.setdefault(extra, {})
@@ -110,7 +106,7 @@ def format_requires_metadata(run_requires):
         is_extra = extras_re.match(key)
         if is_extra:
             extra = is_extra.groups()[0]
-            if extra is None or extra == 'all':
+            if extra is None:
                 obj = deps
             else:
                 obj = extras.setdefault(extra, {})
