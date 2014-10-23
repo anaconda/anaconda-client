@@ -1,8 +1,3 @@
-'''
-Created on Jul 15, 2013
-
-@author: sean
-'''
 from clyent.errors import ClyentError
 
 class BinstarError(ClyentError):
