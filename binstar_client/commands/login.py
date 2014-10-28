@@ -28,6 +28,7 @@ def interactive_get_token(args):
     url = config.get('url', 'https://api.binstar.org')
 
     token = None
+    hostname = getattr(args, 'hostname', platform.node())
     username = input('Username: ')
 
     auth_name = 'binstar_client:'
@@ -36,7 +37,7 @@ def interactive_get_token(args):
         # For testing with binstar alpha site
         auth_name += '%s:' % site
 
-    auth_name += '%s@%s' % (getpass.getuser(), args.hostname)
+    auth_name += '%s@%s' % (getpass.getuser(), hostname)
 
     password = None
     for _ in range(3):
@@ -49,7 +50,7 @@ def interactive_get_token(args):
             token = bs.authenticate(username, password, auth_name, url,
                                     created_with=' '.join(sys.argv),
                                     fail_if_already_exists=True,
-                                    hostname=args.hostname)
+                                    hostname=hostname)
             break
 
         except errors.Unauthorized:
