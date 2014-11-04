@@ -20,7 +20,7 @@ def main(args):
     if args.copy:
         binstar.copy_channel(args.copy[0], owner, args.copy[1])
         log.info("Copied channel %s to %s" % tuple(args.copy))
-    if args.remove:
+    elif args.remove:
         binstar.remove_channel(args.remove, owner)
         log.info("Removed channel %s" % args.remove)
     elif args.list:
