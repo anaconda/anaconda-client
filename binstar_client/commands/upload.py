@@ -1,11 +1,7 @@
 '''
 Upload a file to binstar. 
 
-This command must be run after 'binstar register' if the package namespace does
-not exist on binstar.
-
 eg:
-    binstar register CONDA_PACKAGE_1.bz2
     binstar upload CONDA_PACKAGE_1.bz2
 
 '''
@@ -101,7 +97,7 @@ def add_package(binstar, args, username, package_name, package_attrs, package_ty
     except NotFound:
         if args.no_register:
             raise UserError('Binstar package %s/%s does not exist. '
-                            'Please run "binstar register" to create this package namespace in the cloud.' % (username, package_name))
+                            'Please run "binstar package --create" to create this package namespace in the cloud.' % (username, package_name))
         else:
 
             if args.summary:
