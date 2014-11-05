@@ -1,20 +1,19 @@
 '''
-Show information about an object:
+Show information about an object
 
-example::
+Examples:
 
-    * binstar show continuumio
-    * binstar show continuumio/python
-    * binstar show continuumio/python/2.7.5
-
+    binstar show continuumio
+    binstar show continuumio/python
+    binstar show continuumio/python/2.7.5
     binstar show sean/meta/1.2.0/meta.tar.gz
 
-
 '''
+
 from argparse import RawTextHelpFormatter
 from binstar_client.utils import get_binstar, parse_specs
 from binstar_client.utils.pprint import pprint_user, pprint_packages, \
-    pprint_orgs, pprint_collections
+    pprint_orgs
 import logging
 
 
@@ -96,11 +95,13 @@ def main(args):
         log.info(args.spec)
 
 def add_parser(subparsers):
-
+    description = 'Show information about an object'
     parser = subparsers.add_parser('show',
-                                      help='Show information about an object',
-                                      description=__doc__, formatter_class=RawTextHelpFormatter)
+                                   help=description, description=description,
+                                   epilog=__doc__,
+                                   formatter_class=RawTextHelpFormatter)
 
-    parser.add_argument('spec', help='Package written as <user>[/<package>[/<version>[/<filename>]]]', type=parse_specs)
+    parser.add_argument('spec', type=parse_specs,
+                        help='Package written as USER[/PACKAGE[/VERSION[/FILE]]]')
 
     parser.set_defaults(main=main)

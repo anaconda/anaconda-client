@@ -1,9 +1,12 @@
 '''
-Upload a file to binstar. 
 
-eg:
     binstar upload CONDA_PACKAGE_1.bz2
 
+##### See Also
+
+  * [Uploading a Conda Package](http://localhost:8080/examples.html#UploadingACondaPackage)
+  * [Uploading a PyPI Package](http://localhost:8080/examples.html#UploadingAPypiPackage)
+  
 '''
 from __future__ import unicode_literals
 
@@ -220,25 +223,28 @@ def windows_glob(item):
 
 def add_parser(subparsers):
 
+    description = 'Upload packages to binstar'
     parser = subparsers.add_parser('upload',
                                    formatter_class=argparse.RawDescriptionHelpFormatter,
-                                   help='Upload a file to binstar',
-                                   description=__doc__)
+                                   help=description, description=description,
+                                   epilog=__doc__)
 
     parser.add_argument('files', nargs='+', help='Distributions to upload', default=[], type=windows_glob)
 
     parser.add_argument('-c', '--channel', action='append', default=[], dest='channels',
                         help='Add this file to a specific channel. Warning: if the file Channels do not include "main", the file will not show up in your user channel')
-
-    parser.add_argument('-u', '--user', help='User account, defaults to the current user')
     parser.add_argument('--no-progress', help="Don't show upload progress", action='store_true')
-    parser.add_argument('-p', '--package', help='Defaults to the packge name in the uploaded file')
-    parser.add_argument('-v', '--version', help='Defaults to the packge version in the uploaded file')
-    parser.add_argument('-s', '--summary', help='Set the summary of the package')
-    parser.add_argument('-t', '--package-type', help='Set the package type, defaults to autodetect')
-    parser.add_argument('-d', '--description', help='description of the file(s)')
+    parser.add_argument('-u', '--user', help='User account, defaults to the current user')
 
-    parser.add_argument("--no-register", action="store_true", default=False)
+    mgroup = parser.add_argument_group('metadata options')
+    mgroup.add_argument('-p', '--package', help='Defaults to the packge name in the uploaded file')
+    mgroup.add_argument('-v', '--version', help='Defaults to the packge version in the uploaded file')
+    mgroup.add_argument('-s', '--summary', help='Set the summary of the package')
+    mgroup.add_argument('-t', '--package-type', help='Set the package type, defaults to autodetect')
+    mgroup.add_argument('-d', '--description', help='description of the file(s)')
+
+    parser.add_argument("--no-register", action="store_true", default=False,
+                        help='Don\'t create a new package namespace if it does not exist')
     parser.add_argument('--build-id', help='Binstar-Build ID (internal only)')
 
     group = parser.add_mutually_exclusive_group()

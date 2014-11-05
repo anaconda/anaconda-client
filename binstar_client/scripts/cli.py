@@ -17,7 +17,7 @@ from binstar_client.utils.handlers import syslog_handler
 
 from clyent import add_default_arguments, add_subparser_modules
 from clyent.logs import setup_logging
-import sys
+import argparse
 
 
 logger = logging.getLogger('binstar')
@@ -41,16 +41,20 @@ def file_or_token(value):
         raise ValueError()
     return value
 
-def binstar_main(sub_command_module, args=None, exit=True, description=None, version=None):
 
-    parser = ArgumentParser(description=description,
+
+
+def binstar_main(sub_command_module, args=None, exit=True, description=None, version=None, epilog=None):
+
+    parser = ArgumentParser(description=description, epilog=epilog,
                             formatter_class=RawDescriptionHelpFormatter)
 
     add_default_arguments(parser, version)
-    parser.add_argument('-t', '--token', type=file_or_token,
+    bgroup = parser.add_argument_group('binstar options')
+    bgroup.add_argument('-t', '--token', type=file_or_token,
                         help="Authentication token to use. "
                              "May be a token or a path to a file containing a token")
-    parser.add_argument('-s', '--site',
+    bgroup.add_argument('-s', '--site',
                         help='select the binstar site to use', default=None)
 
     add_subparser_modules(parser, sub_command_module)

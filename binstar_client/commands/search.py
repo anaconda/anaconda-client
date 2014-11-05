@@ -19,7 +19,8 @@ def search(args):
 def add_parser(subparsers):
     parser1 = subparsers.add_parser('search',
                                       help='Search binstar',
-                                      description=__doc__)
+                                      description='Search binstar',
+                                      epilog=__doc__)
     parser1.add_argument('name', nargs=1, help='Search string')
     parser1.add_argument('-t', '--package-type', choices=['conda', 'pypi'],
                          help='only search for packages of this type')

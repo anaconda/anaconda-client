@@ -176,25 +176,30 @@ def add_parser(subparsers):
     parser = subparsers.add_parser('auth',
                                     help='Manage Authorization Tokens',
                                     description=__doc__)
+
     parser.add_argument('-n', '--name', default='binstar_token:%s' % (socket.gethostname()),
                         help='A unique name so you can identify this token later. View your tokens at binstar.org/settings/access')
-    parser.add_argument('--url', default='http://binstar.org', help='The url of the application that will use this token')
-    parser.add_argument('--max-age', type=int, help='The maximum age in seconds that this token will be valid for')
-    parser.add_argument('-s', '--scopes', action='append', help=('Scopes for token. '
-                                                                 'For example if you want to limit this token to conda downloads only you would use '
-                                                                 '--scopes "repo conda:download"'), default=[])
 
-    g = parser.add_argument_group('Token Strength options')
+    parser.add_argument('-o', '--org', '--organization', help='Set the token owner (must be an organization)', dest='organization')
+
+    g = parser.add_argument_group('token creation arguments', 'These arguments are only valid with the `--create` action')
+
     g.add_argument('--strength', choices=['strong', 'weak'], default='strong', dest='strength')
     g.add_argument('--strong', action='store_const', const='strong', dest='strength' , help='Create a longer token (default)')
     g.add_argument('-w', '--weak', action='store_const', const='weak', dest='strength', help='Create a shorter token')
 
-    parser.add_argument('--out', default=sys.stdout,
+    g.add_argument('--url', default='http://binstar.org', help='The url of the application that will use this token')
+    g.add_argument('--max-age', type=int, help='The maximum age in seconds that this token will be valid for')
+    g.add_argument('-s', '--scopes', action='append', help=('Scopes for token. '
+                                                                 'For example if you want to limit this token to conda downloads only you would use '
+                                                                 '--scopes "repo conda:download"'), default=[])
+
+    g.add_argument('--out', default=sys.stdout,
                         type=FileType('w'))
 
-    parser.add_argument('-o', '--org', '--organization', help='Set the token owner (must be an organization)', dest='organization')
 
-    group = parser.add_mutually_exclusive_group(required=True)
+    group = parser.add_argument_group("actions")
+    group = group.add_mutually_exclusive_group(required=True)
     group.add_argument('-x', '--list-scopes', action='store_true', help='list all authentication scopes')
     group.add_argument('-l', '--list', action='store_true', help='list all user authentication tokens')
     group.add_argument('-r', '--remove', metavar='NAME', nargs='+', help='remove authentication tokens')
@@ -203,6 +208,5 @@ def add_parser(subparsers):
                        action='store_true', help='Show information about the current authentication token')
 
     parser.set_defaults(main=main)
-
 
 

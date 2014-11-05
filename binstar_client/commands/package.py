@@ -36,7 +36,8 @@ def add_parser(subparsers):
                                       help='Package utils',
                                       description=__doc__)
 
-    parser.add_argument('spec', help='Package to operate on', type=parse_specs)
+    parser.add_argument('spec', help='Package to operate on', type=parse_specs,
+                        metavar='USER/PACKAGE')
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--add-collaborator', metavar='user', help='username of the collaborator you want to add')
     group.add_argument('--list-collaborators', action='store_true', help='list all of the collaborators in a package')
