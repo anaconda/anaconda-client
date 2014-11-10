@@ -38,16 +38,19 @@ def add_parser(subparsers):
 
     parser.add_argument('spec', help='Package to operate on', type=parse_specs,
                         metavar='USER/PACKAGE')
-    group = parser.add_mutually_exclusive_group(required=True)
+    agroup = parser.add_argument_group('actions')
+    group = agroup.add_mutually_exclusive_group(required=True)
     group.add_argument('--add-collaborator', metavar='user', help='username of the collaborator you want to add')
     group.add_argument('--list-collaborators', action='store_true', help='list all of the collaborators in a package')
     group.add_argument('--create', action='store_true', help='Create a package')
 
-    parser.add_argument('--summary', help='Set the package short summary')
-    parser.add_argument('--license', help='Set the package license')
-    parser.add_argument('--license-url', help='Set the package license url')
+    mgroup = parser.add_argument_group('metadata arguments')
+    mgroup.add_argument('--summary', help='Set the package short summary')
+    mgroup.add_argument('--license', help='Set the package license')
+    mgroup.add_argument('--license-url', help='Set the package license url')
 
-    group = parser.add_mutually_exclusive_group(required=False)
+    pgroup = parser.add_argument_group('privacy')
+    group = pgroup.add_mutually_exclusive_group(required=False)
     group.add_argument('--personal', action='store_const', const='personal', dest='access',
                        help=('Set the package access to personal '
                              'This package will be available only on your personal regitries'))

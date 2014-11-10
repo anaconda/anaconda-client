@@ -4,8 +4,8 @@
 
 ##### See Also
 
-  * [Uploading a Conda Package](http://localhost:8080/examples.html#UploadingACondaPackage)
-  * [Uploading a PyPI Package](http://localhost:8080/examples.html#UploadingAPypiPackage)
+  * [Uploading a Conda Package](http://docs.binstar.org/examples.html#UploadingACondaPackage)
+  * [Uploading a PyPI Package](http://docs.binstar.org/examples.html#UploadingAPypiPackage)
   
 '''
 from __future__ import unicode_literals

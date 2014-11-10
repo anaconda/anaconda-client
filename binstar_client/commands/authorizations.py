@@ -1,9 +1,15 @@
 '''
 Manage Authentication tokens
+
+See also:
+
+  * [Using Binstar Tokens](http://docs.binstar.org/examples.html#UsingBinstarTokens)
+  
 '''
 from __future__ import print_function
 import socket
 from argparse import FileType
+import argparse
 
 
 SCOPE_EXAMPLES = '''
@@ -173,9 +179,12 @@ def main(args):
 
 def add_parser(subparsers):
 
+    description = 'Manage Authorization Tokens'
     parser = subparsers.add_parser('auth',
-                                    help='Manage Authorization Tokens',
-                                    description=__doc__)
+                                    help=description,
+                                    description=description,
+                                    epilog=__doc__,
+                                    formatter_class=argparse.RawDescriptionHelpFormatter)
 
     parser.add_argument('-n', '--name', default='binstar_token:%s' % (socket.gethostname()),
                         help='A unique name so you can identify this token later. View your tokens at binstar.org/settings/access')
