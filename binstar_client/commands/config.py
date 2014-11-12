@@ -88,14 +88,26 @@ def add_parser(subparsers):
                                       help='Binstar configuration',
                                       description=__doc__)
 
-    parser.add_argument('--type', type=try_eval, default=str, help='The type of the values in the set commands')
-    parser.add_argument('--set', nargs=2, action='append', default=[], help='sets a new variable: name value', metavar=('name', 'value'))
-    parser.add_argument('--get', help='get value: name', metavar='name')
-    parser.add_argument('--remove', action='append', default=[], help='removes a variable')
-    parser.add_argument('--show', action='store_true', default=False, help='show all variables')
-    parser.add_argument('-u', '--user', action='store_true', dest='user', default=True, help='set a variable for this user')
-    parser.add_argument('-s', '--site', action='store_false', dest='user', help='set a variable for all users on this machine')
-    parser.add_argument('-f', '--files', action='store_true', help='show the config file names')
+    parser.add_argument('--type', type=try_eval, default=str,
+                        help='The type of the values in the set commands')
+
+    agroup = parser.add_argument_group('actions')
+
+    agroup.add_argument('--set', nargs=2, action='append', default=[],
+                        help='sets a new variable: name value', metavar=('name', 'value'))
+    agroup.add_argument('--get', metavar='name',
+                        help='get value: name')
+    agroup.add_argument('--remove', action='append', default=[],
+                        help='removes a variable')
+    agroup.add_argument('--show', action='store_true', default=False,
+                        help='show all variables')
+    agroup.add_argument('-f', '--files', action='store_true',
+                        help='show the config file names')
+    lgroup = parser.add_argument_group('location')
+    lgroup.add_argument('-u', '--user', action='store_true', dest='user', default=True,
+                        help='set a variable for this user')
+    lgroup.add_argument('-s', '--site', action='store_false', dest='user',
+                        help='set a variable for all users on this machine')
 
 
     parser.set_defaults(main=main, sub_parser=parser)
