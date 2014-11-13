@@ -21,7 +21,7 @@ try:
 except NameError:
     input = input
 
-def interactive_get_token(args):
+def interactive_get_token(args, fail_if_already_exists=True):
     bs = get_binstar(args)
     config = get_config(remote_site=args.site)
 
@@ -49,7 +49,7 @@ def interactive_get_token(args):
 
             token = bs.authenticate(username, password, auth_name, url,
                                     created_with=' '.join(sys.argv),
-                                    fail_if_already_exists=True,
+                                    fail_if_already_exists=fail_if_already_exists,
                                     hostname=hostname)
             break
 
@@ -59,13 +59,13 @@ def interactive_get_token(args):
             continue
 
         except errors.BinstarError as err:
-            if err.args[1] == 400:
+            if fail_if_already_exists is True and err.args[1] == 400:
                 log.error('It appears you are already logged in from host %s' % socket.gethostname())
                 log.error('Logging in again will remove the previous token.')
                 log.error('Otherwise you can login again and specify a '
                           'different hostname with "--hostname"')
                 if bool_input("Would you like to continue"):
-                    bs.remove_authentication(auth_name)
+                    fail_if_already_exists = False
                     continue
                 else:
                     raise
