@@ -9,7 +9,7 @@ class OrgMixin(object):
         else:
             url = '%s/user/orgs' % (self.domain)
 
-        res = self.session.get(url, verify=True)
+        res = self.session.get(url)
         self._check_response(res)
 
         return res.json()
@@ -20,57 +20,57 @@ class OrgMixin(object):
         else:
             url = '%s/groups' % (self.domain,)
 
-        res = self.session.get(url, verify=True)
+        res = self.session.get(url)
         self._check_response(res)
 
         return res.json()
 
     def group(self, owner, group_name):
         url = '%s/group/%s/%s' % (self.domain, owner, group_name)
-        res = self.session.get(url, verify=True)
+        res = self.session.get(url)
         self._check_response(res)
         return res.json()
 
     def group_members(self, org, name):
         url = '%s/group/%s/%s/members' % (self.domain, org, name)
-        res = self.session.get(url, verify=True)
+        res = self.session.get(url)
         self._check_response(res)
 
         return res.json()
 
     def is_group_member(self, org, name, member):
         url = '%s/group/%s/%s/members/%s' % (self.domain, org, name, member)
-        res = self.session.get(url, verify=True)
+        res = self.session.get(url)
         self._check_response(res, [204, 404])
         return res.status_code == 204
 
     def add_group_member(self, org, name, member):
         url = '%s/group/%s/%s/members/%s' % (self.domain, org, name, member)
-        res = self.session.put(url, verify=True)
+        res = self.session.put(url)
         self._check_response(res, [204])
         return
 
     def remove_group_member(self, org, name, member):
         url = '%s/group/%s/%s/members/%s' % (self.domain, org, name, member)
-        res = self.session.delete(url, verify=True)
+        res = self.session.delete(url)
         self._check_response(res, [204])
         return
 
     def remove_group_package(self, org, name, package):
         url = '%s/group/%s/%s/packages/%s' % (self.domain, org, name, package)
-        res = self.session.delete(url, verify=True)
+        res = self.session.delete(url)
         self._check_response(res, [204])
         return
 
     def group_packages(self, org, name):
         url = '%s/group/%s/%s/packages' % (self.domain, org, name)
-        res = self.session.get(url, verify=True)
+        res = self.session.get(url)
         self._check_response(res, [200])
         return res.json()
 
     def add_group_package(self, org, name, package):
         url = '%s/group/%s/%s/packages/%s' % (self.domain, org, name, package)
-        res = self.session.put(url, verify=True)
+        res = self.session.put(url)
         self._check_response(res, [204])
         return
 

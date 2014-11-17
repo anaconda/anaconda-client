@@ -33,10 +33,11 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
                   an anonymous user.
     '''
 
-    def __init__(self, token=None, domain='https://api.binstar.org'):
+    def __init__(self, token=None, domain='https://api.binstar.org', verify=True):
 
         self._session = requests.Session()
         self._session.headers['x-binstar-api-version'] = __version__
+        self.session.verify = verify
         self.token = token
 
         if token:
@@ -100,7 +101,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         Retrieve information on the current authentication token
         '''
         url = '%s/authentication' % (self.domain)
-        res = self.session.get(url, verify=True)
+        res = self.session.get(url)
         self._check_response(res)
         return res.json()
 
@@ -110,7 +111,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         '''
 
         url = '%s/authentications' % (self.domain)
-        res = self.session.get(url, verify=True)
+        res = self.session.get(url)
         self._check_response(res)
         return res.json()
 
@@ -123,7 +124,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         else:
             url = '%s/authentications' % (self.domain,)
 
-        res = self.session.delete(url, verify=True)
+        res = self.session.delete(url)
         self._check_response(res, [201])
 
     def _check_response(self, res, allowed=[200]):
@@ -165,7 +166,8 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         else:
             url = '%s/user' % (self.domain)
 
-        res = self.session.get(url, verify=True)
+        print 'self.session.verify', self.session.verify
+        res = self.session.get(url, verify=self.session.verify)
         self._check_response(res)
 
         return res.json()
@@ -183,7 +185,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         else:
             url = '%s/packages' % (self.domain)
 
-        res = self.session.get(url, verify=True)
+        res = self.session.get(url)
         self._check_response(res)
 
         return res.json()
@@ -196,26 +198,26 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         :param package_name: the name of the package
         '''
         url = '%s/package/%s/%s' % (self.domain, login, package_name)
-        res = self.session.get(url, verify=True)
+        res = self.session.get(url)
         self._check_response(res)
         return res.json()
 
     def package_add_collaborator(self, owner, package_name, collaborator):
         url = '%s/packages/%s/%s/collaborators/%s' % (self.domain, owner, package_name, collaborator)
-        res = self.session.put(url, verify=True)
+        res = self.session.put(url)
         self._check_response(res, [201])
         return
 
     def package_remove_collaborator(self, owner, package_name, collaborator):
         url = '%s/packages/%s/%s/collaborators/%s' % (self.domain, owner, package_name, collaborator)
-        res = self.session.delete(url, verify=True)
+        res = self.session.delete(url)
         self._check_response(res, [201])
         return
 
     def package_collaborators(self, owner, package_name):
 
         url = '%s/packages/%s/%s/collaborators' % (self.domain, owner, package_name)
-        res = self.session.get(url, verify=True)
+        res = self.session.get(url)
         self._check_response(res, [200])
         return res.json()
 
@@ -224,7 +226,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         '''
         url = '%s/package_listing' % (self.domain)
         data = {'modified_after':modified_after or ''}
-        res = self.session.get(url, data=data, verify=True)
+        res = self.session.get(url, data=data)
         self._check_response(res)
         return res.json()
 
@@ -267,7 +269,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
 
         url = '%s/package/%s/%s' % (self.domain, username, package_name)
 
-        res = self.session.delete(url, verify=True)
+        res = self.session.delete(url)
         self._check_response(res, [201])
         return
 
@@ -280,7 +282,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         :param version: the name of the package
         '''
         url = '%s/release/%s/%s/%s' % (self.domain, login, package_name, version)
-        res = self.session.get(url, verify=True)
+        res = self.session.get(url)
         self._check_response(res)
         return res.json()
 
@@ -293,7 +295,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         :param version: the name of the package
         '''
         url = '%s/release/%s/%s/%s' % (self.domain, username, package_name, version)
-        res = self.session.delete(url, verify=True)
+        res = self.session.delete(url)
         self._check_response(res, [201])
         return
 
@@ -321,7 +323,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
 
         url = '%s/dist/%s/%s/%s/%s' % (self.domain, login, package_name, release, basename)
 
-        res = self.session.get(url, verify=True)
+        res = self.session.get(url)
         self._check_response(res)
         return res.json()
 
@@ -334,7 +336,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         else:
             raise TypeError("method remove_dist expects either 'basename' or '_id' arguments")
 
-        res = self.session.delete(url, verify=True)
+        res = self.session.delete(url)
         self._check_response(res)
         return res.json()
 
@@ -359,13 +361,13 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         else:
             headers = {}
 
-        res = self.session.get(url, verify=True, headers=headers, allow_redirects=False)
+        res = self.session.get(url, headers=headers, allow_redirects=False)
         self._check_response(res, allowed=[302, 304])
 
         if res.status_code == 304:
             return None
         elif res.status_code == 302:
-            res2 = requests.get(res.headers['location'], stream=True, verify=True)
+            res2 = requests.get(res.headers['location'], stream=True)
             return res2
 
 
@@ -414,7 +416,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         data_stream, headers = stream_multipart(s3data, files={'file':(basename, fd)},
                                                 callback=callback)
 
-        s3res = requests.post(s3url, data=data_stream, verify=True, timeout=10 * 60 * 60, headers=headers)
+        s3res = requests.post(s3url, data=data_stream, verify=self.session.verify, timeout=10 * 60 * 60, headers=headers)
 
         if s3res.status_code != 201:
             log.info(s3res.text)
@@ -432,8 +434,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
 
     def search(self, query, package_type=None):
         url = '%s/search' % self.domain
-        res = self.session.get(url, params={'name':query, 'type':package_type},
-                               verify=True)
+        res = self.session.get(url, params={'name':query, 'type':package_type})
         self._check_response(res)
         return res.json()
 

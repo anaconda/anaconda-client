@@ -9,7 +9,6 @@ from __future__ import print_function
 
 from ast import literal_eval
 import logging
-from pprint import pprint
 
 from binstar_client.errors import ShowHelp
 from binstar_client.utils import get_config, set_config, SITE_CONFIG, \
@@ -88,7 +87,7 @@ def add_parser(subparsers):
                                       help='Binstar configuration',
                                       description=__doc__)
 
-    parser.add_argument('--type', type=try_eval, default=str,
+    parser.add_argument('--type', default=try_eval,
                         help='The type of the values in the set commands')
 
     agroup = parser.add_argument_group('actions')
