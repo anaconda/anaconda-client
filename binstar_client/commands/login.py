@@ -29,7 +29,10 @@ def interactive_get_token(args, fail_if_already_exists=True):
 
     token = None
     hostname = getattr(args, 'hostname', platform.node())
-    username = input('Username: ')
+    if args.username:
+        username = args.username
+    else:
+        username = input('Username: ')
 
     auth_name = 'binstar_client:'
     site = args.site or config.get('default_site')
@@ -39,7 +42,8 @@ def interactive_get_token(args, fail_if_already_exists=True):
 
     auth_name += '%s@%s' % (getpass.getuser(), hostname)
 
-    password = None
+    password = args.password
+
     for _ in range(3):
         try:
             sys.stderr.write("%s's " % username)
@@ -94,5 +98,13 @@ def add_parser(subparsers):
     subparser.add_argument('--hostname', default=platform.node(),
                            help="Specify the host name of this login, "
                                 "this should be unique (default: %(default)s)"
+                           )
+    subparser.add_argument('--username',
+                           help="Specify your username. "
+                                "If this is not given, you will be prompted"
+                           )
+    subparser.add_argument('--password',
+                           help="Specify your password. "
+                                "If this is not given, you will be prompted"
                            )
     subparser.set_defaults(main=main)
