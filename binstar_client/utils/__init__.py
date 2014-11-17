@@ -10,7 +10,12 @@ import stat
 import sys
 import time
 
-from binstar_client.utils import appdirs
+from binstar_client.utils.appdirs import AppDirs, EnvAppDirs
+
+if 'BINSTAR_CONFIG_DIR' in os.environ:
+    dirs = EnvAppDirs('binstar', 'ContinuumIO', os.environ['BINSTAR_CONFIG_DIR'])
+else:
+    dirs = AppDirs('binstar', 'ContinuumIO')
 import yaml
 
 from ..errors import UserError
@@ -124,8 +129,7 @@ def parse_specs(spec):
     return PackageSpec(user, package, version, basename, attrs, spec)
 
 def load_token(url):
-    data_dir = appdirs.user_data_dir('binstar', 'ContinuumIO')
-    tokenfile = join(data_dir, '%s.token' % quote_plus(url))
+    tokenfile = join(dirs.user_data_dir, '%s.token' % quote_plus(url))
     if isfile(tokenfile):
         with open(tokenfile) as fd:
             token = fd.read()
@@ -153,10 +157,9 @@ def store_token(token, args):
 
     url = config.get('url', DEFAULT_URL)
 
-    data_dir = appdirs.user_data_dir('binstar', 'ContinuumIO')
-    if not isdir(data_dir):
-        os.makedirs(data_dir)
-    tokenfile = join(data_dir, '%s.token' % quote_plus(url))
+    if not isdir(dirs.user_data_dir):
+        os.makedirs(dirs.user_data_dir)
+    tokenfile = join(dirs.user_data_dir, '%s.token' % quote_plus(url))
 
     if isfile(tokenfile):
         os.unlink(tokenfile)
@@ -168,8 +171,7 @@ def store_token(token, args):
 def remove_token(args):
     config = get_config(remote_site=args and args.site)
     url = config.get('url', DEFAULT_URL)
-    data_dir = appdirs.user_data_dir('binstar', 'ContinuumIO')
-    tokenfile = join(data_dir, '%s.token' % quote_plus(url))
+    tokenfile = join(dirs.user_data_dir, '%s.token' % quote_plus(url))
 
     if isfile(tokenfile):
         os.unlink(tokenfile)
@@ -183,9 +185,9 @@ def load_config(config_file):
 
     return {}
 
-SITE_CONFIG = join(appdirs.site_data_dir('binstar', 'ContinuumIO'), 'config.yaml')
-USER_CONFIG = join(appdirs.user_data_dir('binstar', 'ContinuumIO'), 'config.yaml')
-USER_LOGDIR = appdirs.user_log_dir('binstar', 'ContinuumIO')
+SITE_CONFIG = join(dirs.site_data_dir, 'config.yaml')
+USER_CONFIG = join(dirs.user_data_dir, 'config.yaml')
+USER_LOGDIR = dirs.user_log_dir
 
 def recursive_update(d, u):
     for k, v in u.items():
