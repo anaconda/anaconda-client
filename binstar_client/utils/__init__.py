@@ -150,7 +150,7 @@ def get_binstar(args=None, cls=None):
     else:
         token = load_token(url)
 
-    verify = config.get('verify', True)
+    verify = config.get('verify_ssl', True)
     return cls(token, domain=url, verify=verify)
 
 def store_token(token, args):
