@@ -3,16 +3,64 @@ Binstar configuration
 
 Get, Set, Remove or Show the binstar configuration.
 
+#### Binstar Sites
 
+Binstar sites are a mechanism to allow users to quickly switch 
+between binstar instances. This is primarily used for testing 
+the binstar alpha site. But also has applications for the 
+on-site [Anaconda Server](http://continuum.io/anaconda-server).  
+
+Binstar comes with two pre-configured sites `alpha` and 
+`binstar` you may use these in one of two ways:
+
+  * Invoke the binstar command with the `-s/--site` option 
+    e.g. to use the aplha testing site: 
+    
+        binstar -s alpha whoami
+        
+  * Set a site as the default:
+  
+        binstar config --set default_site alpha
+        binstar whoami
+       
+##### Add a Binstar Site
+
+After installing a [Anaconda Server](http://continuum.io/anaconda-server) 
+you can add a site named **site_name** like this:
+
+    binstar config --set sites.site_name.url "http://<anaconda-server-ip>:<port>/api"
+    binstar config --set default_site site_name
+
+##### Site Options VS Global Options
+
+All options can be set as global options - affecting all sites, 
+or site options - affecting only one site
+
+By default options are set gobaly e.g.:
+
+    binstar config --set OPTION VALUE
+
+If you want the option to be limited to a single site, 
+prefix the option with `sites.site_name` e.g.
+  
+    binstar config --set sites.site_name.OPTION VALUE
+    
+#### Common binstar configuration options
+
+  * `url`: Set the binstar api url (default: https://api.binstar.org) 
+  * `verify_ssl`: Perform ssl validation on the https requests. 
+    verify_ssl may be `True`, `False` or a path to a root CA pem file.    
 '''
 from __future__ import print_function
 
+from argparse import RawDescriptionHelpFormatter
 from ast import literal_eval
 import logging
 
 from binstar_client.errors import ShowHelp
 from binstar_client.utils import get_config, set_config, SITE_CONFIG, \
     USER_CONFIG
+
 
 log = logging.getLogger('binstar.config')
 
@@ -83,9 +131,13 @@ def main(args):
 
 
 def add_parser(subparsers):
+    description = 'Binstar configuration'
     parser = subparsers.add_parser('config',
-                                      help='Binstar configuration',
-                                      description=__doc__)
+                                      help=description,
+                                      description=description,
+                                      epilog=__doc__,
+                                      formatter_class=RawDescriptionHelpFormatter
+                                      )
 
     parser.add_argument('--type', default=try_eval,
                         help='The type of the values in the set commands')
