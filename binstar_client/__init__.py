@@ -166,7 +166,6 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         else:
             url = '%s/user' % (self.domain)
 
-        print 'self.session.verify', self.session.verify
         res = self.session.get(url, verify=self.session.verify)
         self._check_response(res)
 

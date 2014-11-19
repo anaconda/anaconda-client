@@ -218,10 +218,11 @@ def get_config(user=True, site=True, remote_site=None):
     sites = config.get('sites', {})
 
     if remote_site:
+        remote_site = str(remote_site)
         if remote_site not in sites:
-            raise UserError("Remote site alias %s does not exist in the config file" % remote_site)
-
-        recursive_update(config, sites.get(remote_site, {}))
+            log.warn("Remote site alias %s does not exist in the config file" % remote_site)
+        else:
+            recursive_update(config, sites.get(remote_site, {}))
 
     return config
 
