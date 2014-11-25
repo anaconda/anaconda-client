@@ -29,8 +29,8 @@ def interactive_get_token(args, fail_if_already_exists=True):
 
     token = None
     hostname = getattr(args, 'hostname', platform.node())
-    if args.username:
-        username = args.username
+    if getattr(args, 'login_username', None):
+        username = args.login_username
     else:
         username = input('Username: ')
 
@@ -42,7 +42,7 @@ def interactive_get_token(args, fail_if_already_exists=True):
 
     auth_name += '%s@%s' % (getpass.getuser(), hostname)
 
-    password = args.password
+    password = getattr(args, 'login_password', None)
 
     for _ in range(3):
         try:
@@ -100,10 +100,12 @@ def add_parser(subparsers):
                                 "this should be unique (default: %(default)s)"
                            )
     subparser.add_argument('--username',
+                           dest='login_username',
                            help="Specify your username. "
                                 "If this is not given, you will be prompted"
                            )
     subparser.add_argument('--password',
+                           dest='login_password',
                            help="Specify your password. "
                                 "If this is not given, you will be prompted"
                            )
