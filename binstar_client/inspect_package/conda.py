@@ -13,6 +13,7 @@ arch_map = {('osx', 'x86_64'):'osx-64',
             ('win', 'x86_64'):'win-64',
             ('linux', 'x86'):'linux-32',
             ('linux', 'x86_64'):'linux-64',
+            ('linux', 'armv6l'): 'linux-armv6l',
             (None, None): 'any-any',
            }
 
