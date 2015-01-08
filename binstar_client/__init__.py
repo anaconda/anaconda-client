@@ -5,7 +5,7 @@ import os
 import requests
 import warnings
 
-from .errors import BinstarError, Conflict, NotFound, Unauthorized
+from . import errors
 from .requests_ext import stream_multipart
 
 from .utils import compute_hash, jencode, pv
@@ -145,13 +145,16 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
             else:
                 msg = data.get('error', msg)
 
-            ErrCls = BinstarError
+            ErrCls = errors.BinstarError
             if res.status_code == 401:
-                ErrCls = Unauthorized
+                ErrCls = errors.Unauthorized
             elif res.status_code == 404:
-                ErrCls = NotFound
+                ErrCls = errors.NotFound
             elif res.status_code == 409:
-                ErrCls = Conflict
+                ErrCls = errors.Conflict
+            elif res.status_code >= 500:
+                ErrCls = errors.ServerError
+
             raise ErrCls(msg, res.status_code)
 
     def user(self, login=None):
@@ -421,7 +424,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
             log.info(s3res.text)
             log.info('')
             log.info('')
-            raise BinstarError('Error uploading package', s3res.status_code)
+            raise errors.BinstarError('Error uploading package', s3res.status_code)
 
         url = '%s/commit/%s/%s/%s/%s' % (self.domain, login, package_name, release, basename)
         payload = dict(dist_id=obj['dist_id'])

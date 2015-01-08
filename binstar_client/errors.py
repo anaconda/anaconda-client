@@ -25,6 +25,9 @@ class NotFound(BinstarError, IndexError):
 class UserError(BinstarError):
     pass
 
+class ServerError(BinstarError):
+    pass
+
 
 class ShowHelp(BinstarError):
     pass
