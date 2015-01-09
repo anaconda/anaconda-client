@@ -6,10 +6,10 @@ example::
     binstar remove sean/meta/1.2.0/meta.tar.gz
 
 '''
-from binstar_client.utils import get_binstar, PackageSpec, parse_specs, \
+from binstar_client.utils import get_binstar, parse_specs, \
     bool_input
-from argparse import FileType, RawTextHelpFormatter
-from binstar_client import NotFound
+from argparse import RawTextHelpFormatter
+from binstar_client import errors
 
 import logging
 log = logging.getLogger('binstar.remove')
@@ -39,7 +39,7 @@ def main(args):
                 else:
                     log.warn('Not removing release %s' % (spec))
 
-        except NotFound:
+        except errors.NotFound:
             if args.force:
                 continue
             else:

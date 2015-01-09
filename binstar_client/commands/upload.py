@@ -17,8 +17,7 @@ import os
 from os.path import exists
 import sys
 
-from binstar_client import BinstarError, NotFound, Conflict
-from binstar_client.errors import UserError
+from binstar_client import errors
 from binstar_client.utils import get_binstar, bool_input, upload_print_callback
 from binstar_client.utils.detect import detect_package_type, get_attrs
 
@@ -67,7 +66,7 @@ def determine_package_type(filename, args):
         sys.stdout.flush()
         package_type = detect_package_type(filename)
         if package_type is None:
-            raise BinstarError('Could not detect package type of file %r please specify package type with option --package-type' % filename)
+            raise errors.BinstarError('Could not detect package type of file %r please specify package type with option --package-type' % filename)
         log.info(package_type)
 
     return package_type
@@ -75,11 +74,11 @@ def determine_package_type(filename, args):
 def get_package_name(args, package_attrs, filename, package_type):
     if args.package:
         if 'name' in package_attrs and package_attrs['name'].lower() != args.package.lower():
-            raise BinstarError('Package name on the command line does not match the package name in the file "%s"' % filename)
+            raise errors.BinstarError('Package name on the command line does not match the package name in the file "%s"' % filename)
         package_name = args.package
     else:
         if 'name' not in package_attrs:
-            raise BinstarError("Could not detect package name for package type %s, please use the --package option" % (package_type,))
+            raise errors.BinstarError("Could not detect package name for package type %s, please use the --package option" % (package_type,))
         package_name = package_attrs['name']
 
     return package_name
@@ -90,16 +89,16 @@ def get_version(args, release_attrs, package_type):
         version = args.version
     else:
         if 'version' not in release_attrs:
-            raise BinstarError("Could not detect package version for package type %s, please use the --version option" % (package_type,))
+            raise errors.BinstarError("Could not detect package version for package type %s, please use the --version option" % (package_type,))
         version = release_attrs['version']
     return version
 
 def add_package(binstar, args, username, package_name, package_attrs, package_type):
     try:
         binstar.package(username, package_name)
-    except NotFound:
+    except errors.NotFound:
         if args.no_register:
-            raise UserError('Binstar package %s/%s does not exist. '
+            raise errors.UserError('Binstar package %s/%s does not exist. '
                             'Please run "binstar package --create" to create this package namespace in the cloud.' % (username, package_name))
         else:
 
@@ -107,7 +106,7 @@ def add_package(binstar, args, username, package_name, package_attrs, package_ty
                 summary = args.summary
             else:
                 if 'summary' not in package_attrs:
-                    raise BinstarError("Could not detect package summary for package type %s, please use the --summary option" % (package_type,))
+                    raise errors.BinstarError("Could not detect package summary for package type %s, please use the --summary option" % (package_type,))
                 summary = package_attrs['summary']
 
             binstar.add_package(username, package_name, summary, package_attrs.get('license'),
@@ -117,7 +116,7 @@ def add_package(binstar, args, username, package_name, package_attrs, package_ty
 def add_release(binstar, args, username, package_name, version, release_attrs):
     try:
         binstar.release(username, package_name, version)
-    except NotFound:
+    except errors.NotFound:
         if args.mode == 'interactive':
             create_release_interactive(binstar, username, package_name, version)
         else:
@@ -127,7 +126,7 @@ def add_release(binstar, args, username, package_name, version, release_attrs):
 def remove_existing_file(binstar, args, username, package_name, version, file_attrs):
     try:
         binstar.distribution(username, package_name, version, file_attrs['basename'])
-    except NotFound:
+    except errors.NotFound:
         return False
     else:
         if args.mode == 'force':
@@ -159,7 +158,7 @@ def main(args):
     for filename in files:
 
         if not exists(filename):
-            raise BinstarError('file %s does not exist' % (filename))
+            raise errors.BinstarError('file %s does not exist' % (filename))
 
         package_type = determine_package_type(filename, args)
 
@@ -170,7 +169,7 @@ def main(args):
         except Exception:
             if args.show_traceback:
                 raise
-            raise BinstarError('Trouble reading metadata from %r. Is this a valid %s package' % (filename, package_type))
+            raise errors.BinstarError('Trouble reading metadata from %r. Is this a valid %s package' % (filename, package_type))
 
         if args.build_id:
             file_attrs['attrs']['binstar_build'] = args.build_id
@@ -201,7 +200,7 @@ def main(args):
                                              attrs=file_attrs['attrs'],
                                              channels=args.channels,
                                              callback=upload_print_callback(args))
-            except Conflict:
+            except errors.Conflict:
                 full_name = '%s/%s/%s/%s' % (username, package_name, version, file_attrs['basename'])
                 log.info('Distribution already exists. Please use the -i/--interactive or --force options or `binstar remove %s`' % full_name)
                 raise

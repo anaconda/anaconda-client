@@ -5,6 +5,8 @@ import os
 import requests
 import warnings
 
+# For backwards compatibility
+from .errors import *
 from . import errors
 from .requests_ext import stream_multipart
 
