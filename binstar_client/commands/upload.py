@@ -236,8 +236,8 @@ def add_parser(subparsers):
     parser.add_argument('-u', '--user', help='User account, defaults to the current user')
 
     mgroup = parser.add_argument_group('metadata options')
-    mgroup.add_argument('-p', '--package', help='Defaults to the packge name in the uploaded file')
-    mgroup.add_argument('-v', '--version', help='Defaults to the packge version in the uploaded file')
+    mgroup.add_argument('-p', '--package', help='Defaults to the package name in the uploaded file')
+    mgroup.add_argument('-v', '--version', help='Defaults to the package version in the uploaded file')
     mgroup.add_argument('-s', '--summary', help='Set the summary of the package')
     mgroup.add_argument('-t', '--package-type', help='Set the package type, defaults to autodetect')
     mgroup.add_argument('-d', '--description', help='description of the file(s)')
