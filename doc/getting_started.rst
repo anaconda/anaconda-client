@@ -4,7 +4,7 @@ Uploading a Conda Package
 To get started you must have: 
 
 * Anaconda_ installed on your system 
-* Account on Binstar_
+* An account on Binstar_
 
 .. _Anaconda: http://docs.continuum.io/anaconda/install.html
 
@@ -15,7 +15,7 @@ If you are not using Anaconda 1.6+ install the binstar command line client::
 	$ conda install binstar
 	$ conda update binstar
 
-If you are not using Anaconda the Binstar is also available on pypi::
+If you are not using Anaconda, then Binstar is also available on pypi::
 
 	$ pip install binstar
 
