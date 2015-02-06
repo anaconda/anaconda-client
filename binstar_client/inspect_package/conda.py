@@ -60,7 +60,8 @@ def inspect_conda_package(filename, fileobj):
 
     about = recipe.pop('about', {})
 
-    os_arch = arch_map[(index['platform'], index['arch'])]
+    subdir = index.get('subdir',
+                       arch_map[(index['platform'], index['arch'])])
     machine = index['arch']
     operatingsystem = os_map.get(index['platform'], index['platform'])
 
@@ -75,7 +76,7 @@ def inspect_conda_package(filename, fileobj):
                     'description': '',
                     }
     file_data = {
-                'basename': '%s/%s' % (os_arch, path.basename(filename)),
+                'basename': '%s/%s' % (subdir, path.basename(filename)),
                 'attrs':{
                         'operatingsystem': operatingsystem,
                         'machine': machine,
