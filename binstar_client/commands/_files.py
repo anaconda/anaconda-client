@@ -34,9 +34,9 @@ def main(args):
         for file in args.files:
             attrs = detect(binstar, spec.user, spec.package, file)
             with open(file) as fd:
-                print 'Uploading %s ... ' % file
+                print('Uploading %s ... ' % file)
                 binstar.upload(spec.user, spec.package, spec.version, basename(file), fd, args.description, **attrs)
-        print '... done'
+        print('... done')
     elif args.action == 'download':
         requests_handle = binstar.download(spec.user, spec.package, spec.version, spec.basename)
 
@@ -50,12 +50,12 @@ def main(args):
     elif args.action == 'list':
         release = binstar.release(spec.user, spec.package, spec.version)
         for dist in release.get('distributions',[]):
-            print '%(basename)s id: %(_id)s' % dist
+            print('%(basename)s id: %(_id)s' % dist)
             for key_value in dist['attrs'].items():
-                print '  + %s: %r' % key_value
+                print('  + %s: %r' % key_value)
     elif args.action == 'remove':
-        print spec.user, spec.package, spec.version, spec.basename, spec.attrs
-        print binstar.remove_dist(spec.user, spec.package, spec.version, spec.basename, spec.attrs)
+        print(spec.user, spec.package, spec.version, spec.basename, spec.attrs)
+        print(binstar.remove_dist(spec.user, spec.package, spec.version, spec.basename, spec.attrs))
     else:
         raise NotImplementedError(args.action)
 

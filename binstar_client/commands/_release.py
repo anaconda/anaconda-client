@@ -22,7 +22,7 @@ def main(args):
         binstar.add_release(user, package, version, {}, announce, description)
     elif args.action == 'show':
         release = binstar.release(user, package, version)
-        print release
+        print(release)
     else:
         raise NotImplementedError(args.action)
 
