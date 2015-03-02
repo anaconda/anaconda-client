@@ -10,6 +10,7 @@ import tarfile
 from binstar_client.inspect_package.conda import inspect_conda_package
 from binstar_client.inspect_package.pypi import inspect_pypi_package
 from binstar_client.inspect_package.r import inspect_r_package
+from binstar_client.inspect_package.ipynb import inspect_ipynb_package
 
 log = logging.getLogger('binstar.detect')
 #===============================================================================
@@ -18,8 +19,16 @@ log = logging.getLogger('binstar.detect')
 detectors = {'conda':inspect_conda_package,
              'pypi': inspect_pypi_package,
              'r': inspect_r_package,
+             'ipynb': inspect_ipynb_package,
              'file': lambda filename, fileobj: ({}, {'description': ''}, {'basename': path.basename(filename), 'attrs':{}}),
              }
+
+
+def is_ipynb(filename):
+    log.debug("Testing if ipynb file ..")
+    if filename.endswith('.ipynb'):
+        return True
+    log.debug("No ipynb file")
 
 
 def is_conda(filename):
@@ -72,6 +81,8 @@ def detect_package_type(filename):
         return 'pypi'
     elif is_r(filename):
         return 'r'
+    elif is_ipynb(filename):
+        return 'ipynb'
     else:
         return None
 
