@@ -11,6 +11,7 @@ import base64
 import json
 import unittest
 
+@unittest.skip("Need to change this to binsar package --create")
 class Test(CLITestCase):
 
     @urlpatch
