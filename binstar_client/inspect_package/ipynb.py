@@ -5,8 +5,9 @@ import os
 class IPythonNotebook(object):
     def __init__(self, filename, fileobj):
         content = json.loads(fileobj.read())
-        self.name = content['metadata']['name'] or filename
         self.basename = os.path.basename(filename)
+        self.name = content['metadata']['name'] or \
+            self.basename.replace('.ipynb', '')
         self.signature = content['metadata']['signature']
         self.version = content['metadata'].get('version', '1.0')
 

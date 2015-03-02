@@ -15,7 +15,7 @@ class Test(CLITestCase):
             package_data, release_data, file_data = inspect_ipynb_package('test.ipynb', fileobj)
 
         self.assertEqual({
-            'name': 'test.ipynb',
+            'name': 'test',
             'summary': 'IPython notebook'
         },package_data)
 
