@@ -8,11 +8,7 @@ class IPythonNotebook(object):
         self.name = content['metadata']['name'] or filename
         self.basename = os.path.basename(filename)
         self.signature = content['metadata']['signature']
-
-        if 'version' in content['metadata']:
-            self.version = content['metadata']['version']
-        else:
-            self.version = '1.0'
+        self.version = content['metadata'].get('version', '1.0')
 
 
 def inspect_ipynb_package(filename, fileobj):
