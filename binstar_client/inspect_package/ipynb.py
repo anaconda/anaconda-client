@@ -18,14 +18,14 @@ def inspect_ipynb_package(filename, fileobj):
 
     package_data = {
         'name': ipython_notebook.name,
-        'summary': '',
+        'summary': 'IPython notebook'
     }
     release_data = {
-        'version': '',
+        'version': 'version',
         'description': ''
     }
     file_data = {
-        'basename': '',
+        'basename': ipython_notebook.name,
         'attrs': {
             'signature': ipython_notebook.signature
         }
