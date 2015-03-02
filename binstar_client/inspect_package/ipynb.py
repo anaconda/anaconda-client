@@ -2,26 +2,27 @@ import json
 
 
 class IPythonNotebook(object):
-    def __init__(self, fileobj):
+    def __init__(self, filename, fileobj):
         content = json.loads(fileobj.read())
-        self.basename = fileobj.name
-
+        self.name = content['metadata']['name'] or filename
         self.signature = content['metadata']['signature']
-        if content['metadata']['name'] == '':
-            self.name = fileobj.name
+
+        if 'version' in content['metadata']:
+            self.version = content['metadata']['version']
         else:
-            self.name = content['metadata']['name']
+            self.version = '1.0'
 
 
 def inspect_ipynb_package(filename, fileobj):
-    ipython_notebook = IPythonNotebook(fileobj)
+    ipython_notebook = IPythonNotebook(filename, fileobj)
+
 
     package_data = {
         'name': ipython_notebook.name,
         'summary': 'IPython notebook'
     }
     release_data = {
-        'version': 'version',
+        'version': ipython_notebook.version,
         'description': ''
     }
     file_data = {
