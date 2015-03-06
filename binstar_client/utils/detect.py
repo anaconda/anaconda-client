@@ -8,6 +8,7 @@ from os import path
 import tarfile
 
 from binstar_client.inspect_package.conda import inspect_conda_package
+from binstar_client.inspect_package import conda_installer
 from binstar_client.inspect_package.pypi import inspect_pypi_package
 from binstar_client.inspect_package.r import inspect_r_package
 from binstar_client.inspect_package.ipynb import inspect_ipynb_package
@@ -20,6 +21,7 @@ detectors = {'conda':inspect_conda_package,
              'pypi': inspect_pypi_package,
              'r': inspect_r_package,
              'ipynb': inspect_ipynb_package,
+             conda_installer.PACKAGE_TYPE: conda_installer.inspect_package,
              'file': lambda filename, fileobj: ({}, {'description': ''}, {'basename': path.basename(filename), 'attrs':{}}),
              }
 
@@ -83,6 +85,8 @@ def detect_package_type(filename):
         return 'r'
     elif is_ipynb(filename):
         return 'ipynb'
+    elif conda_installer.is_installer(filename):
+        return conda_installer.PACKAGE_TYPE
     else:
         return None
 
