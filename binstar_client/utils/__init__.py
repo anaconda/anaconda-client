@@ -323,11 +323,23 @@ def bool_input(prompt, default=True):
             else:
                 sys.stderr.write('please enter yes or no\n')
 
+WAIT_SECONDS = 15
 
 def upload_print_callback(args):
     start_time = time.time()
     if args.no_progress or args.log_level > logging.INFO:
-        return lambda curr, total: None
+
+        def callback(curr, total):
+            perc = 100.0 * curr / total if total else 0
+
+            if (time.time() - callback.last_output) > WAIT_SECONDS:
+                print '| %.2f%% ' % (perc),
+                sys.stdout.flush()
+                callback.last_output = time.time()
+
+        callback.last_output = time.time()
+
+        return callback
 
     def callback(curr, total):
         curr_time = time.time()
