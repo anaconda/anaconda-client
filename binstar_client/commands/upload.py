@@ -74,7 +74,8 @@ def determine_package_type(filename, args):
 def get_package_name(args, package_attrs, filename, package_type):
     if args.package:
         if 'name' in package_attrs and package_attrs['name'].lower() != args.package.lower():
-            raise errors.BinstarError('Package name on the command line does not match the package name in the file "%s"' % filename)
+            msg = 'Package name on the command line " %s" does not match the package name in the file "%s"'
+            raise errors.BinstarError(msg % (args.package.lower(), package_attrs['name'].lower()))
         package_name = args.package
     else:
         if 'name' not in package_attrs:
@@ -185,6 +186,7 @@ def main(args):
 
         add_release(binstar, args, username, package_name, version, release_attrs)
 
+        binstar_package_type = file_attrs.pop('binstar_package_type', package_type)
 
         with open(filename, 'rb') as fd:
             log.info('\nUploading file %s/%s/%s/%s ... ' % (username, package_name, version, file_attrs['basename']))
@@ -194,7 +196,7 @@ def main(args):
                 continue
             try:
                 upload_info = binstar.upload(username, package_name, version, file_attrs['basename'],
-                                             fd, package_type,
+                                             fd, binstar_package_type,
                                              args.description,
                                              dependencies=file_attrs.get('dependencies'),
                                              attrs=file_attrs['attrs'],
