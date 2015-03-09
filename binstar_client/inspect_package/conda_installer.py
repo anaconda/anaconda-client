@@ -17,20 +17,36 @@ def is_installer(filename):
         fd.readline()
         cio_copyright = fd.readline()
         # Copyright (c) 2012-2014 Continuum Analytics, Inc.
+
         # TODO: it would be great if the installers had a unique identifier in the header
-        if "Copyright" not in cio_copyright:
+
+        # Made by CAS installer
+        if "CAS-INSTALLER" in cio_copyright:
+            return True
+
+        # miniconda installer
+        elif "Copyright" not in cio_copyright:
             return False
-        if "Continuum Analytics, Inc." not in cio_copyright:
+
+        elif "Continuum Analytics, Inc." not in cio_copyright:
             return False
+
         return True
 
     return False
 
 def inspect_package(filename, fileobj):
 
-    lines = [fileobj.readline().strip(" #\n") for i in range(11)]
+    # skip #!/bin/bash
+    line = fileobj.readline()
+    lines = []
+    while line.startswith('#'):
+        if ':' in line:
+            lines.append(line.strip(" #\n"))
+        line = fileobj.readline()
+
     try:
-        installer_data = yaml.load("\n".join(lines[4:]))
+        installer_data = yaml.load("\n".join(lines))
     finally:
         log.error("Could not load installer info as YAML")
 
@@ -38,6 +54,7 @@ def inspect_package(filename, fileobj):
     summary = "Conda installer for platform %s" % installer_data.pop('PLAT')
     name = installer_data.pop('NAME')
     version = installer_data.pop('VER')
+
     attrs = installer_data
 
     package_data = {'name': name,
