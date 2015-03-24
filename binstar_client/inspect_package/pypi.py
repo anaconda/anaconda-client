@@ -18,12 +18,12 @@ import re
 def parse_requirement(line, deps, extras, extra):
     req = pkg_resources.Requirement.parse(line)
     if extra:
-        extras[extra][req.key] = req.specs
+        extras[extra].append({'name':req.key, 'specs': req.specs or []})
     else:
-        deps[req.key] = req.specs
+        deps.append({'name':req.key, 'specs': req.specs or []})
 
 def parse_requires_txt(requires_txt):
-    deps = {}
+    deps = []
     error = False
     extras = {}
     extra = None
@@ -35,7 +35,7 @@ def parse_requires_txt(requires_txt):
 
         if line.startswith('[') and line.endswith(']'):
             extra = line[1:-1]
-            extras.setdefault(extra, {})
+            extras.setdefault(extra, [])
             # Dont parse this requirement
             continue
         try:
@@ -44,17 +44,16 @@ def parse_requires_txt(requires_txt):
             error = True
 
     return {'has_dep_errors': error, 'depends': deps, 'extras':extras,
-            'depends_index': list(deps.keys()),
             'optional_depends_index': [d for extra in extras.values() for d in extra.keys()]
             }
 
 def format_rqeuirements(requires):
-    obj = {}
+    obj = []
     for req in requires:
         req = req.strip()
         req_spec = req.split(' ', 1)
         if len(req_spec) == 1:
-            obj[req] = []
+            obj.append({'name': req, 'specs': []})
         else:
             req, spec = req_spec
             spec = spec.strip()
@@ -62,12 +61,12 @@ def format_rqeuirements(requires):
             if spec[-1] == ')': spec = spec[:-1]
 
             req = pkg_resources.Requirement.parse('%s %s' % (req, spec))
-            obj[req.key] = req.specs
+            obj.append({'name': req.key, 'specs': req.specs or []})
 
     return obj
 
 def format_run_requires_metadata(run_requires):
-    deps = {}
+    deps = []
     extras = {}
     environments = {}
     for run_require in run_requires:
@@ -76,28 +75,22 @@ def format_run_requires_metadata(run_requires):
         requires = run_require['requires']
 
         if env:
-            obj = environments.setdefault(env, {})
+            obj = environments.setdefault(env, [])
         elif extra is None:
             obj = deps
         else:
-            obj = extras.setdefault(extra, {})
+            obj = extras.setdefault(extra, [])
 
-        obj.update(format_rqeuirements(requires))
-
-    optional = []
-    optional += [d for extra in extras.values() for d in extra.keys()]
-    optional += [d for extra in environments.values() for d in extra.keys()]
+        obj.extend(format_rqeuirements(requires))
 
     attrs = {'has_dep_errors': False, 'depends': deps, 'extra_depends':extras,
              'environment_depends': environments,
-            'depends_index': list(deps.keys()),
-            'optional_depends_index': optional,
              }
 
     return attrs
 
 def format_requires_metadata(run_requires):
-    deps = {}
+    deps = []
     extras = {}
     environments = {}
 
@@ -109,21 +102,14 @@ def format_requires_metadata(run_requires):
             if extra is None:
                 obj = deps
             else:
-                obj = extras.setdefault(extra, {})
+                obj = extras.setdefault(extra, [])
 
         else:
-            obj = environments.setdefault(key, {})
+            obj = environments.setdefault(key, [])
 
-        obj.update(format_rqeuirements(requirements))
-
-    optional = []
-    optional += [d for extra in extras.values() for d in extra.keys()]
-    optional += [d for extra in environments.values() for d in extra.keys()]
+        obj.extend(format_rqeuirements(requirements))
 
     attrs = {'has_dep_errors': False, 'depends': deps, 'extra_depends':extras,
-             'environment_depends': environments,
-            'depends_index': list(deps.keys()),
-            'optional_depends_index': optional,
              }
 
     return attrs
@@ -146,17 +132,21 @@ def format_wheel_json_metadata(data, filename, zipfile):
                     'home_page': pop_key(data.get('project_urls', {}), 'Home', None)
                     }
 
-    data.update({
-                 'packagetype': 'bdist_wheel',
-                 'python_version':'source',
-                 })
+    attrs = {
+             'packagetype': 'bdist_wheel',
+             'python_version':'source',
+             'extras': [{'key':k, 'value': v} for (k, v) in data.items()]
+             }
+
     if data.get('run_requires', {}):
         dependencies = format_run_requires_metadata(data['run_requires'])
     else:
         dependencies = format_requires_metadata(data.get('requires', {}))
+
+
     file_data = {
                  'basename': path.basename(filename),
-                 'attrs': data,
+                 'attrs': attrs,
                  'dependencies': dependencies,
                  }
 
@@ -187,8 +177,10 @@ def inspect_pypi_package_whl(filename, fileobj):
     if abi == 'none': abi = None
 
     file_data.setdefault('attrs', {})
-    file_data['attrs'].update(build_no=build_no, python_version=python_version, abi=abi,
+
+    file_data['attrs'] = dict(build_no=build_no, python_version=python_version, abi=abi,
                               packagetype='bdist_wheel')
+
     file_data.update(platform=platform)
     return package_data, release_data, file_data
 
@@ -197,10 +189,9 @@ def disutils_dependencies(config_items):
         requirements = [v for k, v in config_items if k == 'Requires']
         depends = format_rqeuirements(requirements)
         return {'depends':depends,
-                'depends_index': list(depends.keys()),
                 'extras': {},
                 'has_dep_errors': False,
-                'optional_depends_index': []
+
                 }
 def inspect_pypi_package_sdist(filename, fileobj):
 
@@ -234,7 +225,10 @@ def inspect_pypi_package_sdist(filename, fileobj):
                     }
     file_data = {
                  'basename': basename(filename),
-                 'attrs': attrs,
+                 'attrs': {
+                     'packagetype': 'sdist',
+                     'python_version':'source',
+                     },
                  }
 
 
@@ -244,13 +238,6 @@ def inspect_pypi_package_sdist(filename, fileobj):
     requires_txt = extract_first(tf, '*.egg-info/requires.txt')
     if requires_txt:
         file_data.update(dependencies=parse_requires_txt(requires_txt))
-
-    attrs.update({
-                 'packagetype': 'sdist',
-                 'python_version':'source',
-                 })
-
-
 
     return package_data, release_data, file_data
 
@@ -273,14 +260,6 @@ def inspect_pypi_package_egg(filename, fileobj):
                     'description': pop_key(attrs, 'Description', None),
                     'home_page': pop_key(attrs, 'Home-page', None)
                     }
-    file_data = {
-                 'basename': basename(filename),
-                 'attrs': attrs,
-                 }
-
-    requires_txt = extract_first(tf, 'EGG-INFO/requires.txt')
-    if requires_txt:
-        file_data.update(dependencies=parse_requires_txt(requires_txt))
 
     if len(filename.split('-')) == 4:
         _, _, python_version, platform = filename[:-4].split('-')
@@ -288,13 +267,18 @@ def inspect_pypi_package_egg(filename, fileobj):
         python_version = 'source'
         platform = None
 
+    file_data = {
+                 'basename': basename(filename),
+                 'attrs': {
+                     'packagetype': 'bdist_egg',
+                     'python_version': python_version,
+                     },
+                 'platform': platform,
+                 }
 
-    file_data.update(platform=platform)
-
-    attrs.update({
-                 'packagetype': 'bdist_egg',
-                 'python_version': python_version,
-                 })
+    requires_txt = extract_first(tf, 'EGG-INFO/requires.txt')
+    if requires_txt:
+        file_data.update(dependencies=parse_requires_txt(requires_txt))
 
     return package_data, release_data, file_data
 
@@ -309,6 +293,7 @@ def inspect_pypi_package_zip(filename, fileobj):
         raise errors.NoMetadataError("Could not find EGG-INFO/PKG-INFO file in pypi sdist")
 
     attrs = dict(Parser().parsestr(data.encode("UTF-8", "replace")).items())
+
     package_data = {'name': pop_key(attrs, 'Name'),
                     'summary': pop_key(attrs, 'Summary', None),
                     'license': pop_key(attrs, 'License', None),
@@ -320,13 +305,11 @@ def inspect_pypi_package_zip(filename, fileobj):
                     }
     file_data = {
                  'basename': basename(filename),
-                 'attrs': attrs,
+                 'attrs': {
+                     'packagetype': 'bdist_egg',
+                     'python_version': 'source',
+                     },
                  }
-
-    attrs.update({
-                 'packagetype': 'bdist_egg',
-                 'python_version': 'source',
-                 })
 
     return package_data, release_data, file_data
 
@@ -384,10 +367,21 @@ def inspect_pypi_package(filename, fileobj):
     _, etx = path.splitext(filename)
     raise errors.NoMetadataError("Can not inspect pypi package with file extension %s" % etx)
 
+# Test Package: https://pypi.python.org/packages/source/F/Flask-Bower/Flask-Bower-1.1.1.tar.gz
+# Test Package: https://pypi.python.org/packages/2.7/i/ipython/ipython-3.0.0-py2-none-any.whl
+# Test Package: https://pypi.python.org/packages/source/i/ipython/ipython-3.0.0.tar.gz
+
 def main():
     filename = sys.argv[1]
-    with open(filename) as fileobj:
-        package_data, release_data, file_data = inspect_pypi_package(filename, fileobj)
+
+    if filename.startswith('https://') or filename.startswith('http://'):
+        import requests, io
+        data = requests.get(filename, stream=True).raw.read()
+        fileobj = io.BytesIO(data)
+    else:
+        fileobj = open(filename)
+
+    package_data, release_data, file_data = inspect_pypi_package(filename, fileobj)
     pprint(package_data)
     print('--')
     pprint(release_data)
