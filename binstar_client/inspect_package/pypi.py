@@ -43,8 +43,8 @@ def parse_requires_txt(requires_txt):
         except ValueError as err:
             error = True
 
-    return {'has_dep_errors': error, 'depends': deps, 'extras':extras,
-            'optional_depends_index': [d for extra in extras.values() for d in extra.keys()]
+    return {'has_dep_errors': error, 'depends': deps,
+            'extras': [{'name': k, 'depends': v} for (k, v) in extras.items()],
             }
 
 def format_rqeuirements(requires):
@@ -67,19 +67,21 @@ def format_rqeuirements(requires):
 
 def format_run_requires_metadata(run_requires):
     deps = []
-    extras = {}
-    environments = {}
+    extras = []
+    environments = []
     for run_require in run_requires:
         extra = run_require.get('extra')
         env = run_require.get('environment')
         requires = run_require['requires']
 
         if env:
-            obj = environments.setdefault(env, [])
+            obj = []
+            environments.append({'name': extra, 'depends': obj})
         elif extra is None:
             obj = deps
         else:
-            obj = extras.setdefault(extra, [])
+            obj = []
+            extras.append({'name': extra, 'depends': obj})
 
         obj.extend(format_rqeuirements(requires))
 
@@ -91,8 +93,8 @@ def format_run_requires_metadata(run_requires):
 
 def format_requires_metadata(run_requires):
     deps = []
-    extras = {}
-    environments = {}
+    extras = []
+    environments = []
 
     extras_re = re.compile('extra == [\'\"](.*)[\'\"]')
     for key, requirements in run_requires.items():
@@ -102,10 +104,12 @@ def format_requires_metadata(run_requires):
             if extra is None:
                 obj = deps
             else:
-                obj = extras.setdefault(extra, [])
+                obj = []
+                extras.append({'name': extra, 'depends': obj})
 
         else:
-            obj = environments.setdefault(key, [])
+            obj = []
+            environments.append({'name': extra, 'depends': obj})
 
         obj.extend(format_rqeuirements(requirements))
 
@@ -135,7 +139,7 @@ def format_wheel_json_metadata(data, filename, zipfile):
     attrs = {
              'packagetype': 'bdist_wheel',
              'python_version':'source',
-             'extras': [{'key':k, 'value': v} for (k, v) in data.items()]
+             'pypi': [{'key':k, 'value': v} for (k, v) in data.items()]
              }
 
     if data.get('run_requires', {}):
@@ -189,7 +193,7 @@ def disutils_dependencies(config_items):
         requirements = [v for k, v in config_items if k == 'Requires']
         depends = format_rqeuirements(requirements)
         return {'depends':depends,
-                'extras': {},
+                'extras': [],
                 'has_dep_errors': False,
 
                 }
