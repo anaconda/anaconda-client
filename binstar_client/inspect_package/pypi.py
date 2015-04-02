@@ -94,9 +94,17 @@ def format_run_requires_metadata(run_requires):
 def format_requires_metadata(run_requires):
     deps = []
     extras = []
-    environments = []
 
     extras_re = re.compile('extra == [\'\"](.*)[\'\"]')
+    has_dep_errors = False
+
+    if not isinstance(run_requires, dict):
+        if isinstance(run_requires, (basestring)):
+            run_requires = {'': [run_requires]}
+        else:
+            has_dep_errors = True
+            run_requires = {}
+
     for key, requirements in run_requires.items():
         is_extra = extras_re.match(key)
         if is_extra:
@@ -108,12 +116,11 @@ def format_requires_metadata(run_requires):
                 extras.append({'name': extra, 'depends': obj})
 
         else:
-            obj = []
-            environments.append({'name': extra, 'depends': obj})
+            obj = deps
 
         obj.extend(format_rqeuirements(requirements))
 
-    attrs = {'has_dep_errors': False, 'depends': deps, 'extra_depends':extras,
+    attrs = {'has_dep_errors': has_dep_errors, 'depends': deps, 'extra_depends':extras,
              }
 
     return attrs
