@@ -23,26 +23,25 @@ def transform_conda_deps(deps):
     """
     Format dependencies into a common binstar format
     """
-    depends = {}
+    depends = []
     for dep in deps:
         dep = dep.strip()
         name_spec = dep.split(' ', 1)
         if len(name_spec) == 1:
             name, = name_spec
-            depends[name] = []
+            depends.append({'name':name, 'specs': []})
         elif len(name_spec) == 2:
             name, spec = name_spec
             if spec.endswith('*'):  # Star does nothing in semver
                 spec = spec[:-1]
-            depends[name] = [['==', spec]]
+            depends.append({'name':name, 'specs': [['==', spec]]})
         elif len(name_spec) == 3:
             name, spec, build_str = name_spec
             if spec.endswith('*'):  # Star does nothing in semver
                 spec = spec[:-1]
-            depends[name] = [['==', '%s+%s' % (spec, build_str)]]
+            depends.append({'name':name, 'specs': [['==', '%s+%s' % (spec, build_str)]]})
 
-    return {'depends': depends,
-            'depends_index': list(depends.keys()), }
+    return {'depends': depends}
 
 
 
@@ -85,7 +84,8 @@ def inspect_conda_package(filename, fileobj):
                  }
 
     file_data['attrs'].update(index)
-    file_data['dependencies'] = transform_conda_deps(index['depends'])
+    conda_depends = index.get('depends', index.get('requires', []))
+    file_data['dependencies'] = transform_conda_deps(conda_depends)
     return package_data, release_data, file_data
 
 def main():
