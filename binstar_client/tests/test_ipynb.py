@@ -26,9 +26,7 @@ class Test(CLITestCase):
 
         self.assertEqual({
             'basename': 'test.ipynb',
-            'attrs': {
-                'signature': ''
-            }
+            'attrs': {}
         }, file_data)
 
     def test_inspect_ipynb_2_package(self):
@@ -47,9 +45,7 @@ class Test(CLITestCase):
 
         self.assertEqual({
             'basename': 'test.ipynb',
-            'attrs': {
-                'signature': 'signature'
-            }
+            'attrs': {}
         }, file_data)
 
 

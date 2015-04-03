@@ -14,13 +14,11 @@ class IPythonNotebook(object):
         self.basename = os.path.basename(filename)
         self.name = content['metadata']['name'] or \
             self.basename.replace('.ipynb', '')
-        self.signature = content['metadata']['signature']
         self.version = content['metadata'].get('version', '1.0')
 
     def populate_nbformat_3(self, filename, content):
         self.basename = os.path.basename(filename)
         self.name = self.basename.replace('.ipynb', '')
-        self.signature = ''
         self.version = content['metadata'].get('version', '1.0')
 
 
@@ -37,9 +35,7 @@ def inspect_ipynb_package(filename, fileobj):
     }
     file_data = {
         'basename': ipython_notebook.basename,
-        'attrs': {
-            'signature': ipython_notebook.signature
-        }
+        'attrs': {}
     }
 
     return package_data, release_data, file_data
