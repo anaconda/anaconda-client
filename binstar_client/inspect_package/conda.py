@@ -5,6 +5,7 @@ from os import path
 from pprint import pprint
 import sys
 import tarfile
+import re
 
 
 arch_map = {('osx', 'x86_64'):'osx-64',
@@ -18,7 +19,7 @@ arch_map = {('osx', 'x86_64'):'osx-64',
 
 os_map = {'osx':'darwin', 'win':'win32'}
 
-
+specs_re = re.compile('^([=><]+)(.*)$')
 def transform_conda_deps(deps):
     """
     Format dependencies into a common binstar format
@@ -34,11 +35,25 @@ def transform_conda_deps(deps):
             name, spec = name_spec
             if spec.endswith('*'):  # Star does nothing in semver
                 spec = spec[:-1]
-            depends.append({'name':name, 'specs': [['==', spec]]})
+
+            match = specs_re.match(spec)
+            if match:
+                op, spec = match.groups()
+            else:
+                op = '=='
+
+            depends.append({'name':name, 'specs': [[op, spec]]})
         elif len(name_spec) == 3:
             name, spec, build_str = name_spec
             if spec.endswith('*'):  # Star does nothing in semver
                 spec = spec[:-1]
+
+            match = specs_re.match(spec)
+            if match:
+                op, spec = match.groups()
+            else:
+                op = '=='
+
             depends.append({'name':name, 'specs': [['==', '%s+%s' % (spec, build_str)]]})
 
     return {'depends': depends}
