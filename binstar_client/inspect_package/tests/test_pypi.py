@@ -34,6 +34,24 @@ expected_dependencies = {'depends': [{'name': u'requests',
                                       'name': u'reST'}],
                           'has_dep_errors': False}
 
+expected_whl_dependencies = {u'depends': [{u'name': u'requests',
+                                             u'specs': [(u'>=', u'2.0'),
+                                                        (u'<=', u'3.0')]},
+                                            {u'name': u'pyyaml', u'specs': []},
+                                            {u'name': u'python-dateutil', u'specs': []},
+                                            {u'name': u'pytz', u'specs': []}],
+                               u'environments': [{u'depends': [{u'name': u'argparse',
+                                                                u'specs': []}],
+                                                  u'name': u'python_version=="2.6"'}],
+                               u'extras': [{u'depends': [{u'name': u'reportlab',
+                                                          u'specs': [(u'>=', u'1.2')]},
+                                                         {u'name': u'RXP',
+                                                          u'specs': []}],
+                                            u'name': u'PDF'},
+                                           {u'depends': [{u'name': u'docutils',
+                                                          u'specs': [(u'>=', u'0.3')]}],
+                                            u'name': u'reST'}],
+                               u'has_dep_errors': False}
 
 class Test(unittest.TestCase):
 
@@ -62,7 +80,7 @@ class Test(unittest.TestCase):
                                         'packagetype': 'bdist_wheel',
                                         'python_version': 'py2'},
                              'basename': 'test_package34-0.3.1-py2-none-any.whl',
-                             'dependencies': expected_dependencies,
+                             'dependencies': expected_whl_dependencies,
                              'platform': None}
 
         self.assertEqual(expected_package_data, package_data)

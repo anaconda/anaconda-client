@@ -74,7 +74,7 @@ def format_run_requires_metadata(run_requires):
 
         if env:
             obj = []
-            environments.append({'name': extra, 'depends': obj})
+            environments.append({'name': env, 'depends': obj})
         elif extra is None:
             obj = deps
         else:
@@ -84,8 +84,8 @@ def format_run_requires_metadata(run_requires):
         obj.extend(format_rqeuirements(requires))
 
     attrs = {'has_dep_errors': False, 'depends': deps,
-             'extra_depends':extras,
-             'environment_depends': environments}
+             'extras':extras,
+             'environments': environments}
 
     return attrs
 
@@ -139,9 +139,13 @@ def format_wheel_json_metadata(data, filename, zipfile):
     else:
         description = None
 
+    home_page = (data.get('project_urls', {})).get('Home')
+    if not home_page:
+        home_page = data.get('extensions', {}).get('python.details', {}).get('project_urls', {}).get('Home')
+
     release_data = {'version': pop_key(data, 'version'),
                     'description': description,
-                    'home_page': pop_key(data.get('project_urls', {}), 'Home', None)}
+                    'home_page': home_page}
 
     attrs = {'packagetype': 'bdist_wheel',
              'python_version':'source',
