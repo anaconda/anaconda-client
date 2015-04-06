@@ -1,0 +1,114 @@
+from __future__ import print_function, unicode_literals
+
+import unittest
+from os import path
+from binstar_client.inspect_package import pypi
+from pprint import pprint
+
+def data_path(filename):
+    return path.join(path.dirname(__file__), 'data', filename)
+
+
+expected_package_data = {'name': 'test-package34',
+                         'license': 'custom',
+                         'summary': 'Python test package for binstar client'}
+
+expected_version_data = {'home_page': 'http://github.com/binstar/binstar_pypi',
+                         'version': '0.3.1',
+                         'description':'longer description of the package'}
+
+expected_dependencies = {'depends': [{'name': u'requests',
+                                       'specs': [(u'>=', u'2.0'), (u'<=', u'3.0')]},
+                                      {'name': u'pyyaml', 'specs': []},
+                                      {'name': u'python-dateutil', 'specs': []},
+                                      {'name': u'pytz', 'specs': []}],
+                          'extras': [{'depends': [{'name': u'reportlab',
+                                                   'specs': [(u'>=', u'1.2')]},
+                                                  {'name': u'rxp', 'specs': []}],
+                                      'name': u'PDF'},
+                                     {'depends': [{'name': u'argparse',
+                                                   'specs': []}],
+                                      'name': u':python_version=="2.6"'},
+                                     {'depends': [{'name': u'docutils',
+                                                   'specs': [(u'>=', u'0.3')]}],
+                                      'name': u'reST'}],
+                          'has_dep_errors': False}
+
+
+class Test(unittest.TestCase):
+
+
+    def test_sdist(self):
+        filename = data_path('test_package34-0.3.1.tar.gz')
+        with open(filename) as fd:
+            package_data, version_data, file_data = pypi.inspect_pypi_package(filename, fd)
+
+
+        expected_file_data = {'attrs': {'packagetype': 'sdist', 'python_version': 'source'},
+                              'basename': 'test_package34-0.3.1.tar.gz',
+                              'dependencies': expected_dependencies}
+
+        self.assertEqual(expected_package_data, package_data)
+        self.assertEqual(expected_version_data, version_data)
+        self.assertEqual(expected_file_data, file_data)
+
+    def test_bdist_wheel(self):
+        filename = data_path('test_package34-0.3.1-py2-none-any.whl')
+
+        with open(filename) as fd:
+            package_data, version_data, file_data = pypi.inspect_pypi_package(filename, fd)
+
+        expected_file_data = {'attrs': {'abi': None, 'build_no': 0,
+                                        'packagetype': 'bdist_wheel',
+                                        'python_version': 'py2'},
+                             'basename': 'test_package34-0.3.1-py2-none-any.whl',
+                             'dependencies': expected_dependencies,
+                             'platform': None}
+
+        self.assertEqual(expected_package_data, package_data)
+        self.assertEqual(expected_version_data, version_data)
+        self.assertEqual(expected_file_data, file_data)
+
+
+    def test_bdist_egg(self):
+        filename = data_path('test_package34-0.3.1-py2.7.egg')
+
+        with open(filename) as fd:
+            package_data, version_data, file_data = pypi.inspect_pypi_package(filename, fd)
+
+
+        expected_file_data = {'attrs': {'packagetype': 'bdist_egg', 'python_version': 'source'},
+                             'basename': 'test_package34-0.3.1-py2.7.egg',
+                             'dependencies': expected_dependencies,
+                             'platform': None}
+
+        self.assertEqual(expected_package_data, package_data)
+        self.assertEqual(expected_version_data, version_data)
+        self.assertEqual(expected_file_data, file_data)
+
+    def test_sdist_distutils(self):
+        filename = data_path('test_package34-distutils-0.3.1.tar.gz')
+        with open(filename) as fd:
+            package_data, version_data, file_data = pypi.inspect_pypi_package(filename, fd)
+
+
+        expected_file_data = {'attrs': {'packagetype': 'sdist', 'python_version': 'source'},
+                              'basename': 'test_package34-distutils-0.3.1.tar.gz',
+                              'dependencies': {'depends': [{'name': 'requests',
+                                                            'specs': [('>=', '2.0'), ('<=', '3.0')]},
+                                                           {'name': 'pyyaml', 'specs': [('==', '2.0')]},
+                                                           {'name': 'pytz', 'specs': []}],
+                                               'extras': [],
+                                               'has_dep_errors': False}}
+
+        dexpected_package_data = expected_package_data.copy()
+        dexpected_package_data['name'] = dexpected_package_data['name'].replace('-', '_')
+        self.assertEqual(dexpected_package_data, package_data)
+        self.assertEqual(expected_version_data, version_data)
+        self.assertEqual(expected_file_data, file_data)
+
+
+
+if __name__ == "__main__":
+    # import sys;sys.argv = ['', 'Test.testName']
+    unittest.main()
