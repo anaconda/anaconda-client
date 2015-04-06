@@ -97,7 +97,7 @@ def format_requires_metadata(run_requires):
     has_dep_errors = False
 
     if not isinstance(run_requires, dict):
-        if isinstance(run_requires, (basestring)):
+        if isinstance(run_requires, basestring):
             run_requires = {'': [run_requires]}
         else:
             has_dep_errors = True
