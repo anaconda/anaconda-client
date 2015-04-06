@@ -1,18 +1,16 @@
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 
 from email.parser import Parser
 import json
 from os import path
-from os.path import basename
-from pprint import pprint
-import sys
+import re
 import tarfile
 import zipfile
 
+import pkg_resources
+
 from binstar_client import errors
 from binstar_client.inspect_package.uitls import extract_first, pop_key
-import pkg_resources
-import re
 
 
 def parse_requirement(line, deps, extras, extra):
@@ -43,9 +41,9 @@ def parse_requires_txt(requires_txt):
         except ValueError as err:
             error = True
 
+    extras = [{'name': k, 'depends': v} for (k, v) in extras.items()]
     return {'has_dep_errors': error, 'depends': deps,
-            'extras': [{'name': k, 'depends': v} for (k, v) in extras.items()],
-            }
+            'extras': extras}
 
 def format_rqeuirements(requires):
     obj = []
@@ -85,9 +83,9 @@ def format_run_requires_metadata(run_requires):
 
         obj.extend(format_rqeuirements(requires))
 
-    attrs = {'has_dep_errors': False, 'depends': deps, 'extra_depends':extras,
-             'environment_depends': environments,
-             }
+    attrs = {'has_dep_errors': False, 'depends': deps,
+             'extra_depends':extras,
+             'environment_depends': environments}
 
     return attrs
 
@@ -120,34 +118,34 @@ def format_requires_metadata(run_requires):
 
         obj.extend(format_rqeuirements(requirements))
 
-    attrs = {'has_dep_errors': has_dep_errors, 'depends': deps, 'extra_depends':extras,
-             }
+    attrs = {'has_dep_errors': has_dep_errors,
+             'depends': deps, 'extra_depends':extras}
 
     return attrs
 
 def format_wheel_json_metadata(data, filename, zipfile):
+
     package_data = {'name': pop_key(data, 'name'),
                     'summary': pop_key(data, 'summary', None),
-                    'license': pop_key(data, 'license', None),
-                    }
-    description_doc = pop_key(data.get('document_names') or {}, 'description', None)
+                    'license': pop_key(data, 'license', None)}
+    description_doc = (data.get('document_names') or {}).get('description')
+
+    # Metadata version 2.0
+    if not description_doc:
+        description_doc = data.get('extensions', {}).get('python.details', {}).get('document_names', {}).get('description')
 
     if description_doc:
-        description = extract_first(zipfile, '*.dist-info/%s' % description_doc)
+        description = extract_first(zipfile, '*.dist-info/%s' % description_doc).strip()
     else:
         description = None
 
-    release_data = {
-                    'version': pop_key(data, 'version'),
+    release_data = {'version': pop_key(data, 'version'),
                     'description': description,
-                    'home_page': pop_key(data.get('project_urls', {}), 'Home', None)
-                    }
+                    'home_page': pop_key(data.get('project_urls', {}), 'Home', None)}
 
-    attrs = {
-             'packagetype': 'bdist_wheel',
+    attrs = {'packagetype': 'bdist_wheel',
              'python_version':'source',
-             'pypi': [{'key':k, 'value': v} for (k, v) in data.items()]
-             }
+             'pypi': [{'key':k, 'value': v} for (k, v) in data.items()]}
 
     if data.get('run_requires', {}):
         dependencies = format_run_requires_metadata(data['run_requires'])
@@ -155,18 +153,15 @@ def format_wheel_json_metadata(data, filename, zipfile):
         dependencies = format_requires_metadata(data.get('requires', {}))
 
 
-    file_data = {
-                 'basename': path.basename(filename),
+    file_data = {'basename': path.basename(filename),
                  'attrs': attrs,
-                 'dependencies': dependencies,
-                 }
+                 'dependencies': dependencies}
 
     return package_data, release_data, file_data
 
 
 def inspect_pypi_package_whl(filename, fileobj):
     tf = zipfile.ZipFile(fileobj)
-
     data = extract_first(tf, '*.dist-info/metadata.json')
     if data is None:
         data = extract_first(tf, '*.dist-info/pydist.json')
@@ -177,6 +172,7 @@ def inspect_pypi_package_whl(filename, fileobj):
         package_data, release_data, file_data = {}, {}, {}
 
     file_components = filename[:-4].split('-')
+
     if len(file_components) == 5:
         _, _, python_version, abi, platform = file_components
         build_no = 0
@@ -184,6 +180,7 @@ def inspect_pypi_package_whl(filename, fileobj):
         _, _, build_no, python_version, abi, platform = file_components
     else:
         raise TypeError("Bad wheel package name")
+
     if platform == 'any': platform = None
     if abi == 'none': abi = None
 
@@ -197,13 +194,14 @@ def inspect_pypi_package_whl(filename, fileobj):
 
 
 def disutils_dependencies(config_items):
-        requirements = [v for k, v in config_items if k == 'Requires']
-        depends = format_rqeuirements(requirements)
-        return {'depends':depends,
-                'extras': [],
-                'has_dep_errors': False,
+    requirements = [v for k, v in config_items if k == 'Requires']
+    depends = format_rqeuirements(requirements)
 
-                }
+    return {'depends':depends,
+            'extras': [],
+            'has_dep_errors': False}
+
+
 def inspect_pypi_package_sdist(filename, fileobj):
 
     tf = tarfile.open(filename, fileobj=fileobj)
@@ -226,21 +224,18 @@ def inspect_pypi_package_sdist(filename, fileobj):
 
     package_data = {'name': name,
                     'summary': pop_key(attrs, 'Summary', None),
-                    'license': pop_key(attrs, 'License', None),
-                    }
-    release_data = {
-                    'version': pop_key(attrs, 'Version'),
-                    'description': pop_key(attrs, 'Description', None),
-                    'home_page': pop_key(attrs, 'Home-page', None)
+                    'license': pop_key(attrs, 'License', None)}
 
-                    }
-    file_data = {
-                 'basename': basename(filename),
+    release_data = {'version': pop_key(attrs, 'Version'),
+                    'description': pop_key(attrs, 'Description', None),
+                    'home_page': pop_key(attrs, 'Home-page', None)}
+
+    file_data = {'basename': path.basename(filename),
                  'attrs': {
                      'packagetype': 'sdist',
                      'python_version':'source',
-                     },
-                 }
+                     }
+                }
 
 
     if distrubite:  # Distrubite does not create dep files
@@ -264,13 +259,11 @@ def inspect_pypi_package_egg(filename, fileobj):
 
     package_data = {'name': pop_key(attrs, 'Name'),
                     'summary': pop_key(attrs, 'Summary', None),
-                    'license': pop_key(attrs, 'License', None),
-                    }
-    release_data = {
-                    'version': pop_key(attrs, 'Version'),
+                    'license': pop_key(attrs, 'License', None)}
+
+    release_data = {'version': pop_key(attrs, 'Version'),
                     'description': pop_key(attrs, 'Description', None),
-                    'home_page': pop_key(attrs, 'Home-page', None)
-                    }
+                    'home_page': pop_key(attrs, 'Home-page', None)}
 
     if len(filename.split('-')) == 4:
         _, _, python_version, platform = filename[:-4].split('-')
@@ -278,14 +271,10 @@ def inspect_pypi_package_egg(filename, fileobj):
         python_version = 'source'
         platform = None
 
-    file_data = {
-                 'basename': basename(filename),
-                 'attrs': {
-                     'packagetype': 'bdist_egg',
-                     'python_version': python_version,
-                     },
-                 'platform': platform,
-                 }
+    file_data = {'basename': path.basename(filename),
+                 'attrs': {'packagetype': 'bdist_egg',
+                           'python_version': python_version},
+                 'platform': platform}
 
     requires_txt = extract_first(tf, 'EGG-INFO/requires.txt')
     if requires_txt:
@@ -307,19 +296,16 @@ def inspect_pypi_package_zip(filename, fileobj):
 
     package_data = {'name': pop_key(attrs, 'Name'),
                     'summary': pop_key(attrs, 'Summary', None),
-                    'license': pop_key(attrs, 'License', None),
-                    }
-    release_data = {
-                    'version': pop_key(attrs, 'Version'),
+                    'license': pop_key(attrs, 'License', None)}
+
+    release_data = {'version': pop_key(attrs, 'Version'),
                     'description': pop_key(attrs, 'Description', None),
-                    'home_page': pop_key(attrs, 'Home-page', None)
-                    }
-    file_data = {
-                 'basename': basename(filename),
+                    'home_page': pop_key(attrs, 'Home-page', None)}
+
+    file_data = {'basename': path.basename(filename),
                  'attrs': {
                      'packagetype': 'bdist_egg',
-                     'python_version': 'source',
-                     },
+                     'python_version': 'source'}
                  }
 
     return package_data, release_data, file_data
@@ -332,14 +318,12 @@ def inspect_pypi_package_exe(filename, fileobj):
     name, version = name_version.split('-', 1)
 
     package_data = {'name': name}
-    release_data = {version: version}
-    file_data = {'attrs': {
-                           'packagetype': 'bdist_wininst',
+    release_data = {'version': version}
+
+    file_data = {'attrs': {'packagetype': 'bdist_wininst',
                            'python_version': 'source',
-                           'windist': windist,
-                           },
-                 'basename': path.basename(filename),
-                }
+                           'windist': windist},
+                 'basename': path.basename(filename)}
 
     return package_data, release_data, file_data
 
@@ -350,18 +334,18 @@ def inspect_pypi_package_rpm(filename, fileobj):
     name, version, python_version = name_version.split('-', 2)
 
     package_data = {'name': name}
-    release_data = {version: version}
-    file_data = {'attrs': {
-                           'packagetype': 'bdist_rpm',
+    release_data = {'version': version}
+
+    file_data = {'attrs': {'packagetype': 'bdist_rpm',
                            'python_version': python_version,
-                           'rpmarch': rpmarch,
-                           },
-                 'basename': path.basename(filename),
-                }
+                           'rpmarch': rpmarch},
+                 'basename': path.basename(filename)}
+
     return package_data, release_data, file_data
 
 
 def inspect_pypi_package(filename, fileobj):
+
     if filename.endswith('.tar.gz') or filename.endswith('.tar.bz2'):
         return inspect_pypi_package_sdist(filename, fileobj)
     if filename.endswith('.whl'):
@@ -383,6 +367,9 @@ def inspect_pypi_package(filename, fileobj):
 # Test Package: https://pypi.python.org/packages/source/i/ipython/ipython-3.0.0.tar.gz
 
 def main():
+    import sys
+    from pprint import pprint
+
     filename = sys.argv[1]
 
     if filename.startswith('https://') or filename.startswith('http://'):
