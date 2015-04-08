@@ -1,8 +1,6 @@
 from fnmatch import fnmatch
 from zipfile import ZipFile
 from tarfile import TarFile
-from pprint import pprint
-from os import path
 
 def extract_first(fileobj, pat):
     if isinstance(fileobj, ZipFile):
@@ -25,7 +23,7 @@ def tarfile_match_and_extract(tf, pat):
     if not item_name:
         return None
 
-    fd = tf.extractfile(item_name.decode())
+    fd = tf.extractfile(item_name)
     return fd.read().decode(errors='ignore')
 
 def safe(version):
