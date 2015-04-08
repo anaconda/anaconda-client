@@ -37,7 +37,7 @@ class Test(unittest.TestCase):
 
     def test_conda(self):
         filename = data_path('conda_gc_test-1.2.1-py27_3.tar.bz2')
-        with open(filename) as fd:
+        with open(filename, 'rb') as fd:
             package_data, version_data, file_data = conda.inspect_conda_package(filename, fd)
 
         self.assertEqual(expected_package_data, package_data)

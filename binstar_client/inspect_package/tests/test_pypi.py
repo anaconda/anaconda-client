@@ -17,36 +17,35 @@ expected_version_data = {'home_page': 'http://github.com/binstar/binstar_pypi',
                          'version': '0.3.1',
                          'description':'longer description of the package'}
 
-expected_dependencies = {'depends': [{'name': u'requests',
-                                       'specs': [(u'>=', u'2.0'), (u'<=', u'3.0')]},
+expected_dependencies = {'depends': [ {'name': u'python-dateutil', 'specs': []},
+                                      {'name': u'pytz', 'specs': []},
                                       {'name': u'pyyaml', 'specs': []},
-                                      {'name': u'python-dateutil', 'specs': []},
-                                      {'name': u'pytz', 'specs': []}],
-                          'extras': [{'depends': [{'name': u'reportlab',
+                                      {'name': u'requests', 'specs': [(u'>=', u'2.0'), (u'<=', u'3.0')]}, ],
+                          'extras': [{'depends': [{'name': u'argparse',
+                                                   'specs': []}],
+                                      'name': u':python_version=="2.6"'},
+                                     {'depends': [{'name': u'reportlab',
                                                    'specs': [(u'>=', u'1.2')]},
                                                   {'name': u'rxp', 'specs': []}],
                                       'name': u'PDF'},
-                                     {'depends': [{'name': u'argparse',
-                                                   'specs': []}],
-                                      'name': u':python_version=="2.6"'},
                                      {'depends': [{'name': u'docutils',
                                                    'specs': [(u'>=', u'0.3')]}],
                                       'name': u'reST'}],
                           'has_dep_errors': False}
 
-expected_whl_dependencies = {u'depends': [{u'name': u'requests',
+expected_whl_dependencies = {u'depends': [{u'name': u'python-dateutil', u'specs': []},
+                                          {u'name': u'pytz', u'specs': []},
+                                          {u'name': u'pyyaml', u'specs': []},
+                                          {u'name': u'requests',
                                              u'specs': [(u'>=', u'2.0'),
-                                                        (u'<=', u'3.0')]},
-                                            {u'name': u'pyyaml', u'specs': []},
-                                            {u'name': u'python-dateutil', u'specs': []},
-                                            {u'name': u'pytz', u'specs': []}],
+                                                        (u'<=', u'3.0')]}],
                                u'environments': [{u'depends': [{u'name': u'argparse',
                                                                 u'specs': []}],
                                                   u'name': u'python_version=="2.6"'}],
-                               u'extras': [{u'depends': [{u'name': u'reportlab',
-                                                          u'specs': [(u'>=', u'1.2')]},
-                                                         {u'name': u'RXP',
-                                                          u'specs': []}],
+                               u'extras': [{u'depends': [{u'name': u'RXP',
+                                                          u'specs': []},
+                                                         {u'name': u'reportlab',
+                                                          u'specs': [(u'>=', u'1.2')]}],
                                             u'name': u'PDF'},
                                            {u'depends': [{u'name': u'docutils',
                                                           u'specs': [(u'>=', u'0.3')]}],
@@ -58,7 +57,7 @@ class Test(unittest.TestCase):
 
     def test_sdist(self):
         filename = data_path('test_package34-0.3.1.tar.gz')
-        with open(filename) as fd:
+        with open(filename, 'rb') as fd:
             package_data, version_data, file_data = pypi.inspect_pypi_package(filename, fd)
 
 
@@ -68,12 +67,15 @@ class Test(unittest.TestCase):
 
         self.assertEqual(expected_package_data, package_data)
         self.assertEqual(expected_version_data, version_data)
-        self.assertEqual(expected_file_data, file_data)
+
+        self.assertEqual(set(expected_file_data), set(file_data))
+        for key in expected_file_data:
+            self.assertEqual(expected_file_data[key], file_data[key])
 
     def test_bdist_wheel(self):
         filename = data_path('test_package34-0.3.1-py2-none-any.whl')
 
-        with open(filename) as fd:
+        with open(filename, 'rb') as fd:
             package_data, version_data, file_data = pypi.inspect_pypi_package(filename, fd)
 
         expected_file_data = {'attrs': {'abi': None, 'build_no': 0,
@@ -85,13 +87,17 @@ class Test(unittest.TestCase):
 
         self.assertEqual(expected_package_data, package_data)
         self.assertEqual(expected_version_data, version_data)
-        self.assertEqual(expected_file_data, file_data)
+
+
+        self.assertEqual(set(expected_file_data), set(file_data))
+        for key in expected_file_data:
+            self.assertEqual(expected_file_data[key], file_data[key])
 
 
     def test_bdist_egg(self):
         filename = data_path('test_package34-0.3.1-py2.7.egg')
 
-        with open(filename) as fd:
+        with open(filename, 'rb') as fd:
             package_data, version_data, file_data = pypi.inspect_pypi_package(filename, fd)
 
 
@@ -102,11 +108,14 @@ class Test(unittest.TestCase):
 
         self.assertEqual(expected_package_data, package_data)
         self.assertEqual(expected_version_data, version_data)
-        self.assertEqual(expected_file_data, file_data)
+
+        self.assertEqual(set(expected_file_data), set(file_data))
+        for key in expected_file_data:
+            self.assertEqual(expected_file_data[key], file_data[key])
 
     def test_sdist_distutils(self):
         filename = data_path('test_package34-distutils-0.3.1.tar.gz')
-        with open(filename) as fd:
+        with open(filename, 'rb') as fd:
             package_data, version_data, file_data = pypi.inspect_pypi_package(filename, fd)
 
 
@@ -123,7 +132,10 @@ class Test(unittest.TestCase):
         dexpected_package_data['name'] = dexpected_package_data['name'].replace('-', '_')
         self.assertEqual(dexpected_package_data, package_data)
         self.assertEqual(expected_version_data, version_data)
-        self.assertEqual(expected_file_data, file_data)
+        self.assertEqual(set(expected_file_data), set(file_data))
+
+        for key in expected_file_data:
+            self.assertEqual(expected_file_data[key], file_data[key])
 
 
 
