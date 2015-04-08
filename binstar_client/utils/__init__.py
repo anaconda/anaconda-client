@@ -1,3 +1,5 @@
+from __future__ import print_function, absolute_import, unicode_literals
+
 import base64
 import collections
 import getpass
@@ -10,15 +12,19 @@ import stat
 import sys
 import time
 
+from pkg_resources import parse_version as pv
+import yaml
+
 from binstar_client.utils.appdirs import AppDirs, EnvAppDirs
+
+from ..errors import UserError
+
 
 if 'BINSTAR_CONFIG_DIR' in os.environ:
     dirs = EnvAppDirs('binstar', 'ContinuumIO', os.environ['BINSTAR_CONFIG_DIR'])
 else:
     dirs = AppDirs('binstar', 'ContinuumIO')
-import yaml
 
-from ..errors import UserError
 
 
 try:
@@ -40,7 +46,6 @@ def jencode(*E, **F):
     payload = dict(*E, **F)
     return json.dumps(payload), {'Content-Type': 'application/json'}
 
-from pkg_resources import parse_version as pv
 
 class PackageSpec(object):
     def __init__(self, user, package=None, version=None, basename=None, attrs=None, spec_str=None):
@@ -333,7 +338,7 @@ def upload_print_callback(args):
             perc = 100.0 * curr / total if total else 0
 
             if (time.time() - callback.last_output) > WAIT_SECONDS:
-                print '| %.2f%% ' % (perc),
+                print('| %.2f%% ' % (perc), end='')
                 sys.stdout.flush()
                 callback.last_output = time.time()
 
