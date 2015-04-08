@@ -13,12 +13,18 @@ from binstar_client import errors
 from binstar_client.inspect_package.uitls import extract_first, pop_key
 
 
+sort_key = lambda i: i['name']
+
 def parse_requirement(line, deps, extras, extra):
     req = pkg_resources.Requirement.parse(line)
     if extra:
         extras[extra].append({'name':req.key, 'specs': req.specs or []})
     else:
         deps.append({'name':req.key, 'specs': req.specs or []})
+
+    deps.sort(key=sort_key)
+    for extra in extras.values():
+        extra.sort(key=sort_key)
 
 def parse_requires_txt(requires_txt):
     deps = []
@@ -40,10 +46,10 @@ def parse_requires_txt(requires_txt):
             parse_requirement(line, deps, extras, extra)
         except ValueError as err:
             error = True
+    extras = [{'name': k, 'depends': sorted(v, key=sort_key)} for (k, v) in extras.items()]
 
-    extras = [{'name': k, 'depends': v} for (k, v) in extras.items()]
-    return {'has_dep_errors': error, 'depends': deps,
-            'extras': extras}
+    return {'has_dep_errors': error, 'depends': sorted(deps, key=sort_key),
+            'extras': sorted(extras, key=sort_key)}
 
 def format_rqeuirements(requires):
     obj = []
@@ -83,7 +89,12 @@ def format_run_requires_metadata(run_requires):
 
         obj.extend(format_rqeuirements(requires))
 
-    attrs = {'has_dep_errors': False, 'depends': deps,
+    deps.sort(key=sort_key)
+    extras.sort(key=sort_key)
+    for extra in extras:
+        extra['depends'].sort(key=sort_key)
+
+    attrs = {'has_dep_errors': False, 'depends': sorted(deps, key=sort_key),
              'extras':extras,
              'environments': environments}
 
@@ -219,7 +230,7 @@ def inspect_pypi_package_sdist(filename, fileobj):
         if data is None:
             raise errors.NoMetadataError("Could not find *.egg-info/PKG-INFO file in pypi sdist")
 
-    config_items = Parser().parsestr(data.encode("UTF-8", "replace")).items()
+    config_items = Parser().parsestr(data).items()
     attrs = dict(config_items)
     name = pop_key(attrs, 'Name', None)
 
@@ -259,7 +270,7 @@ def inspect_pypi_package_egg(filename, fileobj):
     if data is None:
         raise errors.NoMetadataError("Could not find EGG-INFO/PKG-INFO file in pypi sdist")
 
-    attrs = dict(Parser().parsestr(data.encode("UTF-8", "replace")).items())
+    attrs = dict(Parser().parsestr(data).items())
 
     package_data = {'name': pop_key(attrs, 'Name'),
                     'summary': pop_key(attrs, 'Summary', None),
