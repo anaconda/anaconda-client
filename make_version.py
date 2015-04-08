@@ -1,9 +1,11 @@
+from __future__ import print_function, unicode_literals, absolute_import
 from subprocess import check_output
 import os
 
 
 def main():
-    output = check_output(['git', 'describe', '--always', '--long']).strip().split('-')
+    output = check_output(['git', 'describe', '--always', '--long']).strip()
+    output = output.decode().split('-')
     if len(output) == 3:
         version, build, commit = output
     else:
@@ -12,7 +14,7 @@ def main():
     print("Version: %s" % version)
     print("Build: %s" % build)
     print("Commit: %s" % commit)
-    print
+    print()
     print("Writing binstar_client/_version.py")
     with open('binstar_client/_version.py', 'w') as fd:
         if build == '0':
