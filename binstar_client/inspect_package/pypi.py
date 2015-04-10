@@ -186,6 +186,7 @@ def inspect_pypi_package_whl(filename, fileobj):
     else:
         package_data, release_data, file_data = {}, {}, {}
 
+    filename = path.basename(filename)
     file_components = filename[:-4].split('-')
 
     if len(file_components) == 5:
@@ -194,6 +195,7 @@ def inspect_pypi_package_whl(filename, fileobj):
     elif len(file_components) == 6:
         _, _, build_no, python_version, abi, platform = file_components
     else:
+        import pdb; pdb.set_trace()
         raise TypeError("Bad wheel package name")
 
     if platform == 'any': platform = None
