@@ -13,6 +13,7 @@ import pkg_resources
 from binstar_client import errors
 from binstar_client.inspect_package.uitls import extract_first, pop_key
 
+
 sort_key = lambda i: i['name']
 
 def parse_requirement(line, deps, extras, extra):
