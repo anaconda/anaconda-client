@@ -186,6 +186,7 @@ def inspect_pypi_package_whl(filename, fileobj):
     else:
         package_data, release_data, file_data = {}, {}, {}
 
+    filename = path.basename(filename)
     file_components = filename[:-4].split('-')
 
     if len(file_components) == 5:
