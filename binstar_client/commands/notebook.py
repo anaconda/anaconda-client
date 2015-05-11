@@ -1,15 +1,15 @@
 """
 Usage:
-    binstar notebook upload notebook
-    binstar notebook upload project/notebook
-    binstar notebook upload project/notebook-file.ipynb
+    binstar notebook upload notebook.ipynb
+    binstar notebook upload project:PATH/TO/notebook.ipynb
     binstar notebook download project
-    binstar notebook download project/notebook-file[.ipynb]
+    binstar notebook download project:notebook
 """
 
 from __future__ import unicode_literals
 import argparse
 import logging
+from binstar_client import errors
 
 log = logging.getLogger("binstar.notebook")
 
@@ -49,4 +49,11 @@ def add_parser(subparsers):
 
 
 def main(args):
+    """
+    1) test if filename exist
+    2) Detect project name or generate it from the notebook
+    3) generate version with timestamp
+    4) Extract summary from notebook file
+    """
     print(args)
+    raise errors.BinstarError("Download notebooks hasn't been implemented yet. Soon!")
