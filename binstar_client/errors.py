@@ -35,3 +35,10 @@ class ShowHelp(BinstarError):
 
 class NoMetadataError(BinstarError):
     pass
+
+
+class NotebookNotExist(BinstarError):
+    def __init__(self, notebook):
+        msg = "{} does not exist.".format(notebook)
+        self.notebook = notebook
+        super(BinstarError, self).__init__(msg)
