@@ -66,7 +66,6 @@ class SCMCollectionTestCase(unittest.TestCase):
 
         self.assertEqual(col._elements, [file2, file3, file4])
 
-    @unittest.skip('pull')
     def test_substract_equal_zero(self):
         file1 = SCMFile('same.txt', version='1')
         file2 = SCMFile('same.txt', version='1')
@@ -76,22 +75,21 @@ class SCMCollectionTestCase(unittest.TestCase):
 
     def test_substract_vs_empty(self):
         file1 = SCMFile('same.txt', version='1')
-        col1 = SCMCollection([file1])
-        col2 = SCMCollection()
-        self.assertEqual(len(col1 - col2), 1)
+        col3 = SCMCollection([file1])
+        col4 = SCMCollection([])
+        self.assertEqual(len(col3 - col4), 1)
 
 
 class SCMTestCase(unittest.TestCase):
-    @unittest.skip('pull')
     def test_pull(self):
         binstar = mock.Mock()
         binstar.package.return_value = packages
         scm = SCM(binstar, 'username', 'project')
+        print scm._uploaded
         scm.pull()
 
         self.assertEqual(len(scm._uploaded), 2)
 
-    @unittest.skip('local')
     def test_local(self):
         binstar = mock.Mock()
         scm = SCM(binstar, 'username', 'project')
@@ -99,7 +97,6 @@ class SCMTestCase(unittest.TestCase):
         scm.local(packages)
         self.assertEqual(len(scm._local), 2)
 
-    @unittest.skip('diff')
     def test_diff(self):
         uploaded = [
             {
@@ -116,8 +113,8 @@ class SCMTestCase(unittest.TestCase):
         local = [
             {
                 'basename': 'file1',
-                'md5': '1',
-                'version': '1'
+                'md5': '2',
+                'version': '2'
             }, {
                 'basename': 'file2',
                 'md5': '1',
@@ -133,9 +130,10 @@ class SCMTestCase(unittest.TestCase):
         binstar.package.return_value = uploaded
         scm = SCM(binstar, 'username', 'project')
         scm.pull()
-
         scm.local(local)
-        self.assertEqual(len(scm.diff()), 2)
+
+        diff = scm.diff()
+        self.assertEqual(len(diff), 2)
 
 
 if __name__ == '__main__':
