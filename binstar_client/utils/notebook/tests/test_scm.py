@@ -85,7 +85,6 @@ class SCMTestCase(unittest.TestCase):
         binstar = mock.Mock()
         binstar.package.return_value = packages
         scm = SCM(binstar, 'username', 'project')
-        print scm._uploaded
         scm.pull()
 
         self.assertEqual(len(scm._uploaded), 2)

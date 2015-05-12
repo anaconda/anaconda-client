@@ -1,7 +1,7 @@
 import unittest
 from os.path import join, dirname
 from binstar_client import errors
-from binstar_client.utils.notebook import parse
+from binstar_client.utils.notebook import parse, Finder
 
 
 class ParseTestCase(unittest.TestCase):

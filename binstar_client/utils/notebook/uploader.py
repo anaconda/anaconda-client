@@ -24,7 +24,7 @@ class Uploader(object):
         if self.package and self.release:
             try:
                 self.binstar.upload(self.username, self.project, self.version,
-                                    basename(filename), open(filename), filename.split('.')[-1])
+                                    basename(filename), open(filename, 'rb'), filename.split('.')[-1])
                 return True
             except errors.Conflict:
                 if force:
