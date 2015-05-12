@@ -1,5 +1,6 @@
 class SCMCollection(object):
-    _elements = []
+    def __init__(self, elements=[]):
+        self._elements = elements
 
     def append(self, element):
         """
@@ -13,7 +14,6 @@ class SCMCollection(object):
         else:
             choosen = self.choose(prev, element)
             if choosen != prev:
-                print "hellos"
                 self._elements.remove(prev)
                 self._elements.append(choosen)
 
@@ -38,6 +38,18 @@ class SCMCollection(object):
         else:
             return element_b
 
+    def __len__(self):
+        return len(self._elements)
+
+    def __repr__(self):
+        return self._elements.__repr__()
+
+    def __sub__(self, other):
+        print self._elements
+        print other._elements
+        print [element for element in self._elements if element not in other._elements]
+        return SCMCollection([element for element in self._elements if element not in other._elements])
+
 
 class SCMFile(object):
     def __init__(self, filename, md5=None, version=None):
@@ -46,7 +58,7 @@ class SCMFile(object):
         self.version = version
 
     def __eq__(self, other):
-        return self.filename == other.filename and self.md5 == other.md5
+        return self.filename == other.filename
 
     def __gt__(self, other):
         return int(self.version) > int(other.version)
@@ -59,10 +71,26 @@ class SCMFile(object):
 
 
 class SCM(object):
+    _uploaded = SCMCollection()
+    _local = SCMCollection()
+
     def __init__(self, binstar, username, project):
         self.binstar = binstar
         self.username = username
         self.project = project
 
-    def uploaded_files(self):
-        pass
+    def pull(self):
+        for package in self.binstar.package(self.username, self.project):
+            self._uploaded.append(
+                SCMFile(package['basename'], md5=package['md5'], version=package['version'])
+            )
+        return self._uploaded
+
+    def local(self, elements):
+        for element in elements:
+            self._local.append(
+                SCMFile(element['basename'], md5=element['md5'], version=element['version'])
+            )
+
+    def diff(self):
+        return self._uploaded - self._local
