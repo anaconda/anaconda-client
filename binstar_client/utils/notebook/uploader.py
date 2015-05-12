@@ -8,13 +8,13 @@ class Uploader(object):
     _package = None
     _release = None
 
-    def __init__(self, binstar, project, notebook, user=None, version=None, summary=None):
-        self.binstar = binstar
+    def __init__(self, binstar, project, notebook, username=None, version=None, summary=None):
         self.project = project
         self.notebook = notebook
-        self._user = user
+        self._username = username
         self._version = version
         self._summary = summary
+        self.binstar = binstar
 
     def upload(self, force=False):
         """
@@ -24,8 +24,8 @@ class Uploader(object):
         """
         if self.package and self.release:
             try:
-                self.binstar.upload(self.user, self.project, self.version,
-                                    basename(self.notebook), open(self.notebook), 'ipynb')
+                self.binstar.upload(self.username, self.project, self.version,
+                                             basename(self.notebook), open(self.notebook + '.ipynb'), 'ipynb')
                 return True
             except errors.Conflict:
                 if force:
@@ -38,13 +38,13 @@ class Uploader(object):
             return False
 
     def remove(self):
-        return self.binstar.remove_dist(self, self.user, self.project, self.version, basename=self.notebook)
+        return self.binstar.remove_dist(self, self.username, self.project, self.version, basename=self.notebook)
 
     @property
-    def user(self):
-        if self._user is None:
-            self._user = self.binstar['login']
-        return self._user
+    def username(self):
+        if self._username is None:
+            self._username = self.binstar.user()['login']
+        return self._username
 
     @property
     def version(self):
@@ -62,22 +62,22 @@ class Uploader(object):
     def package(self):
         if self._package is None:
             try:
-                self._package = self.binstar.package(self.user, self.project)
+                self._package = self.binstar.package(self.username, self.project)
             except errors.NotFound:
                 try:
-                    self._package = self.binstar.add_package(self.user, self.project, summary=self.summary)
+                    self._package = self.binstar.add_package(self.username, self.project, summary=self.summary)
                 except errors.BinstarError:
                     self.msg = "Project {} can not be created. Maybe you are unauthorized.".format(self.project)
                     self._package = None
-        return None
+        return self._package
 
     @property
     def release(self):
         if self._release is None:
             try:
-                self._release = self.binstar.release(self.user, self.project, self.version)
+                self._release = self.binstar.release(self.username, self.project, self.version)
             except errors.NotFound:
-                self._release = self.binstar.add_release(self.user, self.project, self.version)
+                self._release = self.binstar.add_release(self.username, self.project, self.version, None, None, None)
         return self._release
 
 """

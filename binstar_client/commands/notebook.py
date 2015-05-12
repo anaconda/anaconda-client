@@ -55,10 +55,11 @@ def main(args):
     3) generate version with timestamp
     4) Extract summary from notebook file
     """
+
     if args.action == 'upload':
-        project, notebook = parse(args.name)
+        project, notebook = parse(args.notebook)
         binstar = get_binstar(args)
-        uploader = Uploader(binstar, project, notebook, user=args.user, version=args.version, summary=args.summary)
+        uploader = Uploader(binstar, project, notebook, username=args.user, version=args.version, summary=args.summary)
         if uploader.upload(force=False):
             print("Done")
         else:
