@@ -42,9 +42,7 @@ def add_parser(subparsers):
     parser.add_argument(
         'notebook',
         help="project/notebook or notebook's filename",
-        action='store',
-        default=None,
-        nargs='?'
+        action='store'
     )
 
     parser.set_defaults(main=main)
