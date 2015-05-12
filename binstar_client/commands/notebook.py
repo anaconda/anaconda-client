@@ -1,5 +1,9 @@
 """
 Usage:
+    binstar notebook upload project notebook.ipynb
+    binstar notebook upload project directory/
+
+Deprecated:
     binstar notebook upload notebook.ipynb
     binstar notebook upload project:PATH/TO/notebook.ipynb
     binstar notebook download project
@@ -7,11 +11,12 @@ Usage:
 """
 
 from __future__ import unicode_literals
+import os
 import argparse
 import logging
 from binstar_client import errors
 from binstar_client.utils import get_binstar
-from binstar_client.utils.notebook import parse, Uploader
+from binstar_client.utils.notebook import Finder, Uploader
 
 log = logging.getLogger("binstar.notebook")
 
@@ -40,9 +45,16 @@ def add_parser(subparsers):
     )
 
     parser.add_argument(
-        'notebook',
-        help="project/notebook or notebook's filename",
+        'project',
+        help="project to upload/download",
         action='store'
+    )
+
+    parser.add_argument(
+        'files',
+        help='Files to puload',
+        action='append',
+        default=[]
     )
 
     parser.set_defaults(main=main)
@@ -57,12 +69,18 @@ def main(args):
     """
 
     if args.action == 'upload':
-        project, notebook = parse(args.notebook)
         binstar = get_binstar(args)
-        uploader = Uploader(binstar, project, notebook, username=args.user, version=args.version, summary=args.summary)
-        if uploader.upload(force=False):
-            print("Done")
-        else:
-            raise errors.BinstarError(uploader.msg)
+        finder = Finder(args.files)
+        valid, invalid = finder.parse()
+
+        uploader = Uploader(binstar, args.project, username=args.user, version=args.version, summary=args.summary)
+        for filename in valid:
+            if uploader.upload(filename, force=False):
+                log.info("{} has been uploaded.".format(filename))
+            else:
+                raise errors.BinstarError(uploader.msg)
+        for filename in invalid:
+            log.info("{} can't be uploaded.".format(filename))
+
     elif args.action == 'download':
         raise errors.BinstarError("Download notebooks hasn't been implemented yet. Soon!")

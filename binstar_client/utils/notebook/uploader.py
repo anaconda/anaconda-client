@@ -8,15 +8,14 @@ class Uploader(object):
     _package = None
     _release = None
 
-    def __init__(self, binstar, project, notebook, username=None, version=None, summary=None):
+    def __init__(self, binstar, project, username=None, version=None, summary=None):
         self.project = project
-        self.notebook = notebook
         self._username = username
         self._version = version
         self._summary = summary
         self.binstar = binstar
 
-    def upload(self, force=False):
+    def upload(self, filename, force=False):
         """
         Uploads a notebook
         :param force: True/False
@@ -25,14 +24,14 @@ class Uploader(object):
         if self.package and self.release:
             try:
                 self.binstar.upload(self.username, self.project, self.version,
-                                             basename(self.notebook), open(self.notebook + '.ipynb'), 'ipynb')
+                                    basename(filename), open(filename), filename.split('.')[-1])
                 return True
             except errors.Conflict:
                 if force:
                     self.remove()
                     return self.upload()
                 else:
-                    self.msg = "Conflict: {} already exist in {}/{}".format(self.notebook, self.project, self.version)
+                    self.msg = "Conflict: {} already exist in {}/{}".format(filename, self.project, self.version)
                     return False
         else:
             return False
