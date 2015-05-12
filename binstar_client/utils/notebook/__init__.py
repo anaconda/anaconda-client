@@ -1,5 +1,6 @@
 import os
 from binstar_client import errors
+from uploader import *
 
 
 def parse(handle):

@@ -10,6 +10,8 @@ from __future__ import unicode_literals
 import argparse
 import logging
 from binstar_client import errors
+from binstar_client.utils import get_binstar
+from binstar_client.utils.notebook import parse, Uploader
 
 log = logging.getLogger("binstar.notebook")
 
@@ -55,5 +57,13 @@ def main(args):
     3) generate version with timestamp
     4) Extract summary from notebook file
     """
-    print(args)
-    raise errors.BinstarError("Download notebooks hasn't been implemented yet. Soon!")
+    if args.action == 'upload':
+        project, notebook = parse(args.name)
+        binstar = get_binstar(args)
+        uploader = Uploader(binstar, project, notebook, user=args.user, version=args.version, summary=args.summary)
+        if uploader.upload(force=False):
+            print("Done")
+        else:
+            raise errors.BinstarError(uploader.msg)
+    elif args.action == 'download':
+        raise errors.BinstarError("Download notebooks hasn't been implemented yet. Soon!")
