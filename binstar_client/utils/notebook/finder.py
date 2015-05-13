@@ -1,4 +1,5 @@
 import os
+import uploader
 
 
 class Finder(object):
@@ -8,7 +9,7 @@ class Finder(object):
     * valid uploadable files
     * invalid files/directories
     """
-    extensions = ['ipynb', 'csv', 'json']
+    extensions = uploader.VALID_FORMATS
 
     def __init__(self, elements):
         self.elements = elements

@@ -2,6 +2,8 @@ import time
 from os.path import basename
 from binstar_client import errors
 
+VALID_FORMATS = ['ipynb', 'csv', 'yml', 'yaml', 'json', 'md', 'rst', 'txt']
+
 
 class Uploader(object):
     msg = None
