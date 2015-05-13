@@ -1,5 +1,5 @@
 import os
-import uploader
+from . import uploader
 
 
 class Finder(object):
