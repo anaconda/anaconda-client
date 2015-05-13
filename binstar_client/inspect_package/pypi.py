@@ -4,9 +4,9 @@ from email.parser import Parser
 import json
 from os import path
 import re
-import sys
 import tarfile
 import zipfile
+import sys
 
 import pkg_resources
 
@@ -15,6 +15,10 @@ from binstar_client.inspect_package.uitls import extract_first, pop_key
 
 
 sort_key = lambda i: i['name']
+
+def python_version_check():
+    return sys.version_info.major
+
 
 def parse_requirement(line, deps, extras, extra):
     req = pkg_resources.Requirement.parse(line)
@@ -187,6 +191,7 @@ def inspect_pypi_package_whl(filename, fileobj):
     else:
         package_data, release_data, file_data = {}, {}, {}
 
+    filename = path.basename(filename)
     file_components = filename[:-4].split('-')
 
     if len(file_components) == 5:
@@ -230,7 +235,7 @@ def inspect_pypi_package_sdist(filename, fileobj):
         distrubite = True
         if data is None:
             raise errors.NoMetadataError("Could not find *.egg-info/PKG-INFO file in pypi sdist")
-    if sys.version_info.major==3:
+    if python_version_check()==3:
         config_items = Parser().parsestr(data).items()
     else:
         config_items = Parser().parsestr(data.encode("UTF-8", "replace")).items()
@@ -273,7 +278,7 @@ def inspect_pypi_package_egg(filename, fileobj):
     if data is None:
         raise errors.NoMetadataError("Could not find EGG-INFO/PKG-INFO file in pypi sdist")
 
-    if sys.version_info.major==3:
+    if python_version_check()==3:
         attrs = dict(Parser().parsestr(data).items())
     else:
         attrs = dict(Parser().parsestr(data.encode("UTF-8", "replace")).items())
