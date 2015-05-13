@@ -11,7 +11,6 @@ Deprecated:
 """
 
 from __future__ import unicode_literals
-import os
 import argparse
 import logging
 from binstar_client import errors
