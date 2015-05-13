@@ -1,10 +1,11 @@
 import unittest
+from os.path import join, dirname
 try:
     from unittest import mock
 except ImportError:
     import mock
 
-from binstar_client.utils.notebook import SCMCollection, SCMFile, SCM
+from binstar_client.utils.notebook import SCMCollection, SCMFile, SCM, local_files
 
 
 files = [
@@ -130,6 +131,17 @@ class SCMTestCase(unittest.TestCase):
         scm.local(local)
 
         self.assertEqual(len(scm.diff), 2)
+
+
+class LocalFilesTestCase(unittest.TestCase):
+    def data_dir(self, filename):
+        test_data = join(dirname(__file__), 'data')
+        return join(test_data, filename)
+
+    def test_local_files(self):
+        output = local_files([self.data_dir('virus.exe')])[0]
+        self.assertEqual(output['basename'], 'virus.exe')
+        self.assertTrue('md5' in output.keys())
 
 
 if __name__ == '__main__':

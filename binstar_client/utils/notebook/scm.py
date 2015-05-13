@@ -1,3 +1,7 @@
+import os
+import hashlib
+
+
 class SCMCollection(object):
     def __init__(self, elements=[]):
         self._elements = elements
@@ -103,3 +107,14 @@ class SCM(object):
         if self._username is None:
             self._username = self.binstar.user()['login']
         return self._username
+
+
+def local_files(files):
+    output = []
+    for f in files:
+        output.append({
+            'basename': os.path.basename(f),
+            'md5': hashlib.md5(open(f, 'rb').read()).hexdigest(),
+            'version': ''
+        })
+    return output
