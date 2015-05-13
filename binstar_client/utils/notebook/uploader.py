@@ -17,7 +17,7 @@ class Uploader(object):
         self._summary = summary
         self.binstar = binstar
 
-    def upload(self, filename, force=False):
+    def upload(self, filepath, force=False):
         """
         Uploads a notebook
         :param force: True/False
@@ -26,14 +26,14 @@ class Uploader(object):
         if self.package and self.release:
             try:
                 self.binstar.upload(self.username, self.project, self.version,
-                                    basename(filename), open(filename, 'rb'), filename.split('.')[-1])
+                                    basename(filepath), open(filepath, 'rb'), filepath.split('.')[-1])
                 return True
             except errors.Conflict:
                 if force:
                     self.remove()
                     return self.upload()
                 else:
-                    self.msg = "Conflict: {} already exist in {}/{}".format(filename, self.project, self.version)
+                    self.msg = "Conflict: {} already exist in {}/{}".format(filepath, self.project, self.version)
                     return False
         else:
             return False
@@ -80,6 +80,10 @@ class Uploader(object):
             except errors.NotFound:
                 self._release = self.binstar.add_release(self.username, self.project, self.version, None, None, None)
         return self._release
+
+    @property
+    def files(self):
+        return self.package['files']
 
 """
 Use cases:
