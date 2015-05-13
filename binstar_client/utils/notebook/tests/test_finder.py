@@ -33,7 +33,6 @@ class FinderTestCase(unittest.TestCase):
 
     def test_autoparse(self):
         finder = Finder([self.data_dir('')])
-        self.assertTrue(finder.prefix.endswith('data/'))
         self.assertEqual(finder.valid, ['notebook.ipynb'])
         self.assertEqual(finder.invalid, ['virus.exe'])
 
