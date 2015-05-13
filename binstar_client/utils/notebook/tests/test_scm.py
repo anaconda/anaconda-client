@@ -7,7 +7,7 @@ except ImportError:
 from binstar_client.utils.notebook import SCMCollection, SCMFile, SCM
 
 
-packages = [
+files = [
     {
         u'basename': u'538-sandler.ipynb',
         u'md5': u'a05b1e807998cb85ea49a52f4318bb19',
@@ -82,9 +82,8 @@ class SCMCollectionTestCase(unittest.TestCase):
 
 class SCMTestCase(unittest.TestCase):
     def test_pull(self):
-        binstar = mock.Mock()
-        binstar.package.return_value = packages
-        scm = SCM(binstar, 'username', 'project')
+        uploader = mock.Mock(files=files)
+        scm = SCM(uploader, 'username', 'project')
         scm.pull()
 
         self.assertEqual(len(scm._uploaded), 2)
@@ -93,7 +92,7 @@ class SCMTestCase(unittest.TestCase):
         binstar = mock.Mock()
         scm = SCM(binstar, 'username', 'project')
 
-        scm.local(packages)
+        scm.local(files)
         self.assertEqual(len(scm._local), 2)
 
     def test_diff(self):
@@ -125,14 +124,12 @@ class SCMTestCase(unittest.TestCase):
             }
         ]
 
-        binstar = mock.Mock()
-        binstar.package.return_value = uploaded
-        scm = SCM(binstar, 'username', 'project')
+        uploader = mock.Mock(files=uploaded)
+        scm = SCM(uploader, 'username', 'project')
         scm.pull()
         scm.local(local)
 
-        diff = scm.diff()
-        self.assertEqual(len(diff), 2)
+        self.assertEqual(len(scm.diff), 2)
 
 
 if __name__ == '__main__':

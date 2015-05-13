@@ -47,6 +47,9 @@ class SCMCollection(object):
     def __sub__(self, other):
         return SCMCollection([element for element in self._elements if element not in other._elements])
 
+    def __iter__(self):
+        return self._elements.__iter__()
+
 
 class SCMFile(object):
     def __init__(self, filename, md5=None, version=None):
@@ -68,15 +71,16 @@ class SCMFile(object):
 
 
 class SCM(object):
-    def __init__(self, binstar, username, project):
-        self.binstar = binstar
-        self.username = username
+    def __init__(self, uploader, project, username=None):
+        self.uploader = uploader
         self.project = project
+        self._username = username
         self._uploaded = SCMCollection([])
         self._local = SCMCollection([])
+        self._diff = None
 
     def pull(self):
-        for package in self.binstar.package(self.username, self.project):
+        for package in self.uploader.files:
             self._uploaded.append(
                 SCMFile(package['basename'], md5=package['md5'], version=package['version'])
             )
@@ -88,5 +92,14 @@ class SCM(object):
                 SCMFile(element['basename'], md5=element['md5'], version=element['version'])
             )
 
+    @property
     def diff(self):
-        return self._local - self._uploaded
+        if self._diff is None:
+            self._diff = self._local - self._uploaded
+        return self._diff
+
+    @property
+    def username(self):
+        if self._username is None:
+            self._username = self.binstar.user()['login']
+        return self._username
