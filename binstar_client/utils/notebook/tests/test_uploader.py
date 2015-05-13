@@ -4,7 +4,6 @@ try:
 except ImportError:
     import mock
 from binstar_client import errors
-import binstar_client.utils.notebook
 from binstar_client.utils.notebook import Uploader
 
 
