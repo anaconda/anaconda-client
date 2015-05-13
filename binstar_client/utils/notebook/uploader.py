@@ -6,6 +6,12 @@ VALID_FORMATS = ['ipynb', 'csv', 'yml', 'yaml', 'json', 'md', 'rst', 'txt']
 
 
 class Uploader(object):
+    """
+    * Find or create a package (project)
+    * Find or create release (version)
+    * List files from project
+    * Upload new files to project
+    """
     msg = None
     _package = None
     _release = None
@@ -84,21 +90,3 @@ class Uploader(object):
     @property
     def files(self):
         return self.package['files']
-
-"""
-Use cases:
-
-* There is nothing
-    * Create a project
-    * Create a version
-    * Upload notebook as distribution
-* Project exists and notebook not exist
-    * upload notebook as distribution of the latest release
-* Project exist and notebook exist
-    * show warning
-    * if --force is activated, overwrite last release
-* If version is specified and version does not exist
-    * create a new release with version, upload notebook
-* If version is specified and version exist
-    * upload notebook
-"""
