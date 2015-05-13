@@ -14,8 +14,8 @@ class Finder(object):
     def __init__(self, elements):
         self.elements = elements
         self.first = elements[0]
-        self._valid = []
-        self._invalid = []
+        self._valid = None
+        self._invalid = None
         self._prefix = None
 
     @property
