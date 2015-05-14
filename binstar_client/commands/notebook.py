@@ -19,17 +19,30 @@ log = logging.getLogger("binstar.notebook")
 
 def add_parser(subparsers):
 
-    description = 'Upload/Download notebooks to/from binstar'
+    description = 'Interact with notebooks in binstar'
     parser = subparsers.add_parser('notebook',
                                    formatter_class=argparse.RawDescriptionHelpFormatter,
                                    help=description,
                                    description=description,
                                    epilog=__doc__)
 
-    parser.add_argument(
-        'action',
-        choices=['upload', 'download']
-    )
+    nb_subparsers = parser.add_subparsers()
+    add_upload_parser(nb_subparsers)
+    add_download_parser(nb_subparsers)
+
+
+def add_upload_parser(subparsers):
+    description = "Upload notebooks to binstar"
+    epilog = """
+    Usage:
+        binstar notebook upload project notebook.ipynb
+        binstar notebook upload project directory
+    """
+    parser = subparsers.add_parser('upload',
+                                   formatter_class=argparse.RawDescriptionHelpFormatter,
+                                   help=description,
+                                   description=description,
+                                   epilog=epilog)
 
     mgroup = parser.add_argument_group('metadata options')
     mgroup.add_argument('-v', '--version', help='Notebook version')
@@ -53,27 +66,42 @@ def add_parser(subparsers):
         default=[]
     )
 
-    parser.set_defaults(main=main)
+    parser.set_defaults(main=upload)
 
 
-def main(args):
+def add_download_parser(subparsers):
+    description = "Download notebooks from binstar"
+    epilog = """
+    Usage:
+        binstar notebook download project
+        binstar notebook download project:notebook
+    """
+    parser = subparsers.add_parser('download',
+                                   formatter_class=argparse.RawDescriptionHelpFormatter,
+                                   help=description,
+                                   description=description,
+                                   epilog=epilog)
+    parser.set_defaults(main=download)
+
+
+def upload(args):
     binstar = get_binstar(args)
-    if args.action == 'upload':
-        finder = Finder(args.files)
-        uploader = Uploader(binstar, args.project)
-        scm = SCM(uploader, args.project)
-        scm.local(local_files(finder.valid))
-        scm.pull()
+    finder = Finder(args.files)
+    uploader = Uploader(binstar, args.project)
+    scm = SCM(uploader, args.project)
+    scm.local(local_files(finder.valid))
+    scm.pull()
 
-        if len(scm.diff) == 0:
-            log.info("There are no files to upload")
-        else:
-            for scm_file in scm.diff:
-                filename = scm_file.filename
-                if uploader.upload(os.path.join(finder.prefix, filename), force=False):
-                    log.info("{} has been uploaded.".format(filename))
-        for f in finder.invalid:
-            log.info("{} can't be uploaded".format(f))
+    if len(scm.diff) == 0:
+        log.info("There are no files to upload")
+    else:
+        for scm_file in scm.diff:
+            filename = scm_file.filename
+            if uploader.upload(os.path.join(finder.prefix, filename), force=False):
+                log.info("{} has been uploaded.".format(filename))
+    for f in finder.invalid:
+        log.info("{} can't be uploaded".format(f))
 
-    elif args.action == 'download':
-        raise errors.BinstarError("Download notebooks hasn't been implemented yet. Soon!")
+
+def download(args):
+    raise errors.BinstarError("Download notebooks hasn't been implemented yet. Soon!")
