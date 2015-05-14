@@ -24,8 +24,6 @@ def parse(handle):
     except AttributeError:
         raise BinstarError("{} can't be parsed".format(handle))
 
-    # import pdb; pdb.set_trace()
-    print parsed
     if parsed['project2'] is not None:
         return None, parsed['project2'], None
     elif parsed['project1'] is not None:
