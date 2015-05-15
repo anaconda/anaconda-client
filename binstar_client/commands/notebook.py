@@ -10,6 +10,7 @@ from __future__ import unicode_literals
 import os
 import argparse
 import logging
+from binstar_client import errors
 from binstar_client.utils import get_binstar
 from binstar_client.utils.notebook import Finder, Uploader, Downloader, SCM, local_files, parse
 
@@ -122,9 +123,12 @@ def upload(args):
 
 
 def download(args):
-    downloader = Downloader(*parse(args.handle))
-    if downloader.call(output=args.output, force=args.force):
-        log.info("{} has been downloaded".format(args.handle))
-    else:
-        log.info("{} couldn't be downloaded".format(args.handle))
-
+    binstar = get_binstar(args)
+    username, project, notebook = parse(args.handle)
+    username = username or binstar.user()['login']
+    downloader = Downloader(binstar, username, project, notebook)
+    try:
+        downloader.call(output=args.output, force=args.force)
+        log.info("{} has been downloaded.".format(args.handle))
+    except (errors.NotFound, OSError) as err:
+        log.info(err.msg)
