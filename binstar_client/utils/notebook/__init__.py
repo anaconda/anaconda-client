@@ -18,7 +18,7 @@ def parse(handle):
     :param handle: String
     :return: username, project, file
     """
-    r = r'^(?P<user0>\w+)/(?P<project0>\w+):(?P<notebook0>\w+)$|^(?P<user1>\w+)/(?P<project1>\w+)$|^(?P<project2>\w+)$'
+    r = r'^(?P<user0>\w+)/(?P<project0>\w+):(?P<notebook0>\w+)$|^(?P<user1>\w+)/(?P<project1>\w+)$|^(?P<project2>.+)$'
 
     try:
         parsed = re.compile(r).match(handle).groupdict()
