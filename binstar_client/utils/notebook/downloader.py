@@ -17,17 +17,9 @@ class Downloader(object):
             self.location = output
         self.ensure_location(force)
         if basename is None:
-            for f in self.list_files():
-                if self.can_download(f, force):
-                    self.download(f)
+            self.download_files(force)
         else:
-            dist = next(dist for dist in self.list_files() if dist['basename'] == basename)
-            if dist is None:
-                raise errors.NotFound(basename)
-            if self.can_download(dist, force):
-                self.download(dist)
-            else:
-                raise errors.DestionationPathExists(os.join(self.location), basename)
+            self.download_file(basename, force)
 
     def download(self, dist):
         """
@@ -38,6 +30,20 @@ class Downloader(object):
         with open(os.path.join(self.location, dist['basename']), 'w') as fdout:
             for chunk in requests_handle.iter_content(4096):
                 fdout.write(chunk)
+
+    def download_files(self, force=False):
+        for f in self.list_files():
+            if self.can_download(f, force):
+                self.download(f)
+
+    def download_file(self, basename, force=False):
+        dist = next(dist for dist in self.list_files() if dist['basename'] == basename)
+        if dist is None:
+            raise errors.NotFound(basename)
+        if self.can_download(dist, force):
+            self.download(dist)
+        else:
+            raise errors.DestionationPathExists(os.join(self.location), basename)
 
     def can_download(self, dist, force=False):
         """
