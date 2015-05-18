@@ -61,6 +61,6 @@ class Downloader(object):
                 tmp[f['basename']] = [f]
 
         for basename, versions in tmp.items():
-            output.append(max(versions, lambda x: int(x['version']))[-1])
+            output.append(max(versions, key=lambda x: int(x['version'])))
 
         return output

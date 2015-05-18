@@ -25,9 +25,9 @@ class DownloaderTestCase(unittest.TestCase):
         binstar.package = mock.MagicMock(return_value=files)
 
         downloader = Downloader(binstar, 'username', 'project', 'notebook')
-        self.assertEqual(downloader.list_files()[0]['basename'], 'notebook')
+        print(downloader.list_files())
         self.assertEqual(downloader.list_files()[0]['version'], '2')
-        self.assertEqual(downloader.list_files()[1]['basename'], 'data')
+        self.assertEqual(downloader.list_files()[1]['version'], '2')
 
     def test_can_download(self):
         package_1 = {'basename': 'notebook.ipynb'}
