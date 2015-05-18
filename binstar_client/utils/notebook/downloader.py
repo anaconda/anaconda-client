@@ -39,13 +39,14 @@ class Downloader(object):
         output = []
         tmp = {}
         files = self.binstar.package(self.username, self.project)['files']
+
         for f in files:
             if f['basename'] in tmp:
-                tmp['basename'].append(f)
+                tmp[f['basename']].append(f)
             else:
-                tmp['basename'] = [f]
+                tmp[f['basename']] = [f]
 
-        for basename, versions in tmp:
-            output.append(max(versions, lambda x: x['version']))
+        for basename, versions in tmp.iteritems():
+            output.append(max(versions, lambda x: int(x['version']))[-1])
 
         return output
