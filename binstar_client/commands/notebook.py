@@ -126,9 +126,12 @@ def download(args):
     binstar = get_binstar(args)
     username, project, notebook = parse(args.handle)
     username = username or binstar.user()['login']
-    downloader = Downloader(binstar, username, project, notebook)
+    downloader = Downloader(binstar, username, project)
     try:
-        downloader.call(output=args.output, force=args.force)
+        if notebook is None:
+            downloader.call(output=args.output, force=args.force)
+        else:
+            downloader.call(basename=notebook, output=args.output, force=args.force)
         log.info("{} has been downloaded.".format(args.handle))
-    except (errors.NotFound, OSError) as err:
+    except (errors.DestionationPathExists, errors.NotFound, OSError) as err:
         log.info(err.msg)

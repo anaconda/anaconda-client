@@ -1,49 +1,61 @@
 import os
+from binstar_client import errors
 
 
 class Downloader(object):
     """
     Download a notebook or a data file from Binstar.org
     """
-    def __init__(self, binstar, username, project, notebook):
+    def __init__(self, binstar, username, project):
         self.binstar = binstar
         self.username = username
         self.project = project
-        self.notebookk = notebook
+        self.location = project
 
-    def call(self, force=False, output=None):
-        location = output or self.project
-        self.ensure_location(location)
-        for f in self.list_files():
-            if self.can_download(location, f, force):
-                self.download(f, location)
+    def call(self, basename=None, force=False, output=None):
+        if output is not None:
+            self.location = output
+        self.ensure_location(force)
+        if basename is None:
+            for f in self.list_files():
+                if self.can_download(f, force):
+                    self.download(f)
+        else:
+            dist = next(dist for dist in self.list_files() if dist['basename'] == basename)
+            if dist is None:
+                raise errors.NotFound(basename)
+            if self.can_download(dist, force):
+                self.download(dist)
+            else:
+                raise errors.DestionationPathExists(os.join(self.location), basename)
 
-    def download(self, dist, location):
+    def download(self, dist):
         """
         Download file into location
         """
         requests_handle = self.binstar.download(self.username, self.project, dist['version'], dist['basename'])
 
-        with open(os.path.join(location, dist['basename']), 'w') as fdout:
+        with open(os.path.join(self.location, dist['basename']), 'w') as fdout:
             for chunk in requests_handle.iter_content(4096):
                 fdout.write(chunk)
 
-    def can_download(self, location, dist, force=False):
+    def can_download(self, dist, force=False):
         """
         Can download if location/file does not exist or if force=True
-        :param location:
         :param dist:
         :param force:
         :return: True/False
         """
-        return not os.path.exists(os.path.join(location, dist['basename'])) or force
+        return not os.path.exists(os.path.join(self.location, dist['basename'])) or force
 
-    def ensure_location(self, d):
+    def ensure_location(self, force):
         """
         Created directory dir
         """
-        if not os.path.exists(d):
-            os.makedirs(d)
+        if not os.path.exists(self.location):
+            os.makedirs(self.location)
+        elif not force:
+            raise errors.DestionationPathExists(self.location)
 
     def list_files(self):
         """
