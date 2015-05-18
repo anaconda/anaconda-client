@@ -15,14 +15,28 @@ class Downloader(object):
         location = output or self.project
         self.ensure_location(location)
         for f in self.list_files():
-            self.download(f, location)
+            if self.can_download(location, f, force):
+                self.download(f, location, force)
 
     def download(self, dist, location):
+        """
+        Download file into location
+        """
         requests_handle = self.binstar.download(self.username, self.project, dist['version'], dist['basename'])
 
         with open(os.path.join(location, dist['basename']), 'w') as fdout:
             for chunk in requests_handle.iter_content(4096):
                 fdout.write(chunk)
+
+    def can_download(self, location, dist, force=False):
+        """
+        Can download if location/file does not exist or if force=True
+        :param location:
+        :param dist:
+        :param force:
+        :return: True/False
+        """
+        return not os.path.exists(os.path.join(location, dist['basename'])) or force
 
     def ensure_location(self, d):
         """
@@ -46,7 +60,7 @@ class Downloader(object):
             else:
                 tmp[f['basename']] = [f]
 
-        for basename, versions in tmp.iteritems():
+        for basename, versions in tmp.items():
             output.append(max(versions, lambda x: int(x['version']))[-1])
 
         return output
