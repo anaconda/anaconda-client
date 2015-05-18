@@ -16,7 +16,7 @@ class Downloader(object):
         self.ensure_location(location)
         for f in self.list_files():
             if self.can_download(location, f, force):
-                self.download(f, location, force)
+                self.download(f, location)
 
     def download(self, dist, location):
         """
