@@ -243,7 +243,6 @@ def inspect_pypi_package_sdist(filename, fileobj):
         distrubite = True
         if data is None:
             raise errors.NoMetadataError("Could not find *.egg-info/PKG-INFO file in pypi sdist")
-    import pdb; pdb.set_trace()
     config_items = python_version_check(data)
     attrs = dict(config_items)
     name = pop_key(attrs, 'Name', None)
