@@ -1,8 +1,28 @@
 import os
 import hashlib
 
+"""
+Version control module
+* Download files from a project hosted in anaconda-server
+* Upload files to anaconda-server
+* Upload new files to an existing project in AS
+* If local file already in AS, create a new version and upload it
+
+Usage:
+    uploader = Uploader(binstar, project)
+    scm = SCM(uploader, project)
+    scm.local(loca_files_list)
+    scm.pull()
+"""
+
 
 class SCMCollection(object):
+    """
+    Collection of SCM Files.
+    You can add files into it and it behaves as a collection
+    You can also substract two scm collections. Will stick
+    with the newest versions of every file.
+    """
     def __init__(self, elements=[]):
         self._elements = elements
 
@@ -56,6 +76,11 @@ class SCMCollection(object):
 
 
 class SCMFile(object):
+    """
+    Allows easy comparation between files within the SCM
+    Filer are the same if they have the same filename and md5
+    A file can be bigger than the other if it has an newer version
+    """
     def __init__(self, filename, md5=None, version=None):
         self.filename = filename
         self.md5 = md5
@@ -75,6 +100,12 @@ class SCMFile(object):
 
 
 class SCM(object):
+    """
+    Version control mechanism for notebooks files.
+    * Download files from AS
+    * Upload new files
+    * Upload files with newer version
+    """
     def __init__(self, uploader, project, username=None):
         self.uploader = uploader
         self.project = project

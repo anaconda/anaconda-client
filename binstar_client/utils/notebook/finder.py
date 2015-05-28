@@ -1,6 +1,26 @@
 import os
 from . import uploader
 
+"""
+The Finder class will look for valid files in a directory.
+Valid files are:
+* IPython Notebooks
+* CSV data files
+* JSON data files
+* YAML files (like environment.yaml)
+
+Usage:
+# Files on directory: environment.yaml, notebook.ipynb, image.png
+    finder = Finder(['.'])
+    finder.valid # => ['environment.yaml', 'notebook.ipynb']
+    finder.invalid # => ['image.png']
+
+# Select valid files from a list of files:
+    finder = Finder(['environment.yaml', 'notebook.ipynb', 'image.png'])
+    finder.valid # => ['environment.yaml', 'notebook.ipynb']
+    finder.invalid # => ['image.png']
+"""
+
 
 class Finder(object):
     """
