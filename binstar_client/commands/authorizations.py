@@ -3,8 +3,8 @@ Manage Authentication tokens
 
 See also:
 
-  * [Using Binstar Tokens](http://docs.binstar.org/examples.html#UsingBinstarTokens)
-  
+  * [Using Binstar Tokens](http://docs.anaconda.org/examples.html#UsingBinstarTokens)
+
 '''
 from __future__ import print_function
 import socket
@@ -187,7 +187,7 @@ def add_parser(subparsers):
                                     formatter_class=argparse.RawDescriptionHelpFormatter)
 
     parser.add_argument('-n', '--name', default='binstar_token:%s' % (socket.gethostname()),
-                        help='A unique name so you can identify this token later. View your tokens at binstar.org/settings/access')
+                        help='A unique name so you can identify this token later. View your tokens at anaconda.org/settings/access')
 
     parser.add_argument('-o', '--org', '--organization', help='Set the token owner (must be an organization)', dest='organization')
 
@@ -197,7 +197,7 @@ def add_parser(subparsers):
     g.add_argument('--strong', action='store_const', const='strong', dest='strength' , help='Create a longer token (default)')
     g.add_argument('-w', '--weak', action='store_const', const='weak', dest='strength', help='Create a shorter token')
 
-    g.add_argument('--url', default='http://binstar.org', help='The url of the application that will use this token')
+    g.add_argument('--url', default='http://anaconda.org', help='The url of the application that will use this token')
     g.add_argument('--max-age', type=int, help='The maximum age in seconds that this token will be valid for')
     g.add_argument('-s', '--scopes', action='append', help=('Scopes for token. '
                                                                  'For example if you want to limit this token to conda downloads only you would use '

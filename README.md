@@ -1,19 +1,19 @@
 Binstar Client
 ==============
 
-This is a command line client that provides an interface to [binstar.org](https://binstar.org).
+This is a command line client that provides an interface to [anaconda.org](https://anaconda.org).
 
 ## Quickstart:
 
 ### Create an account:
 
-First create an account on [binstar.org](https://binstar.org)
+First create an account on [anaconda.org](https://anaconda.org)
 
 ### Install the client:
 
 #### With Conda:
 
-``` 
+```
 $ conda install binstar
 ```
 
@@ -38,5 +38,5 @@ For a complete tutorial on building and uploading Conda packages to Binstar read
 ### Links
 
  * https://binstar-client.readthedocs.org/en/latest/
- * https://binstar.org
+ * https://anaconda.org
 

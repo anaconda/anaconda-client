@@ -25,7 +25,7 @@ def interactive_get_token(args, fail_if_already_exists=True):
     bs = get_binstar(args)
     config = get_config(remote_site=args.site)
 
-    url = config.get('url', 'https://api.binstar.org')
+    url = config.get('url', 'https://api.anaconda.org')
 
     token = None
     hostname = getattr(args, 'hostname', platform.node())
@@ -77,7 +77,7 @@ def interactive_get_token(args, fail_if_already_exists=True):
 
     if token is None:
         msg = ('Sorry. Please try again '
-               '(go to https://binstar.org/account/forgot_password '
+               '(go to https://anaconda.org/account/forgot_password '
                'to reset your password)')
         raise errors.BinstarError(msg)
 
