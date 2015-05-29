@@ -11,7 +11,7 @@ class UploaderTestCase(unittest.TestCase):
     def test_release(self):
         binstar = mock.MagicMock()
         binstar.release.return_value = 'release'
-        uploader = Uploader(binstar, 'project')
+        uploader = Uploader(binstar, 'notebook')
         self.assertEqual(uploader.release, 'release')
 
     def test_release_not_exist(self):
