@@ -12,7 +12,7 @@ import argparse
 import logging
 from binstar_client import errors
 from binstar_client.utils import get_binstar
-from binstar_client.utils.notebook import Finder, Uploader, SCM, local_files
+from binstar_client.utils.notebook import Uploader
 
 log = logging.getLogger("binstar.notebook")
 
