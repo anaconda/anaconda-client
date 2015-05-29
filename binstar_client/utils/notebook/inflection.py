@@ -39,5 +39,8 @@ def transliterate(string):
         >>> transliterate(u'Ærøskøbing')
         u'rskbing'
     """
-    normalized = unicodedata.normalize('NFKD', unicode(string))
+    try:
+        normalized = unicodedata.normalize('NFKD', unicode(string))
+    except NameError:
+        normalized = unicodedata.normalize('NFKD', string)
     return normalized.encode('ascii', 'ignore').decode('ascii')

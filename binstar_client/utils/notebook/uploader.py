@@ -2,7 +2,7 @@ import os
 import time
 from os.path import basename
 from binstar_client import errors
-from inflection import parameterize
+from .inflection import parameterize
 
 VALID_FORMATS = ['ipynb', 'csv', 'yml', 'yaml', 'json', 'md', 'rst', 'txt']
 
