@@ -181,7 +181,8 @@ def remove_token(args):
     tokenfile = join(dirs.user_data_dir, '%s.token' % quote_plus(url))
 
     if isfile(tokenfile):
-        os.unlink(tokenfile)
+        os.chmod(tokenfile, stat.S_IWUSR)
+        rm_rf(tokenfile)
 
 def load_config(config_file):
     if exists(config_file):
