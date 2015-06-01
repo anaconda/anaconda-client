@@ -1,6 +1,8 @@
+import os
 import time
 from os.path import basename
 from binstar_client import errors
+from .inflection import parameterize
 
 VALID_FORMATS = ['ipynb', 'csv', 'yml', 'yaml', 'json', 'md', 'rst', 'txt']
 
@@ -15,15 +17,16 @@ class Uploader(object):
     msg = None
     _package = None
     _release = None
+    _project = None
 
-    def __init__(self, binstar, project, username=None, version=None, summary=None):
-        self.project = project
-        self._username = username
-        self._version = version
-        self._summary = summary
+    def __init__(self, binstar, filepath, **kwargs):
         self.binstar = binstar
+        self.filepath = filepath
+        self._username = kwargs.get('user', None)
+        self._version = kwargs.get('version', None)
+        self._summary = kwargs.get('summary', None)
 
-    def upload(self, filepath, force=False):
+    def upload(self, force=False):
         """
         Uploads a notebook
         :param force: True/False
@@ -32,20 +35,27 @@ class Uploader(object):
         if self.package and self.release:
             try:
                 self.binstar.upload(self.username, self.project, self.version,
-                                    basename(filepath), open(filepath, 'rb'), filepath.split('.')[-1])
+                                    basename(self.filepath), open(self.filepath, 'rb'),
+                                    self.filepath.split('.')[-1])
                 return True
             except errors.Conflict:
                 if force:
                     self.remove()
                     return self.upload()
                 else:
-                    self.msg = "Conflict: {} already exist in {}/{}".format(filepath, self.project, self.version)
+                    self.msg = "Conflict: {} already exist in {}/{}".format(self.filepath,
+                                                                            self.project,
+                                                                            self.version)
                     return False
         else:
             return False
 
     def remove(self):
         return self.binstar.remove_dist(self, self.username, self.project, self.version, basename=self.notebook)
+
+    @property
+    def project(self):
+        return parameterize(os.path.basename(self.filepath))
 
     @property
     def username(self):
@@ -62,7 +72,7 @@ class Uploader(object):
     @property
     def summary(self):
         if self._summary is None:
-            self._summary = "IPython notebook project"
+            self._summary = "IPython notebook"
         return self._summary
 
     @property
@@ -72,9 +82,11 @@ class Uploader(object):
                 self._package = self.binstar.package(self.username, self.project)
             except errors.NotFound:
                 try:
-                    self._package = self.binstar.add_package(self.username, self.project, summary=self.summary)
+                    self._package = self.binstar.add_package(self.username, self.project,
+                                                             summary=self.summary)
                 except errors.BinstarError:
-                    self.msg = "Project {} can not be created. Maybe you are unauthorized.".format(self.project)
+                    self.msg = "Project {} can not be created. Maybe you are unauthorized.".\
+                        format(self.project)
                     self._package = None
         return self._package
 

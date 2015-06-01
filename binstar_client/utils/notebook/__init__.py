@@ -2,8 +2,6 @@ import re
 from ...errors import BinstarError
 from .downloader import *
 from .uploader import *
-from .finder import *
-from .scm import *
 
 
 def parse(handle):

@@ -12,7 +12,7 @@ import argparse
 import logging
 from binstar_client import errors
 from binstar_client.utils import get_binstar
-from binstar_client.utils.notebook import Finder, Uploader, Downloader, SCM, local_files, parse
+from binstar_client.utils.notebook import Uploader, Downloader, parse
 
 log = logging.getLogger("binstar.notebook")
 
@@ -32,11 +32,10 @@ def add_parser(subparsers):
 
 
 def add_upload_parser(subparsers):
-    description = "Upload notebooks to binstar"
+    description = "Upload a notebook to anaconda.org"
     epilog = """
     Usage:
-        binstar notebook upload project notebook.ipynb
-        binstar notebook upload project directory
+        binstar notebook upload notebook.ipynb
     """
     parser = subparsers.add_parser('upload',
                                    formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -54,16 +53,15 @@ def add_upload_parser(subparsers):
     )
 
     parser.add_argument(
-        'project',
-        help="project to upload/download",
-        action='store'
+        '--force',
+        help="Force a notebook upload regardless of errors",
+        action='store_true'
     )
 
     parser.add_argument(
-        'files',
-        help='Files to upload',
-        action='append',
-        default=[]
+        'notebook',
+        help='Notebook to upload',
+        action='store'
     )
 
     parser.set_defaults(main=upload)
@@ -105,21 +103,16 @@ def add_download_parser(subparsers):
 
 def upload(args):
     binstar = get_binstar(args)
-    finder = Finder(args.files)
-    uploader = Uploader(binstar, args.project)
-    scm = SCM(uploader, args.project)
-    scm.local(local_files(finder.valid))
-    scm.pull()
+    uploader = Uploader(binstar, args.notebook, user=args.user, summary=args.summary,
+                        version=args.version)
 
-    if len(scm.diff) == 0:
-        log.info("There are no files to upload")
+    if os.path.exists(args.notebook):
+        uploader.upload(force=args.force)
+        log.info("{} has been uploaded.".format(args.notebook))
     else:
-        for scm_file in scm.diff:
-            filename = scm_file.filename
-            if uploader.upload(os.path.join(finder.prefix, filename), force=False):
-                log.info("{} has been uploaded.".format(filename))
-    for f in finder.invalid:
-        log.info("{} can't be uploaded".format(f))
+        raise errors.BinstarError("{} can't be found".format(args.notebook))
+    if uploader.msg is not None:
+        log.error(uploader.msg)
 
 
 def download(args):
