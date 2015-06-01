@@ -4,46 +4,33 @@ from binstar_client import errors
 
 class Downloader(object):
     """
-    Download a notebook or a data file from Binstar.org
+    Download notebook from anaconda.org
     """
-    def __init__(self, binstar, username, project):
+    def __init__(self, binstar, username, notebook):
         self.binstar = binstar
         self.username = username
-        self.project = project
-        self.location = project
+        self.notebook = notebook
 
-    def call(self, basename=None, force=False, output=None):
-        if output is not None:
-            self.location = output
-        self.ensure_location(force)
-        if basename is None:
-            self.download_files(force)
-        else:
-            self.download_file(basename, force)
-
-    def download(self, dist):
-        """
-        Download file into location
-        """
-        requests_handle = self.binstar.download(self.username, self.project, dist['version'], dist['basename'])
-
-        with open(os.path.join(self.location, dist['basename']), 'w') as fdout:
-            for chunk in requests_handle.iter_content(4096):
-                fdout.write(chunk)
+    def __call__(self, output='.', force=False):
+        self.output = output
+        self.ensure_output(force)
+        self.download_files(force)
 
     def download_files(self, force=False):
         for f in self.list_files():
             if self.can_download(f, force):
                 self.download(f)
 
-    def download_file(self, basename, force=False):
-        dist = next(dist for dist in self.list_files() if dist['basename'] == basename)
-        if dist is None:
-            raise errors.NotFound(basename)
-        if self.can_download(dist, force):
-            self.download(dist)
-        else:
-            raise errors.DestionationPathExists(os.join(self.location), basename)
+    def download(self, dist):
+        """
+        Download file into location
+        """
+        requests_handle = self.binstar.download(self.username, self.notebook,
+                                                dist['version'], dist['basename'])
+
+        with open(os.path.join(self.output, dist['basename']), 'w') as fdout:
+            for chunk in requests_handle.iter_content(4096):
+                fdout.write(chunk)
 
     def can_download(self, dist, force=False):
         """
@@ -52,25 +39,25 @@ class Downloader(object):
         :param force:
         :return: True/False
         """
-        return not os.path.exists(os.path.join(self.location, dist['basename'])) or force
+        return not os.path.exists(os.path.join(self.output, dist['basename'])) or force
 
-    def ensure_location(self, force):
+    def ensure_output(self, force):
         """
-        Created directory dir
+        Ensure output's directory exists
         """
-        if not os.path.exists(self.location):
-            os.makedirs(self.location)
+        if not os.path.exists(self.output):
+            os.makedirs(self.output)
         elif not force:
-            raise errors.DestionationPathExists(self.location)
+            raise errors.DestionationPathExists(self.output)
 
     def list_files(self):
         """
-        List available files in a project
+        List available files in a project (aka notebook)
         :return: list
         """
         output = []
         tmp = {}
-        files = self.binstar.package(self.username, self.project)['files']
+        files = self.binstar.package(self.username, self.notebook)['files']
 
         for f in files:
             if f['basename'] in tmp:
