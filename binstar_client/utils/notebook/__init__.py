@@ -14,14 +14,11 @@ def parse(handle):
     :param handle: String
     :return: username, notebooks
     """
-    r = r'^(?P<user1>\w+)/(?P<notebook1>\w+)$|^(?P<notebook2>.+)$'
 
-    try:
-        parsed = re.compile(r).match(handle).groupdict()
-    except AttributeError:
-        raise BinstarError("{} can't be parsed".format(handle))
-
-    if parsed['notebook2'] is not None:
-        return None, parsed['notebook2'], None
+    components = handle.split('/', 1)
+    if len(components) == 1:
+        return None, components[0]
+    elif len(components) == 2:
+        return components[0], components[1]
     else:
-        return parsed['user1'], parsed['notebook1'], None
+        raise BinstarError("{} can't be parsed".format(handle))
