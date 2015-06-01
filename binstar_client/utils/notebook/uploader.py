@@ -19,12 +19,12 @@ class Uploader(object):
     _release = None
     _project = None
 
-    def __init__(self, binstar, filepath, **kwards):
+    def __init__(self, binstar, filepath, **kwargs):
         self.binstar = binstar
         self.filepath = filepath
-        self._username = kwards.get('user', None)
-        self._version = kwards.get('version', None)
-        self._summary = kwards.get('summary', None)
+        self._username = kwargs.get('user', None)
+        self._version = kwargs.get('version', None)
+        self._summary = kwargs.get('summary', None)
 
     def upload(self, force=False):
         """
