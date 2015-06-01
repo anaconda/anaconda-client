@@ -6,26 +6,22 @@ from .uploader import *
 
 def parse(handle):
     """
-    >>> parse("user/project:main.ipynb")
-    ('user', 'project', 'main.ipynb')
-    >>> parse("project")
-    (None, 'project', None)
-    >>> parse("user/project")
-    ('user', 'project', None)
+    >>> parse("user/notebook")
+    ('user', 'notebook')
+    >>> parse("notebook")
+    (None, 'notebook')
 
     :param handle: String
-    :return: username, project, file
+    :return: username, notebooks
     """
-    r = r'^(?P<user0>\w+)/(?P<project0>\w+):(?P<notebook0>\w+)$|^(?P<user1>\w+)/(?P<project1>\w+)$|^(?P<project2>.+)$'
+    r = r'^(?P<user1>\w+)/(?P<notebook1>\w+)$|^(?P<notebook2>.+)$'
 
     try:
         parsed = re.compile(r).match(handle).groupdict()
     except AttributeError:
         raise BinstarError("{} can't be parsed".format(handle))
 
-    if parsed['project2'] is not None:
-        return None, parsed['project2'], None
-    elif parsed['project1'] is not None:
-        return parsed['user1'], parsed['project1'], None
+    if parsed['notebook2'] is not None:
+        return None, parsed['notebook2'], None
     else:
-        return parsed['user0'], parsed['project0'], parsed['notebook0']
+        return parsed['user1'], parsed['notebook1'], None
