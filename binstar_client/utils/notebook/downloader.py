@@ -45,6 +45,8 @@ class Downloader(object):
         """
         Ensure output's directory exists
         """
+        if self.output == '.':
+            return
         if not os.path.exists(self.output):
             os.makedirs(self.output)
         elif not force:

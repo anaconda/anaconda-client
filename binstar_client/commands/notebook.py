@@ -71,9 +71,8 @@ def add_download_parser(subparsers):
     description = "Download notebooks from binstar"
     epilog = """
     Usage:
-        binstar notebook download project
-        binstar notebook download user/project
-        binstar notebook download user/project:notebook
+        binstar notebook download notebook
+        binstar notebook download user/notebook
     """
     parser = subparsers.add_parser('download',
                                    formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -83,7 +82,7 @@ def add_download_parser(subparsers):
 
     parser.add_argument(
         'handle',
-        help="user/project:notebook",
+        help="user/notebook",
         action='store'
     )
 
@@ -95,7 +94,8 @@ def add_download_parser(subparsers):
 
     parser.add_argument(
         '-o', '--output',
-        help='Download as'
+        help='Download as',
+        default='.'
     )
 
     parser.set_defaults(main=download)
@@ -117,14 +117,11 @@ def upload(args):
 
 def download(args):
     binstar = get_binstar(args)
-    username, project, notebook = parse(args.handle)
+    username, notebook = parse(args.handle)
     username = username or binstar.user()['login']
-    downloader = Downloader(binstar, username, project)
+    downloader = Downloader(binstar, username, notebook)
     try:
-        if notebook is None:
-            downloader.call(output=args.output, force=args.force)
-        else:
-            downloader.call(basename=notebook, output=args.output, force=args.force)
+        downloader(output=args.output, force=args.force)
         log.info("{} has been downloaded.".format(args.handle))
     except (errors.DestionationPathExists, errors.NotFound, OSError) as err:
         log.info(err.msg)
