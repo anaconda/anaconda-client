@@ -16,6 +16,7 @@ from pkg_resources import parse_version as pv
 import yaml
 
 from binstar_client.utils.appdirs import AppDirs, EnvAppDirs
+from binstar_client.utils.rm import rm_rf
 
 from ..errors import UserError
 
@@ -168,7 +169,7 @@ def store_token(token, args):
     tokenfile = join(dirs.user_data_dir, '%s.token' % quote_plus(url))
 
     if isfile(tokenfile):
-        os.unlink(tokenfile)
+        rm_rf(tokenfile)
     with open(tokenfile, 'w') as fd:
         fd.write(token)
     os.chmod(tokenfile, stat.S_IRUSR)
