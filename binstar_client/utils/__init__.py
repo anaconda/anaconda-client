@@ -171,7 +171,7 @@ def store_token(token, args):
         os.unlink(tokenfile)
     with open(tokenfile, 'w') as fd:
         fd.write(token)
-    os.chmod(tokenfile, stat.S_IRUSR)
+    os.chmod(tokenfile, stat.S_IWRITE | stat.S_IREAD)
 
 
 def remove_token(args):
@@ -181,6 +181,7 @@ def remove_token(args):
 
     if isfile(tokenfile):
         os.unlink(tokenfile)
+
 
 def load_config(config_file):
     if exists(config_file):
