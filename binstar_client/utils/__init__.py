@@ -168,10 +168,10 @@ def store_token(token, args):
     tokenfile = join(dirs.user_data_dir, '%s.token' % quote_plus(url))
 
     if isfile(tokenfile):
-        _remove_tokenfile(tokenfile)
+        os.unlink(tokenfile)
     with open(tokenfile, 'w') as fd:
         fd.write(token)
-    os.chmod(tokenfile, stat.S_IRUSR)
+    os.chmod(tokenfile, stat.S_IWRITE | stat.S_IREAD)
 
 
 def remove_token(args):
@@ -180,11 +180,6 @@ def remove_token(args):
     tokenfile = join(dirs.user_data_dir, '%s.token' % quote_plus(url))
 
     if isfile(tokenfile):
-        _remove_tokenfile(tokenfile)
-
-
-def _remove_tokenfile(tokenfile):
-        os.chmod(tokenfile, stat.S_IWUSR)
         os.unlink(tokenfile)
 
 
