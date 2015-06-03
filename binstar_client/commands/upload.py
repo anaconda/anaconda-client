@@ -4,9 +4,9 @@
 
 ##### See Also
 
-  * [Uploading a Conda Package](http://docs.binstar.org/examples.html#UploadingACondaPackage)
-  * [Uploading a PyPI Package](http://docs.binstar.org/examples.html#UploadingAPypiPackage)
-  
+  * [Uploading a Conda Package](http://docs.anaconda.org/examples.html#UploadingACondaPackage)
+  * [Uploading a PyPI Package](http://docs.anaconda.org/examples.html#UploadingAPypiPackage)
+
 '''
 from __future__ import unicode_literals
 
@@ -56,7 +56,7 @@ def create_release_interactive(binstar, username, package_name, version):
 
 def determine_package_type(filename, args):
     """
-    return the file type from the inspected package or from the 
+    return the file type from the inspected package or from the
     -t/--package-type argument
     """
     if args.package_type:
@@ -212,7 +212,7 @@ def main(args):
 
 
     for package, upload_info in uploaded_packages:
-        package_url = upload_info.get('url', 'https://binstar.org/%s/%s' % (username, package))
+        package_url = upload_info.get('url', 'https://anaconda.org/%s/%s' % (username, package))
         log.info("Package located at:\n%s\n" % package_url)
 
 
