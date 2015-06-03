@@ -16,12 +16,15 @@ class Downloader(object):
     def __call__(self, output='.', force=False):
         self.output = output
         self.ensure_output(force)
-        self.download_files(force)
+        return self.download_files(force)
 
     def download_files(self, force=False):
+        output = []
         for f in self.list_files():
             if self.can_download(f, force):
                 self.download(f)
+                output.append(f['basename'])
+        return output
 
     def download(self, dist):
         """

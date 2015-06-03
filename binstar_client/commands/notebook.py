@@ -122,7 +122,7 @@ def download(args):
     username = username or binstar.user()['login']
     downloader = Downloader(binstar, username, notebook)
     try:
-        downloader(output=args.output, force=args.force)
-        log.info("{} has been downloaded.".format(args.handle))
+        download_info = downloader(output=args.output, force=args.force)
+        log.info("{} has been downloaded as {}.".format(args.handle, download_info[0]))
     except (errors.DestionationPathExists, errors.NotFound, OSError) as err:
         log.info(err.msg)
