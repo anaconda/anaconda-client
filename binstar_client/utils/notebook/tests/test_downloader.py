@@ -25,7 +25,6 @@ class DownloaderTestCase(unittest.TestCase):
         binstar.package = mock.MagicMock(return_value=files)
 
         downloader = Downloader(binstar, 'username', 'notebook')
-        print(downloader.list_files())
         self.assertEqual(downloader.list_files()[0]['version'], '2')
         self.assertEqual(downloader.list_files()[1]['version'], '2')
 
@@ -38,6 +37,17 @@ class DownloaderTestCase(unittest.TestCase):
         self.assertTrue(downloader.can_download(package_1, True))
         self.assertTrue(downloader.can_download(package_2))
 
+    def test_list_old_files(self):
+        old_files = {'files': [{
+            'basename': 'old-notebook',
+            'version': '1.0.0',
+            'upload_time': '2015-04-02 22:32:31.253000+00:00'
+        }]}
+        binstar = mock.MagicMock()
+        binstar.package = mock.MagicMock(return_value=old_files)
+
+        downloader = Downloader(binstar, 'username', 'notebook')
+        self.assertEqual(downloader.list_files()[0]['version'], '1.0.0')
 
 if __name__ == '__main__':
     unittest.main()

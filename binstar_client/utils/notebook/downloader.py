@@ -1,4 +1,5 @@
 import os
+from dateutil import parser
 from binstar_client import errors
 
 
@@ -59,6 +60,7 @@ class Downloader(object):
         """
         output = []
         tmp = {}
+
         files = self.binstar.package(self.username, self.notebook)['files']
 
         for f in files:
@@ -68,6 +70,11 @@ class Downloader(object):
                 tmp[f['basename']] = [f]
 
         for basename, versions in tmp.items():
-            output.append(max(versions, key=lambda x: int(x['version'])))
+            try:
+                output.append(max(versions, key=lambda x: int(x['version'])))
+            except ValueError:
+                output.append(max(versions, key=lambda x: parser.parse(x['upload_time']).timestamp()))
+            except:
+                output.append(versions[-1])
 
         return output
