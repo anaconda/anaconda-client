@@ -1,9 +1,8 @@
 """
 Usage:
-    binstar notebook upload project notebook.ipynb
-    binstar notebook upload project directory
-    binstar notebook download project
-    binstar notebook download project:notebook
+    binstar notebook upload notebook.ipynb
+    binstar notebook download notebook
+    binstar notebook download user/notebook
 """
 
 from __future__ import unicode_literals
