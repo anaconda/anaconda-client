@@ -12,7 +12,7 @@ import argparse
 import logging
 from binstar_client import errors
 from binstar_client.utils import get_binstar
-from binstar_client.utils.notebook import Uploader, Downloader, parse
+from binstar_client.utils.notebook import Uploader, Downloader, parse, notebook_url
 
 log = logging.getLogger("binstar.notebook")
 
@@ -107,10 +107,12 @@ def upload(args):
                         version=args.version)
 
     if os.path.exists(args.notebook):
-        uploader.upload(force=args.force)
+        upload_info = uploader.upload(force=args.force)
         log.info("{} has been uploaded.".format(args.notebook))
+        log.info("You can visit your notebook at {}".format(notebook_url(upload_info)))
     else:
         raise errors.BinstarError("{} can't be found".format(args.notebook))
+
     if uploader.msg is not None:
         log.error(uploader.msg)
 

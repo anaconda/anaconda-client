@@ -171,7 +171,7 @@ def store_token(token, args):
         os.unlink(tokenfile)
     with open(tokenfile, 'w') as fd:
         fd.write(token)
-    os.chmod(tokenfile, stat.S_IRUSR)
+    os.chmod(tokenfile, stat.S_IWRITE | stat.S_IREAD)
 
 
 def remove_token(args):
@@ -181,6 +181,7 @@ def remove_token(args):
 
     if isfile(tokenfile):
         os.unlink(tokenfile)
+
 
 def load_config(config_file):
     if exists(config_file):
@@ -204,7 +205,7 @@ def recursive_update(d, u):
             d[k] = u[k]
     return d
 
-DEFAULT_URL = 'https://api.binstar.org'
+DEFAULT_URL = 'https://api.anaconda.org'
 ALPHA_URL = 'http://api.alpha.binstar.org'
 DEFAULT_CONFIG = {
                   'sites': {'binstar': {'url': DEFAULT_URL},

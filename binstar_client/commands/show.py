@@ -24,17 +24,17 @@ def install_info(package, package_type):
     if package_type == 'pypi':
         log.info('To install this package with %s run:' % package_type)
         if package['public']:
-            url = 'https://pypi.binstar.org/%s/simple' % package['owner']['login']
+            url = 'https://pypi.anaconda.org/%s/simple' % package['owner']['login']
         else:
-            url = 'https://pypi.binstar.org/t/$TOKEN/%s/simple' % package['owner']['login']
+            url = 'https://pypi.anaconda.org/t/$TOKEN/%s/simple' % package['owner']['login']
 
         log.info('     pip install -i %s %s' % (url, package['name']))
     if package_type == 'conda':
         log.info('To install this package with %s run:' % package_type)
         if package['public']:
-            url = 'https://conda.binstar.org/%s' % package['owner']['login']
+            url = 'https://conda.anaconda.org/%s' % package['owner']['login']
         else:
-            url = 'https://conda.binstar.org/t/$TOKEN/%s' % package['owner']['login']
+            url = 'https://conda.anaconda.org/t/$TOKEN/%s' % package['owner']['login']
 
         log.info('     conda install --channel %s %s' % (url, package['name']))
 

@@ -1,3 +1,8 @@
+2015-06-02: 0.10.4:
+------------------
+* Fix remove token file from Windows environments
+* Replace api.binstar.org for api.anaconda.org
+
 2013-09-05: 0.3.1:
 -----------------
 * fix attribute error on Windows
