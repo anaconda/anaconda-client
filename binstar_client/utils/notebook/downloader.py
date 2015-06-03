@@ -1,5 +1,6 @@
 import os
-from dateutil import parser
+from time import mktime
+from dateutil.parser import parse
 from binstar_client import errors
 
 
@@ -29,7 +30,7 @@ class Downloader(object):
         requests_handle = self.binstar.download(self.username, self.notebook,
                                                 dist['version'], dist['basename'])
 
-        with open(os.path.join(self.output, dist['basename']), 'w') as fdout:
+        with open(os.path.join(self.output, dist['basename']), 'wb') as fdout:
             for chunk in requests_handle.iter_content(4096):
                 fdout.write(chunk)
 
@@ -73,7 +74,9 @@ class Downloader(object):
             try:
                 output.append(max(versions, key=lambda x: int(x['version'])))
             except ValueError:
-                output.append(max(versions, key=lambda x: parser.parse(x['upload_time']).timestamp()))
+                output.append(
+                    max(versions, key=lambda x: mktime(parse(x['upload_time']).timetuple()))
+                )
             except:
                 output.append(versions[-1])
 
