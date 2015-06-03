@@ -10,7 +10,6 @@ from __future__ import unicode_literals
 import os
 import argparse
 import logging
-from urlparse import urlparse
 from binstar_client import errors
 from binstar_client.utils import get_binstar
 from binstar_client.utils.notebook import Uploader, notebook_url

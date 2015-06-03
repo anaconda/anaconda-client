@@ -1,4 +1,7 @@
-from urlparse import urlparse
+try:
+    from urlparse import urlparse
+except ImportError:
+    from urllib.parse import urlparse
 from .uploader import *
 
 
