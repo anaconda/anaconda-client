@@ -15,7 +15,7 @@ class Downloader(object):
 
     def __call__(self, output='.', force=False):
         self.output = output
-        self.ensure_output(force)
+        self.ensure_output()
         return self.download_files(force)
 
     def download_files(self, force=False):
@@ -46,16 +46,12 @@ class Downloader(object):
         """
         return not os.path.exists(os.path.join(self.output, dist['basename'])) or force
 
-    def ensure_output(self, force):
+    def ensure_output(self):
         """
         Ensure output's directory exists
         """
-        if self.output == '.':
-            return
         if not os.path.exists(self.output):
             os.makedirs(self.output)
-        elif not force:
-            raise errors.DestionationPathExists(self.output)
 
     def list_files(self):
         """
