@@ -10,9 +10,10 @@ from __future__ import unicode_literals
 import os
 import argparse
 import logging
+from urlparse import urlparse
 from binstar_client import errors
 from binstar_client.utils import get_binstar
-from binstar_client.utils.notebook import Uploader
+from binstar_client.utils.notebook import Uploader, message_for
 
 log = logging.getLogger("binstar.notebook")
 
@@ -88,13 +89,24 @@ def upload(args):
                         version=args.version)
 
     if os.path.exists(args.notebook):
-        uploader.upload(force=args.force)
+        upload_info = uploader.upload(force=args.force)
         log.info("{} has been uploaded.".format(args.notebook))
+        log.info("You can visit your notebook at {}".format(_build_notebook_url(upload_info)))
     else:
         raise errors.BinstarError("{} can't be found".format(args.notebook))
+
     if uploader.msg is not None:
         log.error(uploader.msg)
 
 
 def download(args):
     raise errors.BinstarError("Download notebooks hasn't been implemented yet. Soon!")
+
+
+def _build_notebook_url(upload_info):
+    parsed = urlparse(upload_info['url'])
+    if parsed.netloc == 'anaconda.org':
+        notebook_url = "{}://notebooks.{}{}".format(parsed.scheme, parsed.netloc, parsed.path)
+    else:
+        notebook_url = "{}://{}/notebooks{}".format(parsed.scheme, parsed.netloc, parsed.path)
+    return notebook_url
