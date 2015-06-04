@@ -6,6 +6,7 @@ from os import path
 import re
 import tarfile
 import zipfile
+import sys
 
 import pkg_resources
 
@@ -14,6 +15,18 @@ from binstar_client.inspect_package.uitls import extract_first, pop_key
 
 
 sort_key = lambda i: i['name']
+
+def python_version_check(filedata):
+    python_version = sys.version_info.major
+
+    if python_version == 3:
+        filedata = Parser().parsestr(filedata).items()
+    else:
+        filedata = Parser().parsestr(filedata.encode("UTF-8", "replace")).items()
+
+    return filedata
+
+
 
 def parse_requirement(line, deps, extras, extra):
     req = pkg_resources.Requirement.parse(line)
@@ -230,8 +243,7 @@ def inspect_pypi_package_sdist(filename, fileobj):
         distrubite = True
         if data is None:
             raise errors.NoMetadataError("Could not find *.egg-info/PKG-INFO file in pypi sdist")
-
-    config_items = Parser().parsestr(data).items()
+    config_items = python_version_check(data)
     attrs = dict(config_items)
     name = pop_key(attrs, 'Name', None)
 
@@ -270,8 +282,7 @@ def inspect_pypi_package_egg(filename, fileobj):
     data = extract_first(tf, 'EGG-INFO/PKG-INFO')
     if data is None:
         raise errors.NoMetadataError("Could not find EGG-INFO/PKG-INFO file in pypi sdist")
-
-    attrs = dict(Parser().parsestr(data).items())
+    attrs = dict(python_version_check(data))
 
     package_data = {'name': pop_key(attrs, 'Name'),
                     'summary': pop_key(attrs, 'Summary', None),
