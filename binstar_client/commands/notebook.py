@@ -1,9 +1,8 @@
 """
 Usage:
-    binstar notebook upload project notebook.ipynb
-    binstar notebook upload project directory
-    binstar notebook download project
-    binstar notebook download project:notebook
+    binstar notebook upload notebook.ipynb
+    binstar notebook download notebook
+    binstar notebook download user/notebook
 """
 
 from __future__ import unicode_literals
@@ -12,7 +11,7 @@ import argparse
 import logging
 from binstar_client import errors
 from binstar_client.utils import get_binstar
-from binstar_client.utils.notebook import Uploader, notebook_url
+from binstar_client.utils.notebook import Uploader, Downloader, parse, notebook_url
 
 log = logging.getLogger("binstar.notebook")
 
@@ -71,14 +70,33 @@ def add_download_parser(subparsers):
     description = "Download notebooks from binstar"
     epilog = """
     Usage:
-        binstar notebook download project
-        binstar notebook download project:notebook
+        binstar notebook download notebook
+        binstar notebook download user/notebook
     """
     parser = subparsers.add_parser('download',
                                    formatter_class=argparse.RawDescriptionHelpFormatter,
                                    help=description,
                                    description=description,
                                    epilog=epilog)
+
+    parser.add_argument(
+        'handle',
+        help="user/notebook",
+        action='store'
+    )
+
+    parser.add_argument(
+        '-f', '--force',
+        help='Overwrite',
+        action='store_true'
+    )
+
+    parser.add_argument(
+        '-o', '--output',
+        help='Download as',
+        default='.'
+    )
+
     parser.set_defaults(main=download)
 
 
@@ -99,4 +117,12 @@ def upload(args):
 
 
 def download(args):
-    raise errors.BinstarError("Download notebooks hasn't been implemented yet. Soon!")
+    binstar = get_binstar(args)
+    username, notebook = parse(args.handle)
+    username = username or binstar.user()['login']
+    downloader = Downloader(binstar, username, notebook)
+    try:
+        download_info = downloader(output=args.output, force=args.force)
+        log.info("{} has been downloaded as {}.".format(args.handle, download_info[0]))
+    except (errors.DestionationPathExists, errors.NotFound, OSError) as err:
+        log.info(err.msg)
