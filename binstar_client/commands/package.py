@@ -21,8 +21,8 @@ def main(args):
 
     elif args.list_collaborators:
         log.info(':Collaborators:')
-        for collab in binstar.package_collaborators(owner, package):
-            log.info('   +', collab['login'])
+        for collab in bs.package_collaborators(owner, package):
+            log.info(collab['login'])
     elif args.create:
         public = args.access != 'private'
         bs.add_package(args.spec.user, args.spec.package, args.summary,

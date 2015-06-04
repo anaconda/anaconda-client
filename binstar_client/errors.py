@@ -21,8 +21,8 @@ class NotFound(BinstarError, IndexError):
     def __init__(self, *args, **kwargs):
         BinstarError.__init__(self, *args, **kwargs)
         IndexError.__init__(self, *args, **kwargs)
-
         self.message = args[0]
+        self.msg = args[0]
 
 
 class UserError(BinstarError):
@@ -41,8 +41,8 @@ class NoMetadataError(BinstarError):
     pass
 
 
-class NotebookNotExist(BinstarError):
-    def __init__(self, notebook):
-        msg = "{} does not exist.".format(notebook)
-        self.notebook = notebook
-        super(BinstarError, self).__init__(msg)
+class DestionationPathExists(BinstarError):
+    def __init__(self, location):
+        self.msg = "destination path '{}' already exists.".format(location)
+        self.location = location
+        super(BinstarError, self).__init__(self.msg)
