@@ -16,7 +16,7 @@ setup(
     version=version,
     author='Sean Ross-Ross',
     author_email='srossross@gmail.com',
-    url='http://github.com/Binstar/binstar_client',
+    url='https://github.com/Anaconda-Server/binstar_client',
     description='Binstar command line client library',
     packages=find_packages(),
     install_requires=['clyent',
