@@ -13,7 +13,7 @@ expected_package_data = {'name': 'test-package34',
                          'license': 'custom',
                          'summary': 'Python test package for binstar client'}
 
-expected_version_data = {'home_page': 'http://github.com/Anaconda-Server/binstar_pypi',
+expected_version_data = {'home_page': 'http://github.com/binstar/binstar_pypi',
                          'version': '0.3.1',
                          'description':'longer description of the package'}
 
