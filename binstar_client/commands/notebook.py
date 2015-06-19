@@ -43,8 +43,10 @@ def add_upload_parser(subparsers):
                                    epilog=epilog)
 
     mgroup = parser.add_argument_group('metadata options')
-    mgroup.add_argument('-v', '--version', help='Notebook version')
+    mgroup.add_argument('-n', '--name', help='Notebook\'s name (will be parameterized)')
+    mgroup.add_argument('-v', '--version', help='Notebook\'s version')
     mgroup.add_argument('-s', '--summary', help='Set the summary of the notebook')
+    mgroup.add_argument('-t', '--thumbnail', help='Notebook\'s thumbnail image')
 
     parser.add_argument(
         '-u', '--user',
@@ -103,7 +105,7 @@ def add_download_parser(subparsers):
 def upload(args):
     binstar = get_binstar(args)
     uploader = Uploader(binstar, args.notebook, user=args.user, summary=args.summary,
-                        version=args.version)
+                        version=args.version, thumbnail=args.thumbnail, name=args.name)
 
     if os.path.exists(args.notebook):
         upload_info = uploader.upload(force=args.force)

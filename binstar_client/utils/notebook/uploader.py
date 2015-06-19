@@ -25,6 +25,9 @@ class Uploader(object):
         self._username = kwargs.get('user', None)
         self._version = kwargs.get('version', None)
         self._summary = kwargs.get('summary', None)
+        self._thumbnail = kwargs.get('thumbnail', None)
+        if 'name' in kwargs and kwargs['name'] is not None:
+            self._project = parameterize(kwargs['name'])
 
     def upload(self, force=False):
         """
@@ -50,11 +53,22 @@ class Uploader(object):
             return False
 
     def remove(self):
-        return self.binstar.remove_dist(self, self.username, self.project, self.version, basename=self.notebook)
+        return self.binstar.remove_dist(self, self.username, self.project,
+                                        self.version, basename=self.notebook)
+
+    @property
+    def notebook_attrs(self):
+        if self._thumbnail is not None:
+            return {'thumbnail': self._thumbnail}
+        else:
+            return {}
 
     @property
     def project(self):
-        return parameterize(os.path.basename(self.filepath))
+        if self._project is None:
+            return parameterize(os.path.basename(self.filepath))
+        else:
+            return self._project
 
     @property
     def username(self):
@@ -82,7 +96,8 @@ class Uploader(object):
             except errors.NotFound:
                 try:
                     self._package = self.binstar.add_package(self.username, self.project,
-                                                             summary=self.summary)
+                                                             summary=self.summary,
+                                                             attrs=self.notebook_attrs)
                 except errors.BinstarError:
                     self.msg = "Project {} can not be created. Maybe you are unauthorized.".\
                         format(self.project)
