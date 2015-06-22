@@ -7,6 +7,7 @@ from .uploader import *
 from ...errors import BinstarError
 from .downloader import *
 from .uploader import *
+from .data_uri import *
 
 
 def parse(handle):
