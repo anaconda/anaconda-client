@@ -3,6 +3,7 @@ import time
 from os.path import basename
 from binstar_client import errors
 from .inflection import parameterize
+from .data_uri import data_uri_from
 
 VALID_FORMATS = ['ipynb', 'csv', 'yml', 'yaml', 'json', 'md', 'rst', 'txt']
 
@@ -59,7 +60,7 @@ class Uploader(object):
     @property
     def notebook_attrs(self):
         if self._thumbnail is not None:
-            return {'thumbnail': self._thumbnail}
+            return {'thumbnail': data_uri_from(self._thumbnail)}
         else:
             return {}
 
