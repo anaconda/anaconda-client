@@ -1,6 +1,9 @@
-import os
 import base64
 import mimetypes
+import os
+import re
+import sys
+import urllib
 import requests
 
 
@@ -12,11 +15,28 @@ class DataURIConverter(object):
     def __call__(self):
         if os.path.exists(self.location):
             with open(self.location, "rb") as fp:
-                data64 = base64.b64encode(fp.read()).decode("ascii")
+                if self.is_py3():
+                    data64 = base64.b64encode(fp.read()).decode("ascii")
+                else:
+                    data64 = fp.read().encode('base64').replace("\n", "")
+            return 'data:image/png;base64,' + data64
+        elif self.is_url():
+            return self.location
         else:
-            r = requests.get(self.location)
-            data64 = base64.b64encode(bytes(r.text, 'utf-8')).decode('ascii')
-        return u'data:%s;base64,%s' % (self.mime, data64)
+            raise IOError("{} not found".format(self.location))
+
+    def is_py3(self):
+        return sys.version_info[0] == 3
+
+    def is_url(self):
+        regex = re.compile(
+            r'^https?://'  # http:// or https://
+            r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|'  # domain...
+            r'localhost|'  # localhost...
+            r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
+            r'(?::\d+)?'  # optional port
+            r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+        return self.location is not None and regex.search(self.location)
 
 
 def data_uri_from(location):
