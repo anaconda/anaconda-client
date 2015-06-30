@@ -15,13 +15,10 @@ class DataURIConverter(object):
     def __call__(self):
         if os.path.exists(self.location):
             with open(self.location, "rb") as fp:
-                if self.is_py3():
-                    data64 = base64.b64encode(fp.read()).decode("ascii")
-                else:
-                    data64 = fp.read().encode('base64').replace("\n", "")
-            return 'data:image/png;base64,' + data64
+                return self._encode(fp.read())
         elif self.is_url():
-            return self.location
+            content = requests.get(self.location).content
+            return self._encode(content)
         else:
             raise IOError("{} not found".format(self.location))
 
@@ -37,6 +34,13 @@ class DataURIConverter(object):
             r'(?::\d+)?'  # optional port
             r'(?:/?|[/?]\S+)$', re.IGNORECASE)
         return self.location is not None and regex.search(self.location)
+
+    def _encode(self, content):
+        if self.is_py3():
+            data64 = base64.b64encode(content).decode("ascii")
+        else:
+            data64 = content.encode('base64').replace("\n", "")
+        return data64
 
 
 def data_uri_from(location):

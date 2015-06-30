@@ -11,12 +11,12 @@ class DataURIConverterTestCase(unittest.TestCase):
     def test_local_image(self):
         location = self.data_dir('bokeh-logo.png')
         output = DataURIConverter(location)()
-        self.assertEqual(output[0:24], "data:image/png;base64,iV")
+        self.assertEqual(output[0:5], "iVBOR")
 
     def test_remote_image(self):
         location = 'http://continuum.io/media/img/anaconda_server_logo.png'
         output = DataURIConverter(location)()
-        self.assertEqual(output, location)
+        self.assertEqual(output[0:5], "iVBOR")
 
     def test_file_not_found(self):
         location = self.data_dir('no-exists.png')
