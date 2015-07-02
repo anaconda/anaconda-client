@@ -1,6 +1,7 @@
 import unittest
 from os.path import join, dirname
 from binstar_client.utils.notebook import DataURIConverter
+from ....errors import ImageTooBig
 
 
 class DataURIConverterTestCase(unittest.TestCase):
@@ -12,6 +13,14 @@ class DataURIConverterTestCase(unittest.TestCase):
         location = self.data_dir('bokeh-logo.png')
         output = DataURIConverter(location)()
         self.assertEqual(output[0:5], "iVBOR")
+
+    def test_validate_size(self):
+        location = self.data_dir('bokeh-logo.png')
+        data_uri = DataURIConverter(location)
+        self.assertEqual(data_uri.validate_size('hello'), None)
+        cad = '0' * 1024 * 1024 + '1'  # More than 1Mb
+        with self.assertRaises(ImageTooBig):
+            data_uri.validate_size(cad)
 
     def test_remote_image(self):
         location = 'http://continuum.io/media/img/anaconda_server_logo.png'

@@ -3,8 +3,10 @@ import mimetypes
 import os
 import re
 import sys
-import urllib
 import requests
+from ...errors import ImageTooBig
+
+MAX_IMAGE_SIZE = 1024 * 512  # 512Kb
 
 
 class DataURIConverter(object):
@@ -36,11 +38,16 @@ class DataURIConverter(object):
         return self.location is not None and regex.search(self.location)
 
     def _encode(self, content):
+        self.validate_size(content)
         if self.is_py3():
             data64 = base64.b64encode(content).decode("ascii")
         else:
             data64 = content.encode('base64').replace("\n", "")
         return data64
+
+    def validate_size(self, content):
+        if len(content) > MAX_IMAGE_SIZE:
+            raise ImageTooBig("{} is too large. Exceeds 512Kb limit.".format(self.location))
 
 
 def data_uri_from(location):
