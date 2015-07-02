@@ -6,7 +6,6 @@ Usage:
 """
 
 from __future__ import unicode_literals
-import os
 import argparse
 import logging
 from binstar_client import errors
@@ -107,15 +106,12 @@ def upload(args):
     uploader = Uploader(binstar, args.notebook, user=args.user, summary=args.summary,
                         version=args.version, thumbnail=args.thumbnail, name=args.name)
 
-    if os.path.exists(args.notebook):
+    try:
         upload_info = uploader.upload(force=args.force)
         log.info("{} has been uploaded.".format(args.notebook))
         log.info("You can visit your notebook at {}".format(notebook_url(upload_info)))
-    else:
-        raise errors.BinstarError("{} can't be found".format(args.notebook))
-
-    if uploader.msg is not None:
-        log.error(uploader.msg)
+    except (errors.ImageTooBig, errors.BinstarError, IOError) as e:
+        log.error(str(e))
 
 
 def download(args):

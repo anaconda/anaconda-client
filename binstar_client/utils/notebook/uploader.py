@@ -15,7 +15,6 @@ class Uploader(object):
     * List files from project
     * Upload new files to project
     """
-    msg = None
     _package = None
     _release = None
     _project = None
@@ -34,24 +33,22 @@ class Uploader(object):
         """
         Uploads a notebook
         :param force: True/False
-        :return: True/False
+        :returns {}
         """
-        if self.package and self.release:
-            try:
-                return self.binstar.upload(self.username, self.project, self.version,
-                                           basename(self.filepath), open(self.filepath, 'rb'),
-                                           self.filepath.split('.')[-1])
-            except errors.Conflict:
-                if force:
-                    self.remove()
-                    return self.upload()
-                else:
-                    self.msg = "Conflict: {} already exist in {}/{}".format(self.filepath,
-                                                                            self.project,
-                                                                            self.version)
-                    return False
-        else:
-            return False
+        self.package and self.release
+        try:
+            return self.binstar.upload(self.username, self.project, self.version,
+                                       basename(self.filepath), open(self.filepath, 'rb'),
+                                       self.filepath.split('.')[-1])
+        except errors.Conflict:
+            if force:
+                self.remove()
+                return self.upload()
+            else:
+                msg = "Conflict: {} already exist in {}/{}".format(self.filepath,
+                                                                   self.project,
+                                                                   self.version)
+                raise errors.BinstarError(msg)
 
     def remove(self):
         return self.binstar.remove_dist(self, self.username, self.project,
@@ -95,14 +92,9 @@ class Uploader(object):
             try:
                 self._package = self.binstar.package(self.username, self.project)
             except errors.NotFound:
-                try:
-                    self._package = self.binstar.add_package(self.username, self.project,
-                                                             summary=self.summary,
-                                                             attrs=self.notebook_attrs)
-                except errors.BinstarError:
-                    self.msg = "Project {} can not be created. Maybe you are unauthorized.".\
-                        format(self.project)
-                    self._package = None
+                self._package = self.binstar.add_package(self.username, self.project,
+                                                         summary=self.summary,
+                                                         attrs=self.notebook_attrs)
         return self._package
 
     @property
@@ -111,7 +103,8 @@ class Uploader(object):
             try:
                 self._release = self.binstar.release(self.username, self.project, self.version)
             except errors.NotFound:
-                self._release = self.binstar.add_release(self.username, self.project, self.version, None, None, None)
+                self._release = self.binstar.add_release(self.username, self.project,
+                                                         self.version, None, None, None)
         return self._release
 
     @property
