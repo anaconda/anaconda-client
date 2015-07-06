@@ -85,7 +85,6 @@ def recursive_remove(config_data, key):
 
 def main(args):
     config = get_config()
-    #import pdb; pdb.set_trace()
     if args.show:
         fmt = ' + %s: %r'
         log.info('Site Config: %s' % SITE_CONFIG)
