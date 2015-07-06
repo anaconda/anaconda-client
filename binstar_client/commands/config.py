@@ -85,6 +85,7 @@ def recursive_remove(config_data, key):
 
 def main(args):
     config = get_config()
+
     if args.show:
         fmt = ' + %s: %r'
         log.info('Site Config: %s' % SITE_CONFIG)
@@ -98,9 +99,9 @@ def main(args):
         return
 
     if args.get:
-        try:
+        if args.get in config:
             log.info(config[args.get])
-        except KeyError:
+        else:
             log.info("The value of '%s' is not set." % args.get)
         return
 
