@@ -46,9 +46,3 @@ class DestionationPathExists(BinstarError):
         self.msg = "destination path '{}' already exists.".format(location)
         self.location = location
         super(BinstarError, self).__init__(self.msg)
-
-
-class ImageTooBig(BinstarError):
-    def __init__(self, msg):
-        self.msg = msg
-        super(ImageTooBig, self).__init__(self.msg)
