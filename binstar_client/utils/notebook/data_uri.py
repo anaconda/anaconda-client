@@ -3,10 +3,11 @@ import mimetypes
 import os
 import re
 import sys
+import tempfile
 import requests
-from ...errors import ImageTooBig
+from PIL import Image
 
-MAX_IMAGE_SIZE = 1024 * 512  # 512Kb
+THUMB_SIZE = (340, 210)
 
 
 class DataURIConverter(object):
@@ -17,12 +18,20 @@ class DataURIConverter(object):
     def __call__(self):
         if os.path.exists(self.location):
             with open(self.location, "rb") as fp:
-                return self._encode(fp.read())
+                return self._encode(self.resize_and_convert(fp).read())
         elif self.is_url():
             content = requests.get(self.location).content
             return self._encode(content)
         else:
             raise IOError("{} not found".format(self.location))
+
+    def resize_and_convert(self, fp):
+        im = Image.open(fp)
+        im.thumbnail(THUMB_SIZE)
+        tmp = tempfile.TemporaryFile()
+        im.save(tmp, format='png')
+        tmp.seek(0)
+        return tmp
 
     def is_py3(self):
         return sys.version_info[0] == 3
