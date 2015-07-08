@@ -1,7 +1,6 @@
 import unittest
 from os.path import join, dirname
 from binstar_client.utils.notebook import DataURIConverter
-from ....errors import ImageTooBig
 
 
 class DataURIConverterTestCase(unittest.TestCase):

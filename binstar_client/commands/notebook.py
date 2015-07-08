@@ -110,7 +110,7 @@ def upload(args):
         upload_info = uploader.upload(force=args.force)
         log.info("{} has been uploaded.".format(args.notebook))
         log.info("You can visit your notebook at {}".format(notebook_url(upload_info)))
-    except (errors.ImageTooBig, errors.BinstarError, IOError) as e:
+    except (errors.BinstarError, IOError) as e:
         log.error(str(e))
 
 
