@@ -1,10 +1,11 @@
 import base64
+import io
 import mimetypes
 import os
 import re
 import sys
-import tempfile
 import requests
+import tempfile
 from PIL import Image
 
 THUMB_SIZE = (340, 210)
@@ -21,7 +22,10 @@ class DataURIConverter(object):
                 return self._encode(self.resize_and_convert(fp).read())
         elif self.is_url():
             content = requests.get(self.location).content
-            return self._encode(content)
+            fp = io.BytesIO()
+            fp.write(content)
+            fp.seek(0)
+            return self._encode(self.resize_and_convert(fp).read())
         else:
             raise IOError("{} not found".format(self.location))
 
