@@ -17,7 +17,6 @@ log = logging.getLogger("binstar.notebook")
 
 
 def add_parser(subparsers):
-
     description = 'Interact with notebooks in binstar'
     parser = subparsers.add_parser('notebook',
                                    formatter_class=argparse.RawDescriptionHelpFormatter,
