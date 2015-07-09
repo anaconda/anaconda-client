@@ -1,12 +1,10 @@
-import re
 try:
     from urlparse import urlparse
 except ImportError:
     from urllib.parse import urlparse
 from .uploader import *
-from ...errors import BinstarError
 from .downloader import *
-from .uploader import *
+from ...errors import BinstarError
 
 
 def parse(handle):

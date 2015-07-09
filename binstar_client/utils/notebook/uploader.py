@@ -50,7 +50,8 @@ class Uploader(object):
             return False
 
     def remove(self):
-        return self.binstar.remove_dist(self, self.username, self.project, self.version, basename=self.notebook)
+        return self.binstar.remove_dist(self, self.username, self.project,
+                                        self.version, basename=self.notebook)
 
     @property
     def project(self):
@@ -95,7 +96,8 @@ class Uploader(object):
             try:
                 self._release = self.binstar.release(self.username, self.project, self.version)
             except errors.NotFound:
-                self._release = self.binstar.add_release(self.username, self.project, self.version, None, None, None)
+                self._release = self.binstar.add_release(self.username, self.project,
+                                                         self.version, None, None, None)
         return self._release
 
     @property
