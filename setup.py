@@ -28,6 +28,7 @@ setup(
     entry_points={
           'console_scripts': [
               'binstar = binstar_client.scripts.cli:main',
+              'conda-server = binstar_client.scripts.cli:main',
               ]
                  },
 
