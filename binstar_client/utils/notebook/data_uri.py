@@ -3,7 +3,6 @@ import io
 import os
 import sys
 import requests
-import tempfile
 try:
     from urlparse import urlparse
 except ImportError:
@@ -33,10 +32,10 @@ class DataURIConverter(object):
     def resize_and_convert(self, fp):
         im = Image.open(fp)
         im.thumbnail(THUMB_SIZE)
-        tmp = tempfile.TemporaryFile()
-        im.save(tmp, format='png')
-        tmp.seek(0)
-        return tmp
+        out = io.BytesIO()
+        im.save(out, format='png')
+        out.seek(0)
+        return out
 
     def is_py3(self):
         return sys.version_info[0] == 3
