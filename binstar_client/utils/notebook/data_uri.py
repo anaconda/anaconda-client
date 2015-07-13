@@ -1,6 +1,5 @@
 import base64
 import io
-import mimetypes
 import os
 import sys
 import requests
@@ -17,7 +16,6 @@ THUMB_SIZE = (340, 210)
 class DataURIConverter(object):
     def __init__(self, location):
         self.location = location
-        self.mime, _ = mimetypes.guess_type(location)
 
     def __call__(self):
         if os.path.exists(self.location):
