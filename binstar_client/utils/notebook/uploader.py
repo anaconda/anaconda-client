@@ -1,4 +1,5 @@
 import os
+import re
 import time
 from os.path import basename
 from binstar_client import errors
@@ -55,7 +56,7 @@ class Uploader(object):
 
     @property
     def project(self):
-        return parameterize(os.path.basename(self.filepath))
+        return re.sub('\-ipynb$', '', parameterize(os.path.basename(self.filepath)))
 
     @property
     def username(self):
