@@ -2,10 +2,13 @@ import base64
 import io
 import mimetypes
 import os
-import re
 import sys
 import requests
 import tempfile
+try:
+    from urlparse import urlparse
+except ImportError:
+    from urllib.parse import urlparse
 from PIL import Image
 
 THUMB_SIZE = (340, 210)
@@ -41,14 +44,7 @@ class DataURIConverter(object):
         return sys.version_info[0] == 3
 
     def is_url(self):
-        regex = re.compile(
-            r'^https?://'  # http:// or https://
-            r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|'  # domain...
-            r'localhost|'  # localhost...
-            r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
-            r'(?::\d+)?'  # optional port
-            r'(?:/?|[/?]\S+)$', re.IGNORECASE)
-        return self.location is not None and regex.search(self.location)
+        return self.location is not None and urlparse(self.location).scheme != ''
 
     def _encode(self, content):
         if self.is_py3():
