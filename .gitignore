@@ -40,5 +40,3 @@ nosetests.xml
 doc/_build/
 .DS_Store
 __conda_*__.txt
-binstar_client/_version.py
-
