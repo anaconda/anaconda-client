@@ -1,0 +1,2 @@
+include versioneer.py
+include binstar_client/_version.py

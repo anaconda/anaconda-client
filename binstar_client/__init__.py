@@ -22,10 +22,9 @@ import platform
 
 log = logging.getLogger('binstar')
 
-try:
-    from ._version import __version__
-except:
-    __version__ = '0.8'
+from ._version import get_versions
+__version__ = get_versions()['version']
+del get_versions
 
 class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
     '''
@@ -442,3 +441,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         self._check_response(res)
         return res.json()
 
+
+from ._version import get_versions
+__version__ = get_versions()['version']
+del get_versions
