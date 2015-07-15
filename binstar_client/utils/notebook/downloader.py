@@ -1,6 +1,7 @@
 import os
 from time import mktime
 from dateutil.parser import parse
+from ...errors import DestionationPathExists
 
 
 class Downloader(object):
@@ -23,6 +24,8 @@ class Downloader(object):
             if self.can_download(f, force):
                 self.download(f)
                 output.append(f['basename'])
+            else:
+                raise DestionationPathExists(f['basename'])
         return output
 
     def download(self, dist):
