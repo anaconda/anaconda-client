@@ -1,5 +1,11 @@
-2015-06-04: 0.11.0beta:
-----------------------
+2015-07-15: 0.12.0:
+-------------------
+  * conda-server notebook include thumbnail
+  * versioneer
+  * renamed into conda-server
+
+2015-06-04: 0.11.0:
+-------------------
   * binstar notebook upload/download
   * Fix bug in collaborators list
   * Fix unicode issues

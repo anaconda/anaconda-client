@@ -1,6 +1,12 @@
 # CHANGELOG:
 
-## 0.11.0beta
+## 0.12.0
+
+  * conda-server notebook include thumbnail
+  * versioneer
+  * renamed into conda-server
+
+## 0.11.0
 
   * binstar notebook upload/download
   * Fix bug in collaborators list
