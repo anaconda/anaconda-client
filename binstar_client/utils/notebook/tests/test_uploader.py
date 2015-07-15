@@ -36,6 +36,11 @@ class UploaderTestCase(unittest.TestCase):
         uploader = Uploader(binstar, 'project')
         self.assertIsInstance(uploader.version, str)
 
+    def test_package_name(self):
+        binstar = mock.MagicMock()
+        uploader = Uploader(binstar, '~/notebooks/my notebook.ipynb')
+        self.assertEqual(uploader.project, 'my-notebook')
+
 
 if __name__ == '__main__':
     unittest.main()

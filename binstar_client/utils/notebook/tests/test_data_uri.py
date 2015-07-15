@@ -1,6 +1,6 @@
 import unittest
 from os.path import join, dirname
-from binstar_client.utils.notebook import DataURIConverter
+from binstar_client.utils.notebook.data_uri import DataURIConverter
 
 
 class DataURIConverterTestCase(unittest.TestCase):

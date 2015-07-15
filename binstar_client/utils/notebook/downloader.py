@@ -1,7 +1,6 @@
 import os
 from time import mktime
 from dateutil.parser import parse
-from binstar_client import errors
 
 
 class Downloader(object):
