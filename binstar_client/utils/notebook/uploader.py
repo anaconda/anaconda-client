@@ -4,6 +4,7 @@ import time
 from os.path import basename
 from binstar_client import errors
 from .inflection import parameterize
+from .data_uri import data_uri_from
 
 VALID_FORMATS = ['ipynb', 'csv', 'yml', 'yaml', 'json', 'md', 'rst', 'txt']
 
@@ -15,7 +16,6 @@ class Uploader(object):
     * List files from project
     * Upload new files to project
     """
-    msg = None
     _package = None
     _release = None
     _project = None
@@ -26,37 +26,48 @@ class Uploader(object):
         self._username = kwargs.get('user', None)
         self._version = kwargs.get('version', None)
         self._summary = kwargs.get('summary', None)
+        self._thumbnail = kwargs.get('thumbnail', None)
+        if 'name' in kwargs and kwargs['name'] is not None:
+            self._project = parameterize(kwargs['name'])
 
     def upload(self, force=False):
         """
         Uploads a notebook
         :param force: True/False
-        :return: True/False
+        :returns {}
         """
-        if self.package and self.release:
-            try:
-                return self.binstar.upload(self.username, self.project, self.version,
-                                           basename(self.filepath), open(self.filepath, 'rb'),
-                                           self.filepath.split('.')[-1])
-            except errors.Conflict:
-                if force:
-                    self.remove()
-                    return self.upload()
-                else:
-                    self.msg = "Conflict: {} already exist in {}/{}".format(self.filepath,
-                                                                            self.project,
-                                                                            self.version)
-                    return False
-        else:
-            return False
+        self.package and self.release
+        try:
+            return self.binstar.upload(self.username, self.project, self.version,
+                                       basename(self.filepath), open(self.filepath, 'rb'),
+                                       self.filepath.split('.')[-1])
+        except errors.Conflict:
+            if force:
+                self.remove()
+                return self.upload()
+            else:
+                msg = "Conflict: {} already exist in {}/{}".format(self.filepath,
+                                                                   self.project,
+                                                                   self.version)
+                raise errors.BinstarError(msg)
 
     def remove(self):
         return self.binstar.remove_dist(self, self.username, self.project,
                                         self.version, basename=self.notebook)
 
     @property
+    def notebook_attrs(self):
+        if self._thumbnail is not None:
+            return {'thumbnail': data_uri_from(self._thumbnail)}
+        else:
+            return {}
+
+    @property
     def project(self):
-        return re.sub('\-ipynb$', '', parameterize(os.path.basename(self.filepath)))
+        if self._project is None:
+            return re.sub('\-ipynb$', '', parameterize(os.path.basename(self.filepath)))
+        else:
+            return self._project
 
     @property
     def username(self):
@@ -82,13 +93,9 @@ class Uploader(object):
             try:
                 self._package = self.binstar.package(self.username, self.project)
             except errors.NotFound:
-                try:
-                    self._package = self.binstar.add_package(self.username, self.project,
-                                                             summary=self.summary)
-                except errors.BinstarError:
-                    self.msg = "Project {} can not be created. Maybe you are unauthorized.".\
-                        format(self.project)
-                    self._package = None
+                self._package = self.binstar.add_package(self.username, self.project,
+                                                         summary=self.summary,
+                                                         attrs=self.notebook_attrs)
         return self._package
 
     @property

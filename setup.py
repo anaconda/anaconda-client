@@ -21,6 +21,7 @@ setup(
     packages=find_packages(),
     install_requires=['clyent',
                       'requests>=2.0',
+                      'pillow',
                       'pyyaml',
                       'python-dateutil',
                       'pytz'],

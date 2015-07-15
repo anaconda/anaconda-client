@@ -2,3 +2,4 @@ PyYAML
 requests
 python-dateutil
 pytz
+pillow
