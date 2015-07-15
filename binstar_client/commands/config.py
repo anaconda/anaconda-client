@@ -99,7 +99,10 @@ def main(args):
         return
 
     if args.get:
-        log.info(config[args.get])
+        if args.get in config:
+            log.info(config[args.get])
+        else:
+            log.info("The value of '%s' is not set." % args.get)
         return
 
     if args.files:
