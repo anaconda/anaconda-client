@@ -4,8 +4,6 @@
 from setuptools import setup, find_packages
 import versioneer
 
-print versioneer.get_version()
-
 setup(
     name='conda-server',
     version=versioneer.get_version(),
