@@ -10,7 +10,7 @@ engine:
  - python=3.4
 
 install:
-  - conda install pip setuptools clyent
+  - conda install pip setuptools clyent pillow
   - pip install coverage mock
   - python setup.py develop
 
