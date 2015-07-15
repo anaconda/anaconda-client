@@ -41,7 +41,7 @@ class DataURIConverter(object):
         return sys.version_info[0] == 3
 
     def is_url(self):
-        return self.location is not None and urlparse(self.location).scheme != ''
+        return self.location is not None and urlparse(self.location).scheme in ['http', 'https']
 
     def _encode(self, content):
         if self.is_py3():
