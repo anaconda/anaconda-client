@@ -1,7 +1,7 @@
 import os
 from time import mktime
 from dateutil.parser import parse
-from ...errors import DestionationPathExists
+from binstar_client.errors import DestionationPathExists
 
 
 class Downloader(object):
