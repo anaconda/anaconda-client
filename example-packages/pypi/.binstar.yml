@@ -66,6 +66,6 @@ script:
 # build_artifacts:
 #   - *.log
 
-## Build Targets: Upload these files to your bunstar package
+## Build Targets: Upload these files to your binstar package
 # build_targets:
 #   - dist/*
