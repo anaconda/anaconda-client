@@ -23,7 +23,7 @@ def main(args):
     if files:
         log.info("Copied %i files" % len(files))
     else:
-        log.warning("Did not copy any files. Please check your inputs with\n\n\tbinstar show %s" % spec)
+        log.warning("Did not copy any files. Please check your inputs with\n\n\tconda server show %s" % spec)
 
 
 def add_parser(subparsers):
@@ -37,4 +37,3 @@ def add_parser(subparsers):
     parser.add_argument('--from-channel', help='Channel to copy packages from', default='main')
     parser.add_argument('--to-channel', help='Channel to put all packages into', default='main')
     parser.set_defaults(main=main)
-

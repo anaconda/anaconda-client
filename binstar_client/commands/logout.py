@@ -24,7 +24,7 @@ def main(args):
 
 def add_parser(subparsers):
     subparser = subparsers.add_parser('logout',
-                                      help='Log out from binstar',
+                                      help='Log out from anaconda.org',
                                       description=__doc__)
 
     subparser.set_defaults(main=main)

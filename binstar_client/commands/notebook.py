@@ -1,8 +1,8 @@
 """
 Usage:
-    binstar notebook upload notebook.ipynb
-    binstar notebook download notebook
-    binstar notebook download user/notebook
+    conda server notebook upload notebook.ipynb
+    conda server notebook download notebook
+    conda server notebook download user/notebook
 """
 
 from __future__ import unicode_literals
@@ -16,7 +16,7 @@ log = logging.getLogger("binstar.notebook")
 
 
 def add_parser(subparsers):
-    description = 'Interact with notebooks in binstar'
+    description = 'Interact with notebooks in anaconda.org'
     parser = subparsers.add_parser('notebook',
                                    formatter_class=argparse.RawDescriptionHelpFormatter,
                                    help=description,
@@ -32,7 +32,7 @@ def add_upload_parser(subparsers):
     description = "Upload a notebook to anaconda.org"
     epilog = """
     Usage:
-        binstar notebook upload notebook.ipynb
+        conda server notebook upload notebook.ipynb
     """
     parser = subparsers.add_parser('upload',
                                    formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -67,11 +67,11 @@ def add_upload_parser(subparsers):
 
 
 def add_download_parser(subparsers):
-    description = "Download notebooks from binstar"
+    description = "Download notebooks from anaconda.org"
     epilog = """
     Usage:
-        binstar notebook download notebook
-        binstar notebook download user/notebook
+        conda server notebook download notebook
+        conda server notebook download user/notebook
     """
     parser = subparsers.add_parser('download',
                                    formatter_class=argparse.RawDescriptionHelpFormatter,
