@@ -57,7 +57,7 @@ def binstar_main(sub_command_module, args=None, exit=True, description=None, ver
     bgroup.add_argument('-s', '--site',
                         help='select the binstar site to use', default=None)
 
-    add_subparser_modules(parser, sub_command_module)
+    add_subparser_modules(parser, sub_command_module, 'conda_server.subcommand')
 
     if not exists(USER_LOGDIR): makedirs(USER_LOGDIR)
     logfile = join(USER_LOGDIR, 'cli.log')
