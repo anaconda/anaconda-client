@@ -64,9 +64,10 @@ def interactive_get_token(args, fail_if_already_exists=True):
 
         except errors.BinstarError as err:
             if fail_if_already_exists is True and err.args[1] == 400:
-                log.error('It appears you are already logged in from host %s' % socket.gethostname())
-                log.error('Logging in again will remove the previous token.')
-                log.error('Otherwise you can login again and specify a '
+                log.warn('It appears you are already logged in from host %s' % socket.gethostname())
+                log.warn('Logging in again will remove the previous token. '
+                         ' (This could cause troubles with virtual machines with the same hostname)')
+                log.warn('Otherwise you can login again and specify a '
                           'different hostname with "--hostname"')
                 if bool_input("Would you like to continue"):
                     fail_if_already_exists = False
