@@ -18,11 +18,11 @@ Examples
 
 To allow access to only conda downloads from your account you can run:
 
-    binstar auth --create --scopes 'repos conda:download'
+    conda server auth --create --scopes 'repos conda:download'
 
 To allow full access to your account:
 
-    binstar auth --create --scopes 'all'
+    conda server auth --create --scopes 'all'
 
 '''
 
@@ -217,5 +217,3 @@ def add_parser(subparsers):
                        action='store_true', help='Show information about the current authentication token')
 
     parser.set_defaults(main=main)
-
-

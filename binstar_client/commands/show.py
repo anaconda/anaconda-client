@@ -3,10 +3,10 @@ Show information about an object
 
 Examples:
 
-    binstar show continuumio
-    binstar show continuumio/python
-    binstar show continuumio/python/2.7.5
-    binstar show sean/meta/1.2.0/meta.tar.gz
+    conda server show continuumio
+    conda server show continuumio/python
+    conda server show continuumio/python/2.7.5
+    conda server show sean/meta/1.2.0/meta.tar.gz
 
 '''
 
@@ -80,7 +80,7 @@ def main(args):
 
         if not package['public']:
             log.info('To generate a $TOKEN run:')
-            log.info('    TOKEN=$(binstar auth --create --name <TOKEN-NAME>)')
+            log.info('    TOKEN=$(conda server auth --create --name <TOKEN-NAME>)')
 
 
 

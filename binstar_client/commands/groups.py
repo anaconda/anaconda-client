@@ -1,4 +1,3 @@
-
 from binstar_client.utils import get_binstar, parse_specs
 from argparse import FileType, ArgumentError
 from os.path import basename

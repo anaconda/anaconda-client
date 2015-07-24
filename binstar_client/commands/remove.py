@@ -1,9 +1,9 @@
 '''
-Remove an object from binstar:
+Remove an object from anaconda.org:
 
 example::
 
-    binstar remove sean/meta/1.2.0/meta.tar.gz
+    conda server remove sean/meta/1.2.0/meta.tar.gz
 
 '''
 from binstar_client.utils import get_binstar, parse_specs, \
@@ -49,7 +49,7 @@ def main(args):
 def add_parser(subparsers):
 
     parser = subparsers.add_parser('remove',
-                                      help='Remove an object from binstar',
+                                      help='Remove an object from anaconda.org',
                                       description=__doc__, formatter_class=RawTextHelpFormatter)
 
     parser.add_argument('specs', help='Package written as <user>[/<package>[/<version>[/<filename>]]]', type=parse_specs, nargs='+')

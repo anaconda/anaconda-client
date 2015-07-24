@@ -14,29 +14,28 @@ First create an account on [anaconda.org](https://anaconda.org)
 #### With Conda:
 
 ```
-$ conda install binstar
+$ conda install conda-server
 ```
 
 #### Or pip:
 
 ```
-$ pip install binstar
+$ pip install conda-server
 ```
 
 ### Login
 
 
-`$ binstar login`
+`$ conda server login`
 
 Test your login with the whoami command:
 
-`$ binstar whoami`
+`$ conda server whoami`
 
-For a complete tutorial on building and uploading Conda packages to Binstar read the [Getting Started Guide](https://binstar-client.readthedocs.org/en/latest/getting_started.html).
+For a complete tutorial on building and uploading Conda packages to Anaconda.org visit the [documentation page](http://docs.anaconda.org/).
 
 
 ### Links
 
- * https://binstar-client.readthedocs.org/en/latest/
+ * http://docs.anaconda.org/
  * https://anaconda.org
-
