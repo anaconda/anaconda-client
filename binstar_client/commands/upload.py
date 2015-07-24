@@ -1,6 +1,6 @@
 '''
 
-    binstar upload CONDA_PACKAGE_1.bz2
+    conda server upload CONDA_PACKAGE_1.bz2
 
 ##### See Also
 
@@ -99,8 +99,8 @@ def add_package(binstar, args, username, package_name, package_attrs, package_ty
         binstar.package(username, package_name)
     except errors.NotFound:
         if args.no_register:
-            raise errors.UserError('Binstar package %s/%s does not exist. '
-                            'Please run "binstar package --create" to create this package namespace in the cloud.' % (username, package_name))
+            raise errors.UserError('Anaconda.org package %s/%s does not exist. '
+                            'Please run "conda server package --create" to create this package namespace in the cloud.' % (username, package_name))
         else:
 
             if args.summary:
@@ -204,7 +204,7 @@ def main(args):
                                              callback=upload_print_callback(args))
             except errors.Conflict:
                 full_name = '%s/%s/%s/%s' % (username, package_name, version, file_attrs['basename'])
-                log.info('Distribution already exists. Please use the -i/--interactive or --force options or `binstar remove %s`' % full_name)
+                log.info('Distribution already exists. Please use the -i/--interactive or --force options or `conda server remove %s`' % full_name)
                 raise
 
             uploaded_packages.append([package_name, upload_info])
@@ -224,7 +224,7 @@ def windows_glob(item):
 
 def add_parser(subparsers):
 
-    description = 'Upload packages to binstar'
+    description = 'Upload packages to anaconda.org'
     parser = subparsers.add_parser('upload',
                                    formatter_class=argparse.RawDescriptionHelpFormatter,
                                    help=description, description=description,
@@ -246,7 +246,7 @@ def add_parser(subparsers):
 
     parser.add_argument("--no-register", action="store_true", default=False,
                         help='Don\'t create a new package namespace if it does not exist')
-    parser.add_argument('--build-id', help='Binstar-Build ID (internal only)')
+    parser.add_argument('--build-id', help='Anaconda.org-Build ID (internal only)')
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-i', '--interactive', action='store_const', help='Run an interactive prompt if any packages are missing',

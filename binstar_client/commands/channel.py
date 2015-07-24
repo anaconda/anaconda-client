@@ -1,5 +1,5 @@
 '''
-Manage your binstar channels
+Manage your anaconda.org channels
 
 '''
 from __future__ import unicode_literals, print_function
@@ -47,7 +47,7 @@ def main(args):
 
 def add_parser(subparsers):
     subparser = subparsers.add_parser('channel',
-                                      help='Manage your binstar channels',
+                                      help='Manage your anaconda.org channels',
                                       formatter_class=argparse.RawDescriptionHelpFormatter,
                                       description=__doc__)
 
