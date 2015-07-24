@@ -1,6 +1,6 @@
 {% set data = load_setuptools()%}
 package:
-  name: binstar
+  name: conda-server
   version: {{data.get('version')}}
 
 build:
