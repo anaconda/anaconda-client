@@ -8,14 +8,7 @@ import tarfile
 import re
 
 
-arch_map = {('osx', 'x86_64'):'osx-64',
-            ('osx', 'x86'):'osx-32',
-            ('win', 'x86'):'win-32',
-            ('win', 'x86_64'):'win-64',
-            ('linux', 'x86'):'linux-32',
-            ('linux', 'x86_64'):'linux-64',
-            (None, None): 'any-any',
-           }
+
 
 os_map = {'osx':'darwin', 'win':'win32'}
 
@@ -59,6 +52,26 @@ def transform_conda_deps(deps):
     return {'depends': depends}
 
 
+def get_subdir(index):
+    """
+    Return the sub-directory given the index dictionary.  The return
+    value is obtained in the following order:
+
+    1. when the 'subdir' key exists, it's value is returned
+    2. if the 'arch' is None, or does not exist, 'noarch' is returned
+    3. otherwise, the return value is constructed from the 'platform' key
+       and the 'arch' key (where 'x86' is replaced by '32',
+       and 'x86_64' by '64')
+    """
+    try:
+        return index['subdir']
+    except KeyError:
+        arch = index.get('arch')
+        if arch is None:
+            return 'noarch'
+        intel_map = {'x86': '32', 'x86_64': '64'}
+        return '%s-%s' % (index.get('platform'), intel_map.get(arch, arch))
+
 
 def inspect_conda_package(filename, fileobj):
 
@@ -74,10 +87,7 @@ def inspect_conda_package(filename, fileobj):
 
     about = recipe.pop('about', {})
 
-    try:
-        subdir = index['subdir']
-    except KeyError:
-        subdir = arch_map[(index['platform'], index['arch'])]
+    subdir = get_subdir(index)
 
     machine = index['arch']
     operatingsystem = os_map.get(index['platform'], index['platform'])

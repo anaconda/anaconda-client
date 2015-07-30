@@ -1,35 +1,35 @@
 '''
-conda-server configuration
+anaconda-client configuration
 
-Get, Set, Remove or Show the conda-server configuration.
+Get, Set, Remove or Show the anaconda-client configuration.
 
-###### conda-server sites
+###### anaconda-client sites
 
-conda-server sites are a mechanism to allow users to quickly switch
+anaconda-client sites are a mechanism to allow users to quickly switch
 between anaconda-server instances. This is primarily used for testing
 the anaconda.org alpha site. But also has applications for the
 on-site [Anaconda Server](http://continuum.io/anaconda-server).
 
-conda-server comes with two pre-configured sites `alpha` and
+anaconda-client comes with two pre-configured sites `alpha` and
 `binstar` you may use these in one of two ways:
 
-  * Invoke the conda-server command with the `-s/--site` option
+  * Invoke the anaconda command with the `-s/--site` option
     e.g. to use the aplha testing site:
 
-        conda server -s alpha whoami
+        anaconda -s alpha whoami
 
   * Set a site as the default:
 
-        conda server config --set default_site alpha
-        conda server whoami
+        anaconda config --set default_site alpha
+        anaconda whoami
 
-###### Add a conda-server site
+###### Add a anaconda-client site
 
 After installing a [Anaconda Server](http://continuum.io/anaconda-server)
 you can add a site named **site_name** like this:
 
-    conda server config --set sites.site_name.url "http://<anaconda-server-ip>:<port>/api"
-    conda server config --set default_site site_name
+    anaconda config --set sites.site_name.url "http://<anaconda-server-ip>:<port>/api"
+    anaconda config --set default_site site_name
 
 ###### Site Options VS Global Options
 
@@ -38,14 +38,14 @@ or site options - affecting only one site
 
 By default options are set gobaly e.g.:
 
-    conda server config --set OPTION VALUE
+    anaconda config --set OPTION VALUE
 
 If you want the option to be limited to a single site,
 prefix the option with `sites.site_name` e.g.
 
-    conda server config --set sites.site_name.OPTION VALUE
+    anaconda config --set sites.site_name.OPTION VALUE
 
-###### Common conda-server configuration options
+###### Common anaconda-client configuration options
 
   * `url`: Set the anaconda.org api url (default: https://api.anaconda.org)
   * `verify_ssl`: Perform ssl validation on the https requests.

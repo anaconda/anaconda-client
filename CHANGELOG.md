@@ -1,5 +1,11 @@
 # CHANGELOG:
 
+## 0.14.0
+
+  * full rename into conda-server #187
+  * Replace error messages into warnings #188
+  * New entry point #186
+
 ## 0.12.0
 
   * conda-server notebook include thumbnail
