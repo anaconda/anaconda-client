@@ -14,23 +14,16 @@ First create an account on [anaconda.org](https://anaconda.org)
 #### With Conda:
 
 ```
-$ conda install conda-server
-```
-
-#### Or pip:
-
-```
-$ pip install conda-server
+$ conda install anaconda-client
 ```
 
 ### Login
 
-
-`$ conda server login`
+`$ anaconda login`
 
 Test your login with the whoami command:
 
-`$ conda server whoami`
+`$ anaconda whoami`
 
 For a complete tutorial on building and uploading Conda packages to Anaconda.org visit the [documentation page](http://docs.anaconda.org/).
 
