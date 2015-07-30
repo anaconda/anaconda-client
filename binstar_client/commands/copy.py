@@ -23,7 +23,7 @@ def main(args):
     if files:
         log.info("Copied %i files" % len(files))
     else:
-        log.warning("Did not copy any files. Please check your inputs with\n\n\tconda server show %s" % spec)
+        log.warning("Did not copy any files. Please check your inputs with\n\n\tanaconda show %s" % spec)
 
 
 def add_parser(subparsers):

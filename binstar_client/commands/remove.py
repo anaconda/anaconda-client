@@ -3,7 +3,7 @@ Remove an object from anaconda.org:
 
 example::
 
-    conda server remove sean/meta/1.2.0/meta.tar.gz
+    anaconda remove sean/meta/1.2.0/meta.tar.gz
 
 '''
 from binstar_client.utils import get_binstar, parse_specs, \

@@ -1,6 +1,6 @@
 '''
 
-    conda server upload CONDA_PACKAGE_1.bz2
+    anaconda upload CONDA_PACKAGE_1.bz2
 
 ##### See Also
 
@@ -100,7 +100,7 @@ def add_package(binstar, args, username, package_name, package_attrs, package_ty
     except errors.NotFound:
         if args.no_register:
             raise errors.UserError('Anaconda.org package %s/%s does not exist. '
-                            'Please run "conda server package --create" to create this package namespace in the cloud.' % (username, package_name))
+                            'Please run "anaconda package --create" to create this package namespace in the cloud.' % (username, package_name))
         else:
 
             if args.summary:
@@ -204,7 +204,7 @@ def main(args):
                                              callback=upload_print_callback(args))
             except errors.Conflict:
                 full_name = '%s/%s/%s/%s' % (username, package_name, version, file_attrs['basename'])
-                log.info('Distribution already exists. Please use the -i/--interactive or --force options or `conda server remove %s`' % full_name)
+                log.info('Distribution already exists. Please use the -i/--interactive or --force options or `anaconda remove %s`' % full_name)
                 raise
 
             uploaded_packages.append([package_name, upload_info])
