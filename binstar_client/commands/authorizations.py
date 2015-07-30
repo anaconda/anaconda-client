@@ -18,11 +18,11 @@ Examples
 
 To allow access to only conda downloads from your account you can run:
 
-    conda server auth --create --scopes 'repos conda:download'
+    anaconda auth --create --scopes 'repos conda:download'
 
 To allow full access to your account:
 
-    conda server auth --create --scopes 'all'
+    anaconda auth --create --scopes 'all'
 
 '''
 

@@ -1,8 +1,8 @@
 """
 Usage:
-    conda server notebook upload notebook.ipynb
-    conda server notebook download notebook
-    conda server notebook download user/notebook
+    anaconda notebook upload notebook.ipynb
+    anaconda notebook download notebook
+    anaconda notebook download user/notebook
 """
 
 from __future__ import unicode_literals
@@ -32,7 +32,7 @@ def add_upload_parser(subparsers):
     description = "Upload a notebook to anaconda.org"
     epilog = """
     Usage:
-        conda server notebook upload notebook.ipynb
+        anaconda notebook upload notebook.ipynb
     """
     parser = subparsers.add_parser('upload',
                                    formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -70,8 +70,8 @@ def add_download_parser(subparsers):
     description = "Download notebooks from anaconda.org"
     epilog = """
     Usage:
-        conda server notebook download notebook
-        conda server notebook download user/notebook
+        anaconda notebook download notebook
+        anaconda notebook download user/notebook
     """
     parser = subparsers.add_parser('download',
                                    formatter_class=argparse.RawDescriptionHelpFormatter,

@@ -50,12 +50,12 @@ def binstar_main(sub_command_module, args=None, exit=True, description=None, ver
                             formatter_class=RawDescriptionHelpFormatter)
 
     add_default_arguments(parser, version)
-    bgroup = parser.add_argument_group('conda-server options')
+    bgroup = parser.add_argument_group('anaconda-client options')
     bgroup.add_argument('-t', '--token', type=file_or_token,
                         help="Authentication token to use. "
                              "May be a token or a path to a file containing a token")
     bgroup.add_argument('-s', '--site',
-                        help='select the conda-server site to use', default=None)
+                        help='select the anaconda-client site to use', default=None)
 
     add_subparser_modules(parser, sub_command_module, 'conda_server.subcommand')
 
@@ -72,7 +72,7 @@ def binstar_main(sub_command_module, args=None, exit=True, description=None, ver
     try:
         try:
             if not hasattr(args, 'main'):
-                parser.error("A sub command must be given. To show all available sub commands, run:\n\n\t conda server -h\n")
+                parser.error("A sub command must be given. To show all available sub commands, run:\n\n\t anaconda -h\n")
             return args.main(args)
         except errors.Unauthorized:
             if not args.token:
