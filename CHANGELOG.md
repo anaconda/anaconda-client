@@ -1,5 +1,11 @@
 # CHANGELOG:
 
+## 1.0.0
+
+  * Rename into **anaconda-client** #193
+  * Executable renamed into **anaconda** #193
+  * Remove duplicated changelog
+
 ## 0.14.0
 
   * full rename into conda-server #187
