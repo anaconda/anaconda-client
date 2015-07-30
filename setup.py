@@ -2,12 +2,12 @@ from setuptools import setup, find_packages
 import versioneer
 
 setup(
-    name='anconda-client',
+    name='anaconda-client',
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
     author='Sean Ross-Ross',
     author_email='srossross@gmail.com',
-    url='http://github.com/Anaanaconda-client/anaconda-client',
+    url='http://github.com/Anaconda-client/anaconda-client',
     description='Anaconda.org command line client library',
     packages=find_packages(),
     install_requires=['clyent',
