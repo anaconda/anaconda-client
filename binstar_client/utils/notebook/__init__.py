@@ -1,4 +1,9 @@
 try:
+    from IPython import nbformat
+except ImportError:
+    nbformat = None
+
+try:
     from urlparse import urlparse
 except ImportError:
     from urllib.parse import urlparse
@@ -34,3 +39,11 @@ def notebook_url(upload_info):
     else:
         url = "{}://{}/notebooks{}".format(parsed.scheme, parsed.netloc, parsed.path)
     return url
+
+
+def has_environment(nb_file):
+    try:
+        nb = nbformat.reader.reads(open(nb_file).read())
+        return 'environment' in nb['metadata']
+    except (AttributeError, TypeError):
+        return False
