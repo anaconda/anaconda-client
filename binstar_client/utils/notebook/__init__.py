@@ -1,5 +1,5 @@
 try:
-    from IPython import nbformat
+    import nbformat
 except ImportError:
     nbformat = None
 
