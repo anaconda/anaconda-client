@@ -1,5 +1,9 @@
 # CHANGELOG:
 
+## 1.0.2
+
+  * Support Jupyter
+
 ## 1.0.0
 
   * Rename into **anaconda-client** #193
