@@ -1,5 +1,7 @@
+from os.path import join, dirname
 import unittest
-from binstar_client.utils.notebook import notebook_url, parse
+from binstar_client.utils.notebook import notebook_url, parse, has_environment
+from binstar_client.errors import BinstarError
 
 
 class ParseTestCase(unittest.TestCase):
@@ -21,6 +23,22 @@ class NotebookURLTestCase(unittest.TestCase):
         upload_info = {'url': 'http://custom/darth/deathstart-ipynb'}
         url = 'http://custom/notebooks/darth/deathstart-ipynb'
         self.assertEqual(notebook_url(upload_info), url)
+
+
+class HasEnvironmentTestCase(unittest.TestCase):
+    def data_dir(self, filename):
+        test_data = join(dirname(__file__), 'data')
+        return join(test_data, filename)
+
+    def test_has_no_environment(self):
+        self.assertEqual(False, has_environment(self.data_dir('notebook.ipynb')))
+
+    def test_has_environment(self):
+        assert has_environment(self.data_dir('notebook_with_env.ipynb'))
+
+    def test_no_file(self):
+        with self.assertRaises(BinstarError):
+            has_environment("no-file")
 
 
 if __name__ == '__main__':
