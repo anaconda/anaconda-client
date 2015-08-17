@@ -1,4 +1,9 @@
 try:
+    import nbformat
+except ImportError:
+    nbformat = None
+
+try:
     from urlparse import urlparse
 except ImportError:
     from urllib.parse import urlparse
@@ -34,3 +39,15 @@ def notebook_url(upload_info):
     else:
         url = "{}://{}/notebooks{}".format(parsed.scheme, parsed.netloc, parsed.path)
     return url
+
+
+def has_environment(nb_file):
+    try:
+        with open(nb_file) as fb:
+            data = fb.read()
+        nb = nbformat.reader.reads(data)
+        return 'environment' in nb['metadata']
+    except (AttributeError, KeyError):
+        return False
+    except (IOError, nbformat.reader.NotJSONError):
+        raise BinstarError("Unable to open {}.".format(nb_file))

@@ -1,3 +1,4 @@
+jupyter
 PyYAML
 requests
 python-dateutil

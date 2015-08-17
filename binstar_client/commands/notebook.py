@@ -10,7 +10,7 @@ import argparse
 import logging
 from binstar_client import errors
 from binstar_client.utils import get_binstar
-from binstar_client.utils.notebook import Uploader, Downloader, parse, notebook_url
+from binstar_client.utils.notebook import Uploader, Downloader, parse, notebook_url, has_environment
 
 log = logging.getLogger("binstar.notebook")
 
@@ -121,5 +121,10 @@ def download(args):
     try:
         download_info = downloader(output=args.output, force=args.force)
         log.info("{} has been downloaded as {}.".format(args.handle, download_info[0]))
+        if has_environment(download_info[0]):
+            log.info("{} has an environment embedded.".format(download_info[0]))
+            log.info("Run:")
+            log.info("    conda env create {}".format(download_info[0]))
+            log.info("To install the environment in your system")
     except (errors.DestionationPathExists, errors.NotFound, OSError) as err:
         log.info(err.msg)
