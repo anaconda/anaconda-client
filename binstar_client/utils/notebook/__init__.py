@@ -43,7 +43,11 @@ def notebook_url(upload_info):
 
 def has_environment(nb_file):
     try:
-        nb = nbformat.reader.reads(open(nb_file).read())
+        with open(nb_file) as fb:
+            data = fb.read()
+        nb = nbformat.reader.reads(data)
         return 'environment' in nb['metadata']
-    except (AttributeError, TypeError):
+    except AttributeError:
         return False
+    except IOError:
+        raise BinstarErro("{} can't be opened".format(nb_file))
