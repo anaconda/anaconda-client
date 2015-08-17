@@ -47,7 +47,7 @@ def has_environment(nb_file):
             data = fb.read()
         nb = nbformat.reader.reads(data)
         return 'environment' in nb['metadata']
-    except AttributeError:
+    except (AttributeError, KeyError):
         return False
-    except IOError:
-        raise BinstarErro("{} can't be opened".format(nb_file))
+    except (IOError, nbformat.reader.NotJSONError):
+        raise BinstarError("Unable to open {}.".format(nb_file))
