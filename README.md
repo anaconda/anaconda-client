@@ -1,4 +1,4 @@
-Binstar Client
+Anaconda Client
 ==============
 
 This is a command line client that provides an interface to [anaconda.org](https://anaconda.org).
