@@ -132,7 +132,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         api_version = res.headers.get('x-binstar-api-version', '0.2.1')
         if pv(api_version) > pv(__version__):
             msg = ('The api server is running the binstar-api version %s. you are using %s\n' % (api_version, __version__)
-                   + 'Please update your client with pip install -U binstar or conda update binstar')
+                   + 'Please update your client with conda update anaconda-client')
             warnings.warn(msg, stacklevel=4)
 
 

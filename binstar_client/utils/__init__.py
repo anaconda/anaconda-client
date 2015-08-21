@@ -149,7 +149,7 @@ def get_binstar(args=None, cls=None):
     config = get_config(remote_site=args and args.site)
     url = config.get('url', DEFAULT_URL)
     if getattr(args, 'log_level', 0) >= logging.INFO:
-        sys.stderr.write("Using binstar api site %s\n" % url)
+        sys.stderr.write("Using anaconda-server api site %s\n" % url)
     if args and args.token:
         token = args.token
     else:
@@ -206,10 +206,10 @@ def recursive_update(d, u):
     return d
 
 DEFAULT_URL = 'https://api.anaconda.org'
-ALPHA_URL = 'http://api.alpha.binstar.org'
+BETA_URL = 'http://api.beta.anaconda.org'
 DEFAULT_CONFIG = {
                   'sites': {'binstar': {'url': DEFAULT_URL},
-                            'alpha': {'url': ALPHA_URL},
+                            'beta': {'url': BETA_URL},
                             }
                   }
 
