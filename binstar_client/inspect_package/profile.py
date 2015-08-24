@@ -1,16 +1,5 @@
 import yaml
 import os
-#
-# self.binstar.upload(self.username, self.packagename,
-#                                        self.version, self.basename, open(self.file),
-#                                        distribution_type=ENVIRONMENT_TYPE, attrs=self.env_data)
-#         else:
-
-# def upload(self, login, package_name, release, basename, fd, distribution_type,
-#            description='', md5=None, size=None, dependencies=None, attrs=None, channels=('main',), callback=None):
-
-# def upload(self, login, package_name, release, basename, fd, distribution_type,
-#            description='', md5=None, size=None, dependencies=None, attrs=None, channels=('main',), callback=None):
 
 def inspect_profile_package(filename, fileobj):
     fn_name = os.path.basename(filename)
