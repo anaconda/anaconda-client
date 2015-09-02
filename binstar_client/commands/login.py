@@ -7,7 +7,10 @@ import getpass
 import logging
 import socket
 import sys
-
+try:
+    from urlparse import urlparse
+except ImportError:
+    from urllib.parse import urlparse
 from binstar_client import errors
 from binstar_client.utils import get_config, get_binstar, store_token, \
     bool_input
@@ -26,7 +29,7 @@ def interactive_get_token(args, fail_if_already_exists=True):
     config = get_config(remote_site=args.site)
 
     url = config.get('url', 'https://api.anaconda.org')
-
+    parsed_url = urlparse(url)
     token = None
     hostname = getattr(args, 'hostname', platform.node())
     if getattr(args, 'login_username', None):
@@ -77,8 +80,13 @@ def interactive_get_token(args, fail_if_already_exists=True):
 
 
     if token is None:
-        msg = ('Sorry. Please try again '
-               '(go to https://anaconda.org/account/forgot_password '
+        if parsed_url.netloc.startswith('api.anaconda.org'):
+            netloc = 'anaconda.org'
+        else:
+            netloc = parsed_url.netloc
+        hostparts = (parsed_url.scheme, netloc)
+        msg = ('Sorry. Please try again ' +\
+               '(go to %s://%s/account/forgot_password ' % hostparts +\
                'to reset your password)')
         raise errors.BinstarError(msg)
 
