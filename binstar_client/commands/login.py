@@ -7,8 +7,10 @@ import getpass
 import logging
 import socket
 import sys
-from urlparse import urlparse
-
+try:
+    from urlparse import urlparse
+except ImportError:
+    from urllib.parse import urlparse
 from binstar_client import errors
 from binstar_client.utils import get_config, get_binstar, store_token, \
     bool_input
