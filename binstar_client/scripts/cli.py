@@ -17,7 +17,6 @@ from binstar_client.utils.handlers import syslog_handler
 
 from clyent import add_default_arguments, add_subparser_modules
 from clyent.logs import setup_logging
-import argparse
 
 
 logger = logging.getLogger('binstar')
