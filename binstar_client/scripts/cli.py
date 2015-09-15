@@ -24,7 +24,7 @@ logger = logging.getLogger('binstar')
 
 
 def add_syslog_handler():
-    hndlr = syslog_handler('binstar-client')
+    hndlr = syslog_handler('anaconda-client')
     hndlr.setLevel(logging.INFO)
 
     root_logger = logging.getLogger()
