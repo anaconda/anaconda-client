@@ -25,10 +25,10 @@ logger = logging.getLogger('binstar')
 
 def add_syslog_handler():
     hndlr = syslog_handler('binstar-client')
+    hndlr.setLevel(logging.INFO)
 
-    binstar_logger = logging.getLogger()
-    binstar_logger.setLevel(logging.INFO)
-    binstar_logger.addHandler(hndlr)
+    root_logger = logging.getLogger()
+    root_logger.addHandler(hndlr)
 
 def file_or_token(value):
 
