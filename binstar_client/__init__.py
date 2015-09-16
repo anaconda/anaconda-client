@@ -41,11 +41,11 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         self.session.verify = verify
         self.token = token
 
-        user_agent = 'Binstar/%s (+https://anaconda.org)' % __version__
+        user_agent = 'Binstar/{} (+https://anaconda.org)'.format(__version__)
         self._session.headers.update({'User-Agent': user_agent})
 
         if token:
-            self._session.headers.update({'Authorization': 'token %s' % (token)})
+            self._session.headers.update({'Authorization': 'token {}'.format(token)})
 
         if domain.endswith('/'):
             domain = domain[:-1]
