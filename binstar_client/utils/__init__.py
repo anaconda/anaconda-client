@@ -136,7 +136,7 @@ def parse_specs(spec):
 def load_token(url):
     tokenfile = join(dirs.user_data_dir, '%s.token' % quote_plus(url))
     if isfile(tokenfile):
-        log.debug("Found login token: %s", tokenfile)
+        log.debug("Found login token: {}".format(tokenfile))
         with open(tokenfile) as fd:
             token = fd.read()
     else:
