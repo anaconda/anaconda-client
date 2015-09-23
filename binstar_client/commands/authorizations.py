@@ -154,7 +154,7 @@ def main(args):
         scopes = [scope for scopes in args.scopes for scope in scopes.split()]
         if not scopes:
             log.warn("You have not specified the scope of this token with the '--scopes' argument.")
-            log.warn("This token will grant full access to %s's account" % username)
+            log.warn("This token will grant full access to %s's account" % (args.organization or username))
             log.warn("Use the --list-scopes option to see a listing of your options")
 
         for _ in range(3):
