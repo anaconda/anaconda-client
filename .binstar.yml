@@ -11,7 +11,7 @@ engine:
 
 install:
   - conda install pip setuptools clyent pillow
-  - pip install coverage mock
+  - pip install coverage==3.7.1 mock
   - python setup.py develop
 
 test:
