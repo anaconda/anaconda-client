@@ -14,15 +14,15 @@ expected_package_data = {'name': 'test_profile',
 
 expected_version_data = {'version': 1.0, 'description': ''}
 
-expected_file_data = {'attrs': {'test_profile':
-                                        {'node_type': 'm1.medium',
-                                        'node_id': 'ami-08faa660',
-                                        'user': 'ubuntu',
-                                        'provider': 'aws_east',
-                                        'plugins': [{'notebook': {'directory': '/opt/notebooks',
-                                                                  'password': 1234,
-                                                                  'port': 8800}}],
-                                        'num_nodes': 3}},
+expected_file_data = {'attrs': {'name':'test_profile',
+                                'node_type': 'm1.medium',
+                                'node_id': 'ami-08faa660',
+                                'user': 'ubuntu',
+                                'provider': 'aws_east',
+                                'plugins': [{'notebook': {'directory': '/opt/notebooks',
+                                                          'password': 1234,
+                                                          'port': 8800}}],
+                                'num_nodes': 3},
                      'basename': 'test_profile.yaml',
                      }
 

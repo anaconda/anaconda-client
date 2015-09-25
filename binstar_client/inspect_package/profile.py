@@ -5,8 +5,9 @@ def inspect_profile_package(filename, fileobj):
     fn_name = os.path.basename(filename)
     name = os.path.splitext(fn_name)[0]
     data = yaml.load(fileobj)
-    keys = set(data.values()[0].keys())
-    key_validator = set(['node_type', 'node_id', 'num_nodes'])
+
+    keys = set(data.keys())
+    key_validator = set(['name', 'node_type', 'node_id', 'num_nodes'])
 
     assert key_validator.issubset(keys)
 

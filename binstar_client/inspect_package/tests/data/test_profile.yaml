@@ -1,11 +1,11 @@
-test_profile:
-  provider: aws_east
-  num_nodes: 3
-  node_id: ami-08faa660
-  node_type: m1.medium
-  user: ubuntu
-  plugins:
-   - notebook:
-       port: 8800
-       password: 1234
-       directory: /opt/notebooks
+name: test_profile
+provider: aws_east
+num_nodes: 3
+node_id: ami-08faa660
+node_type: m1.medium
+user: ubuntu
+plugins:
+ - notebook:
+     port: 8800
+     password: 1234
+     directory: /opt/notebooks
