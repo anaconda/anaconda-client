@@ -46,3 +46,10 @@ class DestionationPathExists(BinstarError):
         self.msg = "destination path '{}' already exists.".format(location)
         self.location = location
         super(BinstarError, self).__init__(self.msg)
+
+
+class PillowNotInstalled(BinstarError):
+    def __init__(self, location):
+        self.msg = ("pillow is not installed. Install it with:"
+                    "    conda install pillow")
+        super(BinstarError, self).__init__(self.msg)

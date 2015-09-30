@@ -21,7 +21,6 @@ requirements:
     - pyyaml
     - dateutil
     - pytz
-    - pillow
 
 about:
   home: {{data.get('url')}}

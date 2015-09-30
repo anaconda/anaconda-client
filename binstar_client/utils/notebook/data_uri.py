@@ -7,7 +7,11 @@ try:
     from urlparse import urlparse
 except ImportError:
     from urllib.parse import urlparse
-from PIL import Image
+try:
+    from PIL import Image
+except ImportError:
+    from ...errors import PillowNotInstalled
+    raise PillowNotInstalled
 
 THUMB_SIZE = (340, 210)
 
