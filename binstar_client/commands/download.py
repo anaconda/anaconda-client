@@ -2,8 +2,8 @@
 Usage:
     anaconda notebook download notebook
     anaconda notebook download user/notebook
-
 '''
+
 from __future__ import unicode_literals
 
 import argparse
