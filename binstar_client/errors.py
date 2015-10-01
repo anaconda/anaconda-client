@@ -50,6 +50,6 @@ class DestionationPathExists(BinstarError):
 
 class PillowNotInstalled(BinstarError):
     def __init__(self):
-        self.msg = ("pillow is not installed. Install it with:"
+        self.msg = ("pillow is not installed. Install it with:\n"
                     "    conda install pillow")
         super(BinstarError, self).__init__(self.msg)
