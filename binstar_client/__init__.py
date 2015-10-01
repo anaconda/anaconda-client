@@ -386,6 +386,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         :param version: the version string of the release
         :param basename: the basename of the distribution to download
         :param fd: a file like object to upload
+        :param distribution_type: pypi or conda or ipynb, etc
         :param description: (optional) a short description about the file
         :param attrs: any extra attributes about the file (eg. build=1, pyversion='2.7', os='osx')
 
