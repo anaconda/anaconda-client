@@ -21,8 +21,8 @@ requirements:
     - pyyaml
     - dateutil
     - pytz
-    - pillow
 
 about:
   home: {{data.get('url')}}
   license: {{data.get('license')}}
+
