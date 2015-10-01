@@ -25,7 +25,7 @@ class DataURIConverter(object):
 
     def check_pillow_installed(self):
         if Image is None:
-            raise PillowNotInstalled
+            raise PillowNotInstalled()
 
     def __call__(self):
         if os.path.exists(self.location):
