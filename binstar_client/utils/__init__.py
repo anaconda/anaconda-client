@@ -209,10 +209,10 @@ def recursive_update(d, u):
     return d
 
 DEFAULT_URL = 'https://api.anaconda.org'
-ALPHA_URL = 'http://api.alpha.binstar.org'
+BETA_URL = 'http://api.beta.anaconda.org'
 DEFAULT_CONFIG = {
                   'sites': {'binstar': {'url': DEFAULT_URL},
-                            'alpha': {'url': ALPHA_URL},
+                            'beta': {'url': BETA_URL},
                             }
                   }
 
