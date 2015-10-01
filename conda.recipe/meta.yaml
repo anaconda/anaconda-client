@@ -21,14 +21,8 @@ requirements:
     - pyyaml
     - dateutil
     - pytz
-  test:
-    - mock
-    - nose
-    - pillow
-
-test:
-  - nosetests
 
 about:
   home: {{data.get('url')}}
   license: {{data.get('license')}}
+
