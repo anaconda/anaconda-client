@@ -1,25 +1,31 @@
-import json
 import os
+import re
+import time
+from ..utils.notebook.inflection import parameterize
 
 
 class IPythonNotebook(object):
+    _name = None
+    _version = None
+
     def __init__(self, filename, fileobj):
-        content = json.loads(fileobj.read())
-        if content['nbformat'] == 3:
-            self.populate_nbformat_2(filename, content)
-        else:
-            self.populate_nbformat_3(filename, content)
+        self.filename = filename
 
-    def populate_nbformat_2(self, filename, content):
-        self.basename = os.path.basename(filename)
-        self.name = content['metadata']['name'] or \
-            self.basename.replace('.ipynb', '')
-        self.version = content['metadata'].get('version', '1.0')
+    @property
+    def basename(self):
+        return os.path.basename(self.filename)
 
-    def populate_nbformat_3(self, filename, content):
-        self.basename = os.path.basename(filename)
-        self.name = self.basename.replace('.ipynb', '')
-        self.version = content['metadata'].get('version', '1.0')
+    @property
+    def name(self):
+        if self._name is None:
+            return re.sub('\-ipynb$', '', parameterize(os.path.basename(self.filename)))
+        return self._name
+
+    @property
+    def version(self):
+        if self._version is None:
+            self._version = time.strftime('%Y.%m.%d-%H%M')
+        return self._version
 
 
 def inspect_ipynb_package(filename, fileobj):
