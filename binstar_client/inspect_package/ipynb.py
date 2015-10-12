@@ -28,7 +28,7 @@ class IPythonNotebook(object):
         return self._version
 
 
-def inspect_ipynb_package(filename, fileobj):
+def inspect_ipynb_package(filename, fileobj, *args, **kwargs):
     ipython_notebook = IPythonNotebook(filename, fileobj)
 
     package_data = {
