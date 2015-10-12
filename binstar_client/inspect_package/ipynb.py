@@ -54,6 +54,8 @@ def inspect_ipynb_package(filename, fileobj, *args, **kwargs):
     if 'parser_args' in kwargs:
         thumbnail_file = kwargs['parser_args'].thumbnail
         ipython_notebook = IPythonNotebook(filename, fileobj, thumbnail_file=thumbnail_file)
+    else:
+        ipython_notebook = IPythonNotebook(filename, fileobj)
 
     package_data = ipython_notebook.get_package_data()
     release_data = {
