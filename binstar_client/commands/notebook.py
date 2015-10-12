@@ -102,7 +102,7 @@ def add_download_parser(subparsers):
 
 def upload(args):
     log.warn("anaconda notebook is being deprecated. Try:")
-    log.warn("    anaconda upload {}".format(args.handle))
+    log.warn("    anaconda upload {}".format(args.notebook))
     binstar = get_binstar(args)
     uploader = Uploader(binstar, args.notebook, user=args.user, summary=args.summary,
                         version=args.version, thumbnail=args.thumbnail, name=args.name)
