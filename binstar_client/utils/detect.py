@@ -91,6 +91,6 @@ def detect_package_type(filename):
         return None
 
 
-def get_attrs(package_type, filename):
+def get_attrs(package_type, filename, *args, **kwargs):
     with open(filename, 'rb') as fileobj:
-        return detectors[package_type](filename, fileobj)
+        return detectors[package_type](filename, fileobj, *args, **kwargs)

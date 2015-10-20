@@ -149,7 +149,7 @@ def main(args):
         username = args.user
     else:
         user = binstar.user()
-        username = user ['login']
+        username = user['login']
 
     uploaded_packages = []
 
@@ -166,7 +166,8 @@ def main(args):
         log.info('extracting package attributes for upload ...')
         sys.stdout.flush()
         try:
-            package_attrs, release_attrs, file_attrs = get_attrs(package_type, filename)
+            package_attrs, release_attrs, file_attrs = get_attrs(package_type,
+                                                                 filename, parser_args=args)
         except Exception:
             if args.show_traceback:
                 raise
@@ -175,12 +176,10 @@ def main(args):
         if args.build_id:
             file_attrs['attrs']['binstar_build'] = args.build_id
 
-
         log.info('done')
 
         package_name = get_package_name(args, package_attrs, filename, package_type)
         version = get_version(args, release_attrs, package_type)
-
 
         add_package(binstar, args, username, package_name, package_attrs, package_type)
 
@@ -243,6 +242,7 @@ def add_parser(subparsers):
     mgroup.add_argument('-s', '--summary', help='Set the summary of the package')
     mgroup.add_argument('-t', '--package-type', help='Set the package type, defaults to autodetect')
     mgroup.add_argument('-d', '--description', help='description of the file(s)')
+    mgroup.add_argument('--thumbnail', help='Notebook\'s thumbnail image')
 
     parser.add_argument("--no-register", action="store_true", default=False,
                         help='Don\'t create a new package namespace if it does not exist')

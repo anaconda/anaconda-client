@@ -73,7 +73,7 @@ def get_subdir(index):
         return '%s-%s' % (index.get('platform'), intel_map.get(arch, arch))
 
 
-def inspect_conda_package(filename, fileobj):
+def inspect_conda_package(filename, fileobj, *args, **kwargs):
 
     tar = tarfile.open(filename, fileobj=fileobj)
     index = tar.extractfile('info/index.json')
