@@ -1,5 +1,12 @@
 # CHANGELOG:
 
+## 1.1.0
+
+  * `anaconda download` new subcommand
+  * `anaconda upload` can upload notebooks
+  * notebooks versions compatible with conda
+  * Pillow is no longer a hard dependency
+
 ## 1.0.2
 
   * Support Jupyter
