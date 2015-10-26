@@ -27,7 +27,7 @@ class IPythonNotebook(object):
     @property
     def version(self):
         if self._version is None:
-            self._version = time.strftime('%Y.%m.%d-%H%M')
+            self._version = time.strftime('%Y.%m.%d.%H%M')
         return self._version
 
     @property
