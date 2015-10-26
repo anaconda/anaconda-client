@@ -2,7 +2,7 @@ import tarfile
 from email.parser import Parser
 from os import path
 
-def inspect_r_package(filename, fileobj):
+def inspect_r_package(filename, fileobj, *args, **kwargs):
 
     tf = tarfile.open(filename, fileobj=fileobj)
 

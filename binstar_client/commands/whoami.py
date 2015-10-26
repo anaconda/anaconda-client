@@ -14,7 +14,8 @@ def main(args):
 
     try:
         user = binstar.user()
-    except errors.Unauthorized:
+    except errors.Unauthorized as err:
+        log.debug(err)
         log.info('Anonymous User')
         return 1
 

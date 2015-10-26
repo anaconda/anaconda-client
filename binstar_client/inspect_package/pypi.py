@@ -188,7 +188,7 @@ def format_wheel_json_metadata(data, filename, zipfile):
     return package_data, release_data, file_data
 
 
-def inspect_pypi_package_whl(filename, fileobj):
+def inspect_pypi_package_whl(filename, fileobj, *args, **kwargs):
     tf = zipfile.ZipFile(fileobj)
     data = extract_first(tf, '*.dist-info/metadata.json')
     if data is None:

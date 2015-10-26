@@ -136,6 +136,7 @@ def parse_specs(spec):
 def load_token(url):
     tokenfile = join(dirs.user_data_dir, '%s.token' % quote_plus(url))
     if isfile(tokenfile):
+        log.debug("Found login token: {}".format(tokenfile))
         with open(tokenfile) as fd:
             token = fd.read()
     else:
@@ -149,11 +150,13 @@ def get_binstar(args=None, cls=None):
     config = get_config(remote_site=args and args.site)
     url = config.get('url', DEFAULT_URL)
     if getattr(args, 'log_level', 0) >= logging.INFO:
-        sys.stderr.write("Using binstar api site %s\n" % url)
+        sys.stderr.write("Using anaconda-server api site %s\n" % url)
     if args and args.token:
+        log.debug("Using token from command line args")
         token = args.token
     else:
         token = load_token(url)
+
 
     verify = config.get('verify_ssl', True)
     return cls(token, domain=url, verify=verify)

@@ -17,18 +17,17 @@ from binstar_client.utils.handlers import syslog_handler
 
 from clyent import add_default_arguments, add_subparser_modules
 from clyent.logs import setup_logging
-import argparse
 
 
 logger = logging.getLogger('binstar')
 
 
 def add_syslog_handler():
-    hndlr = syslog_handler('binstar-client')
+    hndlr = syslog_handler('anaconda-client')
+    hndlr.setLevel(logging.INFO)
 
-    binstar_logger = logging.getLogger()
-    binstar_logger.setLevel(logging.INFO)
-    binstar_logger.addHandler(hndlr)
+    root_logger = logging.getLogger()
+    root_logger.addHandler(hndlr)
 
 def file_or_token(value):
 

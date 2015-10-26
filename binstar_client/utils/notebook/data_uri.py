@@ -2,19 +2,30 @@ import base64
 import io
 import os
 import sys
-import requests
 try:
     from urlparse import urlparse
 except ImportError:
     from urllib.parse import urlparse
-from PIL import Image
+
+import requests
+try:
+    from PIL import Image
+except ImportError:
+    Image = None
+
+from ...errors import PillowNotInstalled
 
 THUMB_SIZE = (340, 210)
 
 
 class DataURIConverter(object):
     def __init__(self, location):
+        self.check_pillow_installed()
         self.location = location
+
+    def check_pillow_installed(self):
+        if Image is None:
+            raise PillowNotInstalled()
 
     def __call__(self):
         if os.path.exists(self.location):
