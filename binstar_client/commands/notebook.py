@@ -101,8 +101,6 @@ def add_download_parser(subparsers):
 
 
 def upload(args):
-    log.warn("anaconda notebook is being deprecated. Try:")
-    log.warn("    anaconda upload {}".format(args.notebook))
     binstar = get_binstar(args)
     uploader = Uploader(binstar, args.notebook, user=args.user, summary=args.summary,
                         version=args.version, thumbnail=args.thumbnail, name=args.name)
@@ -120,8 +118,6 @@ def download(args):
     username, notebook = parse(args.handle)
     username = username or binstar.user()['login']
     downloader = Downloader(binstar, username, notebook)
-    log.warn("anaconda notebook is being deprecated. Try:")
-    log.warn("    anaconda download {}".format(args.handle))
     try:
         download_info = downloader(output=args.output, force=args.force)
         log.info("{} has been downloaded as {}.".format(args.handle, download_info[0]))
