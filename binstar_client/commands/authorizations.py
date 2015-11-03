@@ -3,7 +3,7 @@ Manage Authentication tokens
 
 See also:
 
-  * [Using Binstar Tokens](http://docs.anaconda.org/examples.html#UsingBinstarTokens)
+  * [Using Anaconda.org Tokens](http://docs.anaconda.org/examples.html#UsingAnacondaOrgTokens)
 
 '''
 from __future__ import print_function
