@@ -53,7 +53,7 @@ def add_parser(subparsers):
     group = pgroup.add_mutually_exclusive_group(required=False)
     group.add_argument('--personal', action='store_const', const='personal', dest='access',
                        help=('Set the package access to personal '
-                             'This package will be available only on your personal regitries'))
+                             'This package will be available only on your personal registries'))
     group.add_argument('--private', action='store_const', const='private', dest='access',
                        help=('Set the package access to private '
                              'This package will require authenticated access to install'))
