@@ -56,7 +56,7 @@ def binstar_main(sub_command_module, args=None, exit=True, description=None, ver
 
     setup_logging(logger, args.log_level, use_color=args.color,
                   logfile=logfile, show_tb=args.show_traceback,
-                  as_json=getattr(args, 'json', False))
+                  as_json=getattr(args, 'json_output', False))
 
     try:
         try:
