@@ -1,8 +1,11 @@
 """
 Usage:
-    anaconda notebook upload notebook.ipynb
-    anaconda notebook download notebook
-    anaconda notebook download user/notebook
+
+anaconda notebook upload notebook.ipynb
+
+anaconda notebook download notebook
+
+anaconda notebook download user/notebook
 """
 
 from __future__ import unicode_literals
