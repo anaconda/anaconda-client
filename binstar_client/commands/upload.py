@@ -123,23 +123,37 @@ def add_release(binstar, args, username, package_name, version, release_attrs):
         else:
             create_release(binstar, username, package_name, version, release_attrs['description'])
 
-
-def remove_existing_file(binstar, args, username, package_name, version, file_attrs):
+def resolve_package_conflict(binstar, args, username, package_name, version, file_attrs):
+    """
+    This function checks whether the specified version of the package already
+    exists and if it does, apply user-requested behaviour.
+    
+    Returns:
+        status (bool): True if conflicts are resolved, and False if otherwise.
+    """
     try:
+        # Check if the package with the specified version already exists
         binstar.distribution(username, package_name, version, file_attrs['basename'])
     except errors.NotFound:
-        return False
+        pass
     else:
-        if args.mode == 'force':
-            log.warning('Distribution %s already exists ... removing' % (file_attrs['basename'],))
-            binstar.remove_dist(username, package_name, version, file_attrs['basename'])
         if args.mode == 'interactive':
             if bool_input('Distribution %s already exists. Would you like to replace it?' % (file_attrs['basename'],)):
-                binstar.remove_dist(username, package_name, version, file_attrs['basename'])
+                mode = 'force'
             else:
-                log.info('Not replacing distribution %s' % (file_attrs['basename'],))
-                return True
+                mode = 'skip'
+        else:
+            mode = args.mode
 
+        if mode == 'force':
+            log.info('Distribution %s already exists ... removing', file_attrs['basename'])
+            binstar.remove_dist(username, package_name, version, file_attrs['basename'])
+        elif mode == 'skip':
+            log.info('Distribution %s already exists ... skipping', file_attrs['basename'])
+            return False
+        elif mode == 'fail':
+            raise errors.Conflict('Distribution %s already exists' % file_attrs['basename'])
+    return True
 
 def main(args):
 
@@ -191,9 +205,10 @@ def main(args):
             log.info('\nUploading file %s/%s/%s/%s ... ' % (username, package_name, version, file_attrs['basename']))
             sys.stdout.flush()
 
-            if remove_existing_file(binstar, args, username, package_name, version, file_attrs):
-                continue
             try:
+                if not resolve_package_conflict(binstar, args, username, package_name, version, file_attrs):
+                    continue
+                
                 upload_info = binstar.upload(username, package_name, version, file_attrs['basename'],
                                              fd, binstar_package_type,
                                              args.description,
@@ -203,7 +218,12 @@ def main(args):
                                              callback=upload_print_callback(args))
             except errors.Conflict:
                 full_name = '%s/%s/%s/%s' % (username, package_name, version, file_attrs['basename'])
-                log.info('Distribution already exists. Please use the -i/--interactive or --force options or `anaconda remove %s`' % full_name)
+                log.info(
+                    'Distribution already exists. Please use the '
+                    '-i/--interactive, --force, or --skip-existing options or '
+                    '`anaconda remove %s`',
+                    full_name
+                )
                 raise
 
             uploaded_packages.append([package_name, upload_info])
@@ -255,5 +275,7 @@ def add_parser(subparsers):
                                         action='store_const', dest='mode', const='fail')
     group.add_argument('--force', help='Force a package upload regardless of errors',
                                         action='store_const', dest='mode', const='force')
+    group.add_argument('--skip-existing', help='Skip if a package release exists',
+                                        action='store_const', dest='mode', const='skip')
 
     parser.set_defaults(main=main)
