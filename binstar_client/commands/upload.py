@@ -32,11 +32,11 @@ except NameError:
 log = logging.getLogger('binstar.upload')
 
 
-def create_release(binstar, username, package_name, version, description, announce=None):
-    binstar.add_release(username, package_name, version, [],
+def create_release(aserver_api, username, package_name, version, description, announce=None):
+    aserver_api.add_release(username, package_name, version, [],
                         announce, description)
 
-def create_release_interactive(binstar, username, package_name, version):
+def create_release_interactive(aserver_api, username, package_name, version):
 
     log.info('\nThe release %s/%s/%s does not exist' % (username, package_name, version))
     if not bool_input('Would you like to create it now?'):
@@ -51,7 +51,7 @@ def create_release_interactive(binstar, username, package_name, version):
     else:
         announce = ''
 
-    binstar.add_release(username, package_name, version, [],
+    aserver_api.add_release(username, package_name, version, [],
                         announce, description)
 
 def determine_package_type(filename, args):
@@ -94,9 +94,9 @@ def get_version(args, release_attrs, package_type):
         version = release_attrs['version']
     return version
 
-def add_package(binstar, args, username, package_name, package_attrs, package_type):
+def add_package(aserver_api, args, username, package_name, package_attrs, package_type):
     try:
-        binstar.package(username, package_name)
+        aserver_api.package(username, package_name)
     except errors.NotFound:
         if args.no_register:
             raise errors.UserError('Anaconda.org package %s/%s does not exist. '
@@ -110,32 +110,32 @@ def add_package(binstar, args, username, package_name, package_attrs, package_ty
                     raise errors.BinstarError("Could not detect package summary for package type %s, please use the --summary option" % (package_type,))
                 summary = package_attrs['summary']
 
-            binstar.add_package(username, package_name, summary, package_attrs.get('license'),
+            aserver_api.add_package(username, package_name, summary, package_attrs.get('license'),
                                 public=True)
 
 
-def add_release(binstar, args, username, package_name, version, release_attrs):
+def add_release(aserver_api, args, username, package_name, version, release_attrs):
     try:
-        binstar.release(username, package_name, version)
+        aserver_api.release(username, package_name, version)
     except errors.NotFound:
         if args.mode == 'interactive':
-            create_release_interactive(binstar, username, package_name, version)
+            create_release_interactive(aserver_api, username, package_name, version)
         else:
-            create_release(binstar, username, package_name, version, release_attrs['description'])
+            create_release(aserver_api, username, package_name, version, release_attrs['description'])
 
 
-def remove_existing_file(binstar, args, username, package_name, version, file_attrs):
+def remove_existing_file(aserver_api, args, username, package_name, version, file_attrs):
     try:
-        binstar.distribution(username, package_name, version, file_attrs['basename'])
+        aserver_api.distribution(username, package_name, version, file_attrs['basename'])
     except errors.NotFound:
         return False
     else:
         if args.mode == 'force':
             log.warning('Distribution %s already exists ... removing' % (file_attrs['basename'],))
-            binstar.remove_dist(username, package_name, version, file_attrs['basename'])
+            aserver_api.remove_dist(username, package_name, version, file_attrs['basename'])
         if args.mode == 'interactive':
             if bool_input('Distribution %s already exists. Would you like to replace it?' % (file_attrs['basename'],)):
-                binstar.remove_dist(username, package_name, version, file_attrs['basename'])
+                aserver_api.remove_dist(username, package_name, version, file_attrs['basename'])
             else:
                 log.info('Not replacing distribution %s' % (file_attrs['basename'],))
                 return True
@@ -143,12 +143,12 @@ def remove_existing_file(binstar, args, username, package_name, version, file_at
 
 def main(args):
 
-    binstar = get_binstar(args)
+    aserver_api = get_binstar(args)
 
     if args.user:
         username = args.user
     else:
-        user = binstar.user()
+        user = aserver_api.user()
         username = user['login']
 
     uploaded_packages = []
@@ -181,9 +181,9 @@ def main(args):
         package_name = get_package_name(args, package_attrs, filename, package_type)
         version = get_version(args, release_attrs, package_type)
 
-        add_package(binstar, args, username, package_name, package_attrs, package_type)
+        add_package(aserver_api, args, username, package_name, package_attrs, package_type)
 
-        add_release(binstar, args, username, package_name, version, release_attrs)
+        add_release(aserver_api, args, username, package_name, version, release_attrs)
 
         binstar_package_type = file_attrs.pop('binstar_package_type', package_type)
 
@@ -191,10 +191,10 @@ def main(args):
             log.info('\nUploading file %s/%s/%s/%s ... ' % (username, package_name, version, file_attrs['basename']))
             sys.stdout.flush()
 
-            if remove_existing_file(binstar, args, username, package_name, version, file_attrs):
+            if remove_existing_file(aserver_api, args, username, package_name, version, file_attrs):
                 continue
             try:
-                upload_info = binstar.upload(username, package_name, version, file_attrs['basename'],
+                upload_info = aserver_api.upload(username, package_name, version, file_attrs['basename'],
                                              fd, binstar_package_type,
                                              args.description,
                                              dependencies=file_attrs.get('dependencies'),

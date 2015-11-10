@@ -10,10 +10,10 @@ import logging
 log = logging.getLogger('binstar.whoami')
 
 def main(args):
-    binstar = get_binstar(args)
+    aserver_api = get_binstar(args)
 
     try:
-        user = binstar.user()
+        user = aserver_api.user()
     except errors.Unauthorized as err:
         log.debug(err)
         log.info('Anonymous User')

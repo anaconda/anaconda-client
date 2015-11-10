@@ -9,36 +9,36 @@ from binstar_client.utils.notebook import Uploader
 
 class UploaderTestCase(unittest.TestCase):
     def test_release(self):
-        binstar = mock.MagicMock()
-        binstar.release.return_value = 'release'
-        uploader = Uploader(binstar, 'notebook')
+        aserver_api = mock.MagicMock()
+        aserver_api.release.return_value = 'release'
+        uploader = Uploader(aserver_api, 'notebook')
         self.assertEqual(uploader.release, 'release')
 
     def test_release_not_exist(self):
-        binstar = mock.MagicMock()
-        binstar.release.side_effect = errors.NotFound([])
-        binstar.add_release.return_value = 'release'
-        uploader = Uploader(binstar, 'project')
+        aserver_api = mock.MagicMock()
+        aserver_api.release.side_effect = errors.NotFound([])
+        aserver_api.add_release.return_value = 'release'
+        uploader = Uploader(aserver_api, 'project')
         self.assertEqual(uploader.release, 'release')
 
     def test_package(self):
-        binstar = mock.MagicMock()
-        binstar.package.side_effect = errors.NotFound([])
-        binstar.add_package.return_value = 'package'
-        uploader = Uploader(binstar, 'project')
+        aserver_api = mock.MagicMock()
+        aserver_api.package.side_effect = errors.NotFound([])
+        aserver_api.add_package.return_value = 'package'
+        uploader = Uploader(aserver_api, 'project')
         self.assertEqual(uploader.package, 'package')
 
     def test_version(self):
-        binstar = mock.MagicMock
-        uploader = Uploader(binstar, 'project', version='version')
+        aserver_api = mock.MagicMock
+        uploader = Uploader(aserver_api, 'project', version='version')
         self.assertEqual(uploader.version, 'version')
 
-        uploader = Uploader(binstar, 'project')
+        uploader = Uploader(aserver_api, 'project')
         self.assertIsInstance(uploader.version, str)
 
     def test_package_name(self):
-        binstar = mock.MagicMock()
-        uploader = Uploader(binstar, '~/notebooks/my notebook.ipynb')
+        aserver_api = mock.MagicMock()
+        uploader = Uploader(aserver_api, '~/notebooks/my notebook.ipynb')
         self.assertEqual(uploader.project, 'my-notebook')
 
 

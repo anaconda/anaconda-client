@@ -8,8 +8,8 @@ class Downloader(object):
     """
     Download notebook from anaconda.org
     """
-    def __init__(self, binstar, username, notebook):
-        self.binstar = binstar
+    def __init__(self, aserver_api, username, notebook):
+        self.aserver_api = aserver_api
         self.username = username
         self.notebook = notebook
 
@@ -32,7 +32,7 @@ class Downloader(object):
         """
         Download file into location
         """
-        requests_handle = self.binstar.download(self.username, self.notebook,
+        requests_handle = self.aserver_api.download(self.username, self.notebook,
                                                 dist['version'], dist['basename'])
 
         with open(os.path.join(self.output, dist['basename']), 'wb') as fdout:
@@ -63,7 +63,7 @@ class Downloader(object):
         output = []
         tmp = {}
 
-        files = self.binstar.package(self.username, self.notebook)['files']
+        files = self.aserver_api.package(self.username, self.notebook)['files']
 
         for f in files:
             if f['basename'] in tmp:
