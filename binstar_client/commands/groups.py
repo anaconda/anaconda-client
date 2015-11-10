@@ -1,4 +1,4 @@
-from binstar_client.utils import get_binstar, parse_specs
+from binstar_client.utils import get_server_api, parse_specs
 from argparse import FileType, ArgumentError
 from os.path import basename
 import tarfile
@@ -21,7 +21,7 @@ def group_spec(spec):
 
 def main(args):
 
-    aserver_api = get_binstar(args)
+    aserver_api = get_server_api(args.token, args.site, args.log_level)
 
     if args.action == 'add':
         result = aserver_api.add_group(args.spec['org'], args.spec['group_name'], args.perms)

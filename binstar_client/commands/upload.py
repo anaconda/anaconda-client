@@ -18,7 +18,7 @@ from os.path import exists
 import sys
 
 from binstar_client import errors
-from binstar_client.utils import get_binstar, bool_input, upload_print_callback
+from binstar_client.utils import get_server_api, bool_input, upload_print_callback
 from binstar_client.utils.detect import detect_package_type, get_attrs
 
 
@@ -143,7 +143,7 @@ def remove_existing_file(aserver_api, args, username, package_name, version, fil
 
 def main(args):
 
-    aserver_api = get_binstar(args)
+    aserver_api = get_server_api(args.token, args.site, args.log_level)
 
     if args.user:
         username = args.user

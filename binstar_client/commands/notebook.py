@@ -9,7 +9,7 @@ from __future__ import unicode_literals
 import argparse
 import logging
 from binstar_client import errors
-from binstar_client.utils import get_binstar
+from binstar_client.utils import get_server_api
 from binstar_client.utils.notebook import Uploader, Downloader, parse, notebook_url, has_environment
 
 log = logging.getLogger("binstar.notebook")
@@ -101,7 +101,8 @@ def add_download_parser(subparsers):
 
 
 def upload(args):
-    aserver_api = get_binstar(args)
+    aserver_api = get_server_api(args.token, args.site, args.log_level)
+
     uploader = Uploader(aserver_api, args.notebook, user=args.user, summary=args.summary,
                         version=args.version, thumbnail=args.thumbnail, name=args.name)
 
@@ -114,7 +115,8 @@ def upload(args):
 
 
 def download(args):
-    aserver_api = get_binstar(args)
+    aserver_api = get_server_api(args.token, args.site, args.log_level)
+
     username, notebook = parse(args.handle)
     username = username or aserver_api.user()['login']
     downloader = Downloader(aserver_api, username, notebook)

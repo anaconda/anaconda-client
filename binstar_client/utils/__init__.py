@@ -18,6 +18,7 @@ import yaml
 from binstar_client.utils.appdirs import AppDirs, EnvAppDirs
 
 from ..errors import UserError
+import warnings
 
 
 if 'BINSTAR_CONFIG_DIR' in os.environ:
@@ -143,23 +144,46 @@ def load_token(url):
         token = None
     return token
 
-def get_binstar(args=None, cls=None):
+
+def get_server_api(token=None, site=None, log_level=0, cls=None):
+    """
+    Get the anaconda server api class
+    """
+
     if not cls:
         from binstar_client import Binstar
         cls = Binstar
-    config = get_config(remote_site=args and args.site)
+    config = get_config(remote_site=site)
     url = config.get('url', DEFAULT_URL)
-    if getattr(args, 'log_level', 0) >= logging.INFO:
+    if log_level >= logging.INFO:
         sys.stderr.write("Using anaconda-server api site %s\n" % url)
-    if args and args.token:
+    if token:
         log.debug("Using token from command line args")
-        token = args.token
     else:
         token = load_token(url)
 
-
     verify = config.get('verify_ssl', True)
     return cls(token, domain=url, verify=verify)
+
+def get_binstar(args=None, cls=None):
+    """
+    DEPRICATED METHOD,
+    
+    use `get_server_api`
+    """
+
+    warnings.warn(
+      'method get_binstar is depricated, please use `get_server_api`',
+      DeprecationWarning
+    )
+
+    token = getattr(args, 'token', None)
+    log_level = getattr(args, 'log_level', 0)
+    site = getattr(args, 'site', 0)
+
+    aserver_api = get_server_api(token, site, log_level, cls)
+    return aserver_api
+
 
 def store_token(token, args):
     config = get_config(remote_site=args and args.site)

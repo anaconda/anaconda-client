@@ -27,7 +27,7 @@ To allow full access to your account:
 '''
 
 from datetime import datetime
-from binstar_client.utils import get_binstar
+from binstar_client.utils import get_server_api
 import getpass
 from dateutil.parser import parse as parse_date
 import sys
@@ -119,7 +119,7 @@ def show_auths(authentications):
 
 
 def main(args):
-    aserver_api = get_binstar(args)
+    aserver_api = get_server_api(args.token, args.site, args.log_level)
     if args.info:
         data = aserver_api.authentication()
         log.info('Name: %s' % data['application'])

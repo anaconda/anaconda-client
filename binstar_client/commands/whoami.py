@@ -3,14 +3,14 @@ Print the information of the current user
 '''
 from __future__ import unicode_literals
 from binstar_client import errors
-from binstar_client.utils import get_binstar
+from binstar_client.utils import get_server_api
 from binstar_client.utils.pprint import pprint_user
 import logging
 
 log = logging.getLogger('binstar.whoami')
 
 def main(args):
-    aserver_api = get_binstar(args)
+    aserver_api = get_server_api(args.token, args.site, args.log_level)
 
     try:
         user = aserver_api.user()

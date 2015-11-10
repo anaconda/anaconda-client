@@ -10,7 +10,7 @@ import argparse
 import logging
 
 from binstar_client import errors
-from binstar_client.utils import get_binstar
+from binstar_client.utils import get_server_api
 from binstar_client.utils.notebook import Downloader, parse, has_environment
 
 log = logging.getLogger("binstar.download")
@@ -48,7 +48,7 @@ def add_parser(subparsers):
 
 
 def main(args):
-    aserver_api = get_binstar(args)
+    aserver_api = get_server_api(args.token, args.site, args.log_level)
     username, notebook = parse(args.handle)
     username = username or aserver_api.user()['login']
     downloader = Downloader(aserver_api, username, notebook)

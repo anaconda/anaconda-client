@@ -2,20 +2,20 @@
 Copy packages from one account to another
 '''
 from __future__ import unicode_literals, print_function
-from binstar_client.utils import get_binstar, parse_specs
+from binstar_client.utils import get_server_api, parse_specs
 import logging
 from binstar_client import errors
 
 log = logging.getLogger('binstar.whoami')
 
 def main(args):
-    bs = get_binstar(args)
+    aserver_api = get_server_api(args.token, args.site, args.log_level)
 
     spec = args.spec
-    channels = bs.list_channels(spec.user)
+    channels = aserver_api.list_channels(spec.user)
     if args.from_channel not in channels:
         raise errors.UserError("Channel %s does not exist\n\tplease choose from: %s" % (args.from_channel, ', '.join(channels)))
-    files = bs.copy(spec.user, spec.package, spec.version, spec._basename,
+    files = aserver_api.copy(spec.user, spec.package, spec.version, spec._basename,
                     to_owner=args.to_owner, from_channel=args.from_channel, to_channel=args.to_channel)
     for binstar_file in files:
         print("Copied file: %(basename)s" % binstar_file)
