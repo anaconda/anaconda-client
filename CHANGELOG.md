@@ -1,5 +1,9 @@
 # CHANGELOG:
 
+## 1.1.2
+
+  * Fix issue with big packages #126
+
 ## 1.1.0
 
   * `anaconda download` new subcommand

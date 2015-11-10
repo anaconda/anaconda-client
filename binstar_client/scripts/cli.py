@@ -22,13 +22,6 @@ from clyent.logs import setup_logging
 logger = logging.getLogger('binstar')
 
 
-def add_syslog_handler():
-    hndlr = syslog_handler('anaconda-client')
-    hndlr.setLevel(logging.INFO)
-
-    root_logger = logging.getLogger()
-    root_logger.addHandler(hndlr)
-
 def file_or_token(value):
 
     if isfile(value):
@@ -39,8 +32,6 @@ def file_or_token(value):
         # The error message will be handled by the parser
         raise ValueError()
     return value
-
-
 
 
 def binstar_main(sub_command_module, args=None, exit=True, description=None, version=None, epilog=None):
@@ -65,8 +56,6 @@ def binstar_main(sub_command_module, args=None, exit=True, description=None, ver
 
     setup_logging(logger, args.log_level, use_color=args.color,
                   logfile=logfile, show_tb=args.show_traceback)
-
-    add_syslog_handler()
 
     try:
         try:
