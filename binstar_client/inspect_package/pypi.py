@@ -248,7 +248,8 @@ def inspect_pypi_package_sdist(filename, fileobj):
     name = pop_key(attrs, 'Name', None)
 
     if name is None:
-        name = filename.split('-', 1)[0]
+        basename = path.basename(filename)
+        name = basename.split('-')[0]
 
     package_data = {'name': name,
                     'summary': pop_key(attrs, 'Summary', None),
@@ -292,8 +293,9 @@ def inspect_pypi_package_egg(filename, fileobj):
                     'description': pop_key(attrs, 'Description', None),
                     'home_page': pop_key(attrs, 'Home-page', None)}
 
-    if len(filename.split('-')) == 4:
-        _, _, python_version, platform = filename[:-4].split('-')
+    basename = path.basename(filename)
+    if len(basename.split('-')) == 4:
+        _, _, python_version, platform = basename[:-4].split('-')
     else:
         python_version = 'source'
         platform = None
