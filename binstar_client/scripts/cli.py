@@ -53,21 +53,19 @@ def binstar_main(sub_command_module, args=None, exit=True, description=None, ver
     logfile = join(USER_LOGDIR, 'cli.log')
 
     args = parser.parse_args(args)
-
     setup_logging(logger, args.log_level, use_color=args.color,
                   logfile=logfile, show_tb=args.show_traceback)
-
     try:
         try:
             if not hasattr(args, 'main'):
                 parser.error("A sub command must be given. To show all available sub commands, run:\n\n\t anaconda -h\n")
             return args.main(args)
         except errors.Unauthorized:
-            if not args.token:
+            if not args.token and args.sub_command_name != 'logout':
                 logger.info('The action you are performing requires authentication, please sign in:')
                 interactive_login(args)
                 return args.main(args)
-            else:
+            elif args.sub_command_name != 'logout':
                 raise
 
     except errors.ShowHelp:
