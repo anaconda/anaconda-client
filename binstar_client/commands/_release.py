@@ -33,7 +33,7 @@ def add_parser(subparsers):
                                       help='Add a release',
                                       description=__doc__)
 
-    parser.add_argument('action', help='Adde remove or update an existing release',
+    parser.add_argument('action', help='Add remove or update an existing release',
                         choices=['add', 'remove', 'update', 'show'])
     parser.add_argument('spec', help='Package written as <user>/<package>/<version>')
     parser.add_argument('--requirements', help='TODO')
