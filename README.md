@@ -1,13 +1,13 @@
 Anaconda Client
 ==============
 
-This is a command line client that provides an interface to [anaconda.org](https://anaconda.org).
+This is a command line client that provides an interface to [Anaconda Cloud](https://anaconda.org).
 
 ## Quickstart:
 
 ### Create an account:
 
-First create an account on [anaconda.org](https://anaconda.org)
+First create an account on [Anaconda Cloud](https://anaconda.org)
 
 ### Install the client:
 
@@ -25,7 +25,7 @@ Test your login with the whoami command:
 
 `$ anaconda whoami`
 
-For a complete tutorial on building and uploading Conda packages to Anaconda.org visit the [documentation page](http://docs.anaconda.org/).
+For a complete tutorial on building and uploading Conda packages to Anaconda Cloud visit the [documentation page](http://docs.anaconda.org/).
 
 
 ### Links
