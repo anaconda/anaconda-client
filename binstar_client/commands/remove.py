@@ -16,26 +16,26 @@ log = logging.getLogger('binstar.remove')
 
 def main(args):
 
-    binstar = get_binstar(args)
+    aserver_api = get_binstar(args)
 
     for spec in args.specs:
         try:
             if spec._basename:
                 msg = 'Are you sure you want to remove file %s ?' % (spec,)
                 if args.force or bool_input(msg, False):
-                    binstar.remove_dist(spec.user, spec.package, spec.version, spec.basename)
+                    aserver_api.remove_dist(spec.user, spec.package, spec.version, spec.basename)
                 else:
                     log.warn('Not removing file %s' % (spec))
             elif spec._version:
                 msg = 'Are you sure you want to remove the package release %s ? (and all files under it?)' % (spec,)
                 if args.force or bool_input(msg, False):
-                    binstar.remove_release(spec.user, spec.package, spec.version)
+                    aserver_api.remove_release(spec.user, spec.package, spec.version)
                 else:
                     log.warn('Not removing release %s' % (spec))
             elif spec._package:
                 msg = 'Are you sure you want to remove the package %s ? (and all data with it?)' % (spec,)
                 if args.force or bool_input(msg, False):
-                    binstar.remove_package(spec.user, spec.package)
+                    aserver_api.remove_package(spec.user, spec.package)
                 else:
                     log.warn('Not removing release %s' % (spec))
 

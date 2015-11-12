@@ -48,10 +48,10 @@ def add_parser(subparsers):
 
 
 def main(args):
-    binstar = get_binstar(args)
+    aserver_api = get_binstar(args)
     username, notebook = parse(args.handle)
-    username = username or binstar.user()['login']
-    downloader = Downloader(binstar, username, notebook)
+    username = username or aserver_api.user()['login']
+    downloader = Downloader(aserver_api, username, notebook)
     try:
         download_info = downloader(output=args.output, force=args.force)
         log.info("{} has been downloaded as {}.".format(args.handle, download_info[0]))

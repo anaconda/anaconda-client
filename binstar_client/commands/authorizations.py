@@ -3,7 +3,7 @@ Manage Authentication tokens
 
 See also:
 
-  * [Using Anaconda.org Tokens](http://docs.anaconda.org/examples.html#UsingAnacondaOrgTokens)
+  * [Using Anaconda-Server Tokens](http://docs.anaconda.org/examples.html#UsingAnacondaOrgTokens)
 
 '''
 from __future__ import print_function
@@ -119,21 +119,21 @@ def show_auths(authentications):
 
 
 def main(args):
-    binstar = get_binstar(args)
+    aserver_api = get_binstar(args)
     if args.info:
-        data = binstar.authentication()
+        data = aserver_api.authentication()
         log.info('Name: %s' % data['application'])
         log.info('Id: %s' % data['id'])
     if args.list:
-        show_auths(binstar.authentications())
+        show_auths(aserver_api.authentications())
         return
     elif args.remove:
         for auth_name in args.remove:
-            binstar.remove_authentication(auth_name)
+            aserver_api.remove_authentication(auth_name)
             log.info("Removed token %s" % auth_name)
         return
     elif args.list_scopes:
-        scopes = binstar.list_scopes()
+        scopes = aserver_api.list_scopes()
         for key in sorted(scopes):
             log.info(key)
             log.info('  ' + scopes[key])
@@ -143,7 +143,7 @@ def main(args):
     elif args.create:
 
         try:
-            current_user = binstar.user()
+            current_user = aserver_api.user()
             username = current_user['login']
         except:
             current_user = None
@@ -162,7 +162,7 @@ def main(args):
                 sys.stderr.write("Please re-enter %s's " % username)
                 password = getpass.getpass()
 
-                token = binstar.authenticate(username, password,
+                token = aserver_api.authenticate(username, password,
                                            args.name, application_url=args.url,
                                            scopes=scopes,
                                            for_user=args.organization,

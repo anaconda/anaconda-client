@@ -8,10 +8,10 @@ log = logging.getLogger('binstar.search')
 
 def search(args):
 
-    binstar = get_binstar(args)
+    aserver_api = get_binstar(args)
 
     log.info("Run 'anaconda show <USER/PACKAGE>' to get more details:")
-    packages = binstar.search(args.name, package_type=args.package_type)
+    packages = aserver_api.search(args.name, package_type=args.package_type)
     pprint_packages(packages, access=False)
     log.info("Found %i packages" % len(packages))
 

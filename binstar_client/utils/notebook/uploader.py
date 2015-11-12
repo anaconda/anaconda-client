@@ -20,8 +20,8 @@ class Uploader(object):
     _release = None
     _project = None
 
-    def __init__(self, binstar, filepath, **kwargs):
-        self.binstar = binstar
+    def __init__(self, aserver_api, filepath, **kwargs):
+        self.aserver_api = aserver_api
         self.filepath = filepath
         self._username = kwargs.get('user', None)
         self._version = kwargs.get('version', None)
@@ -38,7 +38,7 @@ class Uploader(object):
         """
         self.package and self.release
         try:
-            return self.binstar.upload(self.username, self.project, self.version,
+            return self.aserver_api.upload(self.username, self.project, self.version,
                                        basename(self.filepath), open(self.filepath, 'rb'),
                                        self.filepath.split('.')[-1])
         except errors.Conflict:
@@ -52,7 +52,7 @@ class Uploader(object):
                 raise errors.BinstarError(msg)
 
     def remove(self):
-        return self.binstar.remove_dist(self, self.username, self.project,
+        return self.aserver_api.remove_dist(self, self.username, self.project,
                                         self.version, basename=self.notebook)
 
     @property
@@ -72,7 +72,7 @@ class Uploader(object):
     @property
     def username(self):
         if self._username is None:
-            self._username = self.binstar.user()['login']
+            self._username = self.aserver_api.user()['login']
         return self._username
 
     @property
@@ -91,9 +91,9 @@ class Uploader(object):
     def package(self):
         if self._package is None:
             try:
-                self._package = self.binstar.package(self.username, self.project)
+                self._package = self.aserver_api.package(self.username, self.project)
             except errors.NotFound:
-                self._package = self.binstar.add_package(self.username, self.project,
+                self._package = self.aserver_api.add_package(self.username, self.project,
                                                          summary=self.summary,
                                                          attrs=self.notebook_attrs)
         return self._package
@@ -102,9 +102,9 @@ class Uploader(object):
     def release(self):
         if self._release is None:
             try:
-                self._release = self.binstar.release(self.username, self.project, self.version)
+                self._release = self.aserver_api.release(self.username, self.project, self.version)
             except errors.NotFound:
-                self._release = self.binstar.add_release(self.username, self.project,
+                self._release = self.aserver_api.add_release(self.username, self.project,
                                                          self.version, None, None, None)
         return self._release
 

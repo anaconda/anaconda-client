@@ -41,11 +41,11 @@ def install_info(package, package_type):
 
 def main(args):
 
-    binstar = get_binstar(args)
+    aserver_api = get_binstar(args)
 
     spec = args.spec
     if spec._basename:
-        dist = binstar.distribution(spec.user, spec.package, spec.version, spec.basename)
+        dist = aserver_api.distribution(spec.user, spec.package, spec.version, spec.basename)
         log.info(dist.pop('basename'))
         log.info(dist.pop('description') or 'no description')
         log.info('')
@@ -58,13 +58,13 @@ def main(args):
 
     elif args.spec._version:
         log.info('version %s' % spec.version)
-        release = binstar.release(spec.user, spec.package, spec.version)
+        release = aserver_api.release(spec.user, spec.package, spec.version)
         for dist in release['distributions']:
             log.info('   + %(basename)s' % dist)
         log.info('%s' % release.get('public_attrs', {}).get('description'))
 
     elif args.spec._package:
-        package = binstar.package(spec.user, spec.package)
+        package = aserver_api.package(spec.user, spec.package)
         package['access'] = 'public' if package['public'] else 'private'
         log.info('Name:    %(name)s' % package)
         log.info('Summary: %(summary)s' % package)
@@ -85,11 +85,11 @@ def main(args):
 
 
     elif args.spec._user:
-        user_info = binstar.user(spec.user)
+        user_info = aserver_api.user(spec.user)
         pprint_user(user_info)
-        pprint_packages(binstar.user_packages(spec.user))
+        pprint_packages(aserver_api.user_packages(spec.user))
         if user_info['user_type'] == 'user':
-            pprint_orgs(binstar.user_orgs(spec.user))
+            pprint_orgs(aserver_api.user_orgs(spec.user))
 
     else:
         log.info(args.spec)
