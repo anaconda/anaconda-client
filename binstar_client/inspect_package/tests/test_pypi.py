@@ -149,8 +149,9 @@ class Test(unittest.TestCase):
         self.assertEqual(expected_version_data, version_data)
 
         self.assertEqual(set(expected_egg_file_data), set(file_data))
-        for key in expected_egg_file_data:
-            self.assertEqual(expected_egg_file_data[key], file_data[key])
+        self.assertEqual(expected_egg_file_data['platform'], file_data['platform'])
+        self.assertEqual(expected_egg_file_data['attrs']['python_version'],
+                         file_data['attrs']['python_version'])
 
     def test_sdist_distutils(self):
         filename = data_path('test_package34-distutils-0.3.1.tar.gz')
