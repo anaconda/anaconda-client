@@ -59,7 +59,7 @@ def encode_multipart_formdata_stream(fields, boundary=None):
         boundary = choose_boundary()
 
     for fieldname, value in iter_fields(fields):
-        body_write(b('--%s\r\n' % (boundary)))
+        body_write_encode('--%s\r\n' % (boundary))
 
         if isinstance(value, tuple):
             if len(value) == 3:
@@ -71,9 +71,9 @@ def encode_multipart_formdata_stream(fields, boundary=None):
                 if content_type is None:
                     content_type = 'application/octet-stream'
             body_write_encode('Content-Disposition: form-data; name="%s"; '
-                               'filename="%s"\r\n' % (fieldname, filename))
-            body_write(b('Content-Type: %s\r\n\r\n' %
-                       (content_type,)))
+                              'filename="%s"\r\n' % (fieldname, filename))
+            body_write_encode('Content-Type: %s\r\n\r\n' %
+                              (content_type,))
         else:
             data = value
             body_write_encode('Content-Disposition: form-data; name="%s"\r\n'
@@ -90,9 +90,9 @@ def encode_multipart_formdata_stream(fields, boundary=None):
 
         body_write(b'\r\n')
 
-    body_write(b('--%s--\r\n' % (boundary)))
+    body_write_encode('--%s--\r\n' % (boundary))
 
-    content_type = b('multipart/form-data; boundary=%s' % boundary)
+    content_type = 'multipart/form-data; boundary=%s' % (boundary)
 
     return body, content_type
 
