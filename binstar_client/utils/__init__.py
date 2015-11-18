@@ -138,7 +138,13 @@ def load_token(url):
     if isfile(tokenfile):
         log.debug("Found login token: {}".format(tokenfile))
         with open(tokenfile) as fd:
-            token = fd.read()
+            token = fd.read().strip()
+
+        if not token:
+            log.debug("Token file is empty: {}".format(tokenfile))
+            log.debug("Removing file: {}".format(tokenfile))
+            os.unlink(tokenfile)
+            token = None
     else:
         token = None
     return token
