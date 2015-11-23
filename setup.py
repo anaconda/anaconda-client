@@ -11,7 +11,7 @@ setup(
     description='Anaconda.org command line client library',
     packages=find_packages(),
     install_requires=['clyent',
-                      'requests>=2.0',
+                      'requests>=2.0,<2.8',
                       'pyyaml',
                       'python-dateutil',
                       'pytz'],
