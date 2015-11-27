@@ -6,9 +6,9 @@ Get, Set, Remove or Show the anaconda-client configuration.
 ###### anaconda-client sites
 
 anaconda-client sites are a mechanism to allow users to quickly switch
-between anaconda-server instances. This is primarily used for testing
-the anaconda.org alpha site. But also has applications for the
-on-site [Anaconda Server](http://continuum.io/anaconda-server).
+between Anaconda Cloud instances. This is primarily used for testing
+the anaconda alpha site. But also has applications for the
+on-site [Anaconda Enterprise](http://continuum.io/anaconda-server).
 
 anaconda-client comes with two pre-configured sites `alpha` and
 `binstar` you may use these in one of two ways:
@@ -25,10 +25,10 @@ anaconda-client comes with two pre-configured sites `alpha` and
 
 ###### Add a anaconda-client site
 
-After installing a [Anaconda Server](http://continuum.io/anaconda-server)
+After installing [Anaconda Enterprise](http://continuum.io/anaconda-server)
 you can add a site named **site_name** like this:
 
-    anaconda config --set sites.site_name.url "http://<anaconda-server-ip>:<port>/api"
+    anaconda config --set sites.site_name.url "http://<anaconda-enterprise-ip>:<port>/api"
     anaconda config --set default_site site_name
 
 ###### Site Options VS Global Options
@@ -47,7 +47,7 @@ prefix the option with `sites.site_name` e.g.
 
 ###### Common anaconda-client configuration options
 
-  * `url`: Set the anaconda.org api url (default: https://api.anaconda.org)
+  * `url`: Set the anaconda api url (default: https://api.anaconda.org)
   * `verify_ssl`: Perform ssl validation on the https requests.
     verify_ssl may be `True`, `False` or a path to a root CA pem file.
 '''

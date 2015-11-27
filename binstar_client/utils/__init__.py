@@ -150,7 +150,7 @@ def get_binstar(args=None, cls=None):
     config = get_config(remote_site=args and args.site)
     url = config.get('url', DEFAULT_URL)
     if getattr(args, 'log_level', 0) >= logging.INFO:
-        sys.stderr.write("Using anaconda-server api site %s\n" % url)
+        sys.stderr.write("Using Anaconda Cloud api site %s\n" % url)
     if args and args.token:
         log.debug("Using token from command line args")
         token = args.token
