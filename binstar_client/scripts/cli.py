@@ -17,6 +17,7 @@ from binstar_client.utils.handlers import syslog_handler
 
 from clyent import add_default_arguments, add_subparser_modules
 from clyent.logs import setup_logging
+import sys
 
 
 logger = logging.getLogger('binstar')
@@ -60,15 +61,19 @@ def binstar_main(sub_command_module, args=None, exit=True, description=None, ver
     try:
         try:
             if not hasattr(args, 'main'):
-                parser.error("A sub command must be given. To show all available sub commands, run:\n\n\t anaconda -h\n")
+                parser.error("A sub command must be given. "
+                             "To show all available sub commands, run:\n\n\t anaconda -h\n")
             return args.main(args)
         except errors.Unauthorized:
-            if not args.token:
-                logger.info('The action you are performing requires authentication, please sign in:')
-                interactive_login(args)
-                return args.main(args)
-            else:
+            if not sys.stdin.isatty() or args.token:
+                # Don't try the interactive login
+                # Just exit
                 raise
+
+            logger.info('The action you are performing requires authentication, '
+                        'please sign in:')
+            interactive_login(args)
+            return args.main(args)
 
     except errors.ShowHelp:
         args.sub_parser.print_help()
