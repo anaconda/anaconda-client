@@ -367,11 +367,19 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
             headers = {}
 
         res = self.session.get(url, headers=headers, allow_redirects=False)
-        self._check_response(res, allowed=[302, 304])
+        self._check_response(res, allowed=[200, 302, 304])
 
-        if res.status_code == 304:
+        if res.status_code == 200:
+            # We received the content directly from anaconda.org
+            return res
+        elif res.status_code == 304:
+            # The content has not changed
             return None
         elif res.status_code == 302:
+            # Download from s3:
+            # We need to create a new request (without using session) to avoid
+            # sending the custom headers set on our session to S3 (which causes
+            # a failure).
             res2 = requests.get(res.headers['location'], stream=True)
             return res2
 
