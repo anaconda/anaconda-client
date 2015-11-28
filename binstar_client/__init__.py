@@ -41,7 +41,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         self.session.verify = verify
         self.token = token
 
-        user_agent = 'Anaconda-CLient/{} (+https://anaconda.org)'.format(__version__)
+        user_agent = 'Anaconda-Client/{} (+https://anaconda.org)'.format(__version__)
         self._session.headers.update({'User-Agent': user_agent})
 
         if token:
