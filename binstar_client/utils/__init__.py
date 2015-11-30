@@ -167,7 +167,8 @@ def get_server_api(token=None, site=None, log_level=0, cls=None):
 
 def get_binstar(args=None, cls=None):
     """
-    DEPRICATED METHOD,
+    DEPRECATED METHOD,
+
     
     use `get_server_api`
     """
