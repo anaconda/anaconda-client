@@ -15,7 +15,12 @@ def main(args):
     if aserver_api.token:
     # TODO: named 'application' because I was using the github model
     # Change it to name once we release the latest version of binstar server
-        aserver_api.remove_authentication()
+        try:
+            aserver_api.remove_authentication()
+        except errors.Unauthorized as err:
+            log.debug("The token that you are trying to remove may not be valid"
+                      "{}".format(err))
+
         remove_token(args)
         log.info("logout successful")
     else:

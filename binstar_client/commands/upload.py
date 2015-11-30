@@ -4,8 +4,8 @@
 
 ##### See Also
 
-  * [Uploading a Conda Package](http://docs.anaconda.org/examples.html#UploadingACondaPackage)
-  * [Uploading a PyPI Package](http://docs.anaconda.org/examples.html#UploadingAPypiPackage)
+  * [Uploading a Conda Package](http://docs.anaconda.org/using.html#Uploading)
+  * [Uploading a PyPI Package](http://docs.anaconda.org/using.html#UploadingPypiPackages)
 
 '''
 from __future__ import unicode_literals

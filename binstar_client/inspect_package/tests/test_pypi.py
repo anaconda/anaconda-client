@@ -4,6 +4,9 @@ import unittest
 from os import path
 from binstar_client.inspect_package import pypi
 from pprint import pprint
+import os
+import shutil
+import tempfile
 
 def data_path(filename):
     return path.join(path.dirname(__file__), 'data', filename)
@@ -51,6 +54,11 @@ expected_whl_dependencies = {u'depends': [{u'name': u'python-dateutil', u'specs'
                                                           u'specs': [(u'>=', u'0.3')]}],
                                             u'name': u'reST'}],
                                u'has_dep_errors': False}
+
+expected_egg_file_data = {'attrs': {'packagetype': 'bdist_egg', 'python_version': 'source'},
+                          'basename': 'test_package34-0.3.1-py2.7.egg',
+                          'dependencies': expected_dependencies,
+                          'platform': None}
 
 class Test(unittest.TestCase):
 
@@ -101,17 +109,49 @@ class Test(unittest.TestCase):
             package_data, version_data, file_data = pypi.inspect_pypi_package(filename, fd)
 
 
-        expected_file_data = {'attrs': {'packagetype': 'bdist_egg', 'python_version': 'source'},
-                             'basename': 'test_package34-0.3.1-py2.7.egg',
-                             'dependencies': expected_dependencies,
-                             'platform': None}
+        self.assertEqual(expected_package_data, package_data)
+        self.assertEqual(expected_version_data, version_data)
+
+        self.assertEqual(set(expected_egg_file_data), set(file_data))
+        for key in expected_egg_file_data:
+            self.assertEqual(expected_egg_file_data[key], file_data[key])
+
+    def test_bdist_egg_dashed_path(self):
+        filename = data_path('test_package34-0.3.1-py2.7.egg')
+        tmpdir = tempfile.gettempdir()
+        dash_count = tmpdir.count('-')
+        if dash_count == 0:
+            tmpdir = path.join(tmpdir, 'has-dash')
+            try:
+                os.mkdir(tmpdir)
+            except (IOError, OSError):
+                raise unittest.SkipTest('Cannot create temporary directory %r' % tmpdir)
+        elif dash_count > 1:
+            raise unittest.SkipTest('Too many dashes in temporary directory path %r' % tmpdir)
+
+        try:
+            shutil.copy(filename, tmpdir)
+        except (IOError, OSError):
+            raise unittest.SkipTest('Cannot copy package to temporary directory')
+
+        tmpfilename = path.join(tmpdir, 'test_package34-0.3.1-py2.7.egg')
+
+        with open(tmpfilename, 'rb') as fd:
+            package_data, version_data, file_data = pypi.inspect_pypi_package(tmpfilename, fd)
+
+        # If we could create this file, we ought to be able to delete it
+        os.remove(tmpfilename)
+        if dash_count == 0:
+            # We created a temporary directory like /tmp/has-dash, delete it
+            os.rmdir(tmpdir)
 
         self.assertEqual(expected_package_data, package_data)
         self.assertEqual(expected_version_data, version_data)
 
-        self.assertEqual(set(expected_file_data), set(file_data))
-        for key in expected_file_data:
-            self.assertEqual(expected_file_data[key], file_data[key])
+        self.assertEqual(set(expected_egg_file_data), set(file_data))
+        self.assertEqual(expected_egg_file_data['platform'], file_data['platform'])
+        self.assertEqual(expected_egg_file_data['attrs']['python_version'],
+                         file_data['attrs']['python_version'])
 
     def test_sdist_distutils(self):
         filename = data_path('test_package34-distutils-0.3.1.tar.gz')
