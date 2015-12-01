@@ -8,7 +8,7 @@ setup(
     author='Sean Ross-Ross',
     author_email='srossross@gmail.com',
     url='http://github.com/Anaconda-client/anaconda-client',
-    description='Anaconda.org command line client library',
+    description='Anaconda Cloud command line client library',
     packages=find_packages(),
     install_requires=['clyent',
                       'requests>=2.0,<2.8',

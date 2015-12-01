@@ -3,7 +3,7 @@ Manage Authentication tokens
 
 See also:
 
-  * [Using Anaconda-Server Tokens](http://docs.anaconda.org/using.html#Tokens)
+  * [Using Anaconda Cloud Tokens](http://docs.anaconda.org/using.html#Tokens)
 
 '''
 from __future__ import print_function

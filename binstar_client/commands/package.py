@@ -1,5 +1,5 @@
 '''
-Anaconda.org package utilities
+Anaconda Cloud package utilities
 '''
 from __future__ import print_function
 from binstar_client.utils import get_binstar, parse_specs
