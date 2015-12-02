@@ -17,7 +17,7 @@ import os
 from os.path import exists
 import sys
 
-from binstar_client import errors
+from binstar_client import errors, requests_ext
 from binstar_client.utils import get_binstar, bool_input, upload_print_callback
 from binstar_client.utils.detect import detect_package_type, get_attrs
 
@@ -205,6 +205,12 @@ def main(args):
                 full_name = '%s/%s/%s/%s' % (username, package_name, version, file_attrs['basename'])
                 log.info('Distribution already exists. Please use the -i/--interactive or --force options or `anaconda remove %s`' % full_name)
                 raise
+            except requests_ext.OpenSslError:
+                requests_ext.warn_openssl()
+                if args.show_traceback != 'never':
+                    raise
+                else:
+                    raise errors.BinstarError('Could not upload package')
 
             uploaded_packages.append([package_name, upload_info])
             log.info("\n\nUpload(s) Complete\n")
