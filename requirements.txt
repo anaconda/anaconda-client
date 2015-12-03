@@ -1,6 +1,6 @@
 nbformat
 PyYAML
-requests<2.8
+requests
 python-dateutil
 pytz
 pillow
