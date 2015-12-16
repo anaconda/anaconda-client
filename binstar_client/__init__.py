@@ -118,12 +118,15 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         self._check_response(res)
         return res.json()
 
-    def remove_authentication(self, auth_name=None):
+    def remove_authentication(self, auth_name=None, organization=None):
         """
         Remove the current authentication or the one given by `auth_name`
         """
         if auth_name:
-            url = '%s/authentications/name/%s' % (self.domain, auth_name)
+            if organization:
+                url = '%s/authentications/org/%s/name/%s' % (self.domain, organization, auth_name)
+            else:
+                url = '%s/authentications/name/%s' % (self.domain, auth_name)
         else:
             url = '%s/authentications' % (self.domain,)
 
