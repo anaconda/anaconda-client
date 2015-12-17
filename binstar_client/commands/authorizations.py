@@ -129,7 +129,7 @@ def main(args):
         return
     elif args.remove:
         for auth_name in args.remove:
-            aserver_api.remove_authentication(auth_name)
+            aserver_api.remove_authentication(auth_name, args.organization)
             log.info("Removed token %s" % auth_name)
         return
     elif args.list_scopes:
