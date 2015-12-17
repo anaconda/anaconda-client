@@ -1,8 +1,3 @@
-'''
-Created on Feb 18, 2014
-
-@author: sean
-'''
 from __future__ import unicode_literals
 from binstar_client.scripts.cli import main
 from binstar_client.tests.fixture import CLITestCase
