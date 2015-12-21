@@ -199,7 +199,7 @@ def main(args):
                                              args.description,
                                              dependencies=file_attrs.get('dependencies'),
                                              attrs=file_attrs['attrs'],
-                                             channels=args.channels,
+                                             channels=args.labels,
                                              callback=upload_print_callback(args))
             except errors.Conflict:
                 full_name = '%s/%s/%s/%s' % (username, package_name, version, file_attrs['basename'])
@@ -237,8 +237,16 @@ def add_parser(subparsers):
 
     parser.add_argument('files', nargs='+', help='Distributions to upload', default=[], type=windows_glob)
 
-    parser.add_argument('-c', '--channel', action='append', default=[], dest='channels',
-                        help='Add this file to a specific channel. Warning: if the file Channels do not include "main", the file will not show up in your user channel')
+    label_help = (
+        '{deprecation}Add this file to a specific {label}. '
+        'Warning: if the file {label}s do not include "main",'
+        'the file will not show up in your user channel')
+
+    parser.add_argument('-c', '--channel', action='append', default=[], dest='labels',
+                        help=label_help.format(deprecation='[DEPRECATED]\n', label='channel'),
+                        metavar='CHANNELS')
+    parser.add_argument('-l', '--label', action='append', dest='labels',
+                        help=label_help.format(deprecation='', label='label'))
     parser.add_argument('--no-progress', help="Don't show upload progress", action='store_true')
     parser.add_argument('-u', '--user', help='User account, defaults to the current user')
 
