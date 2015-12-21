@@ -48,9 +48,9 @@ def add_parser(subparsers):
     _from = parser.add_mutually_exclusive_group()
     _to = parser.add_mutually_exclusive_group()
 
-    _from.add_argument('--from-channel', help='[DEPRECATED]Label to copy packages from', default='main')
-    parser.add_argument('--to-channel', help='[DEPRECATED]Label to put all packages into', default='main')
+    _from.add_argument('--from-channel', help='[DEPRECATED]Channel to copy packages from', default='main')
+    parser.add_argument('--to-channel', help='[DEPRECATED]Channel to put all packages into', default='main')
 
-    _from.add_argument('--from-label', help='Channel to copy packages from', default='main')
-    _to.add_argument('--to-label', help='Channel to put all packages into', default='main')
+    _from.add_argument('--from-label', help='Label to copy packages from', default='main')
+    _to.add_argument('--to-label', help='Label to put all packages into', default='main')
     parser.set_defaults(main=main)
