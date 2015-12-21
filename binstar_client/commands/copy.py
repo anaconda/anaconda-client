@@ -13,13 +13,14 @@ def main(args):
 
     spec = args.spec
     channels = bs.list_channels(spec.user)
-    __name = 'label' if (args.from_label and args.to_label) else 'channel'
+    label_text = 'label' if (args.from_label and args.to_label) else 'channel'
+
     from_label = args.from_channel or args.from_label
     to_label = args.to_channel or args.to_label
     if from_label not in channels:
         raise errors.UserError(
             "{} {} does not exist\n\tplease choose from: {}".format(
-                __name.title(),
+                label_text.title(),
                 from_label,
                 ', '.join(channels)
             ))
