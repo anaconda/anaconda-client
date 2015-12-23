@@ -98,20 +98,25 @@ def add_package(aserver_api, args, username, package_name, package_attrs, packag
     try:
         aserver_api.package(username, package_name)
     except errors.NotFound:
-        if args.no_register:
-            raise errors.UserError('Anaconda Cloud package %s/%s does not exist. '
-                            'Please run "anaconda package --create" to create this package namespace in the cloud.' % (username, package_name))
-        else:
+        if not args.register:
+            raise errors.UserError(
+                'Anaconda Cloud package %s/%s does not exist. '
+                'Please run "anaconda package --create" or add "--register" to this command'
+                ' to create this package namespace in the cloud.' % (username, package_name)
+            )
 
-            if args.summary:
-                summary = args.summary
-            else:
-                if 'summary' not in package_attrs:
-                    raise errors.BinstarError("Could not detect package summary for package type %s, please use the --summary option" % (package_type,))
-                summary = package_attrs['summary']
+    if args.summary:
+        summary = args.summary
+    else:
+        if 'summary' not in package_attrs:
+            raise errors.BinstarError(
+                "Could not detect package summary for package type %s,"
+                " please use the --summary option" % (package_type,)
+            )
+        summary = package_attrs['summary']
 
-            aserver_api.add_package(username, package_name, summary, package_attrs.get('license'),
-                                public=True)
+    aserver_api.add_package(username, package_name, summary, package_attrs.get('license'),
+                        public=True)
 
 
 def add_release(aserver_api, args, username, package_name, version, release_attrs):
@@ -258,8 +263,8 @@ def add_parser(subparsers):
     mgroup.add_argument('-d', '--description', help='description of the file(s)')
     mgroup.add_argument('--thumbnail', help='Notebook\'s thumbnail image')
 
-    parser.add_argument("--no-register", action="store_true", default=False,
-                        help='Don\'t create a new package namespace if it does not exist')
+    parser.add_argument("--register", action="store_true", default=False,
+                        help='Create a new package namespace if it does not exist')
     parser.add_argument('--build-id', help='Anaconda Cloud Build ID (internal only)')
 
     group = parser.add_mutually_exclusive_group()
