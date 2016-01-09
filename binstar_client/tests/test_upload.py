@@ -27,7 +27,7 @@ class Test(CLITestCase):
         registry.register(method='POST', path='/s3_url', status=201)
         registry.register(method='POST', path='/commit/eggs/foo/0.1/osx-64/foo-0.1-0.tar.bz2', status=200, content={})
 
-        main(['--show-traceback', 'upload', self.data_dir('foo-0.1-0.tar.bz2')], False)
+        main(['--show-traceback', 'upload', '--register', self.data_dir('foo-0.1-0.tar.bz2')], False)
 
         registry.assertAllCalled()
 
@@ -39,7 +39,7 @@ class Test(CLITestCase):
         registry.register(method='GET', path='/package/eggs/foo', status=404)
 
         with self.assertRaises(errors.UserError):
-            main(['--show-traceback', 'upload', '--no-register', self.data_dir('foo-0.1-0.tar.bz2')], False)
+            main(['--show-traceback', 'upload', self.data_dir('foo-0.1-0.tar.bz2')], False)
 
         registry.assertAllCalled()
 
@@ -48,6 +48,7 @@ class Test(CLITestCase):
 
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
         registry.register(method='GET', path='/package/eggs/foo', content='{}')
+        registry.register(method='POST', path='/package/eggs/foo', content='{}', status=200)
         registry.register(method='GET', path='/release/eggs/foo/0.1', content='{}')
         registry.register(method='GET', path='/dist/eggs/foo/0.1/osx-64/foo-0.1-0.tar.bz2', status=404, content='{}')
 
@@ -57,7 +58,7 @@ class Test(CLITestCase):
         registry.register(method='POST', path='/s3_url', status=201)
         registry.register(method='POST', path='/commit/eggs/foo/0.1/osx-64/foo-0.1-0.tar.bz2', status=200, content={})
 
-        main(['--show-traceback', 'upload', self.data_dir('foo-0.1-0.tar.bz2')], False)
+        main(['--show-traceback', 'upload', '--register', self.data_dir('foo-0.1-0.tar.bz2')], False)
 
         registry.assertAllCalled()
 
@@ -66,6 +67,7 @@ class Test(CLITestCase):
 
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
         registry.register(method='GET', path='/package/eggs/test-package34', content='{}')
+        registry.register(method='POST', path='/package/eggs/test-package34', content='{}', status=200)
         registry.register(method='GET', path='/release/eggs/test-package34/0.3.1', content='{}')
         registry.register(method='GET', path='/dist/eggs/test-package34/0.3.1/test_package34-0.3.1.tar.gz', status=404, content='{}')
 
