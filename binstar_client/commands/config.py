@@ -50,6 +50,13 @@ prefix the option with `sites.site_name` e.g.
   * `url`: Set the anaconda api url (default: https://api.anaconda.org)
   * `verify_ssl`: Perform ssl validation on the https requests.
     verify_ssl may be `True`, `False` or a path to a root CA pem file.
+
+
+###### Toggle auto-register when doing anaconda upload
+If turned off, whenever an upload is done with a new package name, the upload is going to fail
+
+  anaconda config --set auto_register yes|no
+
 '''
 from __future__ import print_function
 

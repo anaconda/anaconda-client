@@ -18,7 +18,10 @@ from os.path import exists
 import sys
 
 from binstar_client import errors, requests_ext
-from binstar_client.utils import get_binstar, bool_input, upload_print_callback
+from binstar_client.utils import bool_input
+from binstar_client.utils import get_binstar
+from binstar_client.utils import get_config
+from binstar_client.utils import upload_print_callback
 from binstar_client.utils.detect import detect_package_type, get_attrs
 
 
@@ -98,7 +101,7 @@ def add_package(aserver_api, args, username, package_name, package_attrs, packag
     try:
         aserver_api.package(username, package_name)
     except errors.NotFound:
-        if args.no_register:
+        if not get_config().get('auto_register') or args.no_register:
             raise errors.UserError('Anaconda Cloud package %s/%s does not exist. '
                             'Please run "anaconda package --create" to create this package namespace in the cloud.' % (username, package_name))
         else:
