@@ -53,9 +53,10 @@ prefix the option with `sites.site_name` e.g.
 
 
 ###### Toggle auto-register when doing anaconda upload
+
 If turned off, whenever an upload is done with a new package name, the upload is going to fail
 
-  anaconda config --set auto_register yes|no
+    anaconda config --set auto_register yes|no
 
 '''
 from __future__ import print_function
