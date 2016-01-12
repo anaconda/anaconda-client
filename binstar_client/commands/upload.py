@@ -266,7 +266,7 @@ def add_parser(subparsers):
     register_group.add_argument("--register", dest="auto_register", action="store_true",
                         help='Create a new package namespace if it does not exist',
                         default=bool(get_config().get('auto_register')))
-    parser.set_defaults(auto_register=bool(get_config().get('auto_register')))
+    parser.set_defaults(auto_register=bool(get_config().get('auto_register', True)))
     parser.add_argument('--build-id', help='Anaconda Cloud Build ID (internal only)')
 
     group = parser.add_mutually_exclusive_group()
