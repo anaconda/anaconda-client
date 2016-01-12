@@ -18,7 +18,10 @@ from os.path import exists
 import sys
 
 from binstar_client import errors, requests_ext
-from binstar_client.utils import get_binstar, bool_input, upload_print_callback
+from binstar_client.utils import bool_input
+from binstar_client.utils import get_binstar
+from binstar_client.utils import get_config
+from binstar_client.utils import upload_print_callback
 from binstar_client.utils.detect import detect_package_type, get_attrs
 
 
@@ -98,7 +101,7 @@ def add_package(aserver_api, args, username, package_name, package_attrs, packag
     try:
         aserver_api.package(username, package_name)
     except errors.NotFound:
-        if args.no_register:
+        if not args.auto_register:
             raise errors.UserError('Anaconda Cloud package %s/%s does not exist. '
                             'Please run "anaconda package --create" to create this package namespace in the cloud.' % (username, package_name))
         else:
@@ -142,7 +145,6 @@ def remove_existing_file(aserver_api, args, username, package_name, version, fil
 
 
 def main(args):
-
     aserver_api = get_binstar(args)
 
     if args.user:
@@ -258,8 +260,12 @@ def add_parser(subparsers):
     mgroup.add_argument('-d', '--description', help='description of the file(s)')
     mgroup.add_argument('--thumbnail', help='Notebook\'s thumbnail image')
 
-    parser.add_argument("--no-register", action="store_true", default=False,
+    register_group = parser.add_mutually_exclusive_group()
+    register_group.add_argument("--no-register", dest="auto_register", action="store_false",
                         help='Don\'t create a new package namespace if it does not exist')
+    register_group.add_argument("--register", dest="auto_register", action="store_true",
+                        help='Create a new package namespace if it does not exist')
+    parser.set_defaults(auto_register=bool(get_config().get('auto_register', True)))
     parser.add_argument('--build-id', help='Anaconda Cloud Build ID (internal only)')
 
     group = parser.add_mutually_exclusive_group()
