@@ -264,8 +264,7 @@ def add_parser(subparsers):
     register_group.add_argument("--no-register", dest="auto_register", action="store_false",
                         help='Don\'t create a new package namespace if it does not exist')
     register_group.add_argument("--register", dest="auto_register", action="store_true",
-                        help='Create a new package namespace if it does not exist',
-                        default=bool(get_config().get('auto_register')))
+                        help='Create a new package namespace if it does not exist')
     parser.set_defaults(auto_register=bool(get_config().get('auto_register', True)))
     parser.add_argument('--build-id', help='Anaconda Cloud Build ID (internal only)')
 
