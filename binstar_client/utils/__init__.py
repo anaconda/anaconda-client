@@ -160,6 +160,12 @@ def get_binstar(args=None, cls=None):
     if args and args.token:
         log.debug("Using token from command line args")
         token = args.token
+    elif 'BINSTAR_API_TOKEN' in os.environ:
+        log.debug("Using token from environment variable BINSTAR_API_TOKEN")
+        token = os.environ['BINSTAR_API_TOKEN']
+    elif 'ANACONDA_API_TOKEN' in os.environ:
+        log.debug("Using token from environment variable ANACONDA_API_TOKEN")
+        token = os.environ['ANACONDA_API_TOKEN']
     else:
         token = load_token(url)
 
