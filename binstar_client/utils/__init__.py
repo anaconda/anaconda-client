@@ -151,7 +151,7 @@ def load_token(url):
     return token
 
 
-def get_server_api(token=None, site=None, log_level=0, cls=None):
+def get_server_api(token=None, site=None, log_level=logging.INFO, cls=None):
     """
     Get the anaconda server api class
     """
