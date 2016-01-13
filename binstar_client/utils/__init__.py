@@ -193,7 +193,7 @@ def get_binstar(args=None, cls=None):
     )
 
     token = getattr(args, 'token', None)
-    log_level = getattr(args, 'log_level', 0)
+    log_level = getattr(args, 'log_level', logging.INFO)
     site = getattr(args, 'site', None)
 
     aserver_api = get_server_api(token, site, log_level, cls)
