@@ -3,15 +3,17 @@ Manage your Anaconda Cloud channels
 
 '''
 from __future__ import unicode_literals, print_function
-from binstar_client.utils import get_binstar
+from binstar_client.utils import get_server_api
 import functools
 import logging
 import argparse
 
 log = logging.getLogger('binstar.channel')
 
+
 def main(args, name, deprecated=False):
-    aserver_api = get_binstar(args)
+    aserver_api = get_server_api(args.token, args.site, args.log_level)
+
     if args.organization:
         owner = args.organization
     else:

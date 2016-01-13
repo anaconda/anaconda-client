@@ -2,17 +2,18 @@
 Copy packages from one account to another
 '''
 from __future__ import unicode_literals, print_function
-from binstar_client.utils import get_binstar, parse_specs
+from binstar_client.utils import get_server_api, parse_specs
 import logging
 from binstar_client import errors
 
 log = logging.getLogger('binstar.whoami')
 
 def main(args):
-    bs = get_binstar(args)
+    aserver_api = get_server_api(args.token, args.site, args.log_level)
 
     spec = args.spec
-    channels = bs.list_channels(spec.user)
+
+    channels = aserver_api.list_channels(spec.user)
     label_text = 'label' if (args.from_label and args.to_label) else 'channel'
 
     from_label = args.from_channel or args.from_label
@@ -26,7 +27,7 @@ def main(args):
             ))
 
     # TODO: add/replace from_channel => from_label and to_channel => to_label
-    files = bs.copy(spec.user, spec.package, spec.version, spec._basename,
+    files = aserver_api.copy(spec.user, spec.package, spec.version, spec._basename,
                     to_owner=args.to_owner, from_channel=from_label, to_channel=to_label)
     for binstar_file in files:
         print("Copied file: %(basename)s" % binstar_file)

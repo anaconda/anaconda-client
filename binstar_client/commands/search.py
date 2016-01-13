@@ -1,14 +1,14 @@
 '''
 Search Anaconda Cloud for packages
 '''
-from binstar_client.utils import get_binstar
+from binstar_client.utils import get_server_api
 from binstar_client.utils.pprint import pprint_packages
 import logging
 log = logging.getLogger('binstar.search')
 
 def search(args):
 
-    aserver_api = get_binstar(args)
+    aserver_api = get_server_api(args.token, args.site, args.log_level)
 
     log.info("Run 'anaconda show <USER/PACKAGE>' to get more details:")
     packages = aserver_api.search(args.name, package_type=args.package_type)

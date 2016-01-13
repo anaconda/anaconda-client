@@ -11,7 +11,7 @@ Examples:
 '''
 
 from argparse import RawTextHelpFormatter
-from binstar_client.utils import get_binstar, parse_specs
+from binstar_client.utils import get_server_api, parse_specs
 from binstar_client.utils.pprint import pprint_user, pprint_packages, \
     pprint_orgs
 import logging
@@ -41,7 +41,7 @@ def install_info(package, package_type):
 
 def main(args):
 
-    aserver_api = get_binstar(args)
+    aserver_api = get_server_api(args.token, args.site, args.log_level)
 
     spec = args.spec
     if spec._basename:

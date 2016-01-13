@@ -12,7 +12,7 @@ try:
 except ImportError:
     from urllib.parse import urlparse
 from binstar_client import errors
-from binstar_client.utils import get_config, get_binstar, store_token, \
+from binstar_client.utils import get_config, get_server_api, store_token, \
     bool_input
 import platform
 
@@ -25,7 +25,7 @@ except NameError:
     input = input
 
 def interactive_get_token(args, fail_if_already_exists=True):
-    bs = get_binstar(args)
+    bs = get_server_api(args.token, args.site, args.log_level)
     config = get_config(remote_site=args.site)
 
     url = config.get('url', 'https://api.anaconda.org')
@@ -85,8 +85,8 @@ def interactive_get_token(args, fail_if_already_exists=True):
         else:
             netloc = parsed_url.netloc
         hostparts = (parsed_url.scheme, netloc)
-        msg = ('Sorry. Please try again ' +\
-               '(go to %s://%s/account/forgot_password ' % hostparts +\
+        msg = ('Sorry. Please try again ' + \
+               '(go to %s://%s/account/forgot_password ' % hostparts + \
                'to reset your password)')
         raise errors.BinstarError(msg)
 
