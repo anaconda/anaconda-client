@@ -29,7 +29,7 @@ def main(args):
 
 def add_parser(subparsers):
     subparser = subparsers.add_parser('logout',
-                                      help='Log out from anaconda.org',
+                                      help='Log out from Anaconda Cloud',
                                       description=__doc__)
 
     subparser.set_defaults(main=main)

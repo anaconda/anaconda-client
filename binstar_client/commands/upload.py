@@ -17,8 +17,11 @@ import os
 from os.path import exists
 import sys
 
-from binstar_client import errors
-from binstar_client.utils import get_server_api, bool_input, upload_print_callback
+from binstar_client import errors, requests_ext
+from binstar_client.utils import bool_input
+from binstar_client.utils import get_server_api
+from binstar_client.utils import get_config
+from binstar_client.utils import upload_print_callback
 from binstar_client.utils.detect import detect_package_type, get_attrs
 
 
@@ -98,8 +101,8 @@ def add_package(aserver_api, args, username, package_name, package_attrs, packag
     try:
         aserver_api.package(username, package_name)
     except errors.NotFound:
-        if args.no_register:
-            raise errors.UserError('Anaconda.org package %s/%s does not exist. '
+        if not args.auto_register:
+            raise errors.UserError('Anaconda Cloud package %s/%s does not exist. '
                             'Please run "anaconda package --create" to create this package namespace in the cloud.' % (username, package_name))
         else:
 
@@ -199,12 +202,18 @@ def main(args):
                                              args.description,
                                              dependencies=file_attrs.get('dependencies'),
                                              attrs=file_attrs['attrs'],
-                                             channels=args.channels,
+                                             channels=args.labels,
                                              callback=upload_print_callback(args))
             except errors.Conflict:
                 full_name = '%s/%s/%s/%s' % (username, package_name, version, file_attrs['basename'])
                 log.info('Distribution already exists. Please use the -i/--interactive or --force options or `anaconda remove %s`' % full_name)
                 raise
+            except requests_ext.OpenSslError:
+                requests_ext.warn_openssl()
+                if args.show_traceback != 'never':
+                    raise
+                else:
+                    raise errors.BinstarError('Could not upload package')
 
             uploaded_packages.append([package_name, upload_info])
             log.info("\n\nUpload(s) Complete\n")
@@ -223,7 +232,7 @@ def windows_glob(item):
 
 def add_parser(subparsers):
 
-    description = 'Upload packages to anaconda.org'
+    description = 'Upload packages to Anaconda Cloud'
     parser = subparsers.add_parser('upload',
                                    formatter_class=argparse.RawDescriptionHelpFormatter,
                                    help=description, description=description,
@@ -231,8 +240,16 @@ def add_parser(subparsers):
 
     parser.add_argument('files', nargs='+', help='Distributions to upload', default=[], type=windows_glob)
 
-    parser.add_argument('-c', '--channel', action='append', default=[], dest='channels',
-                        help='Add this file to a specific channel. Warning: if the file Channels do not include "main", the file will not show up in your user channel')
+    label_help = (
+        '{deprecation}Add this file to a specific {label}. '
+        'Warning: if the file {label}s do not include "main",'
+        'the file will not show up in your user {label}')
+
+    parser.add_argument('-c', '--channel', action='append', default=[], dest='labels',
+                        help=label_help.format(deprecation='[DEPRECATED]\n', label='channel'),
+                        metavar='CHANNELS')
+    parser.add_argument('-l', '--label', action='append', dest='labels',
+                        help=label_help.format(deprecation='', label='label'))
     parser.add_argument('--no-progress', help="Don't show upload progress", action='store_true')
     parser.add_argument('-u', '--user', help='User account, defaults to the current user')
 
@@ -244,9 +261,13 @@ def add_parser(subparsers):
     mgroup.add_argument('-d', '--description', help='description of the file(s)')
     mgroup.add_argument('--thumbnail', help='Notebook\'s thumbnail image')
 
-    parser.add_argument("--no-register", action="store_true", default=False,
+    register_group = parser.add_mutually_exclusive_group()
+    register_group.add_argument("--no-register", dest="auto_register", action="store_false",
                         help='Don\'t create a new package namespace if it does not exist')
-    parser.add_argument('--build-id', help='Anaconda.org-Build ID (internal only)')
+    register_group.add_argument("--register", dest="auto_register", action="store_true",
+                        help='Create a new package namespace if it does not exist')
+    parser.set_defaults(auto_register=bool(get_config().get('auto_register', True)))
+    parser.add_argument('--build-id', help='Anaconda Cloud Build ID (internal only)')
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-i', '--interactive', action='store_const', help='Run an interactive prompt if any packages are missing',

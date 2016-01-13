@@ -1,5 +1,5 @@
 '''
-Remove an object from anaconda.org:
+Remove an object from Anaconda Cloud
 
 example::
 
@@ -49,7 +49,7 @@ def main(args):
 def add_parser(subparsers):
 
     parser = subparsers.add_parser('remove',
-                                      help='Remove an object from anaconda.org',
+                                      help='Remove an object from Anaconda Cloud',
                                       description=__doc__, formatter_class=RawTextHelpFormatter)
 
     parser.add_argument('specs', help='Package written as <user>[/<package>[/<version>[/<filename>]]]', type=parse_specs, nargs='+')

@@ -139,7 +139,13 @@ def load_token(url):
     if isfile(tokenfile):
         log.debug("Found login token: {}".format(tokenfile))
         with open(tokenfile) as fd:
-            token = fd.read()
+            token = fd.read().strip()
+
+        if not token:
+            log.debug("Token file is empty: {}".format(tokenfile))
+            log.debug("Removing file: {}".format(tokenfile))
+            os.unlink(tokenfile)
+            token = None
     else:
         token = None
     return token
@@ -155,10 +161,18 @@ def get_server_api(token=None, site=None, log_level=0, cls=None):
         cls = Binstar
     config = get_config(remote_site=site)
     url = config.get('url', DEFAULT_URL)
+
     if log_level >= logging.INFO:
-        sys.stderr.write("Using anaconda-server api site %s\n" % url)
+        sys.stderr.write("Using Anaconda Cloud api site %s\n" % url)
     if token:
         log.debug("Using token from command line args")
+    elif 'BINSTAR_API_TOKEN' in os.environ:
+        log.debug("Using token from environment variable BINSTAR_API_TOKEN")
+        token = os.environ['BINSTAR_API_TOKEN']
+    elif 'ANACONDA_API_TOKEN' in os.environ:
+        log.debug("Using token from environment variable ANACONDA_API_TOKEN")
+        token = os.environ['ANACONDA_API_TOKEN']
+
     else:
         token = load_token(url)
 
@@ -169,7 +183,7 @@ def get_binstar(args=None, cls=None):
     """
     DEPRECATED METHOD,
 
-    
+
     use `get_server_api`
     """
 

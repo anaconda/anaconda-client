@@ -1,5 +1,5 @@
 '''
-Anaconda.org command line utility
+Anaconda Cloud command line manager
 '''
 from __future__ import print_function, unicode_literals
 

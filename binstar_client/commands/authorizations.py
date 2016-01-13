@@ -3,7 +3,7 @@ Manage Authentication tokens
 
 See also:
 
-  * [Using Anaconda-Server Tokens](http://docs.anaconda.org/using.html#Tokens)
+  * [Using Anaconda Cloud Tokens](http://docs.anaconda.org/using.html#Tokens)
 
 '''
 from __future__ import print_function
@@ -129,7 +129,7 @@ def main(args):
         return
     elif args.remove:
         for auth_name in args.remove:
-            aserver_api.remove_authentication(auth_name)
+            aserver_api.remove_authentication(auth_name, args.organization)
             log.info("Removed token %s" % auth_name)
         return
     elif args.list_scopes:

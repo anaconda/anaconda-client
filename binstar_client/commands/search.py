@@ -1,5 +1,5 @@
 '''
-Search anaconda.org for packages
+Search Anaconda Cloud for packages
 '''
 from binstar_client.utils import get_server_api
 from binstar_client.utils.pprint import pprint_packages
@@ -18,8 +18,8 @@ def search(args):
 
 def add_parser(subparsers):
     parser1 = subparsers.add_parser('search',
-                                      help='Search anaconda.org',
-                                      description='Search anaconda.org',
+                                      help='Search Anaconda Cloud',
+                                      description='Search Anaconda Cloud',
                                       epilog=__doc__)
     parser1.add_argument('name', nargs=1, help='Search string')
     parser1.add_argument('-t', '--package-type', choices=['conda', 'pypi'],

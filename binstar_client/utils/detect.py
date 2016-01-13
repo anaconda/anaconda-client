@@ -17,12 +17,17 @@ log = logging.getLogger('binstar.detect')
 #===============================================================================
 #
 #===============================================================================
+
+def file_handler(filename, fileobj, *args, **kwargs):
+    return ({}, {'description': ''},
+            {'basename': path.basename(filename), 'attrs':{}})
+
 detectors = {'conda':inspect_conda_package,
              'pypi': inspect_pypi_package,
              'r': inspect_r_package,
              'ipynb': inspect_ipynb_package,
              conda_installer.PACKAGE_TYPE: conda_installer.inspect_package,
-             'file': lambda filename, fileobj: ({}, {'description': ''}, {'basename': path.basename(filename), 'attrs':{}}),
+             'file': file_handler,
              }
 
 
