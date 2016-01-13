@@ -57,7 +57,7 @@ class ChannelsMixin(object):
         :param filename: The exact file to remove the channel from
         
         '''
-        url = '%s/channels/%s/%s' % (self.domain, channel, owner)
+        url = '%s/channels/%s/%s' % (self.domain, owner, channel)
         data, headers = jencode(package=package, version=version, basename=filename)
 
         res = self.session.delete(url, data=data, headers=headers)
