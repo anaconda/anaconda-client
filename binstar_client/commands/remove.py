@@ -38,9 +38,12 @@ def main(args):
                     aserver_api.remove_package(spec.user, spec.package)
                 else:
                     log.warn('Not removing release %s' % (spec))
+            else:
+                log.error('Invalid package specification: %s', spec)
 
         except errors.NotFound:
             if args.force:
+                log.warn('', exc_info=True)
                 continue
             else:
                 raise
