@@ -1,5 +1,21 @@
 # CHANGELOG:
 
+## 1.2.2
+
+  * Learned the `anaconda label` command and `--label` arguments to replace the `--channel` options and `anaconda channel` command (#262)
+  * `anaconda auth --remove` learned the `--organization` argument to remove a token for an organization (#260)
+  * `anaconda upload` can be told not to create packages automatically by setting the new `auto_register` configuration option to `no` (#270)
+  * Learned to read an API token from the environment variable `ANACONDA_API_TOKEN` (#269)
+  * Additional bug fixes (#204 #268 Anaconda-Server/docs.anaconda.org#63)
+ 
+## 1.2.1
+
+  * Produce warning about broken version of Requests with PyOpenSSL
+
+## 1.2.0
+
+  * Fix issue with `anaconda download` when server uses file storage
+
 ## 1.1.2
 
   * Fix issue with big packages #126
