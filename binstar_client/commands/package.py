@@ -56,6 +56,6 @@ def add_parser(subparsers):
                              'This package will be available only on your personal registries'))
     group.add_argument('--private', action='store_const', const='private', dest='access',
                        help=('Set the package access to private '
-                             'This package will require authenticated access to install'))
+                             'This package will require authorized and authenticated access to install'))
 
     parser.set_defaults(main=main)
