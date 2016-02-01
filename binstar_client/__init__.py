@@ -55,8 +55,22 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
     def session(self):
         return self._session
 
-    def authenticate(self, username, password,
-                     application, application_url=None,
+    def krb_authenticate(self, *args, **kwargs):
+        try:
+            from requests_kerberos import HTTPKerberosAuth
+            return self._authenticate(HTTPKerberosAuth(), *args, **kwargs)
+        except ImportError:
+            raise BinstarError(
+                'Kerberos authentication requires the requests-kerberos '
+                'package to be installed')
+
+    def authenticate(self, username, password, *args, **kwargs):
+        return self._authenticate((username, password), *args, **kwargs)
+
+    def _authenticate(self,
+                     auth,
+                     application,
+                     application_url=None,
                      for_user=None,
                      scopes=None,
                      created_with=None,
@@ -86,7 +100,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
                    'fail-if-exists': fail_if_already_exists}
 
         data, headers = jencode(payload)
-        res = self.session.post(url, auth=(username, password), data=data, headers=headers)
+        res = self.session.post(url, auth=auth, data=data, headers=headers)
         self._check_response(res)
         res = res.json()
         token = res['token']
