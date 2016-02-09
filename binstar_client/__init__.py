@@ -55,6 +55,16 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
     def session(self):
         return self._session
 
+    def authentication_type(self):
+        url = '%s/authentication-type' % self.domain
+        res = self.session.get(url)
+        try:
+            self._check_response(res)
+            res = res.json()
+            return res['authentication_type']
+        except BinstarError:
+            return 'password'
+
     def krb_authenticate(self, *args, **kwargs):
         try:
             from requests_kerberos import HTTPKerberosAuth

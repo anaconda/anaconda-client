@@ -52,7 +52,9 @@ def interactive_get_token(args, fail_if_already_exists=True):
     config = get_config(remote_site=args.site)
 
     token = None
-    hostname = args.hostname
+    # This function could be called from a totally different CLI, so we don't
+    # know if the attribute hostname exists.
+    hostname = getattr(args, 'hostname', platform.node())
     site = args.site or config.get('default_site')
     url = config.get('url', 'https://api.anaconda.org')
 
@@ -63,7 +65,9 @@ def interactive_get_token(args, fail_if_already_exists=True):
 
     auth_name += '%s@%s' % (getpass.getuser(), hostname)
 
-    if args.kerberos:
+    auth_type = bs.authentication_type()
+
+    if auth_type == 'kerberos':
         token = try_replace_token(
             bs.krb_authenticate,
             application=auth_name,
@@ -153,6 +157,4 @@ def add_parser(subparsers):
                            help="Specify your password. "
                                 "If this is not given, you will be prompted"
                            )
-    subparser.add_argument('--kerberos', action='store_true',
-                           help='Use Kerberos to authenticate to the server')
     subparser.set_defaults(main=main)
