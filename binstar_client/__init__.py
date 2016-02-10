@@ -180,18 +180,34 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
 
         return res.json()
 
-    def user_packages(self, login=None):
+    def user_packages(self, login=None, platform=None, package_type=None,
+                      type_=None):
         '''
-        Returns a list of packages for a given user
+        Returns a list of packages for a given user and optionally filter
+        by `platform`, `package_type` and `type_`.
 
-        :param login: (optional) the login name of the user or None. If login is None
-                      this method will return the packages for the authenticated user.
+        :param login: (optional) the login name of the user or None. If login
+                      is None this method will return the packages for the
+                      authenticated user.
 
         '''
         if login:
-            url = '%s/packages/%s' % (self.domain, login)
+            url = '{0}/packages/{1}'.format(self.domain, login)
         else:
-            url = '%s/packages' % (self.domain)
+            url = '{0}/packages'.format(self.domain)
+
+        arguments = []
+        if platform:
+            arguments.append('platform={0}'.format(platform))
+
+        if package_type:
+            arguments.append('package_type={0}'.format(package_type))
+
+        if type_:
+            arguments.append('type={0}'.format(type_))
+
+        if platform or package_type or type_:
+            url = "{0}?{1}".format(url, '&'.join(arguments))
 
         res = self.session.get(url)
         self._check_response(res)
