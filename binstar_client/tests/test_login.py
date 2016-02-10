@@ -63,7 +63,7 @@ class Test(CLITestCase):
         urls.register(path='/authentication-type', content='{"authentication_type": "kerberos"}')
 
         def update_authentications():
-            urls.unregister(auth_fail)
+            # The second request should succeed
             auth_success = urls.register(
                 method='POST',
                 path='/authentications',
@@ -76,6 +76,7 @@ class Test(CLITestCase):
         main(['--show-traceback', 'login'], False)
         self.assertIn('login successful', self.stream.getvalue())
 
+        urls.assertAllCalled()
         self.assertTrue(store_token.called)
         self.assertEqual(store_token.call_args[0][0], 'a-token')
 
