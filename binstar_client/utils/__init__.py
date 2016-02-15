@@ -188,7 +188,7 @@ def get_binstar(args=None, cls=None):
     """
 
     warnings.warn(
-      'method get_binstar is depricated, please use `get_server_api`',
+      'method get_binstar is deprecated, please use `get_server_api`',
       DeprecationWarning
     )
 
