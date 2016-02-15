@@ -26,8 +26,6 @@ if 'BINSTAR_CONFIG_DIR' in os.environ:
 else:
     dirs = AppDirs('binstar', 'ContinuumIO')
 
-
-
 try:
     import urlparse
     from urllib import quote_plus
@@ -247,8 +245,8 @@ def recursive_update(d, u):
             d[k] = u[k]
     return d
 
-DEFAULT_URL = 'https://api.anaconda.org'
-ALPHA_URL = 'http://api.alpha.binstar.org'
+DEFAULT_URL = os.environ.get('ANACONDA_DEFAULT_SITE', 'https://api.anaconda.org')
+ALPHA_URL = os.environ.get('ANACONDA_ALPHA_SITE', 'http://api.alpha.binstar.org')
 DEFAULT_CONFIG = {
                   'sites': {'binstar': {'url': DEFAULT_URL},
                             'alpha': {'url': ALPHA_URL},
