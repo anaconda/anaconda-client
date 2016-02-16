@@ -246,18 +246,23 @@ def recursive_update(d, u):
     return d
 
 DEFAULT_URL = os.environ.get('ANACONDA_DEFAULT_SITE', 'https://api.anaconda.org')
-ALPHA_URL = os.environ.get('ANACONDA_ALPHA_SITE', 'http://api.alpha.binstar.org')
+ALPHA_URL = 'http://api.alpha.binstar.org'
 DEFAULT_CONFIG = {
                   'sites': {'binstar': {'url': DEFAULT_URL},
                             'alpha': {'url': ALPHA_URL},
                             }
                   }
 
+
+def has_environment_variable_config():
+    return 'ANACONDA_DEFAULT_SITE' in os.environ
+
+
 def get_config(user=True, site=True, remote_site=None):
     config = DEFAULT_CONFIG.copy()
-    if site:
+    if not has_environment_variable_config() and site:
         recursive_update(config, load_config(SITE_CONFIG))
-    if user:
+    if not has_environment_variable_config() and user:
         recursive_update(config, load_config(USER_CONFIG))
 
     remote_site = remote_site or config.get('default_site')
