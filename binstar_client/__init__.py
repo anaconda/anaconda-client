@@ -72,7 +72,11 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         except ImportError:
             raise BinstarError(
                 'Kerberos authentication requires the requests-kerberos '
-                'package to be installed')
+                'package to be installed:\n'
+                '    conda install requests-kerberos\n'
+                'or: \n'
+                '    pip install requests-kerberos'
+            )
 
     def authenticate(self, username, password, *args, **kwargs):
         return self._authenticate((username, password), *args, **kwargs)

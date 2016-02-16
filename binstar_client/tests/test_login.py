@@ -1,15 +1,23 @@
-'''
-Created on Feb 18, 2014
-
-@author: sean
-'''
 from __future__ import unicode_literals
+# Standard library imports
+import unittest
+
+# Third party imports
+from mock import patch
+
+# Local imports
+from binstar_client import errors
+from binstar_client.scripts.cli import main
 from binstar_client.scripts.cli import main
 from binstar_client.tests.fixture import CLITestCase
 from binstar_client.tests.urlmock import urlpatch
-import unittest
-from mock import patch
 
+try:
+    import requests_kerberos
+except ImportError:
+    have_kerberos = False
+else:
+    have_kerberos = True
 
 class Test(CLITestCase):
     @patch('binstar_client.commands.login.store_token')
@@ -56,6 +64,15 @@ class Test(CLITestCase):
         self.assertTrue(store_token.called)
         self.assertEqual(store_token.call_args[0][0], 'a-token')
 
+    @unittest.skipIf(have_kerberos, "prompts user to install requests-kerberos")
+    @urlpatch
+    def test_login_kerberos_missing(self, urls):
+        urls.register(path='/authentication-type', content='{"authentication_type": "kerberos"}')
+
+        with self.assertRaisesRegexp(errors.BinstarError, 'conda install requests-kerberos'):
+            main(['--show-traceback', 'login'], False)
+
+    @unittest.skipIf(not have_kerberos, "requires requests-kerberos")
     @patch('binstar_client.commands.login.store_token')
     @urlpatch
     def test_login_kerberos(self, urls, store_token):
