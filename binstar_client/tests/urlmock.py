@@ -15,7 +15,7 @@ except NameError:
 
 from collections import namedtuple
 
-rule = namedtuple('rule', ('url', 'path', 'method', 'status', 'content', 'side_effect', 'res'))
+rule = namedtuple('rule', ('url', 'path', 'method', 'status', 'content', 'side_effect', 'res', 'headers'))
 
 def filter_request(m, prepared_request):
     if m.url and  m.url != prepared_request.url:
@@ -38,7 +38,7 @@ class Responses(object):
 
     @property
     def called(self):
-        return bool(len(self._resps))
+        return (len(self._resps))
 
     @property
     def req(self):
@@ -86,6 +86,7 @@ class Registry(object):
         res._content = content
         res.encoding = 'utf-8'
         res.request = prepared_request
+        res.headers.update(rule.headers or {})
         rule.res.append((res, prepared_request))
 
         if rule.side_effect:
@@ -93,10 +94,16 @@ class Registry(object):
 
         return res
 
-    def register(self, url=None, path=None, method='GET', status=200, content=b'', side_effect=None):
+    def register(self, url=None, path=None, method='GET', status=200, content=b'', side_effect=None, headers=None):
         res = Responses()
-        self._map.append(rule(url, path, method, status, content, side_effect, res))
+        self._map.append(rule(url, path, method, status, content, side_effect, res, headers))
         return res
+
+    def unregister(self, res):
+        for item in list(self._map):
+            if res == item.res:
+                self._map.remove(item)
+                return
 
     def assertAllCalled(self):
         for item in self._map:

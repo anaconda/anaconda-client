@@ -24,71 +24,110 @@ try:
 except NameError:
     input = input
 
+
+def try_replace_token(authenticate, **kwargs):
+    '''
+    Authenticates using the given *authenticate*, retrying if the token needs
+    to be replaced.
+    '''
+
+    try:
+        return authenticate(**kwargs)
+    except errors.BinstarError as err:
+        if kwargs.get('fail_if_already_exists') and len(err.args) > 1 and err.args[1] == 400:
+            log.warn('It appears you are already logged in from host %s' % socket.gethostname())
+            log.warn('Logging in again will remove the previous token. '
+                     ' (This could cause troubles with virtual machines with the same hostname)')
+            log.warn('Otherwise you can login again and specify a '
+                      'different hostname with "--hostname"')
+            if bool_input("Would you like to continue"):
+                kwargs['fail_if_already_exists'] = False
+                return authenticate(**kwargs)
+
+        raise
+
+
 def interactive_get_token(args, fail_if_already_exists=True):
     bs = get_server_api(args.token, args.site, args.log_level)
     config = get_config(remote_site=args.site)
 
-    url = config.get('url', 'https://api.anaconda.org')
-    parsed_url = urlparse(url)
     token = None
+    # This function could be called from a totally different CLI, so we don't
+    # know if the attribute hostname exists.
     hostname = getattr(args, 'hostname', platform.node())
-    if getattr(args, 'login_username', None):
-        username = args.login_username
-    else:
-        username = input('Username: ')
+    site = args.site or config.get('default_site')
+    url = config.get('url', 'https://api.anaconda.org')
 
     auth_name = 'binstar_client:'
-    site = args.site or config.get('default_site')
     if site and site != 'binstar':
         # For testing with binstar alpha site
         auth_name += '%s:' % site
 
     auth_name += '%s@%s' % (getpass.getuser(), hostname)
 
-    password = getattr(args, 'login_password', None)
+    auth_type = bs.authentication_type()
 
-    for _ in range(3):
-        try:
-            sys.stderr.write("%s's " % username)
+    if auth_type == 'kerberos':
+        token = try_replace_token(
+            bs.krb_authenticate,
+            application=auth_name,
+            application_url=url,
+            created_with=' '.join(sys.argv),
+            fail_if_already_exists=fail_if_already_exists,
+            hostname=hostname,
+        )
 
-            if password is None:
-                password = getpass.getpass(stream=sys.stderr)
+        if token is None:
+            raise errors.BinstarError(
+                'Unable to authenticate via Kerberos. Try refreshing your '
+                'authentication using `kinit`')
 
-            token = bs.authenticate(username, password, auth_name, url,
-                                    created_with=' '.join(sys.argv),
-                                    fail_if_already_exists=fail_if_already_exists,
-                                    hostname=hostname)
-            break
+    else:
 
-        except errors.Unauthorized:
-            log.error('Invalid Username password combination, please try again')
-            password = None
-            continue
-
-        except errors.BinstarError as err:
-            if fail_if_already_exists is True and err.args[1] == 400:
-                log.warn('It appears you are already logged in from host %s' % socket.gethostname())
-                log.warn('Logging in again will remove the previous token. '
-                         ' (This could cause troubles with virtual machines with the same hostname)')
-                log.warn('Otherwise you can login again and specify a '
-                          'different hostname with "--hostname"')
-                if bool_input("Would you like to continue"):
-                    fail_if_already_exists = False
-                    continue
-                else:
-                    raise
-
-
-    if token is None:
-        if parsed_url.netloc.startswith('api.anaconda.org'):
-            netloc = 'anaconda.org'
+        if getattr(args, 'login_username', None):
+            username = args.login_username
         else:
-            netloc = parsed_url.netloc
-        hostparts = (parsed_url.scheme, netloc)
-        msg = ('Sorry. Please try again ' + \
-               '(go to %s://%s/account/forgot_password ' % hostparts + \
-               'to reset your password)')
-        raise errors.BinstarError(msg)
+            username = input('Username: ')
+
+
+        password = getattr(args, 'login_password', None)
+
+        for _ in range(3):
+            try:
+                sys.stderr.write("%s's " % username)
+
+                if password is None:
+                    password = getpass.getpass(stream=sys.stderr)
+
+                token = try_replace_token(
+                    bs.authenticate,
+                    username=username,
+                    password=password,
+                    application=auth_name,
+                    application_url=url,
+                    created_with=' '.join(sys.argv),
+                    fail_if_already_exists=fail_if_already_exists,
+                    hostname=hostname,
+                )
+                break
+
+            except errors.Unauthorized:
+                log.error('Invalid Username password combination, please try again')
+                password = None
+                continue
+
+
+        if token is None:
+            parsed_url = urlparse(url)
+            if parsed_url.netloc.startswith('api.anaconda.org'):
+                netloc = 'anaconda.org'
+            else:
+                netloc = parsed_url.netloc
+            hostparts = (parsed_url.scheme, netloc)
+            msg = ('Sorry. Please try again ' + \
+                   '(go to %s://%s/account/forgot_password ' % hostparts + \
+                   'to reset your password)')
+            raise errors.BinstarError(msg)
 
     return token
 
