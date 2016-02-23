@@ -22,7 +22,7 @@ from binstar_client.utils import bool_input
 from binstar_client.utils import get_server_api
 from binstar_client.utils import get_config
 from binstar_client.utils import upload_print_callback
-from binstar_client.utils.projects import ProjectsUploader
+from binstar_client.utils.projects import projects_uploader
 from binstar_client.utils.detect import detect_package_type, get_attrs
 
 
@@ -168,8 +168,7 @@ def main(args):
         package_type = determine_package_type(filename, args)
 
         if package_type == 'project':
-            log.info("This is a project and we don't like it")
-            sys.exit(ProjectsUploader(filename, args).upload())
+            sys.exit(projects_uploader(filename, args))
 
         log.info('extracting package attributes for upload ...')
         sys.stdout.flush()
