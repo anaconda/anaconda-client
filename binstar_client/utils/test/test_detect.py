@@ -1,12 +1,6 @@
-import os
 import unittest
+from binstar_client.utils.test.utils import example_path
 from binstar_client.utils.detect import is_project
-
-
-def example_path(example):
-    return os.path.join(os.path.dirname(__file__),
-                        '../../../example-packages',
-                        example)
 
 
 class IsProjectTestCase(unittest.TestCase):
