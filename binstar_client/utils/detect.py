@@ -12,6 +12,7 @@ from binstar_client.inspect_package import conda_installer
 from binstar_client.inspect_package.pypi import inspect_pypi_package
 from binstar_client.inspect_package.r import inspect_r_package
 from binstar_client.inspect_package.ipynb import inspect_ipynb_package
+from binstar_client.inspect_package.profile import inspect_profile_package
 
 log = logging.getLogger('binstar.detect')
 #===============================================================================
@@ -25,6 +26,7 @@ def file_handler(filename, fileobj, *args, **kwargs):
 detectors = {'conda':inspect_conda_package,
              'pypi': inspect_pypi_package,
              'r': inspect_r_package,
+             'cluster_profile': inspect_profile_package,
              'ipynb': inspect_ipynb_package,
              conda_installer.PACKAGE_TYPE: conda_installer.inspect_package,
              'file': file_handler,
@@ -81,6 +83,13 @@ def is_r(filename):
     else:
         log.debug("This not is an R package (expected .tgz, .tar.gz).")
 
+def is_cluster_profile(filename):
+    log.debug("Testing if cluster_profile package ..")
+    if filename.endswith('.yaml') or filename.endswith('.yml'):
+        return True
+    log.debug("This is not an Anaconda Cluster Profile file")
+
+
 def detect_package_type(filename):
     if is_conda(filename):
         return 'conda'
@@ -92,6 +101,8 @@ def detect_package_type(filename):
         return 'ipynb'
     elif conda_installer.is_installer(filename):
         return conda_installer.PACKAGE_TYPE
+    elif is_cluster_profile(filename):
+        return 'cluster_profile'
     else:
         return None
 
