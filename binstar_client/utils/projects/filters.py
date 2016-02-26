@@ -106,3 +106,5 @@ def clean(cad):
 
 def remove_comments(cad):
     return cad.split("#", 1)[0].strip()
+
+filters = [VCSFilter, ProjectIgnoreFilter, LargeFilesFilter]

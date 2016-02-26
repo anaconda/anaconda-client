@@ -92,6 +92,5 @@ class ProjectIgnoreFilterTestCase(unittest.TestCase):
         self.assertTrue(f.run(pfile2))
 
 
-
 if __name__ == '__main__':
     unittest.main()

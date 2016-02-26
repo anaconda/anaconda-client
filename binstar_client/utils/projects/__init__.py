@@ -3,7 +3,8 @@ import logging
 import os
 from os.path import basename, isdir, join, relpath
 from binstar_client.errors import BinstarError
-from .filters import VCSFilter, LargeFilesFilter, ProjectIgnoreFilter
+from .filters import filters
+from .inspectors import inspectors
 
 log = logging.getLogger('binstar.projects.upload')
 
@@ -46,32 +47,12 @@ class PFile(object):
         if self.basename is None:
             self.basename = os.path.basename(self.fullpath)
 
-
-class ProjectfileInspector(object):
-    pass
-
-
-class DocumentationInspector(object):
-    valid_names = [
-        'README.md',
-        'README.rst',
-        'README.txt',
-        'README'
-    ]
-
-    def __init__(self, pfiles):
-        self.pfiles = pfiles
-
-    def get(self):
-        for f in self.pfiles:
-            if f.validate(self.is_documentation):
-                with open(f.fullpath) as fdoc:
-                    return fdoc.read()
-        return None
-
-    def is_documentation(self, **kwargs):
-        basename = kwargs.get('basename', None)
-        return basename is not None and basename in self.valid_names
+    def to_dict(self):
+        return {
+            'basename': self.basename,
+            'size': self.size,
+            'relativepath': self.relativepath
+        }
 
 
 def get_project_name(filename, args):
@@ -103,14 +84,11 @@ def get_files(project_path, klass=None):
     return output
 
 
-def post_process(**args):
-    pass
+def post_process(pfiles, metadata, **args):
+    print(metadata)
 
 
 def projects_uploader(project_path, args):
-    filters = [VCSFilter, ProjectIgnoreFilter, LargeFilesFilter]
-    inspectors = [ProjectfileInspector]
-
     metadata = {'name': get_project_name(project_path, args)}
     pfiles = get_files(project_path, klass=PFile)
 
@@ -120,11 +98,5 @@ def projects_uploader(project_path, args):
         if pfilter.can_filter():
             pfiles = list(filter(pfilter.run, pfiles))
 
-    for pfile in pfiles:
-        for inspector in inspectors:
-            metadata = inspector(pfile).update(metadata)
-
-    for pfile in pfiles:
-        print(pfile)
-
+    [inspectorKlass(pfiles).update(metadata) for inspectorKlass in inspectors]
     post_process(pfiles, metadata)
