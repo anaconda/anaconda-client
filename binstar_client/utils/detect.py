@@ -42,8 +42,12 @@ def is_conda(filename):
     log.debug("Testing if conda package ..")
     if filename.endswith('.tar.bz2'):  # Could be a conda package
         try:
-            with tarfile.open(filename) as tf:
-                tf.getmember('info/index.json')
+            with tarfile.open(filename, mode="r|bz2") as tf:
+                for info in tf:
+                    if info.name == "info/index.json":
+                        break
+                else:
+                    raise KeyError
         except KeyError:
             log.debug("Not conda  package no 'info/index.json' file in the tarball")
             return False
