@@ -42,6 +42,19 @@ class VCSFilter(FilterBase):
         return True
 
 
+class FilesFilter(FilterBase):
+    '''
+    Ignore specific files
+    '''
+    ignored = '.anaconda/project-local.yml'
+
+    def __init__(self, pfiles, *args, **kwargs):
+        self.pfiles = pfiles
+
+    def run(self, pfile):
+        return pfile.relativepath not in self.ignored
+
+
 class LargeFilesFilter(FilterBase):
     max_file_size = 2097152
 

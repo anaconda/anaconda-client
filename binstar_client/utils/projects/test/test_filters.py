@@ -7,6 +7,7 @@ from binstar_client.utils.test.utils import example_path
 from binstar_client.utils.projects.filters import (VCSFilter,
                                                    LargeFilesFilter,
                                                    ProjectIgnoreFilter,
+                                                   FilesFilter,
                                                    ignore_patterns,
                                                    remove_comments)
 
@@ -50,6 +51,16 @@ class LargeFilesFilterTestCase(unittest.TestCase):
     def test_invalid_file(self):
         pfile = mock.MagicMock(size=3097152)
         self.assertFalse(LargeFilesFilter([]).run(pfile))
+
+
+class FilesFilterTestCase(unittest.TestCase):
+    def test_valid_file(self):
+        pfile = mock.MagicMock(relativepath='other-file')
+        self.assertTrue(FilesFilter([]).run(pfile))
+
+    def test_invalid_file(self):
+        pfile = mock.MagicMock(relativepath='.anaconda/project-local.yml')
+        self.assertFalse(FilesFilter([]).run(pfile))
 
 
 class VCSFilterTestCase(unittest.TestCase):
