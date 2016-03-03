@@ -39,6 +39,8 @@ class VCSFilter(FilterBase):
             return False
         if pfile.relativepath.startswith('.hg/'):
             return False
+        if pfile.relativepath.startswith('.anaconda/'):
+            return False
         return True
 
 
