@@ -56,6 +56,7 @@ class PFile(object):
 
 
 def get_project_name(filename, args):
+    # TODO: This method will be moved into Anaconda-Project
     if os.path.isdir(filename):
         return os.path.basename(filename)
     else:
