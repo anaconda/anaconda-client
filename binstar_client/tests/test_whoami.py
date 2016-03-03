@@ -4,6 +4,8 @@ Created on Feb 18, 2014
 @author: sean
 '''
 from __future__ import unicode_literals
+
+import os
 import unittest
 import mock
 from binstar_client.scripts.cli import main
@@ -42,6 +44,8 @@ class Test(CLITestCase):
     def test_netrc_ignored(self, urls, expanduser):
         # Disable token authentication
         self.load_token.return_value = None
+        os.environ.pop('BINSTAR_API_TOKEN', None)
+        os.environ.pop('ANACONDA_API_TOKEN', None)
 
         # requests.get_netrc_auth uses expanduser to find the netrc file, point to our
         # test file
