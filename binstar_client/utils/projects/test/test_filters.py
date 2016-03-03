@@ -62,6 +62,10 @@ class FilesFilterTestCase(unittest.TestCase):
         pfile = mock.MagicMock(relativepath='.anaconda/project-local.yml')
         self.assertFalse(FilesFilter([]).run(pfile))
 
+    def test_invalid_file_yaml(self):
+        pfile = mock.MagicMock(relativepath='.anaconda/project-local.yaml')
+        self.assertFalse(FilesFilter([]).run(pfile))
+
 
 class VCSFilterTestCase(unittest.TestCase):
     def test_can_test(self):

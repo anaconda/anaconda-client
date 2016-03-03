@@ -46,7 +46,7 @@ class FilesFilter(FilterBase):
     '''
     Ignore specific files
     '''
-    ignored = '.anaconda/project-local.yml'
+    ignored = ['.anaconda/project-local.yml', '.anaconda/project-local.yaml']
 
     def __init__(self, pfiles, *args, **kwargs):
         self.pfiles = pfiles
