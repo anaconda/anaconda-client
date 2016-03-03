@@ -1,7 +1,7 @@
 import inspect
 import logging
 import os
-from os.path import basename, isdir, join, relpath
+from os import path
 from binstar_client.errors import BinstarError
 from .filters import filters
 from .inspectors import inspectors
@@ -65,15 +65,15 @@ def get_project_name(filename, args):
 def get_files(project_path, klass=None):
     output = []
     project_path = os.path.normpath(project_path)
-    if isdir(project_path):
+    if path.isdir(project_path):
         for root, directories, filenames in os.walk(project_path):
             for f in filenames:
-                fullpath = join(root, f)
-                relativepath = relpath(fullpath, project_path)
+                fullpath = path.join(root, f)
+                relativepath = path.relpath(fullpath, project_path)
                 tmp = {
                     'fullpath': fullpath,
                     'relativepath': relativepath,
-                    'basename': basename(fullpath),
+                    'basename': path.basename(fullpath),
                     'size': os.stat(fullpath).st_size
                 }
 
