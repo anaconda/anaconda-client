@@ -1,7 +1,7 @@
 from os import path
 import unittest
 
-from ..ipynb import IPythonNotebook, inspect_ipynb_package
+from binstar_client.inspect_package.ipynb import IPythonNotebook, inspect_ipynb_package
 
 
 def data_path(filename):
