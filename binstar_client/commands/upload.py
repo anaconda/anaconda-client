@@ -1,6 +1,7 @@
 '''
 
     anaconda upload CONDA_PACKAGE_1.bz2
+    anaconda upload environment.yml
 
 ##### See Also
 

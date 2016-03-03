@@ -1,0 +1,4 @@
+name: stats
+dependencies:
+  - anaconda-client
+  - dask
