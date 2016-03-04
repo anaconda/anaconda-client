@@ -1,6 +1,7 @@
 '''
 
     anaconda upload CONDA_PACKAGE_1.bz2
+    anaconda upload notebook.ipynb
 
 ##### See Also
 
@@ -113,8 +114,14 @@ def add_package(aserver_api, args, username, package_name, package_attrs, packag
                     raise errors.BinstarError("Could not detect package summary for package type %s, please use the --summary option" % (package_type,))
                 summary = package_attrs['summary']
 
-            aserver_api.add_package(username, package_name, summary, package_attrs.get('license'),
-                                public=True)
+            aserver_api.add_package(
+                username,
+                package_name,
+                summary,
+                package_attrs.get('license'),
+                public=True,
+                attrs=package_attrs
+            )
 
 
 def add_release(aserver_api, args, username, package_name, version, release_attrs):

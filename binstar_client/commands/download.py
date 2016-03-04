@@ -1,7 +1,7 @@
 '''
 Usage:
-    anaconda notebook download notebook
-    anaconda notebook download user/notebook
+    anaconda download notebook
+    anaconda download user/notebook
 '''
 
 from __future__ import unicode_literals
