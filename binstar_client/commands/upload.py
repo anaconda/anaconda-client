@@ -2,6 +2,7 @@
 
     anaconda upload CONDA_PACKAGE_1.bz2
     anaconda upload notebook.ipynb
+    anaconda upload environment.yml
 
 ##### See Also
 
