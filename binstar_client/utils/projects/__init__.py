@@ -89,7 +89,7 @@ def post_process(pfiles, metadata, **args):
     print(metadata)
 
 
-def projects_uploader(project_path, args):
+def upload_project(project_path, args):
     metadata = {'name': get_project_name(project_path, args)}
     pfiles = get_files(project_path, klass=PFile)
 
@@ -101,3 +101,4 @@ def projects_uploader(project_path, args):
 
     [inspectorKlass(pfiles).update(metadata) for inspectorKlass in inspectors]
     post_process(pfiles, metadata)
+    return metadata['name'], {}
