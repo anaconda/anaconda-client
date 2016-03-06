@@ -101,4 +101,4 @@ def upload_project(project_path, args):
 
     [inspectorKlass(pfiles).update(metadata) for inspectorKlass in inspectors]
     post_process(pfiles, metadata)
-    return metadata['name'], {}
+    return [metadata['name'], {}]

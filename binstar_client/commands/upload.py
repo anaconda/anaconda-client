@@ -247,9 +247,9 @@ def main(args):
         package_url = upload_info.get('url', 'https://anaconda.org/%s/%s' % (username, package))
         log.info("Package located at:\n%s\n" % package_url)
 
-    for project, upload_info in uploaded_projects:
+    for project_name, upload_info in uploaded_projects:
         # TODO: We don't know what's going to be the URL yet
-        pass
+        log.info("Project {} uploaded.\n".format(project_name))
 
 
 def windows_glob(item):
