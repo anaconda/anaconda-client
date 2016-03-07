@@ -8,7 +8,7 @@ import warnings
 # For backwards compatibility
 from .errors import *
 from . import errors
-from .requests_ext import stream_multipart
+from .requests_ext import stream_multipart, NullAuth
 
 from .utils import compute_hash, jencode, pv
 from .utils.http_codes import STATUS_CODES
@@ -39,6 +39,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         self._session = requests.Session()
         self._session.headers['x-binstar-api-version'] = __version__
         self.session.verify = verify
+        self.session.auth = NullAuth()
         self.token = token
 
         user_agent = 'Anaconda-Client/{} (+https://anaconda.org)'.format(__version__)
