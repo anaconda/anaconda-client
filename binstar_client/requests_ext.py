@@ -5,13 +5,19 @@ Created on Jun 6, 2013
 '''
 from __future__ import unicode_literals
 
+# Standard library imports
 from io import BytesIO, StringIO
+import codecs
+import logging
+
+# Third party imports
+import pkg_resources
 from requests.packages.urllib3.filepost import choose_boundary, iter_fields
 from requests.packages.urllib3.packages import six
-from requests.packages.urllib3.packages.six import b
-import codecs
+import requests
 
 encoder = codecs.lookup('utf-8')[0]
+log = logging.getLogger('binstar.requests_ext')
 
 def writer(lst):
     encoder()
@@ -158,3 +164,51 @@ def stream_multipart(data, files=None, callback=None):
     headers = {'Content-Type':content_type}
     return data, headers
 
+try:
+    import requests.packages.urllib3.contrib.pyopenssl
+    import OpenSSL.SSL
+except ImportError:
+    HAS_OPENSSL = False
+    OpenSslError = None
+else:
+    HAS_OPENSSL = True
+    OpenSslError = OpenSSL.SSL.Error
+
+requests_version = pkg_resources.parse_version(requests.__version__)
+
+# The first version that shipped urllib3 with issue shazow/urllib3#717
+min_requests_version = pkg_resources.parse_version('2.8')
+max_requests_version = pkg_resources.parse_version('2.9.1')
+# limit warning to broken versions
+HAS_BROKEN_URLLIB3 = min_requests_version <= requests_version < max_requests_version
+
+def warn_openssl():
+    '''
+    Output a warning about requests incompatibility
+    '''
+    if HAS_OPENSSL and HAS_BROKEN_URLLIB3:
+        log.error(
+            'The version of requests you are using is incompatible with '
+            'PyOpenSSL. Please upgrade requests to requests>=2.9.1 or '
+            'uninstall PyOpenSSL.\n'
+            'See https://github.com/anaconda-server/anaconda-client/issues/222 '
+            'for more details.')
+
+
+class NullAuth(requests.auth.AuthBase):
+    '''force requests to ignore the ``.netrc``
+
+    Some sites do not support regular authentication, but we still
+    want to store credentials in the ``.netrc`` file and submit them
+    as form elements. Without this, requests would otherwise use the
+    .netrc which leads, on some sites, to a 401 error.
+
+    https://github.com/kennethreitz/requests/issues/2773
+
+    Use with::
+
+        requests.get(url, auth=NullAuth())
+    '''
+
+    def __call__(self, r):
+        return r

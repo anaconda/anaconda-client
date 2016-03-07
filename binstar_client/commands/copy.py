@@ -2,21 +2,33 @@
 Copy packages from one account to another
 '''
 from __future__ import unicode_literals, print_function
-from binstar_client.utils import get_binstar, parse_specs
+from binstar_client.utils import get_server_api, parse_specs
 import logging
 from binstar_client import errors
 
 log = logging.getLogger('binstar.whoami')
 
 def main(args):
-    bs = get_binstar(args)
+    aserver_api = get_server_api(args.token, args.site, args.log_level)
 
     spec = args.spec
-    channels = bs.list_channels(spec.user)
-    if args.from_channel not in channels:
-        raise errors.UserError("Channel %s does not exist\n\tplease choose from: %s" % (args.from_channel, ', '.join(channels)))
-    files = bs.copy(spec.user, spec.package, spec.version, spec._basename,
-                    to_owner=args.to_owner, from_channel=args.from_channel, to_channel=args.to_channel)
+
+    channels = aserver_api.list_channels(spec.user)
+    label_text = 'label' if (args.from_label and args.to_label) else 'channel'
+
+    from_label = args.from_channel or args.from_label
+    to_label = args.to_channel or args.to_label
+    if from_label not in channels:
+        raise errors.UserError(
+            "{} {} does not exist\n\tplease choose from: {}".format(
+                label_text.title(),
+                from_label,
+                ', '.join(channels)
+            ))
+
+    # TODO: add/replace from_channel => from_label and to_channel => to_label
+    files = aserver_api.copy(spec.user, spec.package, spec.version, spec._basename,
+                    to_owner=args.to_owner, from_channel=from_label, to_channel=to_label)
     for binstar_file in files:
         print("Copied file: %(basename)s" % binstar_file)
 
@@ -34,6 +46,13 @@ def add_parser(subparsers):
     parser.add_argument('spec', help=('Package - written as user/package/version[/filename] '
                                       'If filename is not given, copy all files in the version'), type=parse_specs)
     parser.add_argument('--to-owner', help='User account to copy package to (default: your account)')
-    parser.add_argument('--from-channel', help='Channel to copy packages from', default='main')
-    parser.add_argument('--to-channel', help='Channel to put all packages into', default='main')
+
+    _from = parser.add_mutually_exclusive_group()
+    _to = parser.add_mutually_exclusive_group()
+
+    _from.add_argument('--from-channel', help='[DEPRECATED]Channel to copy packages from', default='main')
+    parser.add_argument('--to-channel', help='[DEPRECATED]Channel to put all packages into', default='main')
+
+    _from.add_argument('--from-label', help='Label to copy packages from', default='main')
+    _to.add_argument('--to-label', help='Label to put all packages into', default='main')
     parser.set_defaults(main=main)

@@ -2,13 +2,13 @@
 Anaconda Cloud package utilities
 '''
 from __future__ import print_function
-from binstar_client.utils import get_binstar, parse_specs
+from binstar_client.utils import get_server_api, parse_specs
 import logging
 
 log = logging.getLogger('binstar.package')
 def main(args):
 
-    bs = get_binstar(args)
+    aserver_api = get_server_api(args.token, args.site, args.log_level)
     spec = args.spec
 
     owner = spec.user
@@ -16,16 +16,16 @@ def main(args):
 
     if args.add_collaborator:
         collaborator = args.add_collaborator
-        bs.package_add_collaborator(owner, package, collaborator)
+        aserver_api.package_add_collaborator(owner, package, collaborator)
         args.add_collaborator
 
     elif args.list_collaborators:
         log.info(':Collaborators:')
-        for collab in bs.package_collaborators(owner, package):
+        for collab in aserver_api.package_collaborators(owner, package):
             log.info(collab['login'])
     elif args.create:
         public = args.access != 'private'
-        bs.add_package(args.spec.user, args.spec.package, args.summary,
+        aserver_api.add_package(args.spec.user, args.spec.package, args.summary,
                        public=public,
                        license=args.license, license_url=args.license_url)
         log.info('Package created!')
@@ -56,6 +56,6 @@ def add_parser(subparsers):
                              'This package will be available only on your personal registries'))
     group.add_argument('--private', action='store_const', const='private', dest='access',
                        help=('Set the package access to private '
-                             'This package will require authenticated access to install'))
+                             'This package will require authorized and authenticated access to install'))
 
     parser.set_defaults(main=main)

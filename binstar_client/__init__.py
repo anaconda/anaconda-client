@@ -8,7 +8,7 @@ import warnings
 # For backwards compatibility
 from .errors import *
 from . import errors
-from .requests_ext import stream_multipart
+from .requests_ext import stream_multipart, NullAuth
 
 from .utils import compute_hash, jencode, pv
 from .utils.http_codes import STATUS_CODES
@@ -39,6 +39,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         self._session = requests.Session()
         self._session.headers['x-binstar-api-version'] = __version__
         self.session.verify = verify
+        self.session.auth = NullAuth()
         self.token = token
 
         user_agent = 'Anaconda-Client/{} (+https://anaconda.org)'.format(__version__)
@@ -55,8 +56,36 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
     def session(self):
         return self._session
 
-    def authenticate(self, username, password,
-                     application, application_url=None,
+    def authentication_type(self):
+        url = '%s/authentication-type' % self.domain
+        res = self.session.get(url)
+        try:
+            self._check_response(res)
+            res = res.json()
+            return res['authentication_type']
+        except BinstarError:
+            return 'password'
+
+    def krb_authenticate(self, *args, **kwargs):
+        try:
+            from requests_kerberos import HTTPKerberosAuth
+            return self._authenticate(HTTPKerberosAuth(), *args, **kwargs)
+        except ImportError:
+            raise BinstarError(
+                'Kerberos authentication requires the requests-kerberos '
+                'package to be installed:\n'
+                '    conda install requests-kerberos\n'
+                'or: \n'
+                '    pip install requests-kerberos'
+            )
+
+    def authenticate(self, username, password, *args, **kwargs):
+        return self._authenticate((username, password), *args, **kwargs)
+
+    def _authenticate(self,
+                     auth,
+                     application,
+                     application_url=None,
                      for_user=None,
                      scopes=None,
                      created_with=None,
@@ -86,7 +115,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
                    'fail-if-exists': fail_if_already_exists}
 
         data, headers = jencode(payload)
-        res = self.session.post(url, auth=(username, password), data=data, headers=headers)
+        res = self.session.post(url, auth=auth, data=data, headers=headers)
         self._check_response(res)
         res = res.json()
         token = res['token']
@@ -118,12 +147,15 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         self._check_response(res)
         return res.json()
 
-    def remove_authentication(self, auth_name=None):
+    def remove_authentication(self, auth_name=None, organization=None):
         """
         Remove the current authentication or the one given by `auth_name`
         """
         if auth_name:
-            url = '%s/authentications/name/%s' % (self.domain, auth_name)
+            if organization:
+                url = '%s/authentications/org/%s/name/%s' % (self.domain, organization, auth_name)
+            else:
+                url = '%s/authentications/name/%s' % (self.domain, auth_name)
         else:
             url = '%s/authentications' % (self.domain,)
 

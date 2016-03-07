@@ -6,7 +6,7 @@ example::
     anaconda remove sean/meta/1.2.0/meta.tar.gz
 
 '''
-from binstar_client.utils import get_binstar, parse_specs, \
+from binstar_client.utils import get_server_api, parse_specs, \
     bool_input
 from argparse import RawTextHelpFormatter
 from binstar_client import errors
@@ -16,7 +16,7 @@ log = logging.getLogger('binstar.remove')
 
 def main(args):
 
-    aserver_api = get_binstar(args)
+    aserver_api = get_server_api(args.token, args.site, args.log_level)
 
     for spec in args.specs:
         try:
@@ -38,9 +38,12 @@ def main(args):
                     aserver_api.remove_package(spec.user, spec.package)
                 else:
                     log.warn('Not removing release %s' % (spec))
+            else:
+                log.error('Invalid package specification: %s', spec)
 
         except errors.NotFound:
             if args.force:
+                log.warn('', exc_info=True)
                 continue
             else:
                 raise

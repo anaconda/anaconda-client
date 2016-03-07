@@ -12,18 +12,33 @@ from binstar_client.inspect_package import conda_installer
 from binstar_client.inspect_package.pypi import inspect_pypi_package
 from binstar_client.inspect_package.r import inspect_r_package
 from binstar_client.inspect_package.ipynb import inspect_ipynb_package
+from binstar_client.inspect_package.env import inspect_env_package
 
 log = logging.getLogger('binstar.detect')
 #===============================================================================
 #
 #===============================================================================
-detectors = {'conda':inspect_conda_package,
-             'pypi': inspect_pypi_package,
-             'r': inspect_r_package,
-             'ipynb': inspect_ipynb_package,
-             conda_installer.PACKAGE_TYPE: conda_installer.inspect_package,
-             'file': lambda filename, fileobj: ({}, {'description': ''}, {'basename': path.basename(filename), 'attrs':{}}),
-             }
+
+def file_handler(filename, fileobj, *args, **kwargs):
+    return ({}, {'description': ''},
+            {'basename': path.basename(filename), 'attrs':{}})
+
+detectors = {
+    'conda': inspect_conda_package,
+    'pypi': inspect_pypi_package,
+    'r': inspect_r_package,
+    'ipynb': inspect_ipynb_package,
+    'env': inspect_env_package,
+    conda_installer.PACKAGE_TYPE: conda_installer.inspect_package,
+    'file': file_handler,
+}
+
+
+def is_environment(filename):
+    log.debug("Testing if environment file ..")
+    if filename.endswith('.yml') or filename.endswith('.yaml'):
+        return True
+    log.debug("No environment file")
 
 
 def is_ipynb(filename):
@@ -37,8 +52,12 @@ def is_conda(filename):
     log.debug("Testing if conda package ..")
     if filename.endswith('.tar.bz2'):  # Could be a conda package
         try:
-            with tarfile.open(filename) as tf:
-                tf.getmember('info/index.json')
+            with tarfile.open(filename, mode="r|bz2") as tf:
+                for info in tf:
+                    if info.name == "info/index.json":
+                        break
+                else:
+                    raise KeyError
         except KeyError:
             log.debug("Not conda  package no 'info/index.json' file in the tarball")
             return False
@@ -85,6 +104,8 @@ def detect_package_type(filename):
         return 'r'
     elif is_ipynb(filename):
         return 'ipynb'
+    elif is_environment(filename):
+        return 'env'
     elif conda_installer.is_installer(filename):
         return conda_installer.PACKAGE_TYPE
     else:

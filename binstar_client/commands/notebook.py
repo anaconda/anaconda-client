@@ -1,15 +1,14 @@
 """
-Usage:
-    anaconda notebook upload notebook.ipynb
-    anaconda notebook download notebook
-    anaconda notebook download user/notebook
+[Deprecation warning]
+`anaconda notebook` is going to be deprecated
+use `anaconda upload/download` instead
 """
 
 from __future__ import unicode_literals
 import argparse
 import logging
 from binstar_client import errors
-from binstar_client.utils import get_binstar
+from binstar_client.utils import get_server_api
 from binstar_client.utils.notebook import Uploader, Downloader, parse, notebook_url, has_environment
 
 log = logging.getLogger("binstar.notebook")
@@ -31,8 +30,9 @@ def add_parser(subparsers):
 def add_upload_parser(subparsers):
     description = "Upload a notebook to anaconda.org"
     epilog = """
-    Usage:
-        anaconda notebook upload notebook.ipynb
+    [Deprecation warning]
+    `anaconda notebook` is going to be deprecated
+    use `anaconda upload` instead
     """
     parser = subparsers.add_parser('upload',
                                    formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -69,9 +69,9 @@ def add_upload_parser(subparsers):
 def add_download_parser(subparsers):
     description = "Download notebooks from anaconda.org"
     epilog = """
-    Usage:
-        anaconda notebook download notebook
-        anaconda notebook download user/notebook
+    [Deprecation warning]
+    `anaconda notebook` is going to be deprecated
+    use `anaconda download` instead
     """
     parser = subparsers.add_parser('download',
                                    formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -101,12 +101,15 @@ def add_download_parser(subparsers):
 
 
 def upload(args):
-    aserver_api = get_binstar(args)
+    aserver_api = get_server_api(args.token, args.site, args.log_level)
+
     uploader = Uploader(aserver_api, args.notebook, user=args.user, summary=args.summary,
                         version=args.version, thumbnail=args.thumbnail, name=args.name)
 
     try:
         upload_info = uploader.upload(force=args.force)
+        log.warn("`anaconda notebook` is going to be deprecated")
+        log.warn("use `anaconda upload` instead.")
         log.info("{} has been uploaded.".format(args.notebook))
         log.info("You can visit your notebook at {}".format(notebook_url(upload_info)))
     except (errors.BinstarError, IOError) as e:
@@ -114,12 +117,15 @@ def upload(args):
 
 
 def download(args):
-    aserver_api = get_binstar(args)
+    aserver_api = get_server_api(args.token, args.site, args.log_level)
+
     username, notebook = parse(args.handle)
     username = username or aserver_api.user()['login']
     downloader = Downloader(aserver_api, username, notebook)
     try:
         download_info = downloader(output=args.output, force=args.force)
+        log.warn("`anaconda notebook` is going to be deprecated")
+        log.warn("use `anaconda download` instead.")
         log.info("{} has been downloaded as {}.".format(args.handle, download_info[0]))
         if has_environment(download_info[0]):
             log.info("{} has an environment embedded.".format(download_info[0]))
