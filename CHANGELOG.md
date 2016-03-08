@@ -1,5 +1,10 @@
 # CHANGELOG:
 
+## 1.3.1
+
+  * Fix pip 8.1 issue with py27. #303
+  * Fix `anaconda copy` problem with labels. #304
+
 ## 1.3.0
 
   * `notebook` subcommand is going to be deprecated. Showing deprecation warnings for now. #300
