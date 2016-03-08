@@ -13,7 +13,7 @@ import pkg_resources
 from binstar_client import errors
 from binstar_client.inspect_package.uitls import extract_first, pop_key
 
-
+sort_ver = lambda i: i[1]
 sort_key = lambda i: i['name']
 
 def python_version_check(filedata):
@@ -30,6 +30,7 @@ def python_version_check(filedata):
 
 def parse_requirement(line, deps, extras, extra):
     req = pkg_resources.Requirement.parse(line)
+    req.specs.sort(key=sort_ver)
     if extra:
         extras[extra].append({'name':req.key, 'specs': req.specs or []})
     else:
@@ -78,6 +79,7 @@ def format_rqeuirements(requires):
             if spec[-1] == ')': spec = spec[:-1]
 
             req = pkg_resources.Requirement.parse('%s %s' % (req, spec))
+            req.specs.sort(key=sort_ver)
             obj.append({'name': req.key, 'specs': req.specs or []})
 
     return obj
@@ -265,7 +267,6 @@ def inspect_pypi_package_sdist(filename, fileobj):
                      'python_version':'source',
                      }
                 }
-
 
     if distrubite:  # Distrubite does not create dep files
         file_data.update(dependencies=disutils_dependencies(config_items))

@@ -62,7 +62,7 @@ expected_egg_file_data = {'attrs': {'packagetype': 'bdist_egg', 'python_version'
 
 class Test(unittest.TestCase):
 
-
+    maxDiff = None
     def test_sdist(self):
         filename = data_path('test_package34-0.3.1.tar.gz')
         with open(filename, 'rb') as fd:
