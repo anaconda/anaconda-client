@@ -1,9 +1,7 @@
 """
-Usage:
-
-    anaconda notebook upload notebook.ipynb
-    anaconda notebook download notebook
-    anaconda notebook download user/notebook
+[Deprecation warning]
+`anaconda notebook` is going to be deprecated
+use `anaconda upload/download` instead
 """
 
 from __future__ import unicode_literals
@@ -32,8 +30,9 @@ def add_parser(subparsers):
 def add_upload_parser(subparsers):
     description = "Upload a notebook to anaconda.org"
     epilog = """
-    Usage:
-        anaconda notebook upload notebook.ipynb
+    [Deprecation warning]
+    `anaconda notebook` is going to be deprecated
+    use `anaconda upload` instead
     """
     parser = subparsers.add_parser('upload',
                                    formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -70,9 +69,9 @@ def add_upload_parser(subparsers):
 def add_download_parser(subparsers):
     description = "Download notebooks from anaconda.org"
     epilog = """
-    Usage:
-        anaconda notebook download notebook
-        anaconda notebook download user/notebook
+    [Deprecation warning]
+    `anaconda notebook` is going to be deprecated
+    use `anaconda download` instead
     """
     parser = subparsers.add_parser('download',
                                    formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -109,6 +108,8 @@ def upload(args):
 
     try:
         upload_info = uploader.upload(force=args.force)
+        log.warn("`anaconda notebook` is going to be deprecated")
+        log.warn("use `anaconda upload` instead.")
         log.info("{} has been uploaded.".format(args.notebook))
         log.info("You can visit your notebook at {}".format(notebook_url(upload_info)))
     except (errors.BinstarError, IOError) as e:
@@ -123,6 +124,8 @@ def download(args):
     downloader = Downloader(aserver_api, username, notebook)
     try:
         download_info = downloader(output=args.output, force=args.force)
+        log.warn("`anaconda notebook` is going to be deprecated")
+        log.warn("use `anaconda download` instead.")
         log.info("{} has been downloaded as {}.".format(args.handle, download_info[0]))
         if has_environment(download_info[0]):
             log.info("{} has an environment embedded.".format(download_info[0]))

@@ -1,5 +1,23 @@
 # CHANGELOG:
 
+## 1.3.1
+
+  * Fix pip 8.1 issue with py27. #303
+  * Fix `anaconda copy` problem with labels. #304
+
+## 1.3.0
+
+  * `notebook` subcommand is going to be deprecated. Showing deprecation warnings for now. #300
+  * `anaconda upload` can upload notebooks with thumbnails. #300
+  * `anaconda upload` can upload environments. #301
+  * Fix/netrc auth. #298
+  * Fix OpenSSL issue. #297
+  * Improve performance when dealing with tar files. #293 (@brentp)
+  * `anaconda login` supports kerberos. #278
+  * Typos. #284 (@barentsen) and #276
+  * Error when failing to delete data. #273
+  * Docs cleanup. #272
+
 ## 1.2.2
 
   * Learned the `anaconda label` command and `--label` arguments to replace the `--channel` options and `anaconda channel` command (#262)
@@ -7,7 +25,7 @@
   * `anaconda upload` can be told not to create packages automatically by setting the new `auto_register` configuration option to `no` (#270)
   * Learned to read an API token from the environment variable `ANACONDA_API_TOKEN` (#269)
   * Additional bug fixes (#204 #268 Anaconda-Server/docs.anaconda.org#63)
- 
+
 ## 1.2.1
 
   * Produce warning about broken version of Requests with PyOpenSSL
