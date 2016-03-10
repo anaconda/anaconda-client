@@ -23,8 +23,10 @@ import platform
 log = logging.getLogger('binstar')
 
 from ._version import get_versions
+
 __version__ = get_versions()['version']
 del get_versions
+
 
 class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
     '''
@@ -180,8 +182,13 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
 
         return res.json()
 
-    def user_packages(self, login=None, platform=None, package_type=None,
-                      type_=None):
+    def user_packages(
+            self,
+            login=None,
+            platform=None,
+            package_type=None,
+            type_=None,
+            access=None):
         '''
         Returns a list of packages for a given user and optionally filter
         by `platform`, `package_type` and `type_`.
@@ -189,27 +196,32 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         :param login: (optional) the login name of the user or None. If login
                       is None this method will return the packages for the
                       authenticated user.
-
+        :param platform: only find packages that include files for this platform.
+           (e.g. 'linux-64', 'osx-64', 'win-32')
+        :param package_type: only find packages that have this kind of file
+           (e.g. 'env', 'conda', 'pypi')
+        :param type_: only find packages that have this conda `type`
+           (i.e. 'app')
+        :param access: only find packages that have this access level
+           (e.g. 'private', 'authenticated', 'public')
         '''
         if login:
             url = '{0}/packages/{1}'.format(self.domain, login)
         else:
             url = '{0}/packages'.format(self.domain)
 
-        arguments = []
+        arguments = {}
+
         if platform:
-            arguments.append('platform={0}'.format(platform))
-
+            arguments['platform'] = platform
         if package_type:
-            arguments.append('package_type={0}'.format(package_type))
-
+            arguments['package_type'] = package_type
         if type_:
-            arguments.append('type={0}'.format(type_))
+            arguments['type'] = type_
+        if access:
+            arguments['access'] = access
 
-        if platform or package_type or type_:
-            url = "{0}?{1}".format(url, '&'.join(arguments))
-
-        res = self.session.get(url)
+        res = self.session.get(url, params=arguments)
         self._check_response(res)
 
         return res.json()
