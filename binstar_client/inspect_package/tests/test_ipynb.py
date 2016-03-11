@@ -19,7 +19,7 @@ class IPythonNotebookTestCase(unittest.TestCase):
     def test_package_name_unicode(self):
 
         fileobj = io.StringIO()
-        self.assertEqual(IPythonNotebook('na\xcc\x83o.ipynb', fileobj).name, 'nao')
+        self.assertEqual(IPythonNotebook(b'na\xcc\x83o.ipynb', fileobj).name, 'nao')
 
     def test_version(self):
         with open(data_path('notebook.ipynb')) as fileobj:
