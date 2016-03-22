@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 import base64
+import collections
 import json
 import os
 import requests
@@ -239,7 +240,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         else:
             url = '{0}/packages'.format(self.domain)
 
-        arguments = {}
+        arguments = collections.OrderedDict()
 
         if platform:
             arguments['platform'] = platform
