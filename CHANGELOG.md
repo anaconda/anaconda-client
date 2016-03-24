@@ -1,5 +1,10 @@
 # CHANGELOG:
 
+## 1.4.0 (2016-03-24)
+
+  * `BinstarClient.user_packages` learned arguments `platform`, `package_type`,
+    `type_`, and `access`
+
 ## 1.3.1
 
   * Fix pip 8.1 issue with py27. #303
