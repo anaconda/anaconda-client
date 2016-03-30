@@ -1,7 +1,9 @@
+
 from os import path
 import unittest
 
 from binstar_client.inspect_package.ipynb import IPythonNotebook, inspect_ipynb_package
+import io
 
 
 def data_path(filename):
@@ -10,8 +12,14 @@ def data_path(filename):
 
 class IPythonNotebookTestCase(unittest.TestCase):
     def test_package_name(self):
-        with open(data_path('notebook.ipynb')) as fileobj:
-            assert IPythonNotebook('notebook.ipynb', fileobj).name == 'notebook'
+
+        fileobj = io.StringIO()
+        self.assertEqual(IPythonNotebook('notebook.ipynb', fileobj).name, 'notebook')
+
+    def test_package_name_unicode(self):
+
+        fileobj = io.StringIO()
+        self.assertEqual(IPythonNotebook(b'na\xcc\x83o.ipynb', fileobj).name, 'nao')
 
     def test_version(self):
         with open(data_path('notebook.ipynb')) as fileobj:

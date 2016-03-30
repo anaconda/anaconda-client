@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import os
 import re
 import time
@@ -11,6 +12,10 @@ class IPythonNotebook(object):
     thumbnail_file = None
 
     def __init__(self, filename, fileobj, *args, **kwargs):
+
+        if isinstance(filename, bytes):
+            filename = filename.decode('utf-8', errors='ignore')
+
         self.filename = filename
         self.thumbnail_file = kwargs.get('thumbnail_file', None)
 

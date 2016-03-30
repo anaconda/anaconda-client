@@ -50,6 +50,10 @@ def is_ipynb(filename):
 
 def is_conda(filename):
     log.debug("Testing if conda package ..")
+    try:
+        filename.endswith('.tar.bz2')
+    except:
+        import pdb;pdb.set_trace()
     if filename.endswith('.tar.bz2'):  # Could be a conda package
         try:
             with tarfile.open(filename, mode="r|bz2") as tf:
@@ -96,6 +100,8 @@ def is_r(filename):
         log.debug("This not is an R package (expected .tgz, .tar.gz).")
 
 def detect_package_type(filename):
+    if isinstance(filename, bytes):
+        filename = filename.decode('utf-8', errors='ignore')
     if is_conda(filename):
         return 'conda'
     elif is_pypi(filename):
