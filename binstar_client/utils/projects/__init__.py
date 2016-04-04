@@ -87,14 +87,6 @@ class PFile(object):
         }
 
 
-def get_project_name(filename, args):
-    # TODO: This method will be moved into Anaconda-Project
-    if os.path.isdir(filename):
-        return os.path.basename(filename)
-    else:
-        return os.path.splitext(os.path.basename(filename))[0]
-
-
 def get_files(project_path, klass=None):
     output = []
     project_path = os.path.normpath(project_path)
@@ -117,20 +109,23 @@ def get_files(project_path, klass=None):
     return output
 
 
-def post_process(pfiles, metadata, **args):
-    print(metadata)
-
-
 def upload_project(project_path, args):
-    metadata = {'name': get_project_name(project_path, args)}
-    pfiles = get_files(project_path, klass=PFile)
+    project = CondaProject(
+        project_path,
+        description=args.description,
+        summary=args.summary,
+        version=args.version
+    )
 
-    print("Uploading {}".format(metadata['name']))
+    print("Uploading project: {}".format(project.name))
+
+    pfiles = get_files(project_path, klass=PFile)
     for pFilter in filters:
         pfilter = pFilter(pfiles, args, basepath=project_path)
         if pfilter.can_filter():
             pfiles = list(filter(pfilter.run, pfiles))
 
-    [inspectorKlass(pfiles).update(metadata) for inspectorKlass in inspectors]
-    post_process(pfiles, metadata)
-    return [metadata['name'], {}]
+    project.pfiles = pfiles
+    [inspector(pfiles).update(project.metadata) for inspector in inspectors]
+
+    return [project.name, {}]
