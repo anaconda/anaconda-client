@@ -1,6 +1,22 @@
 import unittest
 from binstar_client.utils.test.utils import example_path
-from binstar_client.utils.projects import PFile, get_project_name
+from binstar_client.utils.projects import PFile, CondaProject
+
+
+class CondaProjectTestCase(unittest.TestCase):
+    def test_get_project_name_from_file(self):
+        prj = CondaProject(example_path('bokeh-apps/timeout.py'))
+        self.assertEqual(prj.name, 'timeout')
+
+    def test_get_project_name_from_dir(self):
+        prj = CondaProject(example_path('bokeh-apps/weather'))
+        self.assertEqual(prj.name, 'weather')
+
+    def test_ignore_empty_options(self):
+        prj = CondaProject(example_path('bokeh-apps/weather'), version='1')
+        self.assertEqual(prj.metadata['version'], '1')
+        self.assertNotIn('summary', prj.metadata)
+        self.assertNotIn('description', prj.metadata)
 
 
 class PFileTestCase(unittest.TestCase):
@@ -34,20 +50,6 @@ class PFileTestCase(unittest.TestCase):
 
         pfile = PFile(fullpath=example_path('bokeh-apps/timeout.py'))
         assert pfile.validate(Validate)
-
-
-class GetProjectNameTestCase(unittest.TestCase):
-    def test_file(self):
-        self.assertEqual(
-            get_project_name(example_path('bokeh-apps/timeout.py'), {}),
-            'timeout'
-        )
-
-    def test_dir(self):
-        self.assertEqual(
-            get_project_name(example_path('bokeh-apps/weather'), {}),
-            'weather'
-        )
 
 
 if __name__ == '__main__':

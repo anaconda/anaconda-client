@@ -3,10 +3,42 @@ import logging
 import os
 from os import path
 from binstar_client.errors import BinstarError
+from .filer import memory_tar
 from .filters import filters
 from .inspectors import inspectors
 
 log = logging.getLogger('binstar.projects.upload')
+
+
+class CondaProject(object):
+    # TODO: This class will be moved into Anaconda-Project
+    def __init__(self, project_path, *args, **kwargs):
+        self.project_path = project_path
+        self._name = None
+        self.pfiles = []
+        self.metadata = {
+            'name': self.name,
+            'summary': kwargs.get('summary', None),
+            'description': kwargs.get('description', None),
+            'version': kwargs.get('version', None)
+        }
+        self.metadata = dict((k, v) for k, v in self.metadata.iteritems() if v)
+
+    @property
+    def tar(self):
+        return memory_tar(self.pfiles)
+
+    @property
+    def name(self):
+        if self._name is None:
+            self._name = self._get_project_name()
+        return self._name
+
+    def _get_project_name(self):
+        if os.path.isdir(self.project_path):
+            return os.path.basename(self.project_path)
+        else:
+            return os.path.splitext(os.path.basename(self.project_path))[0]
 
 
 class PFile(object):
