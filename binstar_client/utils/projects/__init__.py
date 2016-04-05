@@ -23,7 +23,7 @@ class CondaProject(object):
             'description': kwargs.get('description', None),
             'version': kwargs.get('version', None)
         }
-        self.metadata = dict((k, v) for k, v in self.metadata.iteritems() if v)
+        self.metadata = dict((k, v) for k, v in self.metadata.items() if v)
 
     def to_project_creation(self):
         return {
