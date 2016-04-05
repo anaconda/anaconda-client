@@ -151,7 +151,7 @@ def load_token(url):
     return token
 
 
-def get_server_api(token=None, site=None, log_level=logging.INFO, cls=None):
+def get_server_api(token=None, site=None, log_level=logging.INFO, cls=None, **kwargs):
     """
     Get the anaconda server api class
     """
@@ -177,7 +177,7 @@ def get_server_api(token=None, site=None, log_level=logging.INFO, cls=None):
         token = load_token(url)
 
     verify = config.get('verify_ssl', True)
-    return cls(token, domain=url, verify=verify)
+    return cls(token, domain=url, verify=verify, **kwargs)
 
 def get_binstar(args=None, cls=None):
     """
