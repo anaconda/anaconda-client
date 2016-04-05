@@ -2,10 +2,12 @@ import inspect
 import logging
 import os
 from os import path
+from binstar_client.utils import get_server_api
 from binstar_client.errors import BinstarError
-from .filer import memory_tar
+from .filer import tempfile_tar
 from .filters import filters
 from .inspectors import inspectors
+from .uploader import ProjectUploader
 
 log = logging.getLogger('binstar.projects.upload')
 
@@ -17,16 +19,42 @@ class CondaProject(object):
         self._name = None
         self.pfiles = []
         self.metadata = {
-            'name': self.name,
             'summary': kwargs.get('summary', None),
             'description': kwargs.get('description', None),
             'version': kwargs.get('version', None)
         }
         self.metadata = dict((k, v) for k, v in self.metadata.iteritems() if v)
 
+    def to_project_creation(self):
+        return {
+            'name': self.name,
+            'access': 'public',
+            'profile': {
+                'description': self.metadata.get('description', ''),
+                'summary': self.metadata.get('summary', ''),
+            }
+        }
+
+    def to_stage(self):
+        return {
+            'basename': self.basename
+        }
+
+    @property
+    def basename(self):
+        return "{}.tar".format(self.name)
+
     @property
     def tar(self):
-        return memory_tar(self.pfiles)
+        return tempfile_tar(self.pfiles)
+
+    @property
+    def tar_size(self):
+        spos = self.tar.tell()
+        self.tar.seek(0, os.SEEK_END)
+        size = self.tar.tell() - spos
+        self.tar.seek(spos)
+        return size
 
     @property
     def name(self):
@@ -109,7 +137,7 @@ def get_files(project_path, klass=None):
     return output
 
 
-def upload_project(project_path, args):
+def upload_project(project_path, args, username):
     project = CondaProject(
         project_path,
         description=args.description,
@@ -127,5 +155,14 @@ def upload_project(project_path, args):
 
     project.pfiles = pfiles
     [inspector(pfiles).update(project.metadata) for inspector in inspectors]
+
+    api = get_server_api(
+        token=args.token,
+        site=args.site,
+        log_level=args.log_level,
+        cls=ProjectUploader,
+        username=username,
+        project=project)
+    api.upload()
 
     return [project.name, {}]

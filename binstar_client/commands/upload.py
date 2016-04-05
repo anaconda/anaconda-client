@@ -234,7 +234,7 @@ def main(args):
         package_type = determine_package_type(filename, args)
 
         if package_type == 'project':
-            uploaded_projects.append(upload_project(filename, args))
+            uploaded_projects.append(upload_project(filename, args, username))
         else:
             uploaded_packages.append(upload_package(
                 filename,
