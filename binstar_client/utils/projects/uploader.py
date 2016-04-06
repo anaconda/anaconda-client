@@ -1,3 +1,4 @@
+from tempfile import SpooledTemporaryFile
 import requests
 import binstar_client
 from binstar_client.requests_ext import stream_multipart
@@ -31,9 +32,16 @@ class ProjectUploader(binstar_client.Binstar):
         res = self.session.post(url, data=data, headers=headers)
         return res
 
+    def commit(self, revision_id):
+        url = "{}/apps/{}/project/{}/commit".format(
+            self.domain, self.username, self.project.name)
+        data, headers = jencode({'revision_id': revision_id})
+        res = self.session.post(url, data=data, headers=headers)
+        return res
+
     def file_upload(self, url, obj):
-        fd = self.project.tar
-        _hexmd5, b64md5, size = compute_hash(fd, size=self.project.tar_size)
+        fd = self.project.tar_in(SpooledTemporaryFile())
+        _hexmd5, b64md5, size = compute_hash(fd, size=self.project.size(fd))
 
         s3data = obj['form_data']
         s3data['Content-Length'] = size
@@ -52,6 +60,7 @@ class ProjectUploader(binstar_client.Binstar):
         if s3res.status_code != 201:
             raise binstar_client.errors.BinstarError(
                 'Error uploading package', s3res.status_code)
+        return s3res
 
     def projects(self):
         url = "{}/apps/{}/projects".format(self.domain, self.username)
@@ -67,7 +76,9 @@ class ProjectUploader(binstar_client.Binstar):
         * commit revision
         '''
         if not self.exists():
-            self._check_response(self.create())
+            self.create()
 
         data = self.stage().json()
         self.file_upload(data['post_url'], data)
+        res = self.commit(data['form_data']['revision_id'])
+        return res.json()

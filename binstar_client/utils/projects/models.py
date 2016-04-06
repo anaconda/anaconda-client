@@ -1,7 +1,7 @@
 import inspect
 import os
+import tarfile
 from binstar_client.errors import BinstarError
-from .filer import tempfile_tar
 
 
 class CondaProject(object):
@@ -9,6 +9,7 @@ class CondaProject(object):
     def __init__(self, project_path, *args, **kwargs):
         self.project_path = project_path
         self._name = None
+        self._tar = None
         self.pfiles = []
         self.metadata = {
             'summary': kwargs.get('summary', None),
@@ -36,16 +37,18 @@ class CondaProject(object):
     def basename(self):
         return "{}.tar".format(self.name)
 
-    @property
-    def tar(self):
-        return tempfile_tar(self.pfiles)
+    def tar_in(self, tmp):
+        with tarfile.open(mode='w', fileobj=tmp) as tar:
+            for pfile in self.pfiles:
+                tar.add(pfile.fullpath, arcname=pfile.relativepath)
+        tmp.seek(0)
+        return tmp
 
-    @property
-    def tar_size(self):
-        spos = self.tar.tell()
-        self.tar.seek(0, os.SEEK_END)
-        size = self.tar.tell() - spos
-        self.tar.seek(spos)
+    def size(self, fd):
+        spos = fd.tell()
+        fd.seek(0, os.SEEK_END)
+        size = fd.tell() - spos
+        fd.seek(spos)
         return size
 
     @property
