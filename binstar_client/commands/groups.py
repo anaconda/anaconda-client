@@ -8,67 +8,41 @@ from pprint import pprint
 import re
 from binstar_client.pprintb import package_list, user_list
 
-def group_spec(spec):
-    '''
-    Spec
-    '''
-    pat = re.compile('^(?P<org>[a-z][a-z0-9_-]+)(/:(?P<group_name>[a-z][a-z0-9_-]+)(/(?P<member>[a-z][a-z0-9_-]+))?)?$')
-    mat = pat.match(spec)
-    if mat is None:
-        raise ArgumentError('dfasdf')
+from binstar_client.utils.spec import group_spec
 
-    return mat.groupdict()
+
 
 def main(args):
 
     aserver_api = get_server_api(args.token, args.site, args.log_level)
+    spec = args.spec
+    action = args.action
 
-    if args.action == 'add':
-        result = aserver_api.add_group(args.spec['org'], args.spec['group_name'], args.perms)
+    if action == 'add':
+        result = aserver_api.add_group(spec.org, spec.group_name, args.perms)
         pprint(result)
-    elif args.action == 'show':
-        if args.spec['group_name']:
-            result = aserver_api.group(args.spec['org'], args.spec['group_name'])
+    elif action == 'show':
+        if spec.group_name:
+            result = aserver_api.group(spec.org, spec.group_name)
             pprint(result)
         else:
-            result = aserver_api.groups(args.spec['org'])
+            result = aserver_api.groups(spec.org)
             pprint(result)
 
-    elif args.action == 'members':
-        if not args.spec['group_name']:
-            raise ArgumentError('must specify group_name in spec')
-        result = aserver_api.group_members(args.spec['org'], args.spec['group_name'])
+    elif action == 'members':
+        result = aserver_api.group_members(spec.org, spec.group_name)
         user_list(result, args.verbose)
-    elif args.action == 'add_member':
-        if not args.spec['group_name']:
-            raise ArgumentError('must specify group_name in spec')
-        if not args.spec['member']:
-            raise ArgumentError('must specify group_name in spec')
-        aserver_api.add_group_member(args.spec['org'], args.spec['group_name'], args.spec['member'])
-    elif args.action == 'remove_member':
-        if not args.spec['group_name']:
-            raise ArgumentError('must specify group_name in spec')
-        if not args.spec['member']:
-            raise ArgumentError('must specify group_name in spec')
-        aserver_api.remove_group_member(args.spec['org'], args.spec['group_name'], args.spec['member'])
-    elif args.action == 'packages':
-        if not args.spec['group_name']:
-            raise ArgumentError('must specify group_name in spec')
-        result = aserver_api.group_packages(args.spec['org'], args.spec['group_name'])
+    elif action == 'add_member':
+        aserver_api.add_group_member(spec.org, spec.group_name, spec.member)
+    elif action == 'remove_member':
+        aserver_api.remove_group_member(spec.org, spec.group_name, spec.member)
+    elif action == 'packages':
+        result = aserver_api.group_packages(spec.org, spec.group_name)
         package_list(result, args.verbose)
-
-    elif args.action == 'add_package':
-        if not args.spec['group_name']:
-            raise ArgumentError('must specify group_name in spec')
-        if not args.spec['member']:
-            raise ArgumentError('must specify group_name in spec')
-        aserver_api.add_group_package(args.spec['org'], args.spec['group_name'], args.spec['member'])
-    elif args.action == 'remove_package':
-        if not args.spec['group_name']:
-            raise ArgumentError('must specify group_name in spec')
-        if not args.spec['member']:
-            raise ArgumentError('must specify group_name in spec')
-        aserver_api.remove_group_package(args.spec['org'], args.spec['group_name'], args.spec['member'])
+    elif action == 'add_package':
+        aserver_api.add_group_package(spec.org, spec.group_name, spec.member)
+    elif action == 'remove_package':
+        aserver_api.remove_group_package(spec.org, spec.group_name, spec.member)
     else:
         raise NotImplementedError(args.action)
 
