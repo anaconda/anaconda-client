@@ -1,3 +1,9 @@
+import logging
+import yaml
+
+log = logging.getLogger('binstar.auth')
+
+
 class ProjectFilesInspector(object):
     def __init__(self, pfiles):
         self.pfiles = pfiles
@@ -48,9 +54,12 @@ class ConfigurationInspector(object):
         self.config_pfile = None
 
     def update(self, metadata):
-        if self.has_config():
-            with open(self.config_pfile.fullpath) as configfile:
-                metadata['configuration'] = configfile.read()
+        try:
+            if self.has_config():
+                with open(self.config_pfile.fullpath) as configfile:
+                    metadata['configuration'] = yaml.load(configfile)
+        except yaml.YAMLError:
+            log.warn("Could not parse configuration file.")
         return metadata
 
     def has_config(self):

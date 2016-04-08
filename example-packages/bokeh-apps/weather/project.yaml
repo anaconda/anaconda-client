@@ -1,0 +1,5 @@
+name: weather
+source: who-knows
+depedencies:
+  - bokeh
+  - python
