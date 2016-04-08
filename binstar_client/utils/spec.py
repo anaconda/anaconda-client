@@ -86,3 +86,56 @@ def parse_specs(spec):
         attrs = dict(urlparse.parse_qsl(qsl))
 
     return PackageSpec(user, package, version, basename, attrs, spec)
+
+
+class GroupSpec(object):
+    def __init__(self, org, group_name=None, member=None, spec_str=None):
+        self._org = org
+        self._group_name = group_name
+        self._member = member
+
+        if not spec_str:
+            spec_str = str(org)
+            if group_name:
+                spec_str = '%s/%s' % (spec_str, group_name)
+            if member:
+                spec_str = '%s/%s' % (spec_str, member)
+        self.spec_str = spec_str
+
+    def __str__(self):
+        return self.spec_str
+
+    def __repr__(self):
+        return '<GroupSpec %r>' % (self.spec_str)
+
+    @property
+    def org(self):
+        if self._org is None:
+            raise UserError('Organization not given (got %r expected <organization>)' % (self.spec_str,))
+        return self._org
+
+    @property
+    def group_name(self):
+        if self._group_name is None:
+            raise UserError('Group name not given (got %r expected <organization>/<group_name>)' % (self.spec_str,))
+        return self._group_name
+
+    @property
+    def member(self):
+        if self._member is None:
+            raise UserError('Group name not given (got %r expected <organization>/<group_name>/<member>)' % (self.spec_str,))
+        return self._member
+
+
+def group_spec(spec):
+    '''<organization>/<group_name>/<member>'''
+    org = spec
+    group = member = None
+    if '/' in org:
+        org, group = org.split('/', 1)
+    if group and '/' in group:
+        group, member = group.split('/', 1)
+    if member and '/' in member:
+        raise UserError('Invalid group specification "%s" (unexpected "/" in %s)' % member)
+
+    return GroupSpec(org, group, member, spec)
