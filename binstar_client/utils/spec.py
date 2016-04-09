@@ -123,7 +123,7 @@ class GroupSpec(object):
     @property
     def member(self):
         if self._member is None:
-            raise UserError('Group name not given (got %r expected <organization>/<group_name>/<member>)' % (self.spec_str,))
+            raise UserError('Member name not given (got %r expected <organization>/<group_name>/<member>)' % (self.spec_str,))
         return self._member
 
 
