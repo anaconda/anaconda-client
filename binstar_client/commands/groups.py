@@ -1,13 +1,14 @@
-from binstar_client.utils import get_server_api, parse_specs
 from argparse import FileType, ArgumentError
-from os.path import basename
-import tarfile
 import json
-from warnings import warn
+import logging
+from os.path import basename
 from pprint import pprint
 import re
-from binstar_client.pprintb import package_list, user_list
+import tarfile
+from warnings import warn
 
+from binstar_client.pprintb import package_list, user_list
+from binstar_client.utils import get_server_api, parse_specs
 from binstar_client.utils.spec import group_spec
 
 
