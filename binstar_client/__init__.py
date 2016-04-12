@@ -46,7 +46,11 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         self.token = token
 
         user_agent = 'Anaconda-Client/{} (+https://anaconda.org)'.format(__version__)
-        self._session.headers.update({'User-Agent': user_agent})
+        self._session.headers.update({
+            'User-Agent': user_agent,
+            'Content-Type':'application/json',
+            'Accept': 'application/json',
+        })
 
         if token:
             self._session.headers.update({'Authorization': 'token {}'.format(token)})
