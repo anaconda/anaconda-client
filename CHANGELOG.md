@@ -1,5 +1,9 @@
 # CHANGELOG:
 
+## Unreleased
+### Fixed
+* `anaconda groups` subcommand had several bugs, and was difficult to use (#312)
+
 ## 1.4.0 (2016-03-24)
 
   * `BinstarClient.user_packages` learned arguments `platform`, `package_type`,
