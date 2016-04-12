@@ -3,6 +3,8 @@
 ## Unreleased
 ### Fixed
 * `anaconda groups` subcommand had several bugs, and was difficult to use (#312)
+* `anaconda upload` will do the minimal amount of work to parse a conda package (@brentp) (#311)
+* `anaconda upload` had Unicode errors when dealing with Jupyter notebooks (#306)
 
 ## 1.4.0 (2016-03-24)
 
