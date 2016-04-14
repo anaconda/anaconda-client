@@ -64,10 +64,18 @@ def is_project(filename):
 
 def is_conda(filename):
     log.debug("Testing if conda package ..")
+    try:
+        filename.endswith('.tar.bz2')
+    except:
+        import pdb;pdb.set_trace()
     if filename.endswith('.tar.bz2'):  # Could be a conda package
         try:
-            with tarfile.open(filename) as tf:
-                tf.getmember('info/index.json')
+            with tarfile.open(filename, mode="r|bz2") as tf:
+                for info in tf:
+                    if info.name == "info/index.json":
+                        break
+                else:
+                    raise KeyError
         except KeyError:
             log.debug("Not conda  package no 'info/index.json' file in the tarball")
             return False
@@ -106,6 +114,8 @@ def is_r(filename):
         log.debug("This not is an R package (expected .tgz, .tar.gz).")
 
 def detect_package_type(filename):
+    if isinstance(filename, bytes):
+        filename = filename.decode('utf-8', errors='ignore')
     if is_conda(filename):
         return 'conda'
     elif is_pypi(filename):

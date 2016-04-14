@@ -75,15 +75,21 @@ def get_subdir(index):
 
 def inspect_conda_package(filename, fileobj, *args, **kwargs):
 
-    tar = tarfile.open(filename, fileobj=fileobj)
-    index = tar.extractfile('info/index.json')
-    index = json.loads(index.read().decode())
+    index, recipe = None, {}
 
-    try:
-        recipe = tar.extractfile('info/recipe.json')
-        recipe = json.loads(recipe.read().decode())
-    except KeyError:
-        recipe = {}
+    with tarfile.open(filename, fileobj=fileobj, mode="r|bz2") as tar:
+        for info in tar:
+            if info.name == 'info/index.json':
+                index = tar.extractfile(info)
+                index = json.loads(index.read().decode())
+            elif info.name == 'info/recipe.json':
+                recipe = tar.extractfile(info)
+                recipe = json.loads(recipe.read().decode())
+            if index is not None and recipe != {}:
+                break
+        else:
+            if index is None:
+                raise TypeError("info/index.json required in conda package")
 
     about = recipe.pop('about', {})
 

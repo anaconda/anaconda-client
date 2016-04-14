@@ -1,13 +1,16 @@
 package: binstar
 
 platform:
+  - linux-32
   - linux-64
   - osx-64
+  - win-32
   - win-64
 
 engine:
  - python=2.7
  - python=3.4
+ - python=3.5
 
 install:
   - conda install pip setuptools clyent pillow
