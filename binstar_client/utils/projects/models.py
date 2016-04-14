@@ -1,6 +1,7 @@
 import inspect
 import os
 import tarfile
+from tempfile import SpooledTemporaryFile
 from binstar_client.errors import BinstarError
 
 
@@ -10,6 +11,7 @@ class CondaProject(object):
         self.project_path = project_path
         self._name = None
         self._tar = None
+        self._size = None
         self.pfiles = []
         self.metadata = {
             'summary': kwargs.get('summary', None),
@@ -17,6 +19,14 @@ class CondaProject(object):
             'version': kwargs.get('version', None)
         }
         self.metadata = dict((k, v) for k, v in self.metadata.items() if v)
+
+    def tar_it(self, fd=SpooledTemporaryFile()):
+        with tarfile.open(mode='w', fileobj=fd) as tar:
+            for pfile in self.pfiles:
+                tar.add(pfile.fullpath, arcname=pfile.relativepath)
+        fd.seek(0)
+        self._tar = fd
+        return fd
 
     def to_project_creation(self):
         return {
@@ -30,26 +40,37 @@ class CondaProject(object):
 
     def to_stage(self):
         return {
-            'basename': self.basename
+            'basename': self.basename,
+            'configuration': self.configuration
         }
+
+    @property
+    def tar(self):
+        if self._tar is None:
+            self.tar_it()
+        return self._tar
+
+    @property
+    def configuration(self):
+        output = self.metadata.get('configuration', {})
+        output.update({
+            'size': self.size,
+            'num_of_files': len(self.pfiles)
+        })
+        return output
 
     @property
     def basename(self):
         return "{}.tar".format(self.name)
 
-    def tar_in(self, tmp):
-        with tarfile.open(mode='w', fileobj=tmp) as tar:
-            for pfile in self.pfiles:
-                tar.add(pfile.fullpath, arcname=pfile.relativepath)
-        tmp.seek(0)
-        return tmp
-
-    def size(self, fd):
-        spos = fd.tell()
-        fd.seek(0, os.SEEK_END)
-        size = fd.tell() - spos
-        fd.seek(spos)
-        return size
+    @property
+    def size(self):
+        if self._size is None:
+            spos = self._tar.tell()
+            self._tar.seek(0, os.SEEK_END)
+            self._size = self._tar.tell() - spos
+            self._tar.seek(spos)
+        return self._size
 
     @property
     def name(self):

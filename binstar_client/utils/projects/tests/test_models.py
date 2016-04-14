@@ -16,7 +16,12 @@ class CondaProjectTestCase(unittest.TestCase):
 
     def test_to_stage(self):
         cp = CondaProject(example_path('bokeh-apps/weather'))
-        self.assertEqual(cp.to_stage(), {'basename': 'weather.tar'})
+        cp.tar_it()
+        self.assertEqual(
+            cp.to_stage(),
+            {'basename': 'weather.tar', 'configuration': {
+                'num_of_files': 0, 'size': 10240
+            }})
 
     def test_get_project_name_from_file(self):
         prj = CondaProject(example_path('bokeh-apps/timeout.py'))

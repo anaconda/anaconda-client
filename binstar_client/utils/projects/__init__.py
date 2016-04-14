@@ -50,6 +50,7 @@ def upload_project(project_path, args, username):
 
     project.pfiles = pfiles
     [inspector(pfiles).update(project.metadata) for inspector in inspectors]
+    project.tar_it()
 
     api = get_server_api(
         token=args.token,

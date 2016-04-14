@@ -40,15 +40,15 @@ class ProjectUploader(binstar_client.Binstar):
         return res
 
     def file_upload(self, url, obj):
-        fd = self.project.tar_in(SpooledTemporaryFile())
-        _hexmd5, b64md5, size = compute_hash(fd, size=self.project.size(fd))
+        _hexmd5, b64md5, size = compute_hash(
+            self.project.tar, size=self.project.size)
 
         s3data = obj['form_data']
         s3data['Content-Length'] = size
         s3data['Content-MD5'] = b64md5
 
         data_stream, headers = stream_multipart(
-            s3data, files={'file': (self.project.basename, fd)})
+            s3data, files={'file': (self.project.basename, self.project.tar)})
 
         s3res = requests.post(
             url,
