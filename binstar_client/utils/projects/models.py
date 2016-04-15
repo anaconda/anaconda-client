@@ -41,7 +41,8 @@ class CondaProject(object):
     def to_stage(self):
         return {
             'basename': self.basename,
-            'configuration': self.configuration
+            'configuration': self.configuration,
+            'size': self.size
         }
 
     @property
