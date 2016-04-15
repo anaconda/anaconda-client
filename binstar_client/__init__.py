@@ -37,7 +37,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
                   an anonymous user.
     '''
 
-    def __init__(self, token=None, domain='https://api.anaconda.org', verify=True):
+    def __init__(self, token=None, domain='https://api.anaconda.org', verify=True, **kwargs):
 
         self._session = requests.Session()
         self._session.headers['x-binstar-api-version'] = __version__

@@ -24,6 +24,7 @@ from binstar_client.utils import bool_input
 from binstar_client.utils import get_server_api
 from binstar_client.utils import get_config
 from binstar_client.utils import upload_print_callback
+from binstar_client.utils.projects import upload_project
 from binstar_client.utils.detect import detect_package_type, get_attrs
 
 
@@ -152,6 +153,63 @@ def remove_existing_file(aserver_api, args, username, package_name, version, fil
                 return True
 
 
+def upload_package(filename, package_type, aserver_api, username, args):
+    log.info('extracting package attributes for upload ...')
+    sys.stdout.flush()
+    try:
+        package_attrs, release_attrs, file_attrs = get_attrs(package_type,
+                                                             filename, parser_args=args)
+    except Exception:
+        if args.show_traceback:
+            raise
+        raise errors.BinstarError(('Trouble reading metadata from {}.'
+                                   ' Is this a valid {} package').format(filename, package_type))
+
+    if args.build_id:
+        file_attrs['attrs']['binstar_build'] = args.build_id
+
+    log.info('done')
+
+    package_name = get_package_name(args, package_attrs, filename, package_type)
+    version = get_version(args, release_attrs, package_type)
+
+    add_package(aserver_api, args, username, package_name, package_attrs, package_type)
+    add_release(aserver_api, args, username, package_name, version, release_attrs)
+    binstar_package_type = file_attrs.pop('binstar_package_type', package_type)
+
+    with open(filename, 'rb') as fd:
+        log.info('\nUploading file %s/%s/%s/%s ... ' % (username, package_name, version, file_attrs['basename']))
+        sys.stdout.flush()
+
+        if remove_existing_file(aserver_api, args, username, package_name, version, file_attrs):
+            return []
+        try:
+            upload_info = aserver_api.upload(username,
+                                             package_name,
+                                             version,
+                                             file_attrs['basename'],
+                                             fd, binstar_package_type,
+                                             args.description,
+                                             dependencies=file_attrs.get('dependencies'),
+                                             attrs=file_attrs['attrs'],
+                                             channels=args.labels,
+                                             callback=upload_print_callback(args))
+        except errors.Conflict:
+            full_name = '%s/%s/%s/%s' % (username, package_name, version, file_attrs['basename'])
+            log.info('Distribution already exists. Please use the '
+                     '-i/--interactive or --force options or `anaconda remove %s`' % full_name)
+            raise
+        except requests_ext.OpenSslError:
+            requests_ext.warn_openssl()
+            if args.show_traceback != 'never':
+                raise
+            else:
+                raise errors.BinstarError('Could not upload package')
+
+        log.info("\n\nUpload(s) Complete\n")
+        return [package_name, upload_info]
+
+
 def main(args):
 
     aserver_api = get_server_api(args.token, args.site, args.log_level)
@@ -163,6 +221,7 @@ def main(args):
         username = user['login']
 
     uploaded_packages = []
+    uploaded_projects = []
 
     # Flatten file list because of 'windows_glob' function
     files = [f for fglob in args.files for f in fglob]
@@ -174,62 +233,23 @@ def main(args):
 
         package_type = determine_package_type(filename, args)
 
-        log.info('extracting package attributes for upload ...')
-        sys.stdout.flush()
-        try:
-            package_attrs, release_attrs, file_attrs = get_attrs(package_type,
-                                                                 filename, parser_args=args)
-        except Exception:
-            if args.show_traceback:
-                raise
-            raise errors.BinstarError('Trouble reading metadata from %r. Is this a valid %s package' % (filename, package_type))
-
-        if args.build_id:
-            file_attrs['attrs']['binstar_build'] = args.build_id
-
-        log.info('done')
-
-        package_name = get_package_name(args, package_attrs, filename, package_type)
-        version = get_version(args, release_attrs, package_type)
-
-        add_package(aserver_api, args, username, package_name, package_attrs, package_type)
-
-        add_release(aserver_api, args, username, package_name, version, release_attrs)
-
-        binstar_package_type = file_attrs.pop('binstar_package_type', package_type)
-
-        with open(filename, 'rb') as fd:
-            log.info('\nUploading file %s/%s/%s/%s ... ' % (username, package_name, version, file_attrs['basename']))
-            sys.stdout.flush()
-
-            if remove_existing_file(aserver_api, args, username, package_name, version, file_attrs):
-                continue
-            try:
-                upload_info = aserver_api.upload(username, package_name, version, file_attrs['basename'],
-                                             fd, binstar_package_type,
-                                             args.description,
-                                             dependencies=file_attrs.get('dependencies'),
-                                             attrs=file_attrs['attrs'],
-                                             channels=args.labels,
-                                             callback=upload_print_callback(args))
-            except errors.Conflict:
-                full_name = '%s/%s/%s/%s' % (username, package_name, version, file_attrs['basename'])
-                log.info('Distribution already exists. Please use the -i/--interactive or --force options or `anaconda remove %s`' % full_name)
-                raise
-            except requests_ext.OpenSslError:
-                requests_ext.warn_openssl()
-                if args.show_traceback != 'never':
-                    raise
-                else:
-                    raise errors.BinstarError('Could not upload package')
-
-            uploaded_packages.append([package_name, upload_info])
-            log.info("\n\nUpload(s) Complete\n")
-
+        if package_type == 'project':
+            uploaded_projects.append(upload_project(filename, args, username))
+        else:
+            uploaded_packages.append(upload_package(
+                filename,
+                package_type=package_type,
+                aserver_api=aserver_api,
+                username=username,
+                args=args))
 
     for package, upload_info in uploaded_packages:
         package_url = upload_info.get('url', 'https://anaconda.org/%s/%s' % (username, package))
         log.info("Package located at:\n%s\n" % package_url)
+
+    for project_name, upload_info in uploaded_projects:
+        # TODO: We don't know what's going to be the URL yet
+        log.info("Project {} uploaded.\n".format(project_name))
 
 
 def windows_glob(item):

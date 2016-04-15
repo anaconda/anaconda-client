@@ -48,6 +48,20 @@ def is_ipynb(filename):
     log.debug("No ipynb file")
 
 
+def is_project(filename):
+    log.debug("Testing if project ..")
+
+    def is_python_file():
+        return filename.endswith('.py')
+
+    def is_directory():
+        return path.isdir(filename)
+
+    if is_directory() or is_python_file():
+        return True
+    log.debug("Not a project")
+
+
 def is_conda(filename):
     log.debug("Testing if conda package ..")
     try:
@@ -114,6 +128,8 @@ def detect_package_type(filename):
         return 'env'
     elif conda_installer.is_installer(filename):
         return conda_installer.PACKAGE_TYPE
+    elif is_project(filename):
+        return 'project'
     else:
         return None
 
