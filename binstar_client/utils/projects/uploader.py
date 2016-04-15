@@ -67,7 +67,7 @@ class ProjectUploader(binstar_client.Binstar):
         data, headers = jencode(self.project.to_project_creation())
         return self.session.get(url, data=data, headers=headers)
 
-    def upload(self, labels=['main']):
+    def upload(self):
         '''
         * Check if project already exists
             * if it doesn't, then create it
