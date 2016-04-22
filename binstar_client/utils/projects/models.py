@@ -80,6 +80,8 @@ class CondaProject(object):
         return self._name
 
     def _get_project_name(self):
+        if self.project_path == ".":
+            return  os.path.basename(os.path.abspath("."))
         if os.path.isdir(self.project_path):
             return os.path.basename(self.project_path)
         else:
