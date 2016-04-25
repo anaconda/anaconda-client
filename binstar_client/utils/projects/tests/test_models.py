@@ -31,6 +31,11 @@ class CondaProjectTestCase(unittest.TestCase):
         prj = CondaProject(example_path('bokeh-apps/weather'))
         self.assertEqual(prj.name, 'weather')
 
+    def test_get_project_name_from_current_dir(self):
+        prj = CondaProject('.')
+        self.assertEqual(prj.name, 'anaconda-client')
+
+
     def test_ignore_empty_options(self):
         prj = CondaProject(example_path('bokeh-apps/weather'), version='1')
         self.assertEqual(prj.metadata['version'], '1')

@@ -81,7 +81,7 @@ class CondaProject(object):
 
     def _get_project_name(self):
         if os.path.isdir(self.project_path):
-            return os.path.basename(self.project_path)
+            return os.path.basename(os.path.abspath(self.project_path))
         else:
             return os.path.splitext(os.path.basename(self.project_path))[0]
 
