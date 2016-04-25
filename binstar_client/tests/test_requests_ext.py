@@ -7,9 +7,9 @@ from binstar_client import requests_ext
 
 class TestMultiPart(unittest.TestCase):
     def test_unicode_read(self):
-        body = io.BytesIO(b'Unicode™')
+        body = io.BytesIO(u'Unicode™'.encode('utf-8'))
         multipart = requests_ext.MultiPartIO([body])
-        self.assertEqual(b'Unicode™', multipart.read())
+        self.assertEqual(u'Unicode™'.encode('utf-8'), multipart.read())
 
 
 if __name__ == "__main__":
