@@ -1,4 +1,6 @@
+import os
 import unittest
+
 from binstar_client.utils.test.utils import example_path
 from ..models import CondaProject, PFile
 
@@ -32,9 +34,12 @@ class CondaProjectTestCase(unittest.TestCase):
         self.assertEqual(prj.name, 'weather')
 
     def test_get_project_name_from_current_dir(self):
-        prj = CondaProject('.')
-        self.assertEqual(prj.name, 'anaconda-client')
+        cwd = os.getcwd()
+        self.addCleanup(os.chdir, cwd)
 
+        os.chdir(example_path('bokeh-apps/weather'))
+        prj = CondaProject('.')
+        self.assertEqual(prj.name, 'weather')
 
     def test_ignore_empty_options(self):
         prj = CondaProject(example_path('bokeh-apps/weather'), version='1')
