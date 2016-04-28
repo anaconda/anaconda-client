@@ -115,10 +115,10 @@ class MultiPartIO(object):
             self.callback(self.tell(), self._total)
 
         if n == -1:
-            return ''.join(fd.read() for fd in self.to_read)
+            return b''.join(fd.read() for fd in self.to_read)
 
         if not self.to_read:
-            return ''
+            return b''
 
         while self.to_read:
             data = self.to_read[0].read(n)
@@ -129,7 +129,7 @@ class MultiPartIO(object):
             fd = self.to_read.pop(0)
             self.have_read.append(fd)
 
-        return ''
+        return b''
 
     def tell(self):
         cursor = sum(fd.tell() for fd in self.have_read)
