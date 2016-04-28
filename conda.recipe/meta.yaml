@@ -3,6 +3,8 @@ package:
   name: binstar
   version: {{data.get('version')}}
 
+build: {}
+
 requirements:
   build:
     - python
