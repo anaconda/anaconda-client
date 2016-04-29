@@ -14,26 +14,26 @@ class ProjectUploader(binstar_client.Binstar):
         super(ProjectUploader, self).__init__(token, domain, verify)
 
     def exists(self):
-        url = "{}/apps/{}/project/{}".format(
+        url = "{}/apps/{}/projects/{}".format(
             self.domain, self.username, self.project.name)
         res = self.session.get(url)
         return res.status_code == 200
 
     def create(self):
-        url = "{}/apps/{}/project".format(self.domain, self.username)
+        url = "{}/apps/{}/projects".format(self.domain, self.username)
         data, headers = jencode(self.project.to_project_creation())
         res = self.session.post(url, data=data, headers=headers)
         return res
 
     def stage(self):
-        url = "{}/apps/{}/project/{}/stage".format(
+        url = "{}/apps/{}/projects/{}/stage".format(
             self.domain, self.username, self.project.name)
         data, headers = jencode(self.project.to_stage())
         res = self.session.post(url, data=data, headers=headers)
         return res
 
     def commit(self, revision_id):
-        url = "{}/apps/{}/project/{}/commit".format(
+        url = "{}/apps/{}/projects/{}/commit".format(
             self.domain, self.username, self.project.name)
         data, headers = jencode({'revision_id': revision_id})
         res = self.session.post(url, data=data, headers=headers)
