@@ -59,6 +59,5 @@ def upload_project(project_path, args, username):
         cls=ProjectUploader,
         username=username,
         project=project)
-    api.upload()
 
-    return [project.name, {}]
+    return [project.name, api.upload()['url']]
