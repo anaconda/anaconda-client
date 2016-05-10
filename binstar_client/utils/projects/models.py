@@ -56,9 +56,15 @@ class CondaProject(object):
         output = self.metadata.get('configuration', {})
         output.update({
             'size': self.size,
-            'num_of_files': len(self.pfiles)
+            'num_of_files': len(self)
         })
         return output
+
+    def __len__(self):
+        if os.path.isfile(self.project_path):
+            return 1
+        else:
+            return len(self.pfiles)
 
     @property
     def basename(self):
