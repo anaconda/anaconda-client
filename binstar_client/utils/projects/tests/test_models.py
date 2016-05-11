@@ -47,14 +47,14 @@ class CondaProjectTestCase(unittest.TestCase):
         self.assertNotIn('summary', prj.metadata)
         self.assertNotIn('description', prj.metadata)
 
-    def test_len_dir(self):
+    def test_get_file_count_dir(self):
         # Files need to be loaded
         prj = CondaProject(example_path('bokeh-apps/weather'), version='1')
-        self.assertEqual(len(prj), 0)
+        self.assertEqual(prj.get_file_count(), 0)
 
-    def test_len_file(self):
+    def test_get_file_count_file(self):
         prj = CondaProject(example_path('bokeh-apps/timeout.py'), version='1')
-        self.assertEqual(len(prj), 1)
+        self.assertEqual(prj.get_file_count(), 1)
 
 
 class PFileTestCase(unittest.TestCase):
