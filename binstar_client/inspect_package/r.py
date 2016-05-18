@@ -1,6 +1,18 @@
 import tarfile
-from email.parser import Parser
+import email.parser
 from os import path
+
+# Python 3 requires BytesParser which doesn't exist in Python 2
+Parser = getattr(email.parser, 'BytesParser', email.parser.Parser)
+
+def parse_package_list(package_spec):
+    if not package_spec:
+        return []
+
+    return [
+        spec.strip()
+        for spec in package_spec.split(',')
+    ]
 
 def inspect_r_package(filename, fileobj, *args, **kwargs):
 
@@ -18,8 +30,8 @@ def inspect_r_package(filename, fileobj, *args, **kwargs):
 
     attrs = {}
     attrs['NeedsCompilation'] = raw_attrs.get('NeedsCompilation', 'no')
-    attrs['depends'] = raw_attrs.get('Depends', '').split(',')
-    attrs['suggests'] = raw_attrs.get('Suggests', '').split(',')
+    attrs['depends'] = parse_package_list(raw_attrs.get('Depends'))
+    attrs['suggests'] = parse_package_list(raw_attrs.get('Suggests'))
 
     built = raw_attrs.get('Built')
 
@@ -37,7 +49,7 @@ def inspect_r_package(filename, fileobj, *args, **kwargs):
                     'license': license,
                     }
     release_data = {
-                    'version': 'version',
+                    'version': version,
                     'description': description,
                     }
     file_data = {
