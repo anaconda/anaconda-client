@@ -1,6 +1,9 @@
 import tarfile
-from email.parser import Parser
+import email.parser
 from os import path
+
+# Python 3 requires BytesParser which doesn't exist in Python 2
+Parser = getattr(email.parser, 'BytesParser', email.parser.Parser)
 
 def parse_package_list(package_spec):
     if not package_spec:
