@@ -2,6 +2,15 @@ import tarfile
 from email.parser import Parser
 from os import path
 
+def parse_package_list(package_spec):
+    if not package_spec:
+        return []
+
+    return [
+        spec.strip()
+        for spec in package_spec.split(',')
+    ]
+
 def inspect_r_package(filename, fileobj, *args, **kwargs):
 
     tf = tarfile.open(filename, fileobj=fileobj)
@@ -18,8 +27,8 @@ def inspect_r_package(filename, fileobj, *args, **kwargs):
 
     attrs = {}
     attrs['NeedsCompilation'] = raw_attrs.get('NeedsCompilation', 'no')
-    attrs['depends'] = raw_attrs.get('Depends', '').split(',')
-    attrs['suggests'] = raw_attrs.get('Suggests', '').split(',')
+    attrs['depends'] = parse_package_list(raw_attrs.get('Depends'))
+    attrs['suggests'] = parse_package_list(raw_attrs.get('Suggests'))
 
     built = raw_attrs.get('Built')
 
@@ -37,7 +46,7 @@ def inspect_r_package(filename, fileobj, *args, **kwargs):
                     'license': license,
                     }
     release_data = {
-                    'version': 'version',
+                    'version': version,
                     'description': description,
                     }
     file_data = {
