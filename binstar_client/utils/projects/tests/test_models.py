@@ -2,7 +2,7 @@ import os
 import unittest
 
 from binstar_client.utils.test.utils import example_path
-from ..models import CondaProject, PFile
+from binstar_client.utils.projects.models import CondaProject, PFile
 
 
 class CondaProjectTestCase(unittest.TestCase):
@@ -23,7 +23,7 @@ class CondaProjectTestCase(unittest.TestCase):
             cp.to_stage(),
             {'basename': 'weather.tar', 'configuration': {
                 'num_of_files': 0, 'size': 10240
-            }, 'size': 10240})
+            }})
 
     def test_get_project_name_from_file(self):
         prj = CondaProject(example_path('bokeh-apps/timeout.py'))
