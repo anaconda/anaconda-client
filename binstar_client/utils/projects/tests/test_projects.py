@@ -4,7 +4,7 @@ from binstar_client.utils.projects import get_files
 
 
 def test_get_files():
-    pfiles = get_files(example_path('bokeh-apps/weather'))
+    pfiles = sorted(get_files(example_path('bokeh-apps/weather')), key=lambda x: x['basename'])
     assert len(pfiles) == 6
     assert pfiles[0]['basename'] == '.projectignore'
     assert pfiles[0]['relativepath'] == '.projectignore'
