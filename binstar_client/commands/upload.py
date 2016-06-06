@@ -248,7 +248,6 @@ def main(args):
         log.info("Package located at:\n%s\n" % package_url)
 
     for project_name, url in uploaded_projects:
-        # TODO: We don't know what's going to be the URL yet
         log.info("Project {} uploaded to {}.\n".format(project_name, url))
 
 

@@ -1,63 +1,69 @@
+from binstar_client import errors
 import logging
 import os
-from os import path
-from binstar_client.utils import get_server_api
-from .filters import filters
-from .inspectors import inspectors
-from .uploader import ProjectUploader
-from .models import CondaProject, PFile
+import shutil
+import sys
+import tempfile
+
 
 log = logging.getLogger('binstar.projects.upload')
 
 
-def get_files(project_path, klass=None):
-    output = []
-    project_path = os.path.normpath(project_path)
-    if path.isdir(project_path):
-        for root, directories, filenames in os.walk(project_path):
-            for f in filenames:
-                fullpath = path.join(root, f)
-                relativepath = path.relpath(fullpath, project_path)
-                tmp = {
-                    'fullpath': fullpath,
-                    'relativepath': relativepath,
-                    'basename': path.basename(fullpath),
-                    'size': os.stat(fullpath).st_size
-                }
+class _TmpDir(object):
+    def __init__(self, prefix):
+        self._dir = tempfile.mkdtemp(prefix=prefix)
 
-                if klass is None:
-                    output.append(tmp)
-                else:
-                    output.append(klass(**tmp))
-    return output
+    def __exit__(self, type, value, traceback):
+        try:
+            shutil.rmtree(path=self._dir)
+        except Exception as e:
+            # prefer original exception to rmtree exception
+            if value is None:
+                print("Exception cleaning up TmpDir %s: %s" % (self._dir, str(e)), file=sys.stderr)
+                raise e
+            else:
+                print("Failed to clean up TmpDir %s: %s" % (self._dir, str(e)), file=sys.stderr)
+                raise value
+
+    def __enter__(self):
+        return self._dir
 
 
-def upload_project(project_path, args, username):
-    project = CondaProject(
-        project_path,
-        description=args.description,
-        summary=args.summary,
-        version=args.version
-    )
+def _real_upload_project(project, args, username):
+    from anaconda_project import project_ops
 
     print("Uploading project: {}".format(project.name))
 
-    pfiles = get_files(project_path, klass=PFile)
-    for pFilter in filters:
-        pfilter = pFilter(pfiles, args, basepath=project_path)
-        if pfilter.can_filter():
-            pfiles = list(filter(pfilter.run, pfiles))
+    status = project_ops.upload(project, site=args.site, username=username,
+                                token=args.token, log_level=args.log_level)
 
-    project.pfiles = pfiles
-    [inspector(pfiles).update(project.metadata) for inspector in inspectors]
-    project.tar_it()
+    for log in status.logs:
+        print(log)
+    if not status:
+        for error in status.errors:
+            print(error, file=sys.stderr)
+        print(status.status_description, file=sys.stderr)
+        raise errors.BinstarError(status.status_description)
+    else:
+        print(status.status_description)
+        return [project.name, status.url]
 
-    api = get_server_api(
-        token=args.token,
-        site=args.site,
-        log_level=args.log_level,
-        cls=ProjectUploader,
-        username=username,
-        project=project)
 
-    return [project.name, api.upload()['url']]
+def upload_project(project_path, args, username):
+    try:
+        from anaconda_project import project_ops
+    except ImportError:
+        raise errors.BinstarError("To upload projects such as {}, install the anaconda-project package.".format(project_path))
+
+    from anaconda_project import project
+
+    if os.path.exists(project_path) and not os.path.isdir(project_path):
+        # make the single file into a temporary project directory
+        with (_TmpDir(prefix="anaconda_project_upload_")) as dirname:
+            shutil.copy(project_path, dirname)
+            basename_no_extension = os.path.splitext(os.path.basename(project_path))[0]
+            project = project_ops.create(dirname, name=basename_no_extension)
+            return _real_upload_project(project, args, username)
+    else:
+        project = project.Project(directory_path=project_path)
+        return _real_upload_project(project, args, username)
