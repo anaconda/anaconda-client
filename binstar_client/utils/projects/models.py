@@ -42,7 +42,6 @@ class CondaProject(object):
         return {
             'basename': self.basename,
             'configuration': self.configuration,
-            'size': self.size
         }
 
     @property
