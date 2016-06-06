@@ -18,7 +18,7 @@ install:
   - python setup.py develop
 
 test:
-  - conda install -y nbformat
+  - conda install -y nbformat anaconda_project
   - python binstar_client/tests/runtests.py
 
 script:
