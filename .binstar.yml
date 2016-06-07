@@ -18,6 +18,7 @@ install:
   - python setup.py develop
 
 test:
+  - conda config --add channels https://conda.anaconda.org/t/ha-e3f51724-731d-45ea-bbb7-853fdda42c11/binstar
   - conda install -y nbformat anaconda_project
   - python binstar_client/tests/runtests.py
 
