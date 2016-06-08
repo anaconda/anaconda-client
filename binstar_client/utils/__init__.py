@@ -79,7 +79,7 @@ def get_server_api(token=None, site=None, log_level=logging.INFO, cls=None, **kw
     url = config.get('url', DEFAULT_URL)
 
     if log_level >= logging.INFO:
-        sys.stderr.write("Using Anaconda Cloud api site %s\n" % url)
+        sys.stderr.write("Using Anaconda API: %s\n" % url)
     if token:
         log.debug("Using token from command line args")
     elif 'BINSTAR_API_TOKEN' in os.environ:
