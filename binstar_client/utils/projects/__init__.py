@@ -55,7 +55,7 @@ def upload_project(project_path, args, username):
     try:
         from anaconda_project import project_ops
     except ImportError:
-        raise errors.BinstarError("To upload projects such as {}, install the anaconda-project package.".format(project_path))
+        raise errors.BinstarError("To upload projects such as {}, install the anaconda_project package.".format(project_path))
 
     from anaconda_project import project
 
