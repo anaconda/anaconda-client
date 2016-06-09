@@ -13,12 +13,13 @@ engine:
  - python=3.5
 
 install:
-  - conda install pip setuptools clyent pillow
+  - conda install pip setuptools clyent pillow psutil
   - pip install coverage==3.7.1 mock
   - python setup.py develop
 
 test:
-  - conda install -y nbformat
+  - conda config --add channels https://conda.anaconda.org/t/ha-e3f51724-731d-45ea-bbb7-853fdda42c11/binstar
+  - conda install -y nbformat anaconda_project
   - python binstar_client/tests/runtests.py
 
 script:

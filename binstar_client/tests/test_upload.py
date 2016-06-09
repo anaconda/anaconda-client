@@ -100,5 +100,80 @@ class Test(CLITestCase):
 
         registry.assertAllCalled()
 
+    @urlpatch
+    def test_upload_project(self, registry):
+        # there's redundant work between anaconda-client which
+        # checks auth and anaconda-project also checks auth;
+        # -project has no way to know it was already checked :-/
+        registry.register(method='GET', path='/user/eggs', content='{"login": "eggs"}')
+        registry.register(method='GET', path='/user', content='{"login": "eggs"}')
+        registry.register(method='GET', path='/apps/eggs/projects/dog', content='{}')
+        stage_content = '{"post_url":"http://s3_url.com/s3_url", "form_data":{"foo":"bar"}, "dist_id":"dist42"}'
+        registry.register(method='POST', path='/apps/eggs/projects/dog/stage',
+                          content=stage_content)
+        registry.register(method='POST', path='/s3_url', status=201)
+        registry.register(method='POST', path='/apps/eggs/projects/dog/commit/dist42', content='{}')
+
+        main(['--show-traceback', 'upload',
+              '--package-type', 'project',
+              self.data_dir('bar')], False)
+
+        registry.assertAllCalled()
+
+    @urlpatch
+    def test_upload_notebook_as_project(self, registry):
+        registry.register(method='GET', path='/user/eggs', content='{"login": "eggs"}')
+        registry.register(method='GET', path='/user', content='{"login": "eggs"}')
+        registry.register(method='GET', path='/apps/eggs/projects/foo', content='{}')
+        stage_content = '{"post_url":"http://s3_url.com/s3_url", "form_data":{"foo":"bar"}, "dist_id":"dist42"}'
+        registry.register(method='POST', path='/apps/eggs/projects/foo/stage',
+                          content=stage_content)
+        registry.register(method='POST', path='/s3_url', status=201)
+        registry.register(method='POST', path='/apps/eggs/projects/foo/commit/dist42', content='{}')
+
+        main(['--show-traceback', 'upload',
+              '--package-type', 'project',
+              self.data_dir('foo.ipynb')], False)
+
+        registry.assertAllCalled()
+
+    @urlpatch
+    def test_upload_project_specifying_user(self, registry):
+        registry.register(method='GET', path='/user/alice', content='{"login": "alice"}')
+        registry.register(method='GET', path='/apps/alice/projects/dog', content='{}')
+        stage_content = '{"post_url":"http://s3_url.com/s3_url", "form_data":{"foo":"bar"}, "dist_id":"dist42"}'
+        registry.register(method='POST', path='/apps/alice/projects/dog/stage',
+                          content=stage_content)
+        registry.register(method='POST', path='/s3_url', status=201)
+        registry.register(method='POST', path='/apps/alice/projects/dog/commit/dist42', content='{}')
+
+        main(['--show-traceback', 'upload',
+              '--package-type', 'project',
+              '--user', 'alice',
+              self.data_dir('bar')], False)
+
+        registry.assertAllCalled()
+
+
+    @urlpatch
+    def test_upload_project_specifying_token(self, registry):
+        registry.register(method='GET', path='/user/eggs', content='{"login": "eggs"}',
+                          expected_headers={'Authorization':'token abcdefg'})
+        registry.register(method='GET', path='/user', content='{"login": "eggs"}')
+        registry.register(method='GET', path='/apps/eggs/projects/dog', content='{}')
+        stage_content = '{"post_url":"http://s3_url.com/s3_url", "form_data":{"foo":"bar"}, "dist_id":"dist42"}'
+        registry.register(method='POST', path='/apps/eggs/projects/dog/stage',
+                          content=stage_content)
+        registry.register(method='POST', path='/s3_url', status=201)
+        registry.register(method='POST', path='/apps/eggs/projects/dog/commit/dist42', content='{}')
+
+        main(['--show-traceback', '--token', 'abcdefg',
+              'upload',
+              '--package-type', 'project',
+              self.data_dir('bar')], False)
+
+        registry.assertAllCalled()
+
+
 if __name__ == '__main__':
     unittest.main()

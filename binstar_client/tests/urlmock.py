@@ -15,7 +15,7 @@ except NameError:
 
 from collections import namedtuple
 
-rule = namedtuple('rule', ('url', 'path', 'method', 'status', 'content', 'side_effect', 'res', 'headers'))
+rule = namedtuple('rule', ('url', 'path', 'method', 'status', 'content', 'side_effect', 'res', 'headers', 'expected_headers'))
 
 def filter_request(m, prepared_request):
     if m.url and  m.url != prepared_request.url:
@@ -74,6 +74,14 @@ class Registry(object):
                                                                           prepared_request.url,
                                                                           ))
 
+        if rule.expected_headers:
+            for header, value in rule.expected_headers.items():
+                if header not in prepared_request.headers:
+                    raise Exception("{}: header {} expected in {}".format(prepared_request.url, header, prepared_request.headers))
+
+                if prepared_request.headers[header] != value:
+                    raise Exception("{}: header {} has unexpected value {} was expecting {}".format(prepared_request.url, header, prepared_request.headers[header], value))
+
         content = rule.content
         if isinstance(content, dict):
             content = json.dumps(content)
@@ -94,9 +102,9 @@ class Registry(object):
 
         return res
 
-    def register(self, url=None, path=None, method='GET', status=200, content=b'', side_effect=None, headers=None):
+    def register(self, url=None, path=None, method='GET', status=200, content=b'', side_effect=None, headers=None, expected_headers=None):
         res = Responses()
-        self._map.append(rule(url, path, method, status, content, side_effect, res, headers))
+        self._map.append(rule(url, path, method, status, content, side_effect, res, headers, expected_headers))
         return res
 
     def unregister(self, res):
