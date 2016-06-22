@@ -64,10 +64,7 @@ def is_project(filename):
 
 def is_conda(filename):
     log.debug("Testing if conda package ..")
-    try:
-        filename.endswith('.tar.bz2')
-    except:
-        import pdb;pdb.set_trace()
+    
     if filename.endswith('.tar.bz2'):  # Could be a conda package
         try:
             with tarfile.open(filename, mode="r|bz2") as tf:
