@@ -1,4 +1,4 @@
-package: binstar
+package: anaconda-client
 
 platform:
   - linux-32

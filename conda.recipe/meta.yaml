@@ -1,6 +1,6 @@
 {% set data = load_setuptools()%}
 package:
-  name: binstar
+  name: anaconda-client
   version: {{data.get('version')}}
 
 build: {}
