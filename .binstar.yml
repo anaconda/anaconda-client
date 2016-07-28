@@ -19,7 +19,8 @@ install:
 
 test:
   - conda config --add channels https://conda.anaconda.org/t/an-1126452d-8e3d-439a-9763-03b5696f4f97/binstar
-  - conda install -y nbformat anaconda_project
+  - conda config --add channels conda-kapsel
+  - conda install -y nbformat conda-kapsel
   - python binstar_client/tests/runtests.py
 
 script:
