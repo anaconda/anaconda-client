@@ -1,0 +1,9 @@
+name: dog
+description: "Hi this is dog"
+
+env_specs:
+  default:
+    channels: []
+    packages: []
+
+
