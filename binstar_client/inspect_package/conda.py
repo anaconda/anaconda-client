@@ -1,18 +1,22 @@
 from __future__ import print_function
 
-import json
+# Standard library imports
 from os import path
 from pprint import pprint
+import json
+import re
 import sys
 import tarfile
-import re
+import tempfile
+
+# Local imports
+from ..utils.notebook.data_uri import data_uri_from
 
 
-
-
-os_map = {'osx':'darwin', 'win':'win32'}
-
+os_map = {'osx': 'darwin', 'win': 'win32'}
 specs_re = re.compile('^([=><]+)(.*)$')
+
+
 def transform_conda_deps(deps):
     """
     Format dependencies into a common binstar format
@@ -93,6 +97,24 @@ def inspect_conda_package(filename, fileobj, *args, **kwargs):
             if index is None:
                 raise TypeError("info/index.json required in conda package")
 
+    # Load icon if defined in the recipe app section and file exists inside
+    # recipe folder
+    fileobj.seek(0)
+    icon_b64 = None
+    app = recipe.get('app')
+    if app:
+        icon_path = app.get('icon')
+        if icon_path:
+            tar = tarfile.open(filename, fileobj=fileobj, mode="r|bz2")
+            for info in tar:
+                if info.name == 'info/recipe/{0}'.format(icon_path):
+                    icon_data = tar.extractfile(info).read()
+                    f, temp_path = tempfile.mkstemp()
+                    with open(temp_path, 'wb') as f:
+                        f.write(icon_data)
+                    icon_b64 = data_uri_from(temp_path)
+                    break
+
     about = recipe.pop('about', {})
 
     subdir = get_subdir(index)
@@ -102,6 +124,7 @@ def inspect_conda_package(filename, fileobj, *args, **kwargs):
 
     package_data = {
                     'name': index.pop('name'),
+                    # Should this info be removed and moved to the release?
                     'summary': about.get('summary', ''),
                     'license': about.get('license'),
                     }
@@ -109,10 +132,14 @@ def inspect_conda_package(filename, fileobj, *args, **kwargs):
                     'version': index.pop('version'),
                     'home_page': about.get('home'),
                     'description': '',
+                    # Add summary and license as per release attributes?
+                    # 'summary': about.get('summary', ''),
+                    # 'license': about.get('license'),
+                    'icon': icon_b64,
                     }
     file_data = {
                 'basename': '%s/%s' % (subdir, path.basename(filename)),
-                'attrs':{
+                'attrs':+{
                         'operatingsystem': operatingsystem,
                         'machine': machine,
                         'target-triplet': '%s-any-%s' % (machine, operatingsystem),
@@ -124,6 +151,7 @@ def inspect_conda_package(filename, fileobj, *args, **kwargs):
     conda_depends = index.get('depends', index.get('requires', []))
     file_data['dependencies'] = transform_conda_deps(conda_depends)
     return package_data, release_data, file_data
+
 
 def main():
     filename = sys.argv[1]

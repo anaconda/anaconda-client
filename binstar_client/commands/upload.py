@@ -38,9 +38,10 @@ except NameError:
 log = logging.getLogger('binstar.upload')
 
 
-def create_release(aserver_api, username, package_name, version, description, announce=None):
+def create_release(aserver_api, username, package_name, version, description,
+                   announce=None, icon=None):
     aserver_api.add_release(username, package_name, version, [],
-                        announce, description)
+                            announce, description, icon=icon)
 
 def create_release_interactive(aserver_api, username, package_name, version):
 
@@ -133,7 +134,13 @@ def add_release(aserver_api, args, username, package_name, version, release_attr
         if args.mode == 'interactive':
             create_release_interactive(aserver_api, username, package_name, version)
         else:
-            create_release(aserver_api, username, package_name, version, release_attrs['description'])
+            create_release(aserver_api,
+                           username,
+                           package_name,
+                           version,
+                           release_attrs['description'],
+                           icon=release_attrs.get('icon'),
+                           )
 
 
 def remove_existing_file(aserver_api, args, username, package_name, version, file_attrs):
@@ -158,7 +165,8 @@ def upload_package(filename, package_type, aserver_api, username, args):
     sys.stdout.flush()
     try:
         package_attrs, release_attrs, file_attrs = get_attrs(package_type,
-                                                             filename, parser_args=args)
+                                                             filename,
+                                                             parser_args=args)
     except Exception:
         if args.show_traceback:
             raise
