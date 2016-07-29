@@ -32,7 +32,7 @@ class _TmpDir(object):
 
 
 def _real_upload_project(project, args, username):
-    from anaconda_project import project_ops
+    from conda_kapsel import project_ops
 
     print("Uploading project: {}".format(project.name))
 
@@ -53,15 +53,15 @@ def _real_upload_project(project, args, username):
 
 def upload_project(project_path, args, username):
     try:
-        from anaconda_project import project_ops
+        from conda_kapsel import project_ops
     except ImportError:
-        raise errors.BinstarError("To upload projects such as {}, install the anaconda_project package.".format(project_path))
+        raise errors.BinstarError("To upload projects such as {}, install the conda-kapsel package.".format(project_path))
 
-    from anaconda_project import project
+    from conda_kapsel import project
 
     if os.path.exists(project_path) and not os.path.isdir(project_path):
         # make the single file into a temporary project directory
-        with (_TmpDir(prefix="anaconda_project_upload_")) as dirname:
+        with (_TmpDir(prefix="anaconda_upload_")) as dirname:
             shutil.copy(project_path, dirname)
             basename_no_extension = os.path.splitext(os.path.basename(project_path))[0]
             project = project_ops.create(dirname, name=basename_no_extension)
