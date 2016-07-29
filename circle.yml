@@ -1,0 +1,32 @@
+# https://circleci.com/gh/Anaconda-Platform/anaconda-client/
+
+machine:
+  environment:
+    # Used by test scripts
+    PYTHON_TEST: "$HOME/miniconda/envs/test/bin/python"
+    PATH: "$HOME/miniconda/bin:$PATH"  # To avoid prepending this to the commands on circle-ci
+    # Python versions to test (Maximum of 2 different versions for now)
+    PY_VERSIONS: "2.7 3.4 3.5"
+    # Used by astropy-ci helpers
+    TRAVIS_OS_NAME: "linux"
+    CONDA_CHANNELS: "https://conda.anaconda.org/t/an-1126452d-8e3d-439a-9763-03b5696f4f97/binstar conda-kapsel"
+    CONDA_DEPENDENCIES: "pip setuptools clyent pillow psutil nbformat conda-kapsel mock"
+    PIP_DEPENDENCIES: "coverage==3.7.1"
+
+dependencies:
+  override:
+    # First convert PY_VERSIONS to an array and then select the python version based on the CIRCLE_NODE_INDEX
+    - PY_VERSIONS=($PY_VERSIONS) &&
+      TRAVIS_PYTHON_VERSION=${PY_VERSIONS[$CIRCLE_NODE_INDEX]} && 
+      echo -e "PYTHON = $TRAVIS_PYTHON_VERSION \n============" &&
+      git clone git://github.com/astropy/ci-helpers.git &&
+      source ci-helpers/travis/setup_conda_$TRAVIS_OS_NAME.sh &&
+      "$PYTHON_TEST" setup.py develop;
+
+test:
+  override:
+    - conda info --json: # note the colon
+        parallel: true
+    - "$PYTHON_TEST binstar_client/tests/runtests.py": # note the colon
+        parallel: true
+
