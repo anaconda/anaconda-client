@@ -2,12 +2,15 @@
 
 language: python
 sudo: false
+branches:
+  only:
+    - develop
 
 env:
   global:
     # Environment variables used by astropy helpers
     - CONDA_CHANNELS="https://conda.anaconda.org/t/an-1126452d-8e3d-439a-9763-03b5696f4f97/binstar conda-kapsel"
-    - CONDA_DEPENDENCIES="pip setuptools clyent pillow psutil nbformat anaconda_project coverage==3.7.1 mock"
+    - CONDA_DEPENDENCIES="pip setuptools clyent pillow psutil nbformat conda-kapsel coverage==3.7.1 mock"
 
 matrix:
   include:
