@@ -6,9 +6,8 @@ sudo: false
 env:
   global:
     # Environment variables used by astropy helpers
-    - CONDA_CHANNELS="https://conda.anaconda.org/t/an-1126452d-8e3d-439a-9763-03b5696f4f97/binstar"
-    - CONDA_DEPENDENCIES="pip setuptools clyent pillow psutil nbformat anaconda_project"
-    - PIP_DEPENDENCIES="coverage==3.7.1 mock"
+    - CONDA_CHANNELS="https://conda.anaconda.org/t/an-1126452d-8e3d-439a-9763-03b5696f4f97/binstar conda-kapsel"
+    - CONDA_DEPENDENCIES="pip setuptools clyent pillow psutil nbformat anaconda_project coverage==3.7.1 mock"
 
 matrix:
   include:
@@ -24,7 +23,7 @@ matrix:
 
 install:
   # Use Astropy ci helpers for initial setup
-  - git clone git://github.com/astropy/ci-helpers.git
+  - git clone git://github.com/astropy/ci-helpers.git --depth=1
   - source ci-helpers/travis/setup_conda_$TRAVIS_OS_NAME.sh
   - python setup.py develop
 
@@ -34,4 +33,3 @@ script:
 after_success:
   - bash <(curl -s https://codecov.io/bash)
 #  - coveralls
-
