@@ -1,7 +1,7 @@
 Anaconda Client
 ==============
 
-[![Build Status](https://travis-ci.org/Anaconda-Platform/anaconda-client.svg?branch=develop)](https://travis-ci.org/Anaconda-Platform/anaconda-client) [![codecov](https://codecov.io/gh/Anaconda-Platform/anaconda-client/branch/develop/graph/badge.svg)](https://codecov.io/gh/Anaconda-Platform/anaconda-client)
+[![Build Status](https://travis-ci.org/Anaconda-Platform/anaconda-client.svg?branch=develop)](https://travis-ci.org/Anaconda-Platform/anaconda-client) [![codecov](https://codecov.io/gh/Anaconda-Platform/anaconda-client/branch/develop/graph/badge.svg)](https://codecov.io/gh/Anaconda-Platform/anaconda-client) [![Code Issues](https://www.quantifiedcode.com/api/v1/project/f81992110c744273b518ffbaf82d8e96/badge.svg)](https://www.quantifiedcode.com/app/project/f81992110c744273b518ffbaf82d8e96)
 
 
 This is a command line client that provides an interface to [Anaconda Cloud](https://anaconda.org).
