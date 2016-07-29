@@ -75,7 +75,7 @@ def get_subdir(index):
 
 def inspect_conda_package(filename, fileobj, *args, **kwargs):
 
-    index, recipe = None, {}
+    index, recipe, has_prefix = None, {}, False
 
     with tarfile.open(filename, fileobj=fileobj, mode="r|bz2") as tar:
         for info in tar:
@@ -85,6 +85,8 @@ def inspect_conda_package(filename, fileobj, *args, **kwargs):
             elif info.name == 'info/recipe.json':
                 recipe = tar.extractfile(info)
                 recipe = json.loads(recipe.read().decode())
+            elif info.name == 'info/has_prefix':
+                has_prefix = True
             if index is not None and recipe != {}:
                 break
         else:
@@ -113,7 +115,8 @@ def inspect_conda_package(filename, fileobj, *args, **kwargs):
                 'attrs':{
                         'operatingsystem': operatingsystem,
                         'machine': machine,
-                        'target-triplet': '%s-any-%s' % (machine, operatingsystem)
+                        'target-triplet': '%s-any-%s' % (machine, operatingsystem),
+                        'has_prefix': has_prefix
                          }
                  }
 

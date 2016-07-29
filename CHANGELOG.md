@@ -1,6 +1,9 @@
 # CHANGELOG:
 
 ## Unreleased
+### Added
+* `anaconda upload` learned to include whether `info/has_prefix` exists in a conda package as metadata (as true/false).
+
 ### Fixed
 * `anaconda groups` subcommand had several bugs, and was difficult to use (#312)
 * `anaconda upload` will do the minimal amount of work to parse a conda package (@brentp) (#311)
