@@ -1,8 +1,12 @@
 # CHANGELOG:
 
-## Unreleased
+## 1.5.1 (2016-08-01)
+
 ### Added
-* `anaconda upload` learned to include whether `info/has_prefix` exists in a conda package as metadata (as true/false).
+* `anaconda upload` learned to include whether `info/has_prefix`
+  exists in a conda package as metadata (as true/false).
+* `anaconda upload` can upload projects with a kapsel.yml (for
+  conda kapsel)
 
 ### Fixed
 * `anaconda groups` subcommand had several bugs, and was difficult to use (#312)
