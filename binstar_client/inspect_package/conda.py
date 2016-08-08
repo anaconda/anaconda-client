@@ -139,7 +139,7 @@ def inspect_conda_package(filename, fileobj, *args, **kwargs):
                     }
     file_data = {
                 'basename': '%s/%s' % (subdir, path.basename(filename)),
-                'attrs':+{
+                'attrs': {
                         'operatingsystem': operatingsystem,
                         'machine': machine,
                         'target-triplet': '%s-any-%s' % (machine, operatingsystem),
