@@ -87,6 +87,8 @@ def inspect_conda_package(filename, fileobj, *args, **kwargs):
                 index = tar.extractfile(info)
                 index = json.loads(index.read().decode())
             elif info.name == 'info/recipe.json':
+                # recipe.index is deprecated and only packages built with older
+                # versions of conda-build contain that file.
                 recipe = tar.extractfile(info)
                 recipe = json.loads(recipe.read().decode())
             elif info.name == 'info/has_prefix':
@@ -97,23 +99,20 @@ def inspect_conda_package(filename, fileobj, *args, **kwargs):
             if index is None:
                 raise TypeError("info/index.json required in conda package")
 
-    # Load icon if defined in the recipe app section and file exists inside
-    # recipe folder
+    # Load icon defined in the index.json and file exists inside info folder
     fileobj.seek(0)
     icon_b64 = None
-    app = recipe.get('app')
-    if app:
-        icon_path = app.get('icon')
-        if icon_path:
-            tar = tarfile.open(filename, fileobj=fileobj, mode="r|bz2")
-            for info in tar:
-                if info.name == 'info/recipe/{0}'.format(icon_path):
-                    icon_data = tar.extractfile(info).read()
-                    f, temp_path = tempfile.mkstemp()
-                    with open(temp_path, 'wb') as f:
-                        f.write(icon_data)
-                    icon_b64 = data_uri_from(temp_path)
-                    break
+    icon_path = index.get('icon')
+    if icon_path:
+        tar = tarfile.open(filename, fileobj=fileobj, mode="r|bz2")
+        for info in tar:
+            if info.name == 'info/{0}'.format(icon_path):
+                icon_data = tar.extractfile(info).read()
+                f, temp_path = tempfile.mkstemp()
+                with open(temp_path, 'wb') as f:
+                    f.write(icon_data)
+                icon_b64 = data_uri_from(temp_path)
+                break
 
     about = recipe.pop('about', {})
 
@@ -123,33 +122,34 @@ def inspect_conda_package(filename, fileobj, *args, **kwargs):
     operatingsystem = os_map.get(index['platform'], index['platform'])
 
     package_data = {
-                    'name': index.pop('name'),
-                    # Should this info be removed and moved to the release?
-                    'summary': about.get('summary', ''),
-                    'license': about.get('license'),
-                    }
+        'name': index.pop('name'),
+        # TODO: this info should be removed and moved to release
+        'summary': about.get('summary', ''),
+        'license': about.get('license'),
+        }
     release_data = {
-                    'version': index.pop('version'),
-                    'home_page': about.get('home'),
-                    'description': '',
-                    # Add summary and license as per release attributes?
-                    # 'summary': about.get('summary', ''),
-                    # 'license': about.get('license'),
-                    'icon': icon_b64,
-                    }
+        'version': index.pop('version'),
+        'home_page': about.get('home'),
+        'description': '',
+        # TODO: Add summary and license as per release attributes
+        # 'summary': about.get('summary', ''),
+        # 'license': about.get('license'),
+        'icon': icon_b64,
+        }
     file_data = {
-                'basename': '%s/%s' % (subdir, path.basename(filename)),
-                'attrs': {
-                        'operatingsystem': operatingsystem,
-                        'machine': machine,
-                        'target-triplet': '%s-any-%s' % (machine, operatingsystem),
-                        'has_prefix': has_prefix
-                         }
-                 }
+        'basename': '%s/%s' % (subdir, path.basename(filename)),
+        'attrs': {
+            'operatingsystem': operatingsystem,
+            'machine': machine,
+            'target-triplet': '%s-any-%s' % (machine, operatingsystem),
+            'has_prefix': has_prefix
+            }
+        }
 
     file_data['attrs'].update(index)
     conda_depends = index.get('depends', index.get('requires', []))
     file_data['dependencies'] = transform_conda_deps(conda_depends)
+
     return package_data, release_data, file_data
 
 
