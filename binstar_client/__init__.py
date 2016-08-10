@@ -380,6 +380,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         :param requirements: A dict of requirements TODO: describe
         :param announce: An announcement that will be posted to all package watchers
         :param description: A long description about the package
+        :param icon: icon b64 string for the package (compressed by notebook data_uri_from upload logic)
         '''
 
         url = '%s/release/%s/%s/%s' % (self.domain, login, package_name, version)
