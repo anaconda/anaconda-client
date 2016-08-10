@@ -1,13 +1,16 @@
 from __future__ import print_function, unicode_literals
 
-import unittest
+# Standard libary imports
 from os import path
+import unittest
+
+# Local imports
 from binstar_client.inspect_package import conda
-from pprint import pprint
 
 
 def data_path(filename):
     return path.join(path.dirname(__file__), 'data', filename)
+
 
 expected_package_data = {
     'license': None,
@@ -43,6 +46,24 @@ expected_file_data = {
         },
     }
 
+# Test package application data
+# -----------------------------------------------------------------------------
+with open(data_path('test-app-package-icon-0.1.0-b64.txt'), 'r') as f:
+    ICON_B64_DATA = f.read().strip()   # Removes a line return at the end
+
+app_expected_package_data = {
+    'license': None,
+    'name': u'test-app-package-icon',
+    'summary': u'',
+    }
+
+app_expected_version_data = {
+    'description': '',
+    'home_page': None,
+    'icon': ICON_B64_DATA,
+    'version': u'0.1',
+    }
+
 
 class Test(unittest.TestCase):
 
@@ -54,6 +75,14 @@ class Test(unittest.TestCase):
         self.assertEqual(expected_package_data, package_data)
         self.assertEqual(expected_version_data, version_data)
         self.assertEqual(expected_file_data, file_data)
+
+    def test_conda_app_image(self):
+        filename = data_path('test-app-package-icon-0.1-0.tar.bz2')
+        with open(filename, 'rb') as fd:
+            package_data, version_data, file_data = conda.inspect_conda_package(filename, fd)
+
+        self.assertEqual(app_expected_package_data, package_data)
+        self.assertEqual(app_expected_version_data, version_data)
 
 
 if __name__ == "__main__":
