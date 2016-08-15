@@ -1,0 +1,24 @@
+# This recipe requires the latest conda build that includes the icon handling fixes
+package:
+  name: "test-app-package-icon"
+  version: 0.1.0
+
+app:
+  entry: test-app-package-icon
+  icon: image.ico   # Any image type with any name, inside the recipe folder
+  summary: A conda package application
+  type: desk
+
+build:
+  number: 3
+
+requirements:
+  build:
+    - python ==2.7.8
+  run:
+    - python ==2.7.8
+
+about:
+  description: A conda package application
+  summary: A conda package application
+
