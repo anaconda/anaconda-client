@@ -13,7 +13,7 @@ requirements:
     - python
     - setuptools
     - clyent
-    - requests
+    - requests >=2.9.1
     - pyyaml
     - dateutil
     - pytz
