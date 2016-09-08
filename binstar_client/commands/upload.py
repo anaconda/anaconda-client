@@ -19,7 +19,7 @@ import os
 from os.path import exists
 import sys
 
-from binstar_client import errors, requests_ext
+from binstar_client import errors
 from binstar_client.utils import bool_input
 from binstar_client.utils import get_server_api
 from binstar_client.utils import get_config
@@ -207,12 +207,6 @@ def upload_package(filename, package_type, aserver_api, username, args):
             log.info('Distribution already exists. Please use the '
                      '-i/--interactive or --force options or `anaconda remove %s`' % full_name)
             raise
-        except requests_ext.OpenSslError:
-            requests_ext.warn_openssl()
-            if args.show_traceback != 'never':
-                raise
-            else:
-                raise errors.BinstarError('Could not upload package')
 
         log.info("\n\nUpload(s) Complete\n")
         return [package_name, upload_info]

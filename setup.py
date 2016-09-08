@@ -11,7 +11,7 @@ setup(
     description='Anaconda Cloud command line client library',
     packages=find_packages(),
     install_requires=['clyent',
-                      'requests>=2.0',
+                      'requests>=2.9.1',
                       'pyyaml',
                       'python-dateutil',
                       'pytz'],
