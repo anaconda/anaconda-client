@@ -3,7 +3,14 @@ package:
   name: anaconda-client
   version: {{data.get('version')}}
 
-build: {}
+source:
+  git_url: ../
+
+build:
+  entry_points:
+    - anaconda = binstar.scripts.cli:main
+    - binstar = binstar_client.scripts.cli:main
+    - conda-server = binstar_client.scripts.cli:main
 
 requirements:
   build:
@@ -21,3 +28,6 @@ requirements:
 about:
   home: {{data.get('url')}}
   license: {{data.get('license')}}
+  license_family: BSD
+  license_file: LICENSE.md
+  summary: {{data.get('description')}}
