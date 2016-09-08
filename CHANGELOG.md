@@ -1,5 +1,15 @@
 # CHANGELOG:
 
+## Unreleased
+
+### Added
+
+* `anaconda upload` will extract icons from conda packages
+* Added explicit license file
+
+### Fixed
+* Removed workaround for old requests versions
+
 ## 1.5.1 (2016-08-01)
 
 ### Added
