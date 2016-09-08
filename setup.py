@@ -7,7 +7,7 @@ setup(
     cmdclass=versioneer.get_cmdclass(),
     author='Sean Ross-Ross',
     author_email='srossross@gmail.com',
-    url='http://github.com/Anaconda-client/anaconda-client',
+    url='http://github.com/Anaconda-Platform/anaconda-client',
     description='Anaconda Cloud command line client library',
     packages=find_packages(),
     install_requires=['clyent',
@@ -22,4 +22,11 @@ setup(
             'conda-server = binstar_client.scripts.cli:main'
         ]
     },
+    license='BSD License',
+    classifiers=[
+        'Development Status :: 5 - Production/Stable',
+        'Environment :: Console',
+        'License :: OSI Approved :: BSD License',
+        'Programming Language :: Python',
+    ]
 )
