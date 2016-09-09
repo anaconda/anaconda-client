@@ -6,6 +6,7 @@
 
 * `anaconda upload` will extract icons from conda packages
 * Added explicit license file
+* Added some clarity on help file for -u switch (PR#360)
 
 ### Fixed
 * Removed workaround for old requests versions
