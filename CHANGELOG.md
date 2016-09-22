@@ -10,6 +10,8 @@
 
 ### Fixed
 * Removed workaround for old requests versions
+* `anaconda upload` would raise an exception if a file was interactively
+not overwritten (#364)
 
 ## 1.5.1 (2016-08-01)
 
