@@ -190,7 +190,7 @@ def upload_package(filename, package_type, aserver_api, username, args):
         sys.stdout.flush()
 
         if remove_existing_file(aserver_api, args, username, package_name, version, file_attrs):
-            return []
+            return None
         try:
             upload_info = aserver_api.upload(username,
                                              package_name,
@@ -238,12 +238,14 @@ def main(args):
         if package_type == 'project':
             uploaded_projects.append(upload_project(filename, args, username))
         else:
-            uploaded_packages.append(upload_package(
+            package_info = upload_package(
                 filename,
                 package_type=package_type,
                 aserver_api=aserver_api,
                 username=username,
-                args=args))
+                args=args)
+            if package_info:
+                uploaded_packages.append(package_info)
 
     for package, upload_info in uploaded_packages:
         package_url = upload_info.get('url', 'https://anaconda.org/%s/%s' % (username, package))
