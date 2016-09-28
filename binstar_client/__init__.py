@@ -484,6 +484,9 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         self._check_response(res)
         obj = res.json()
 
+        if 'error' in obj:
+            log.error('Upload failed: %s' % obj['error'])
+            return res.json()
         s3url = obj['post_url']
         s3data = obj['form_data']
 
