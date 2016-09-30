@@ -1,13 +1,17 @@
 from __future__ import print_function, absolute_import, unicode_literals
 
 from os.path import exists, join, dirname, isfile, isdir
-from urllib import quote_plus
 import collections
 import logging
 import os
 import stat
 import sys
 import warnings
+
+try:
+    from urllib import quote_plus
+except ImportError:
+    from urllib.parse import quote_plus
 
 import yaml
 

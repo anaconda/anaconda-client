@@ -19,14 +19,6 @@ from .config import (get_server_api, get_binstar, dirs,
 
 
 try:
-    import urlparse
-    from urllib import quote_plus
-except ImportError:
-    from urllib import parse as urlparse
-    from urllib.parse import quote_plus
-
-
-try:
     input = raw_input
 except NameError:
     input = input
