@@ -1,12 +1,16 @@
 from __future__ import print_function, absolute_import, unicode_literals
 
-from os.path import exists, join, dirname, isfile, isdir
+import glob
+import json
+from os.path import exists, join, dirname, isfile, isdir, basename, abspath, expanduser
 import collections
 import logging
 import os
 import stat
 import sys
 import warnings
+import itertools
+from string import Template
 
 try:
     from urllib import quote_plus
@@ -16,6 +20,7 @@ except ImportError:
 import yaml
 
 from binstar_client.utils.appdirs import AppDirs, EnvAppDirs
+from binstar_client.errors import BinstarError
 
 
 log = logging.getLogger('binstar')
@@ -25,8 +30,28 @@ if 'BINSTAR_CONFIG_DIR' in os.environ:
 else:
     dirs = AppDirs('binstar', 'ContinuumIO')
 
-SITE_CONFIG = join(dirs.site_data_dir, 'config.yaml')
-USER_CONFIG = join(dirs.user_data_dir, 'config.yaml')
+CONDA_PREFIX = sys.prefix
+try:
+    # We're in the root environment
+    import conda.config
+    CONDA_ROOT = conda.config.root_dir
+except ImportError:
+    # We're not in the root environment.
+    envs_dir = dirname(CONDA_PREFIX)
+    if basename(envs_dir) == 'envs':
+        # We're in a named environment: `conda create -n <name>`
+        CONDA_ROOT = dirname(envs_dir)
+    else:
+        # We're in an isolated environment: `conda create -p <path>`
+        # TODO: shell out to $PREFIX/bin/conda?
+        # CONDA_EXE = join(dirname(sys.executable), 'conda')
+        # import subprocess
+
+        #     conda_info = json.loads(subprocess.check_output([CONDA_EXE, 'info', '--json']))
+        #     CONDA_ROOT = conda_info['root_prefix']
+        # except (KeyError, subprocess.CalledProcessError):
+            CONDA_ROOT = None
+
 USER_LOGDIR = dirs.user_log_dir
 
 DEFAULT_URL = 'https://api.anaconda.org'
@@ -37,6 +62,39 @@ DEFAULT_CONFIG = {
         'alpha': {'url': ALPHA_URL},
     }
 }
+CONFIGURATION_KEYS = [
+    'verify_ssl',
+    'url',
+    'default_site',
+]
+SEARCH_PATH = (
+    dirs.site_data_dir,
+    '/etc/conda/anacondarc',
+    '$CONDA_ROOT/anacondarc',
+    '$CONDA_ROOT/.anacondarc',
+    dirs.user_data_dir,
+    '~/.anacondarc',
+    '~/.conda/anacondarc',
+    '~/.continuum/anacondarc',
+    '$CONDA_PREFIX/anacondarc',
+    '$CONDA_PREFIX/.anacondarc',
+    '$ANACONDARC',
+)
+
+
+def expandvars(path):
+    environ = dict(CONDA_ROOT=CONDA_ROOT, CONDA_PREFIX=CONDA_PREFIX)
+    environ.update(os.environ)
+    return Template(path).safe_substitute(**environ)
+
+
+def expand(path):
+    return abspath(expanduser(expandvars(path)))
+
+
+SITE_CONFIG = expand('$CONDA_ROOT/.anacondarc')
+SYSTEM_CONFIG = SITE_CONFIG
+USER_CONFIG = expand('~/.anacondarc')
 
 
 def recursive_update(d, u):
@@ -150,12 +208,44 @@ def load_config(config_file):
     return {}
 
 
+def load_file_configs(search_path):
+    def _file_yaml_loader(fullpath):
+        assert fullpath.endswith(".yml") or fullpath.endswith(".yaml") or fullpath.endswith("anacondarc"), fullpath
+        yield fullpath, load_config(fullpath)
+
+    def _dir_yaml_loader(fullpath):
+        for filename in os.listdir(fullpath):
+            if filename.endswith(".yml") or filename.endswith(".yaml"):
+                filepath = join(fullpath, filename)
+                yield filepath, load_config(filepath)
+
+    # map a stat result to a file loader or a directory loader
+    _loader = {
+        stat.S_IFREG: _file_yaml_loader,
+        stat.S_IFDIR: _dir_yaml_loader,
+    }
+
+    def _get_st_mode(path):
+        # stat the path for file type, or None if path doesn't exist
+        try:
+            return stat.S_IFMT(os.stat(path).st_mode)
+        except OSError:
+            return None
+
+    expanded_paths = tuple(expand(path) for path in search_path)
+    stat_paths = (_get_st_mode(path) for path in expanded_paths)
+    load_paths = (_loader[st_mode](path)
+                  for path, st_mode in zip(expanded_paths, stat_paths)
+                  if st_mode is not None)
+    raw_data = collections.OrderedDict(kv for kv in itertools.chain.from_iterable(load_paths))
+    return raw_data
+
+
 def get_config(user=True, site=True, remote_site=None):
     config = DEFAULT_CONFIG.copy()
-    if site:
-        recursive_update(config, load_config(SITE_CONFIG))
-    if user:
-        recursive_update(config, load_config(USER_CONFIG))
+    file_configs = load_file_configs(SEARCH_PATH)
+    for fn in file_configs:
+        recursive_update(config, file_configs[fn])
 
     remote_site = remote_site or config.get('default_site')
     sites = config.get('sites', {})
@@ -170,12 +260,15 @@ def get_config(user=True, site=True, remote_site=None):
     return config
 
 
-def set_config(data, user=True):
-    config_file = USER_CONFIG if user else SITE_CONFIG
-
+def set_config(data, config_file):
     data_dir = dirname(config_file)
-    if not exists(data_dir):
-        os.makedirs(data_dir)
 
-    with open(config_file, 'w') as fd:
-        yaml.dump(data, fd)
+    try:
+        if not exists(data_dir):
+            os.makedirs(data_dir)
+
+        with open(config_file, 'w') as fd:
+            yaml.safe_dump(data, fd)
+    except EnvironmentError as exc:
+        raise BinstarError('%s: %s' % (exc.filename, exc.strerror,))
+
