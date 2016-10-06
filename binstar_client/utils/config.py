@@ -19,6 +19,7 @@ except ImportError:
 
 import yaml
 
+from binstar_client.utils.conda import CONDA_PREFIX, CONDA_ROOT
 from binstar_client.utils.appdirs import AppDirs, EnvAppDirs
 from binstar_client.errors import BinstarError
 
@@ -29,28 +30,6 @@ if 'BINSTAR_CONFIG_DIR' in os.environ:
     dirs = EnvAppDirs('binstar', 'ContinuumIO', os.environ['BINSTAR_CONFIG_DIR'])
 else:
     dirs = AppDirs('binstar', 'ContinuumIO')
-
-CONDA_PREFIX = sys.prefix
-try:
-    # We're in the root environment
-    import conda.config
-    CONDA_ROOT = conda.config.root_dir
-except ImportError:
-    # We're not in the root environment.
-    envs_dir = dirname(CONDA_PREFIX)
-    if basename(envs_dir) == 'envs':
-        # We're in a named environment: `conda create -n <name>`
-        CONDA_ROOT = dirname(envs_dir)
-    else:
-        # We're in an isolated environment: `conda create -p <path>`
-        # TODO: shell out to $PREFIX/bin/conda?
-        # CONDA_EXE = join(dirname(sys.executable), 'conda')
-        # import subprocess
-
-        #     conda_info = json.loads(subprocess.check_output([CONDA_EXE, 'info', '--json']))
-        #     CONDA_ROOT = conda_info['root_prefix']
-        # except (KeyError, subprocess.CalledProcessError):
-            CONDA_ROOT = None
 
 USER_LOGDIR = dirs.user_log_dir
 
