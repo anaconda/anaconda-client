@@ -48,15 +48,11 @@ CONFIGURATION_KEYS = [
 ]
 SEARCH_PATH = (
     dirs.site_data_dir,
-    '/etc/conda/anacondarc',
-    '$CONDA_ROOT/anacondarc',
-    '$CONDA_ROOT/.anacondarc',
+    '/etc/anaconda-client/',
+    '$CONDA_ROOT/etc/anaconda-client/',
     dirs.user_data_dir,
-    '~/.anacondarc',
-    '~/.conda/anacondarc',
-    '~/.continuum/anacondarc',
-    '$CONDA_PREFIX/anacondarc',
-    '$CONDA_PREFIX/.anacondarc',
+    '~/.continuum/anaconda-client/',
+    '$CONDA_PREFIX/etc/anaconda-client/',
     '$ANACONDARC',
 )
 
@@ -71,9 +67,9 @@ def expand(path):
     return abspath(expanduser(expandvars(path)))
 
 
-SITE_CONFIG = expand('$CONDA_ROOT/.anacondarc')
+SITE_CONFIG = expand('$CONDA_ROOT/etc/anaconda-client/config.yaml')
 SYSTEM_CONFIG = SITE_CONFIG
-USER_CONFIG = expand('~/.anacondarc')
+USER_CONFIG = expand('~/.continuum/anaconda-client/config.yaml')
 
 
 def recursive_update(d, u):
@@ -84,23 +80,6 @@ def recursive_update(d, u):
         else:
             d[k] = u[k]
     return d
-
-
-def load_token(url):
-    tokenfile = join(dirs.user_data_dir, '%s.token' % quote_plus(url))
-    if isfile(tokenfile):
-        log.debug("Found login token: {}".format(tokenfile))
-        with open(tokenfile) as fd:
-            token = fd.read().strip()
-
-        if not token:
-            log.debug("Token file is empty: {}".format(tokenfile))
-            log.debug("Removing file: {}".format(tokenfile))
-            os.unlink(tokenfile)
-            token = None
-    else:
-        token = None
-    return token
 
 
 def get_server_api(token=None, site=None, log_level=logging.INFO, cls=None, **kwargs):
@@ -152,14 +131,20 @@ def get_binstar(args=None, cls=None):
     return aserver_api
 
 
+TOKEN_DIRS = [
+    dirs.user_data_dir,
+    join(dirname(USER_CONFIG), 'tokens'),
+]
+TOKEN_DIR = TOKEN_DIRS[-1]
+
+
 def store_token(token, args):
     config = get_config(remote_site=args and args.site)
 
     url = config.get('url', DEFAULT_URL)
-
-    if not isdir(dirs.user_data_dir):
-        os.makedirs(dirs.user_data_dir)
-    tokenfile = join(dirs.user_data_dir, '%s.token' % quote_plus(url))
+    if not isdir(TOKEN_DIR):
+        os.makedirs(TOKEN_DIR)
+    tokenfile = join(TOKEN_DIR, '%s.token' % quote_plus(url))
 
     if isfile(tokenfile):
         os.unlink(tokenfile)
@@ -168,13 +153,29 @@ def store_token(token, args):
     os.chmod(tokenfile, stat.S_IWRITE | stat.S_IREAD)
 
 
+def load_token(url):
+    for token_dir in TOKEN_DIRS:
+        tokenfile = join(token_dir, '%s.token' % quote_plus(url))
+        if isfile(tokenfile):
+            log.debug("Found login token: {}".format(tokenfile))
+            with open(tokenfile) as fd:
+                token = fd.read().strip()
+
+            if token:
+                return token
+            else:
+                log.debug("Token file is empty: {}".format(tokenfile))
+                log.debug("Removing file: {}".format(tokenfile))
+                os.unlink(tokenfile)
+
+
 def remove_token(args):
     config = get_config(remote_site=args and args.site)
     url = config.get('url', DEFAULT_URL)
-    tokenfile = join(dirs.user_data_dir, '%s.token' % quote_plus(url))
-
-    if isfile(tokenfile):
-        os.unlink(tokenfile)
+    for token_dir in TOKEN_DIRS:
+        tokenfile = join(token_dir, '%s.token' % quote_plus(url))
+        if isfile(tokenfile):
+            os.unlink(tokenfile)
 
 
 def load_config(config_file):
@@ -239,7 +240,7 @@ def get_config(user=True, site=True, remote_site=None):
     return config
 
 
-def set_config(data, config_file):
+def save_config(data, config_file):
     data_dir = dirname(config_file)
 
     try:
@@ -251,3 +252,7 @@ def set_config(data, config_file):
     except EnvironmentError as exc:
         raise BinstarError('%s: %s' % (exc.filename, exc.strerror,))
 
+
+def set_config(data, user=True):
+    warnings.warn('Use save_config instead of set_config', DeprecationWarning)
+    save_config(data, USER_CONFIG if user else SYSTEM_CONFIG)
