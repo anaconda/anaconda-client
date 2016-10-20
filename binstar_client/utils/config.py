@@ -53,7 +53,6 @@ SEARCH_PATH = (
     dirs.user_data_dir,
     '~/.continuum/anaconda-client/',
     '$CONDA_PREFIX/etc/anaconda-client/',
-    '$ANACONDARC',
 )
 
 
