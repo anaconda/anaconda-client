@@ -69,7 +69,7 @@ import logging
 from binstar_client.errors import ShowHelp, UserError
 import yaml
 from binstar_client.utils.config import (SEARCH_PATH, USER_CONFIG, SYSTEM_CONFIG, CONFIGURATION_KEYS,
-                                         get_config, set_config, load_config, load_file_configs)
+                                         get_config, save_config, load_config, load_file_configs)
 log = logging.getLogger('binstar.config')
 
 def recursive_set(config_data, key, value, ty):
@@ -134,7 +134,7 @@ def main(args):
     if not (args.set or args.remove):
         raise ShowHelp()
 
-    set_config(config, config_file)
+    save_config(config, config_file)
 
 
 def add_parser(subparsers):
