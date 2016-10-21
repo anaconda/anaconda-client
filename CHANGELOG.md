@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.5.2 (2016-10-20)
+
 ### Added
 
 * `anaconda upload` will extract icons from conda packages
