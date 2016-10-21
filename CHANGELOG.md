@@ -11,6 +11,10 @@
 ### Fixed
 * Removed workaround for old requests versions
 
+### Changed
+* `anaconda-client` will load configuration files with the extension `.yaml` from 
+  the directories `~/.continuum/anaconda-client`, `/etc/anaconda-client` and `$PREFIX/etc/anaconda-client`.
+
 ## 1.5.1 (2016-08-01)
 
 ### Added
