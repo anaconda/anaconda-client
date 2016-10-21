@@ -9,6 +9,8 @@ from binstar_client.tests.fixture import CLITestCase
 from binstar_client.tests.urlmock import urlpatch
 import unittest
 from binstar_client import errors
+from mock import patch
+
 
 class Test(CLITestCase):
 
@@ -173,6 +175,20 @@ class Test(CLITestCase):
               self.data_dir('bar')], False)
 
         registry.assertAllCalled()
+
+    @urlpatch
+    @patch('binstar_client.commands.upload.bool_input')
+    def test_upload_interactive_no_overwrite(self, registry, bool_input):
+        # regression test for #364
+        registry.register(method='GET', path='/user', content='{"login": "eggs"}')
+        registry.register(method='GET', path='/package/eggs/foo', content='{}')
+        registry.register(method='GET', path='/release/eggs/foo/0.1', content='{}')
+        registry.register(method='GET', path='/dist/eggs/foo/0.1/osx-64/foo-0.1-0.tar.bz2', status=200, content='{}')
+
+        # don't overwrite
+        bool_input.return_value = False
+
+        main(['--show-traceback', 'upload', '-i', self.data_dir('foo-0.1-0.tar.bz2')], False)
 
 
 if __name__ == '__main__':
