@@ -66,12 +66,10 @@ from argparse import RawDescriptionHelpFormatter
 from ast import literal_eval
 import logging
 
-from binstar_client.errors import ShowHelp
-from binstar_client.utils import get_config, set_config, SITE_CONFIG, \
-    USER_CONFIG
+from binstar_client.errors import ShowHelp, UserError
 import yaml
-
-
+from binstar_client.utils.config import (SEARCH_PATH, USER_CONFIG, SYSTEM_CONFIG, CONFIGURATION_KEYS,
+                                         get_config, save_config, load_config, load_file_configs)
 log = logging.getLogger('binstar.config')
 
 def recursive_set(config_data, key, value, ty):
@@ -79,6 +77,8 @@ def recursive_set(config_data, key, value, ty):
         prefix, key = key.split('.', 1)
         config_data = config_data.setdefault(prefix, {})
 
+    if key not in CONFIGURATION_KEYS:
+        log.warn('"%s" is not a known configuration key', key)
     config_data[key] = ty(value)
 
 def recursive_remove(config_data, key):
@@ -96,15 +96,14 @@ def main(args):
     config = get_config()
 
     if args.show:
-        fmt = ' + %s: %r'
-        log.info('Site Config: %s' % SITE_CONFIG)
-        for key_value in get_config(user=False).items():
-            log.info(fmt % key_value)
-        log.info("")
-        log.info('User Config: %s' % USER_CONFIG)
-        for key_value in get_config(site=False).items():
-            log.info(fmt % key_value)
-        log.info("")
+        log.info(yaml.safe_dump(config, default_flow_style=False))
+        return
+
+    if args.show_sources:
+        config_files = load_file_configs(SEARCH_PATH)
+        for path in config_files:
+            log.info('==> %s <==', path)
+            log.info(yaml.safe_dump(config_files[path], default_flow_style=False))
         return
 
     if args.get:
@@ -116,14 +115,15 @@ def main(args):
 
     if args.files:
         log.info('User Config: %s' % USER_CONFIG)
-        log.info('Site Config: %s' % SITE_CONFIG)
+        log.info('System Config: %s' % SYSTEM_CONFIG)
         return
 
-    config = get_config(args.user, not args.user)
+    config_file = USER_CONFIG if args.user else SYSTEM_CONFIG
+
+    config = load_config(config_file)
 
     for key, value in args.set:
         recursive_set(config, key, value, args.type)
-        config[key] = args.type(value)
 
     for key in args.remove:
         try:
@@ -134,11 +134,11 @@ def main(args):
     if not (args.set or args.remove):
         raise ShowHelp()
 
-    set_config(config, args.user)
+    save_config(config, config_file)
 
 
 def add_parser(subparsers):
-    description = 'Binstar configuration'
+    description = 'Anaconda client configuration'
     parser = subparsers.add_parser('config',
                                       help=description,
                                       description=description,
@@ -161,10 +161,12 @@ def add_parser(subparsers):
                         help='show all variables')
     agroup.add_argument('-f', '--files', action='store_true',
                         help='show the config file names')
+    agroup.add_argument('--show-sources', action='store_true',
+                        help='Display all identified config sources')
     lgroup = parser.add_argument_group('location')
     lgroup.add_argument('-u', '--user', action='store_true', dest='user', default=True,
                         help='set a variable for this user')
-    lgroup.add_argument('-s', '--site', action='store_false', dest='user',
+    lgroup.add_argument('-s', '--system', '--site', action='store_false', dest='user',
                         help='set a variable for all users on this machine')
 
 

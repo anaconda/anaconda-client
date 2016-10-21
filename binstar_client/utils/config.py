@@ -1,12 +1,16 @@
 from __future__ import print_function, absolute_import, unicode_literals
 
-from os.path import exists, join, dirname, isfile, isdir
+import glob
+import json
+from os.path import exists, join, dirname, isfile, isdir, basename, abspath, expanduser
 import collections
 import logging
 import os
 import stat
 import sys
 import warnings
+import itertools
+from string import Template
 
 try:
     from urllib import quote_plus
@@ -15,7 +19,9 @@ except ImportError:
 
 import yaml
 
+from binstar_client.utils.conda import CONDA_PREFIX, CONDA_ROOT
 from binstar_client.utils.appdirs import AppDirs, EnvAppDirs
+from binstar_client.errors import BinstarError
 
 
 log = logging.getLogger('binstar')
@@ -25,8 +31,6 @@ if 'BINSTAR_CONFIG_DIR' in os.environ:
 else:
     dirs = AppDirs('binstar', 'ContinuumIO')
 
-SITE_CONFIG = join(dirs.site_data_dir, 'config.yaml')
-USER_CONFIG = join(dirs.user_data_dir, 'config.yaml')
 USER_LOGDIR = dirs.user_log_dir
 
 DEFAULT_URL = 'https://api.anaconda.org'
@@ -37,6 +41,34 @@ DEFAULT_CONFIG = {
         'alpha': {'url': ALPHA_URL},
     }
 }
+CONFIGURATION_KEYS = [
+    'verify_ssl',
+    'url',
+    'default_site',
+]
+SEARCH_PATH = (
+    dirs.site_data_dir,
+    '/etc/anaconda-client/',
+    '$CONDA_ROOT/etc/anaconda-client/',
+    dirs.user_data_dir,
+    '~/.continuum/anaconda-client/',
+    '$CONDA_PREFIX/etc/anaconda-client/',
+)
+
+
+def expandvars(path):
+    environ = dict(CONDA_ROOT=CONDA_ROOT, CONDA_PREFIX=CONDA_PREFIX)
+    environ.update(os.environ)
+    return Template(path).safe_substitute(**environ)
+
+
+def expand(path):
+    return abspath(expanduser(expandvars(path)))
+
+
+SITE_CONFIG = expand('$CONDA_ROOT/etc/anaconda-client/config.yaml')
+SYSTEM_CONFIG = SITE_CONFIG
+USER_CONFIG = expand('~/.continuum/anaconda-client/config.yaml')
 
 
 def recursive_update(d, u):
@@ -47,23 +79,6 @@ def recursive_update(d, u):
         else:
             d[k] = u[k]
     return d
-
-
-def load_token(url):
-    tokenfile = join(dirs.user_data_dir, '%s.token' % quote_plus(url))
-    if isfile(tokenfile):
-        log.debug("Found login token: {}".format(tokenfile))
-        with open(tokenfile) as fd:
-            token = fd.read().strip()
-
-        if not token:
-            log.debug("Token file is empty: {}".format(tokenfile))
-            log.debug("Removing file: {}".format(tokenfile))
-            os.unlink(tokenfile)
-            token = None
-    else:
-        token = None
-    return token
 
 
 def get_server_api(token=None, site=None, log_level=logging.INFO, cls=None, **kwargs):
@@ -115,14 +130,20 @@ def get_binstar(args=None, cls=None):
     return aserver_api
 
 
+TOKEN_DIRS = [
+    dirs.user_data_dir,
+    join(dirname(USER_CONFIG), 'tokens'),
+]
+TOKEN_DIR = TOKEN_DIRS[-1]
+
+
 def store_token(token, args):
     config = get_config(remote_site=args and args.site)
 
     url = config.get('url', DEFAULT_URL)
-
-    if not isdir(dirs.user_data_dir):
-        os.makedirs(dirs.user_data_dir)
-    tokenfile = join(dirs.user_data_dir, '%s.token' % quote_plus(url))
+    if not isdir(TOKEN_DIR):
+        os.makedirs(TOKEN_DIR)
+    tokenfile = join(TOKEN_DIR, '%s.token' % quote_plus(url))
 
     if isfile(tokenfile):
         os.unlink(tokenfile)
@@ -131,13 +152,29 @@ def store_token(token, args):
     os.chmod(tokenfile, stat.S_IWRITE | stat.S_IREAD)
 
 
+def load_token(url):
+    for token_dir in TOKEN_DIRS:
+        tokenfile = join(token_dir, '%s.token' % quote_plus(url))
+        if isfile(tokenfile):
+            log.debug("Found login token: {}".format(tokenfile))
+            with open(tokenfile) as fd:
+                token = fd.read().strip()
+
+            if token:
+                return token
+            else:
+                log.debug("Token file is empty: {}".format(tokenfile))
+                log.debug("Removing file: {}".format(tokenfile))
+                os.unlink(tokenfile)
+
+
 def remove_token(args):
     config = get_config(remote_site=args and args.site)
     url = config.get('url', DEFAULT_URL)
-    tokenfile = join(dirs.user_data_dir, '%s.token' % quote_plus(url))
-
-    if isfile(tokenfile):
-        os.unlink(tokenfile)
+    for token_dir in TOKEN_DIRS:
+        tokenfile = join(token_dir, '%s.token' % quote_plus(url))
+        if isfile(tokenfile):
+            os.unlink(tokenfile)
 
 
 def load_config(config_file):
@@ -150,12 +187,44 @@ def load_config(config_file):
     return {}
 
 
+def load_file_configs(search_path):
+    def _file_yaml_loader(fullpath):
+        assert fullpath.endswith(".yml") or fullpath.endswith(".yaml") or fullpath.endswith("anacondarc"), fullpath
+        yield fullpath, load_config(fullpath)
+
+    def _dir_yaml_loader(fullpath):
+        for filename in os.listdir(fullpath):
+            if filename.endswith(".yml") or filename.endswith(".yaml"):
+                filepath = join(fullpath, filename)
+                yield filepath, load_config(filepath)
+
+    # map a stat result to a file loader or a directory loader
+    _loader = {
+        stat.S_IFREG: _file_yaml_loader,
+        stat.S_IFDIR: _dir_yaml_loader,
+    }
+
+    def _get_st_mode(path):
+        # stat the path for file type, or None if path doesn't exist
+        try:
+            return stat.S_IFMT(os.stat(path).st_mode)
+        except OSError:
+            return None
+
+    expanded_paths = tuple(expand(path) for path in search_path)
+    stat_paths = (_get_st_mode(path) for path in expanded_paths)
+    load_paths = (_loader[st_mode](path)
+                  for path, st_mode in zip(expanded_paths, stat_paths)
+                  if st_mode is not None)
+    raw_data = collections.OrderedDict(kv for kv in itertools.chain.from_iterable(load_paths))
+    return raw_data
+
+
 def get_config(user=True, site=True, remote_site=None):
     config = DEFAULT_CONFIG.copy()
-    if site:
-        recursive_update(config, load_config(SITE_CONFIG))
-    if user:
-        recursive_update(config, load_config(USER_CONFIG))
+    file_configs = load_file_configs(SEARCH_PATH)
+    for fn in file_configs:
+        recursive_update(config, file_configs[fn])
 
     remote_site = remote_site or config.get('default_site')
     sites = config.get('sites', {})
@@ -170,12 +239,19 @@ def get_config(user=True, site=True, remote_site=None):
     return config
 
 
-def set_config(data, user=True):
-    config_file = USER_CONFIG if user else SITE_CONFIG
-
+def save_config(data, config_file):
     data_dir = dirname(config_file)
-    if not exists(data_dir):
-        os.makedirs(data_dir)
 
-    with open(config_file, 'w') as fd:
-        yaml.dump(data, fd)
+    try:
+        if not exists(data_dir):
+            os.makedirs(data_dir)
+
+        with open(config_file, 'w') as fd:
+            yaml.safe_dump(data, fd)
+    except EnvironmentError as exc:
+        raise BinstarError('%s: %s' % (exc.filename, exc.strerror,))
+
+
+def set_config(data, user=True):
+    warnings.warn('Use save_config instead of set_config', DeprecationWarning)
+    save_config(data, USER_CONFIG if user else SYSTEM_CONFIG)
