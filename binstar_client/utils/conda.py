@@ -7,7 +7,7 @@ WINDOWS = sys.platform.startswith('win')
 CONDA_PREFIX = sys.prefix
 BIN_DIR = 'Scripts' if WINDOWS else 'bin'
 CONDA_EXE = join(CONDA_PREFIX, BIN_DIR,
-                 'conda.exe' if WINDOWS else 'conda.exe')
+                 'conda.exe' if WINDOWS else 'conda')
 
 
 def get_conda_root():
