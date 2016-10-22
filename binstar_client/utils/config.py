@@ -42,9 +42,11 @@ DEFAULT_CONFIG = {
     }
 }
 CONFIGURATION_KEYS = [
-    'verify_ssl',
-    'url',
+    'auto_register',
     'default_site',
+    'sites',
+    'url',
+    'verify_ssl',
 ]
 SEARCH_PATH = (
     dirs.site_data_dir,
