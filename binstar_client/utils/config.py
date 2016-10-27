@@ -24,14 +24,29 @@ from binstar_client.utils.appdirs import AppDirs, EnvAppDirs
 from binstar_client.errors import BinstarError
 
 
+def expandvars(path):
+    environ = dict(CONDA_ROOT=CONDA_ROOT, CONDA_PREFIX=CONDA_PREFIX)
+    environ.update(os.environ)
+    return Template(path).safe_substitute(**environ)
+
+
+def expand(path):
+    return abspath(expanduser(expandvars(path)))
+
+
 log = logging.getLogger('binstar')
 
 if 'BINSTAR_CONFIG_DIR' in os.environ:
     dirs = EnvAppDirs('binstar', 'ContinuumIO', os.environ['BINSTAR_CONFIG_DIR'])
+    USER_CONFIG = join(dirs.user_data_dir, 'config.yaml')
 else:
     dirs = AppDirs('binstar', 'ContinuumIO')
+    USER_CONFIG = expand('~/.continuum/anaconda-client/config.yaml')
 
 USER_LOGDIR = dirs.user_log_dir
+SITE_CONFIG = expand('$CONDA_ROOT/etc/anaconda-client/config.yaml')
+SYSTEM_CONFIG = SITE_CONFIG
+
 
 DEFAULT_URL = 'https://api.anaconda.org'
 ALPHA_URL = 'http://api.alpha.binstar.org'
@@ -56,21 +71,6 @@ SEARCH_PATH = (
     '~/.continuum/anaconda-client/',
     '$CONDA_PREFIX/etc/anaconda-client/',
 )
-
-
-def expandvars(path):
-    environ = dict(CONDA_ROOT=CONDA_ROOT, CONDA_PREFIX=CONDA_PREFIX)
-    environ.update(os.environ)
-    return Template(path).safe_substitute(**environ)
-
-
-def expand(path):
-    return abspath(expanduser(expandvars(path)))
-
-
-SITE_CONFIG = expand('$CONDA_ROOT/etc/anaconda-client/config.yaml')
-SYSTEM_CONFIG = SITE_CONFIG
-USER_CONFIG = expand('~/.continuum/anaconda-client/config.yaml')
 
 
 def recursive_update(d, u):
@@ -142,16 +142,17 @@ TOKEN_DIR = TOKEN_DIRS[-1]
 def store_token(token, args):
     config = get_config(remote_site=args and args.site)
 
-    url = config.get('url', DEFAULT_URL)
-    if not isdir(TOKEN_DIR):
-        os.makedirs(TOKEN_DIR)
-    tokenfile = join(TOKEN_DIR, '%s.token' % quote_plus(url))
+    for token_dir in TOKEN_DIRS:
+        url = config.get('url', DEFAULT_URL)
+        if not isdir(token_dir):
+            os.makedirs(token_dir)
+        tokenfile = join(token_dir, '%s.token' % quote_plus(url))
 
-    if isfile(tokenfile):
-        os.unlink(tokenfile)
-    with open(tokenfile, 'w') as fd:
-        fd.write(token)
-    os.chmod(tokenfile, stat.S_IWRITE | stat.S_IREAD)
+        if isfile(tokenfile):
+            os.unlink(tokenfile)
+        with open(tokenfile, 'w') as fd:
+            fd.write(token)
+        os.chmod(tokenfile, stat.S_IWRITE | stat.S_IREAD)
 
 
 def load_token(url):
@@ -213,10 +214,9 @@ def load_file_configs(search_path):
         except OSError:
             return None
 
-    expanded_paths = tuple(expand(path) for path in search_path)
-    stat_paths = (_get_st_mode(path) for path in expanded_paths)
+    stat_paths = (_get_st_mode(path) for path in search_path)
     load_paths = (_loader[st_mode](path)
-                  for path, st_mode in zip(expanded_paths, stat_paths)
+                  for path, st_mode in zip(search_path, stat_paths)
                   if st_mode is not None)
     raw_data = collections.OrderedDict(kv for kv in itertools.chain.from_iterable(load_paths))
     return raw_data
@@ -249,7 +249,7 @@ def save_config(data, config_file):
             os.makedirs(data_dir)
 
         with open(config_file, 'w') as fd:
-            yaml.safe_dump(data, fd)
+            yaml.safe_dump(data, fd, default_flow_style=False)
     except EnvironmentError as exc:
         raise BinstarError('%s: %s' % (exc.filename, exc.strerror,))
 

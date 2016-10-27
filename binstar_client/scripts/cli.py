@@ -82,6 +82,10 @@ def binstar_main(sub_command_module, args=None, exit=True, description=None, ver
         else:
             return 1
 
+
 def main(args=None, exit=True):
     binstar_main(command_module, args, exit,
                  description=__doc__, version=version)
+
+if __name__ == '__main__':
+    main()
