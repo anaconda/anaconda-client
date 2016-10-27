@@ -1,6 +1,10 @@
 # CHANGELOG:
 
-## Unreleased
+## 1.5.3 (2016-10-27)
+
+### Fixed
+* `anaconda config --set` should use `BINSTAR_CONFIG_DIR`
+* Save `<host>.token` to the old directory, so `conda` can read them
 
 ## 1.5.2 (2016-10-20)
 
