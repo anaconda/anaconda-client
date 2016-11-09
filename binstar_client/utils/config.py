@@ -214,9 +214,10 @@ def load_file_configs(search_path):
         except OSError:
             return None
 
-    stat_paths = (_get_st_mode(path) for path in search_path)
+    expanded_paths = [expand(path) for path in search_path]
+    stat_paths = (_get_st_mode(path) for path in expanded_paths)
     load_paths = (_loader[st_mode](path)
-                  for path, st_mode in zip(search_path, stat_paths)
+                  for path, st_mode in zip(expanded_paths, stat_paths)
                   if st_mode is not None)
     raw_data = collections.OrderedDict(kv for kv in itertools.chain.from_iterable(load_paths))
     return raw_data

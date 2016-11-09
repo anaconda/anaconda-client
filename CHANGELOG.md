@@ -1,5 +1,10 @@
 # CHANGELOG:
 
+## 1.5.4 (2016-11-09)
+
+### Fixed
+* `anaconda config` should expand paths before reading them
+
 ## 1.5.3 (2016-10-27)
 
 ### Fixed
