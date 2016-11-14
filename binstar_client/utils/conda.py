@@ -10,6 +10,22 @@ CONDA_EXE = join(CONDA_PREFIX, BIN_DIR,
                  'conda.exe' if WINDOWS else 'conda')
 
 
+# this function is broken out for monkeypatch by unit tests,
+# so we can test the ImportError handling
+def _import_conda_root():
+    import conda.config
+    return conda.config.root_dir
+
+
+def _conda_root_from_conda_info():
+    try:
+        output = subprocess.check_output([CONDA_EXE, 'info', '--json']).decode("utf-8")
+        conda_info = json.loads(output)
+        return conda_info['root_prefix']
+    except (ValueError, KeyError, subprocess.CalledProcessError):
+        return None
+
+
 def get_conda_root():
     """Get the PREFIX of the conda installation.
 
@@ -19,8 +35,7 @@ def get_conda_root():
     try:
         # Fast-path
         # We're in the root environment
-        import conda.config
-        conda_root = conda.config.root_dir
+        conda_root = _import_conda_root()
     except ImportError:
         # We're not in the root environment.
         envs_dir = dirname(CONDA_PREFIX)
@@ -30,11 +45,7 @@ def get_conda_root():
         else:
             # We're in an isolated environment: `conda create -p <path>`
             # The only way we can find out is by calling conda.
-            try:
-                conda_info = json.loads(subprocess.check_output([CONDA_EXE, 'info', '--json']))
-                conda_root = conda_info['root_prefix']
-            except (ValueError, KeyError, subprocess.CalledProcessError):
-                conda_root = None
+            conda_root = _conda_root_from_conda_info()
 
     return conda_root
 
