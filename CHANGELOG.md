@@ -1,5 +1,8 @@
 # CHANGELOG:
 
+## 1.5.5 (2016-11-17)
+* fix reading of conda root prefix on a detached environment in Python 3
+
 ## 1.5.4 (2016-11-09)
 
 ### Fixed
