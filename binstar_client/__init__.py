@@ -523,6 +523,13 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         self._check_response(res)
         return res.json()
 
+    def user_licenses(self, product=None):
+        """Download the user current trial/paid licenses."""
+        url = '{domain}/license'.format(domain=self.domain)
+        res = self.session.get(url, params={'product': product})
+        self._check_response(res)
+        return res.json()
+
 
 from ._version import get_versions
 __version__ = get_versions()['version']
