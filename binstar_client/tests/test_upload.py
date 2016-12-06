@@ -23,7 +23,7 @@ class Test(CLITestCase):
         registry.register(method='GET', path='/release/eggs/foo/0.1', content='{}')
         registry.register(method='GET', path='/dist/eggs/foo/0.1/osx-64/foo-0.1-0.tar.bz2', status=404, content='{}')
 
-        content = {"post_url": "http://s3_url.com/s3_url", "form_data": {}, "dist_id": "dist_id"}
+        content = {"post_url": "http://s3url.com/s3_url", "form_data": {}, "dist_id": "dist_id"}
         registry.register(method='POST', path='/stage/eggs/foo/0.1/osx-64/foo-0.1-0.tar.bz2', content=content)
 
         registry.register(method='POST', path='/s3_url', status=201)
@@ -53,7 +53,7 @@ class Test(CLITestCase):
         registry.register(method='GET', path='/release/eggs/foo/0.1', content='{}')
         registry.register(method='GET', path='/dist/eggs/foo/0.1/osx-64/foo-0.1-0.tar.bz2', status=404, content='{}')
 
-        content = {"post_url": "http://s3_url.com/s3_url", "form_data": {}, "dist_id": "dist_id"}
+        content = {"post_url": "http://s3url.com/s3_url", "form_data": {}, "dist_id": "dist_id"}
         registry.register(method='POST', path='/stage/eggs/foo/0.1/osx-64/foo-0.1-0.tar.bz2', content=content)
 
         registry.register(method='POST', path='/s3_url', status=201)
@@ -71,7 +71,7 @@ class Test(CLITestCase):
         registry.register(method='GET', path='/release/eggs/test-package34/0.3.1', content='{}')
         registry.register(method='GET', path='/dist/eggs/test-package34/0.3.1/test_package34-0.3.1.tar.gz', status=404, content='{}')
 
-        content = {"post_url": "http://s3_url.com/s3_url", "form_data": {}, "dist_id": "dist_id"}
+        content = {"post_url": "http://s3url.com/s3_url", "form_data": {}, "dist_id": "dist_id"}
         registry.register(method='POST', path='/stage/eggs/test-package34/0.3.1/test_package34-0.3.1.tar.gz', content=content)
 
         registry.register(method='POST', path='/s3_url', status=201)
@@ -88,7 +88,7 @@ class Test(CLITestCase):
         registry.register(method='GET', path='/release/eggs/test-package34/0.3.1', content='{}')
         registry.register(method='GET', path='/dist/eggs/test-package34/0.3.1/test_package34-0.3.1.tar.gz', status=404, content='{}')
 
-        content = {"post_url": "http://s3_url.com/s3_url", "form_data": {}, "dist_id": "dist_id"}
+        content = {"post_url": "http://s3url.com/s3_url", "form_data": {}, "dist_id": "dist_id"}
         registry.register(method='POST', path='/stage/eggs/test-package34/0.3.1/test_package34-0.3.1.tar.gz', content=content)
 
         registry.register(method='POST', path='/s3_url', status=201)
@@ -110,7 +110,7 @@ class Test(CLITestCase):
         registry.register(method='GET', path='/user/eggs', content='{"login": "eggs"}')
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
         registry.register(method='GET', path='/apps/eggs/projects/dog', content='{}')
-        stage_content = '{"post_url":"http://s3_url.com/s3_url", "form_data":{"foo":"bar"}, "dist_id":"dist42"}'
+        stage_content = '{"post_url":"http://s3url.com/s3_url", "form_data":{"foo":"bar"}, "dist_id":"dist42"}'
         registry.register(method='POST', path='/apps/eggs/projects/dog/stage',
                           content=stage_content)
         registry.register(method='POST', path='/s3_url', status=201)
@@ -127,7 +127,7 @@ class Test(CLITestCase):
         registry.register(method='GET', path='/user/eggs', content='{"login": "eggs"}')
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
         registry.register(method='GET', path='/apps/eggs/projects/foo', content='{}')
-        stage_content = '{"post_url":"http://s3_url.com/s3_url", "form_data":{"foo":"bar"}, "dist_id":"dist42"}'
+        stage_content = '{"post_url":"http://s3url.com/s3_url", "form_data":{"foo":"bar"}, "dist_id":"dist42"}'
         registry.register(method='POST', path='/apps/eggs/projects/foo/stage',
                           content=stage_content)
         registry.register(method='POST', path='/s3_url', status=201)
@@ -143,7 +143,7 @@ class Test(CLITestCase):
     def test_upload_project_specifying_user(self, registry):
         registry.register(method='GET', path='/user/alice', content='{"login": "alice"}')
         registry.register(method='GET', path='/apps/alice/projects/dog', content='{}')
-        stage_content = '{"post_url":"http://s3_url.com/s3_url", "form_data":{"foo":"bar"}, "dist_id":"dist42"}'
+        stage_content = '{"post_url":"http://s3url.com/s3_url", "form_data":{"foo":"bar"}, "dist_id":"dist42"}'
         registry.register(method='POST', path='/apps/alice/projects/dog/stage',
                           content=stage_content)
         registry.register(method='POST', path='/s3_url', status=201)
@@ -163,7 +163,7 @@ class Test(CLITestCase):
                           expected_headers={'Authorization':'token abcdefg'})
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
         registry.register(method='GET', path='/apps/eggs/projects/dog', content='{}')
-        stage_content = '{"post_url":"http://s3_url.com/s3_url", "form_data":{"foo":"bar"}, "dist_id":"dist42"}'
+        stage_content = '{"post_url":"http://s3url.com/s3_url", "form_data":{"foo":"bar"}, "dist_id":"dist42"}'
         registry.register(method='POST', path='/apps/eggs/projects/dog/stage',
                           content=stage_content)
         registry.register(method='POST', path='/s3_url', status=201)
