@@ -1,5 +1,8 @@
 # CHANGELOG:
 
+## 1.6 (2016-12-08)
+* Add trial license generation endpoint for registered users
+
 ## 1.5.5 (2016-11-17)
 * fix reading of conda root prefix on a detached environment in Python 3
 
