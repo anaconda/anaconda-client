@@ -1,6 +1,10 @@
 # CHANGELOG:
 
-## 1.6 (2016-12-08)
+## 1.6.1 (2017-01-31)
+* Support reading package information from `about.json` instead of `recipe.json`
+(@jjhelmus)
+
+## 1.6.0 (2016-12-08)
 * Add trial license generation endpoint for registered users
 
 ## 1.5.5 (2016-11-17)
