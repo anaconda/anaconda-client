@@ -19,14 +19,21 @@ expected_package_data = {
     'summary': 'This is a simple meta-package',
     }
 
-expected_version_data = {
+expected_version_data_121 = {
     'description': '',
     'home_page': None,
     'icon': None,  # The icon if found on the conda folder is uplaoded here.
     'version': '1.2.1',
     }
 
-expected_file_data = {
+expected_version_data_221 = {
+    'description': '',
+    'home_page': None,
+    'icon': None,  # The icon if found on the conda folder is uplaoded here.
+    'version': '2.2.1',
+    }
+
+expected_file_data_121 = {
     'attrs': {
         'arch': 'x86_64',
         'build': 'py27_3',
@@ -41,6 +48,27 @@ expected_file_data = {
         'has_prefix': False,
         },
     'basename': 'osx-64/conda_gc_test-1.2.1-py27_3.tar.bz2',
+    'dependencies': {
+        'depends': [{'name': 'foo', 'specs': [['==', '3']]},
+                    {'name': 'python', 'specs': [['==', '2.7.8']]}],
+        },
+    }
+
+expected_file_data_221 = {
+    'attrs': {
+        'arch': 'x86_64',
+        'build': 'py27_3',
+        'build_number': 3,
+        'depends': ['foo ==3*', 'python ==2.7.8'],
+        #'license': None,
+        'machine': 'x86_64',
+        'operatingsystem': 'linux',
+        'platform': 'linux',
+        'subdir': 'linux-64',
+        'target-triplet': 'x86_64-any-linux',
+        'has_prefix': False,
+        },
+    'basename': 'linux-64/conda_gc_test-2.2.1-py27_3.tar.bz2',
     'dependencies': {
         'depends': [{'name': 'foo', 'specs': [['==', '3']]},
                     {'name': 'python', 'specs': [['==', '2.7.8']]}],
@@ -66,14 +94,24 @@ app_expected_version_data = {
 
 class Test(unittest.TestCase):
 
-    def test_conda(self):
+    def test_conda_old(self):
         filename = data_path('conda_gc_test-1.2.1-py27_3.tar.bz2')
         with open(filename, 'rb') as fd:
             package_data, version_data, file_data = conda.inspect_conda_package(filename, fd)
 
         self.assertEqual(expected_package_data, package_data)
-        self.assertEqual(expected_version_data, version_data)
-        self.assertEqual(expected_file_data, file_data)
+        self.assertEqual(expected_version_data_121, version_data)
+        self.assertEqual(expected_file_data_121, file_data)
+
+    def test_conda(self):
+        filename = data_path('conda_gc_test-2.2.1-py27_3.tar.bz2')
+        with open(filename, 'rb') as fd:
+            package_data, version_data, file_data = conda.inspect_conda_package(filename, fd)
+
+        self.assertEqual(expected_package_data, package_data)
+        self.assertEqual(expected_version_data_221, version_data)
+        print(file_data)
+        self.assertEqual(expected_file_data_221, file_data)
 
     def test_conda_app_image(self):
         filename = data_path('test-app-package-icon-0.1-0.tar.bz2')
