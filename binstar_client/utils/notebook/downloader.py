@@ -40,7 +40,7 @@ class Downloader(object):
         if not os.path.exists(os.path.dirname(filename)):
             try:
                 os.makedirs(os.path.dirname(filename))
-            except:
+            except OSError:
                 pass
 
         with open(os.path.join(self.output, filename), 'wb') as fdout:
