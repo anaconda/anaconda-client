@@ -40,9 +40,8 @@ class Downloader(object):
         if not os.path.exists(os.path.dirname(filename)):
             try:
                 os.makedirs(os.path.dirname(filename))
-            except OSError as exc: # Guard against race condition
-                if exc.errno != errno.EEXIST:
-                    raise
+            except:
+                pass
 
         with open(os.path.join(self.output, filename), 'wb') as fdout:
             for chunk in requests_handle.iter_content(4096):
