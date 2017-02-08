@@ -32,10 +32,18 @@ class Downloader(object):
         """
         Download file into location
         """
-        requests_handle = self.aserver_api.download(self.username, self.notebook,
-                                                dist['version'], dist['basename'])
+        filename = dist['basename']
+        requests_handle = self.aserver_api.download(
+            self.username, self.notebook, dist['version'], filename
+        )
 
-        with open(os.path.join(self.output, dist['basename']), 'wb') as fdout:
+        if not os.path.exists(os.path.dirname(filename)):
+            try:
+                os.makedirs(os.path.dirname(filename))
+            except OSError:
+                pass
+
+        with open(os.path.join(self.output, filename), 'wb') as fdout:
             for chunk in requests_handle.iter_content(4096):
                 fdout.write(chunk)
 

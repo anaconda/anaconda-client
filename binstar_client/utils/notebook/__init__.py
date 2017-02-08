@@ -42,6 +42,9 @@ def notebook_url(upload_info):
 
 
 def has_environment(nb_file):
+    if nbformat is None:
+        return False
+
     try:
         with open(nb_file) as fb:
             data = fb.read()
@@ -50,4 +53,4 @@ def has_environment(nb_file):
     except (AttributeError, KeyError):
         return False
     except (IOError, nbformat.reader.NotJSONError):
-        raise BinstarError("Unable to open {}.".format(nb_file))
+        return False

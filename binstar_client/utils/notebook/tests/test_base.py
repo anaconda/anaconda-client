@@ -37,8 +37,7 @@ class HasEnvironmentTestCase(unittest.TestCase):
         assert has_environment(self.data_dir('notebook_with_env.ipynb'))
 
     def test_no_file(self):
-        with self.assertRaises(BinstarError):
-            has_environment("no-file")
+        self.assertFalse(has_environment("no-file"))
 
 
 if __name__ == '__main__':
