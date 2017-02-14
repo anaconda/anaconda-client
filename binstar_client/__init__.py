@@ -63,6 +63,22 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
     def session(self):
         return self._session
 
+    def check_server(self):
+        """
+        Checks if the server is reachable and throws
+        and exception if it isn't
+        """
+        msg = 'API server not found. Please check your API url configuration.'
+
+        try:
+            res = self.session.head(self.domain)
+        except:
+            raise errors.NotFound(msg)
+        try:
+            self._check_response(res)
+        except errors.NotFound:
+            raise errors.NotFound(msg)
+
     def authentication_type(self):
         url = '%s/authentication-type' % self.domain
         res = self.session.get(url)
@@ -70,8 +86,6 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
             self._check_response(res)
             res = res.json()
             return res['authentication_type']
-        except errors.NotFound:
-            raise errors.NotFound('API server not found. Please check your API url configuration.')
         except BinstarError:
             return 'password'
 

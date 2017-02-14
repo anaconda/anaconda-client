@@ -65,6 +65,7 @@ def interactive_get_token(args, fail_if_already_exists=True):
 
     auth_name += '%s@%s' % (getpass.getuser(), hostname)
 
+    bs.check_server()
     auth_type = bs.authentication_type()
 
     if auth_type == 'kerberos':
