@@ -70,6 +70,8 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
             self._check_response(res)
             res = res.json()
             return res['authentication_type']
+        except errors.NotFound:
+            raise errors.NotFound('API server not found. Please check your API url configuration.')
         except BinstarError:
             return 'password'
 
