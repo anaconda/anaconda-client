@@ -17,6 +17,7 @@ class Test(CLITestCase):
     @urlpatch
     def test_upload_bad_package(self, registry):
 
+        registry.register(method='HEAD', path='/', status=200)
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
         registry.register(method='GET', path='/package/eggs/foo', content='{}', status=404)
         registry.register(method='POST', path='/package/eggs/foo', content='{}', status=200)
@@ -37,6 +38,7 @@ class Test(CLITestCase):
     @urlpatch
     def test_upload_bad_package_no_register(self, registry):
 
+        registry.register(method='HEAD', path='/', status=200)
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
         registry.register(method='GET', path='/package/eggs/foo', status=404)
 
@@ -48,6 +50,7 @@ class Test(CLITestCase):
     @urlpatch
     def test_upload_conda(self, registry):
 
+        registry.register(method='HEAD', path='/', status=200)
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
         registry.register(method='GET', path='/package/eggs/foo', content='{}')
         registry.register(method='GET', path='/release/eggs/foo/0.1', content='{}')
@@ -66,6 +69,7 @@ class Test(CLITestCase):
     @urlpatch
     def test_upload_pypi(self, registry):
 
+        registry.register(method='HEAD', path='/', status=200)
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
         registry.register(method='GET', path='/package/eggs/test-package34', content='{}')
         registry.register(method='GET', path='/release/eggs/test-package34/0.3.1', content='{}')
@@ -83,6 +87,7 @@ class Test(CLITestCase):
 
     @urlpatch
     def test_upload_file(self, registry):
+        registry.register(method='HEAD', path='/', status=200)
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
         registry.register(method='GET', path='/package/eggs/test-package34', content='{}')
         registry.register(method='GET', path='/release/eggs/test-package34/0.3.1', content='{}')
@@ -107,6 +112,7 @@ class Test(CLITestCase):
         # there's redundant work between anaconda-client which
         # checks auth and anaconda-project also checks auth;
         # -project has no way to know it was already checked :-/
+        registry.register(method='HEAD', path='/', status=200)
         registry.register(method='GET', path='/user/eggs', content='{"login": "eggs"}')
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
         registry.register(method='GET', path='/apps/eggs/projects/dog', content='{}')
@@ -124,6 +130,7 @@ class Test(CLITestCase):
 
     @urlpatch
     def test_upload_notebook_as_project(self, registry):
+        registry.register(method='HEAD', path='/', status=200)
         registry.register(method='GET', path='/user/eggs', content='{"login": "eggs"}')
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
         registry.register(method='GET', path='/apps/eggs/projects/foo', content='{}')
@@ -141,6 +148,7 @@ class Test(CLITestCase):
 
     @urlpatch
     def test_upload_project_specifying_user(self, registry):
+        registry.register(method='HEAD', path='/', status=200)
         registry.register(method='GET', path='/user/alice', content='{"login": "alice"}')
         registry.register(method='GET', path='/apps/alice/projects/dog', content='{}')
         stage_content = '{"post_url":"http://s3url.com/s3_url", "form_data":{"foo":"bar"}, "dist_id":"dist42"}'
@@ -159,6 +167,7 @@ class Test(CLITestCase):
 
     @urlpatch
     def test_upload_project_specifying_token(self, registry):
+        registry.register(method='HEAD', path='/', status=200)
         registry.register(method='GET', path='/user/eggs', content='{"login": "eggs"}',
                           expected_headers={'Authorization':'token abcdefg'})
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
@@ -180,6 +189,7 @@ class Test(CLITestCase):
     @patch('binstar_client.commands.upload.bool_input')
     def test_upload_interactive_no_overwrite(self, registry, bool_input):
         # regression test for #364
+        registry.register(method='HEAD', path='/', status=200)
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
         registry.register(method='GET', path='/package/eggs/foo', content='{}')
         registry.register(method='GET', path='/release/eggs/foo/0.1', content='{}')

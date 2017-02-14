@@ -215,6 +215,7 @@ def upload_package(filename, package_type, aserver_api, username, args):
 def main(args):
 
     aserver_api = get_server_api(args.token, args.site, args.log_level)
+    aserver_api.check_server()
 
     if args.user:
         username = args.user

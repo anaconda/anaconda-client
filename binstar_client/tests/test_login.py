@@ -28,6 +28,7 @@ class Test(CLITestCase):
         input.return_value = 'test_user'
         getpass.return_value = 'password'
 
+        urls.register(path='/', method='HEAD', status=200)
         urls.register(path='/authentication-type', content='{"authentication_type": "password"}')
 
         auth = urls.register(method='POST', path='/authentications', content='{"token": "a-token"}')
@@ -50,6 +51,7 @@ class Test(CLITestCase):
         input.return_value = 'test_user'
         getpass.return_value = 'password'
 
+        urls.register(path='/', method='HEAD', status=200)
         urls.register(path='/authentication-type', status=404)
 
         auth = urls.register(method='POST', path='/authentications', content='{"token": "a-token"}')
@@ -67,6 +69,7 @@ class Test(CLITestCase):
     @unittest.skipIf(have_kerberos, "prompts user to install requests-kerberos")
     @urlpatch
     def test_login_kerberos_missing(self, urls):
+        urls.register(path='/', method='HEAD', status=200)
         urls.register(path='/authentication-type', content='{"authentication_type": "kerberos"}')
 
         with self.assertRaisesRegexp(errors.BinstarError, 'conda install requests-kerberos'):
@@ -77,6 +80,7 @@ class Test(CLITestCase):
     @urlpatch
     def test_login_kerberos(self, urls, store_token):
 
+        urls.register(path='/', method='HEAD', status=200)
         urls.register(path='/authentication-type', content='{"authentication_type": "kerberos"}')
 
         def update_authentications():
