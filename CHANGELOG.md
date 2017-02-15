@@ -1,5 +1,23 @@
 # CHANGELOG:
 
+## Version 1.6.2 (2017/02/15)
+
+### Issues Closed
+
+#### Bugs fixed
+
+* [Issue 336](https://github.com/Anaconda-Platform/anaconda-client/issues/336) - anaconda download generates an error for notebook files
+* [Issue 153](https://github.com/Anaconda-Platform/anaconda-client/issues/153) - binstar package --list-collaborators option broken
+
+In this release 2 issues were closed.
+
+### Pull Requests Merged
+
+* [PR 389](https://github.com/Anaconda-Platform/anaconda-client/pull/389) - Better error message for the server not found exception
+* [PR 386](https://github.com/Anaconda-Platform/anaconda-client/pull/386) - Fix/download non notebook files
+
+In this release 2 pull requests were closed.
+
 ## 1.6.1 (2017-01-31)
 * Support reading package information from `about.json` instead of `recipe.json`
 (@jjhelmus)
