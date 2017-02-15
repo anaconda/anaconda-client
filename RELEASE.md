@@ -7,7 +7,7 @@
     git pull upstream develop
     git push origin develop
 
-**2.)** Update [CHANGELOG.md](https://github.com/Anaconda-Platform/anaconda-client/blob/develop/CHANGELOG.md), using loghub itself
+**2.)** Update [CHANGELOG.md](https://github.com/Anaconda-Platform/anaconda-client/blob/develop/CHANGELOG.md), using [loghub](https://github.com/spyder-ide/loghub) 
 
     loghub Anaconda-Platform/anaconda-client --since-tag <latest-version-tag-used> -u <username> -ilr "reso:completed" -ilg "type:feature" "New Features" -ilg "type:enhancements" "Code Enhancements" -ilg "type:bug" "Bugs fixed"
 
