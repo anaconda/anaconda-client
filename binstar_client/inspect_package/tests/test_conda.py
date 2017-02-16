@@ -15,7 +15,7 @@ def data_path(filename):
 
 expected_package_data = {
     'home': None,
-    'description': None,
+    'description': '',
     'dev_url': None,
     'doc_url': None,
     'license': None,
@@ -86,21 +86,21 @@ expected_file_data_221 = {
 # -----------------------------------------------------------------------------
 ICON_B64 = data_uri_from(data_path('43c9b994a4d96f779dad87219d645c9f.png'))
 app_expected_package_data = {
-    'home': None,
-    'description': None,
-    'dev_url': None,
-    'doc_url': None,
-    'source_git_url': None,
-    'source_git_tag': None,
-    'license': None,
-    'license_url': None,
+    'home': 'http://home.page',
+    'description': 'test description',
+    'dev_url': 'https://dev.url',
+    'doc_url': 'https://doc.url',
+    'source_git_tag': 0.1,
+    'source_git_url': 'http://git.url',
+    'license': 'LICENSE',
+    'license_url': 'http://license.url',
     'name': u'test-app-package-icon',
     'summary': u'',
     }
 
 app_expected_version_data = {
-    'description': '',
-    'home_page': None,
+    'description': 'test description',
+    'home_page': 'http://home.page',
     'icon': ICON_B64,
     'version': u'0.1',
     }
@@ -124,7 +124,6 @@ class Test(unittest.TestCase):
 
         self.assertEqual(expected_package_data, package_data)
         self.assertEqual(expected_version_data_221, version_data)
-        print(file_data)
         self.assertEqual(expected_file_data_221, file_data)
 
     def test_conda_app_image(self):
