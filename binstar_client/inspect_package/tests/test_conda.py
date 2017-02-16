@@ -14,17 +14,24 @@ def data_path(filename):
 
 
 expected_package_data = {
+    'home': None,
+    'description': None,
+    'dev_url': None,
+    'doc_url': None,
     'license': None,
+    'license_url': None,
+    'source_git_url': None,
+    'source_git_tag': None,
     'name': 'conda_gc_test',
     'summary': 'This is a simple meta-package',
-    }
+}
 
 expected_version_data_121 = {
     'description': '',
     'home_page': None,
     'icon': None,  # The icon if found on the conda folder is uplaoded here.
     'version': '1.2.1',
-    }
+}
 
 expected_version_data_221 = {
     'description': '',
@@ -79,7 +86,14 @@ expected_file_data_221 = {
 # -----------------------------------------------------------------------------
 ICON_B64 = data_uri_from(data_path('43c9b994a4d96f779dad87219d645c9f.png'))
 app_expected_package_data = {
+    'home': None,
+    'description': None,
+    'dev_url': None,
+    'doc_url': None,
+    'source_git_url': None,
+    'source_git_tag': None,
     'license': None,
+    'license_url': None,
     'name': u'test-app-package-icon',
     'summary': u'',
     }
