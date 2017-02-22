@@ -14,18 +14,20 @@ def data_path(filename):
 
 
 expected_package_data = {
+    'name': 'conda_gc_test',
+    'summary': 'This is a simple meta-package',
+    'license': None,
+}
+
+expected_version_data_121 = {
     'home': None,
     'description': '',
+    'summary': 'This is a simple meta-package',
     'dev_url': None,
     'doc_url': None,
     'license': None,
     'license_url': None,
     'source_git_url': None,
-    'name': 'conda_gc_test',
-    'summary': 'This is a simple meta-package',
-}
-
-expected_version_data_121 = {
     'source_git_tag': None,
     'description': '',
     'home_page': None,
@@ -34,12 +36,20 @@ expected_version_data_121 = {
 }
 
 expected_version_data_221 = {
+    'home': None,
+    'description': '',
+    'summary': 'This is a simple meta-package',
+    'dev_url': None,
+    'doc_url': None,
+    'license': None,
+    'license_url': None,
+    'source_git_url': None,
     'source_git_tag': None,
     'description': '',
     'home_page': None,
     'icon': None,  # The icon if found on the conda folder is uplaoded here.
     'version': '2.2.1',
-    }
+}
 
 expected_file_data_121 = {
     'attrs': {
@@ -87,24 +97,26 @@ expected_file_data_221 = {
 # -----------------------------------------------------------------------------
 ICON_B64 = data_uri_from(data_path('43c9b994a4d96f779dad87219d645c9f.png'))
 app_expected_package_data = {
+    'name': u'test-app-package-icon',
+    'summary': u'',
+    'license': 'LICENSE',
+}
+
+app_expected_version_data = {
     'home': 'http://home.page',
     'description': 'test description',
+    'summary': u'',
     'dev_url': 'https://dev.url',
     'doc_url': 'https://doc.url',
     'source_git_url': 'http://git.url',
     'license': 'LICENSE',
     'license_url': 'http://license.url',
-    'name': u'test-app-package-icon',
-    'summary': u'',
-    }
-
-app_expected_version_data = {
     'source_git_tag': 0.1,
     'description': 'test description',
     'home_page': 'http://home.page',
     'icon': ICON_B64,
     'version': u'0.1',
-    }
+}
 
 
 class Test(unittest.TestCase):
