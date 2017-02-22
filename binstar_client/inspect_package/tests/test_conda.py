@@ -21,12 +21,12 @@ expected_package_data = {
     'license': None,
     'license_url': None,
     'source_git_url': None,
-    'source_git_tag': None,
     'name': 'conda_gc_test',
     'summary': 'This is a simple meta-package',
 }
 
 expected_version_data_121 = {
+    'source_git_tag': None,
     'description': '',
     'home_page': None,
     'icon': None,  # The icon if found on the conda folder is uplaoded here.
@@ -34,6 +34,7 @@ expected_version_data_121 = {
 }
 
 expected_version_data_221 = {
+    'source_git_tag': None,
     'description': '',
     'home_page': None,
     'icon': None,  # The icon if found on the conda folder is uplaoded here.
@@ -90,7 +91,6 @@ app_expected_package_data = {
     'description': 'test description',
     'dev_url': 'https://dev.url',
     'doc_url': 'https://doc.url',
-    'source_git_tag': 0.1,
     'source_git_url': 'http://git.url',
     'license': 'LICENSE',
     'license_url': 'http://license.url',
@@ -99,6 +99,7 @@ app_expected_package_data = {
     }
 
 app_expected_version_data = {
+    'source_git_tag': 0.1,
     'description': 'test description',
     'home_page': 'http://home.page',
     'icon': ICON_B64,

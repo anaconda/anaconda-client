@@ -136,17 +136,17 @@ def inspect_conda_package(filename, fileobj, *args, **kwargs):
         'doc_url': about.get('doc_url'),
         'home': about.get('home'),
         'source_git_url': about.get('source_git_url'),
-        'source_git_tag': about.get('source_git_tag'),
-        }
+    }
     release_data = {
         'version': index.pop('version'),
         'home_page': about.get('home'),
         'description': about.get('description', ''),
+        'source_git_tag': about.get('source_git_tag'),
         # TODO: Add summary and license as per release attributes
         # 'summary': about.get('summary', ''),
         # 'license': about.get('license'),
         'icon': icon_b64,
-        }
+    }
     file_data = {
         'basename': '%s/%s' % (subdir, path.basename(filename)),
         'attrs': {
@@ -154,8 +154,8 @@ def inspect_conda_package(filename, fileobj, *args, **kwargs):
             'machine': machine,
             'target-triplet': '%s-any-%s' % (machine, operatingsystem),
             'has_prefix': has_prefix
-            }
         }
+    }
 
     file_data['attrs'].update(index)
     conda_depends = index.get('depends', index.get('requires', []))
