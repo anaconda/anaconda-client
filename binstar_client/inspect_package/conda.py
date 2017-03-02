@@ -129,6 +129,7 @@ def inspect_conda_package(filename, fileobj, *args, **kwargs):
         'name': index.pop('name'),
         'summary': about.get('summary', ''),
         'license': about.get('license'),
+        'description': about.get('description', ''),
     }
     release_data = {
         'version': index.pop('version'),

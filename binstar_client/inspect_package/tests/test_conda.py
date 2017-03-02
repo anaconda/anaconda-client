@@ -17,6 +17,7 @@ expected_package_data = {
     'name': 'conda_gc_test',
     'summary': 'This is a simple meta-package',
     'license': None,
+    'description': '',
 }
 
 expected_version_data_121 = {
@@ -100,6 +101,7 @@ app_expected_package_data = {
     'name': u'test-app-package-icon',
     'summary': u'',
     'license': 'LICENSE',
+    'description': 'test description',
 }
 
 app_expected_version_data = {
