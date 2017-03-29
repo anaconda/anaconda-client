@@ -295,7 +295,7 @@ def add_parser(subparsers):
     mgroup.add_argument('-t', '--package-type', help='Set the package type, defaults to autodetect')
     mgroup.add_argument('-d', '--description', help='description of the file(s)')
     mgroup.add_argument('--thumbnail', help='Notebook\'s thumbnail image')
-    mgroup.add_argument('--private', help="Create the package as private access", action='store_true')
+    mgroup.add_argument('--private', help="Create the package with private access", action='store_true')
 
     register_group = parser.add_mutually_exclusive_group()
     register_group.add_argument("--no-register", dest="auto_register", action="store_false",
