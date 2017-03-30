@@ -200,6 +200,37 @@ class Test(CLITestCase):
 
         main(['--show-traceback', 'upload', '-i', self.data_dir('foo-0.1-0.tar.bz2')], False)
 
+    @urlpatch
+    def test_upload_private_package(self, registry):
+
+        registry.register(method='HEAD', path='/', status=200)
+        registry.register(method='GET', path='/user', content='{"login": "eggs"}')
+        registry.register(method='GET', path='/package/eggs/foo', content='{}', status=404)
+        registry.register(method='POST', path='/package/eggs/foo', content='{}', status=200)
+        registry.register(method='GET', path='/release/eggs/foo/0.1', content='{}')
+        registry.register(method='GET', path='/dist/eggs/foo/0.1/osx-64/foo-0.1-0.tar.bz2', status=404, content='{}')
+
+        content = {"post_url": "http://s3url.com/s3_url", "form_data": {}, "dist_id": "dist_id"}
+        registry.register(method='POST', path='/stage/eggs/foo/0.1/osx-64/foo-0.1-0.tar.bz2', content=content)
+
+        registry.register(method='POST', path='/s3_url', status=201)
+        registry.register(method='POST', path='/commit/eggs/foo/0.1/osx-64/foo-0.1-0.tar.bz2', status=200, content={})
+
+        main(['--show-traceback', 'upload', '--private', self.data_dir('foo-0.1-0.tar.bz2')], False)
+
+        registry.assertAllCalled()
+
+    @urlpatch
+    def test_upload_private_package_not_allowed(self, registry):
+
+        registry.register(method='HEAD', path='/', status=200)
+        registry.register(method='GET', path='/user', content='{"login": "eggs"}')
+        registry.register(method='GET', path='/package/eggs/foo', content='{}', status=404)
+        registry.register(method='POST', path='/package/eggs/foo', content='{"error": "You can not create a private package."}', status=400)
+
+        with self.assertRaises(errors.BinstarError):
+            main(['--show-traceback', 'upload', '--private', self.data_dir('foo-0.1-0.tar.bz2')], False)
+
 
 if __name__ == '__main__':
     unittest.main()
