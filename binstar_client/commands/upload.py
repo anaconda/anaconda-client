@@ -117,12 +117,14 @@ def add_package(aserver_api, args, username, package_name, package_attrs, packag
                     raise errors.BinstarError("Could not detect package summary for package type %s, please use the --summary option" % (package_type,))
                 summary = package_attrs['summary']
 
+            public = not args.private
+
             aserver_api.add_package(
                 username,
                 package_name,
                 summary,
                 package_attrs.get('license'),
-                public=True,
+                public=public,
                 attrs=package_attrs,
                 license_url=package_attrs.get('license_url')
             )
@@ -293,6 +295,7 @@ def add_parser(subparsers):
     mgroup.add_argument('-t', '--package-type', help='Set the package type, defaults to autodetect')
     mgroup.add_argument('-d', '--description', help='description of the file(s)')
     mgroup.add_argument('--thumbnail', help='Notebook\'s thumbnail image')
+    mgroup.add_argument('--private', help="Create the package with private access", action='store_true')
 
     register_group = parser.add_mutually_exclusive_group()
     register_group.add_argument("--no-register", dest="auto_register", action="store_false",
