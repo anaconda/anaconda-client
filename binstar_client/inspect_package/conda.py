@@ -127,9 +127,15 @@ def inspect_conda_package(filename, fileobj, *args, **kwargs):
 
     package_data = {
         'name': index.pop('name'),
+        # TODO: this info should be removed and moved to release
         'summary': about.get('summary', ''),
-        'license': about.get('license'),
         'description': about.get('description', ''),
+        'license': about.get('license'),
+        'license_url': about.get('license_url'),
+        'dev_url': about.get('dev_url'),
+        'doc_url': about.get('doc_url'),
+        'home': about.get('home'),
+        'source_git_url': about.get('source_git_url'),
     }
     release_data = {
         'version': index.pop('version'),
