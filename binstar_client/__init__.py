@@ -322,6 +322,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
                     license=None,
                     public=True,
                     license_url=None,
+                    license_family=None,
                     attrs=None):
         '''
         Add a new package to a users account
@@ -339,7 +340,11 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
 
         attrs = attrs or {}
         attrs['summary'] = summary
-        attrs['license'] = {'name':license, 'url':license_url}
+        attrs['license'] = {
+            'name': license,
+            'url': license_url,
+            'family': license_family,
+        }
 
         payload = dict(public=bool(public),
                        publish=False,
