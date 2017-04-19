@@ -23,6 +23,7 @@ expected_package_data = {
     'home': None,
     'license_url': None,
     'source_git_url': None,
+    'license_family': None,
 }
 
 expected_version_data_121 = {
@@ -33,6 +34,7 @@ expected_version_data_121 = {
     'doc_url': None,
     'license': None,
     'license_url': None,
+    'license_family': None,
     'source_git_url': None,
     'source_git_tag': None,
     'description': '',
@@ -49,6 +51,7 @@ expected_version_data_221 = {
     'doc_url': None,
     'license': None,
     'license_url': None,
+    'license_family': None,
     'source_git_url': None,
     'source_git_tag': None,
     'description': '',
@@ -107,6 +110,7 @@ app_expected_package_data = {
     'summary': u'',
     'license': 'LICENSE',
     'license_url': 'http://license.url',
+    'license_family': None,
     'description': 'test description',
     'dev_url': 'https://dev.url',
     'doc_url': 'https://doc.url',
@@ -123,6 +127,7 @@ app_expected_version_data = {
     'source_git_url': 'http://git.url',
     'license': 'LICENSE',
     'license_url': 'http://license.url',
+    'license_family': None,
     'source_git_tag': 0.1,
     'description': 'test description',
     'home_page': 'http://home.page',
