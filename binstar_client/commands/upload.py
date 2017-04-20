@@ -38,13 +38,10 @@ except NameError:
 log = logging.getLogger('binstar.upload')
 
 
-def create_release(aserver_api, username, package_name, version, description,
-                   announce=None, icon=None):
-    aserver_api.add_release(username, package_name, version, [],
-                            announce, description, icon=icon)
+def create_release(aserver_api, username, package_name, version, release_attrs, announce=None):
+    aserver_api.add_release(username, package_name, version, [], announce, release_attrs)
 
-def create_release_interactive(aserver_api, username, package_name, version):
-
+def create_release_interactive(aserver_api, username, package_name, version, release_attrs):
     log.info('\nThe release %s/%s/%s does not exist' % (username, package_name, version))
     if not bool_input('Would you like to create it now?'):
         log.info('good-bye')
@@ -58,8 +55,7 @@ def create_release_interactive(aserver_api, username, package_name, version):
     else:
         announce = ''
 
-    aserver_api.add_release(username, package_name, version, [],
-                        announce, description)
+    aserver_api.add_release(username, package_name, version, [], announce, release_attrs)
 
 def determine_package_type(filename, args):
     """
@@ -126,24 +122,20 @@ def add_package(aserver_api, args, username, package_name, package_attrs, packag
                 package_attrs.get('license'),
                 public=public,
                 attrs=package_attrs,
-                license_url=package_attrs.get('license_url')
+                license_url=package_attrs.get('license_url'),
+                license_family=package_attrs.get('license_family')
             )
 
 
 def add_release(aserver_api, args, username, package_name, version, release_attrs):
     try:
+        # Check if the release already exists
         aserver_api.release(username, package_name, version)
     except errors.NotFound:
         if args.mode == 'interactive':
-            create_release_interactive(aserver_api, username, package_name, version)
+            create_release_interactive(aserver_api, username, package_name, version, release_attrs)
         else:
-            create_release(aserver_api,
-                           username,
-                           package_name,
-                           version,
-                           release_attrs['description'],
-                           icon=release_attrs.get('icon'),
-                           )
+            create_release(aserver_api, username, package_name, version, release_attrs)
 
 
 def remove_existing_file(aserver_api, args, username, package_name, version, file_attrs):

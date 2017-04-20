@@ -322,6 +322,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
                     license=None,
                     public=True,
                     license_url=None,
+                    license_family=None,
                     attrs=None):
         '''
         Add a new package to a users account
@@ -339,7 +340,11 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
 
         attrs = attrs or {}
         attrs['summary'] = summary
-        attrs['license'] = {'name':license, 'url':license_url}
+        attrs['license'] = {
+            'name': license,
+            'url': license_url,
+            'family': license_family,
+        }
 
         payload = dict(public=bool(public),
                        publish=False,
@@ -385,8 +390,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         self._check_response(res, [201])
         return
 
-    def add_release(self, login, package_name, version, requirements, announce,
-                    description, icon=None):
+    def add_release(self, login, package_name, version, requirements, announce, release_attrs):
         '''
         Add a new release to a package.
 
@@ -395,17 +399,19 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         :param version: the version string of the release
         :param requirements: A dict of requirements TODO: describe
         :param announce: An announcement that will be posted to all package watchers
-        :param description: A long description about the package
-        :param icon: icon b64 string for the package (compressed by notebook data_uri_from upload logic)
         '''
 
         url = '%s/release/%s/%s/%s' % (self.domain, login, package_name, version)
 
-        payload = {'requirements': requirements,
-                   'announce': announce,
-                   'description': description,
-                   'icon': icon,
-                   }
+        if not release_attrs:
+            release_attrs = {}
+
+        payload = {
+            'requirements': requirements,
+            'announce': announce,
+        }
+        payload.update(release_attrs)
+
         data, headers = jencode(payload)
         res = self.session.post(url, data=data, headers=headers)
         self._check_response(res)

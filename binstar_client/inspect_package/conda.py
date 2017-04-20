@@ -132,6 +132,7 @@ def inspect_conda_package(filename, fileobj, *args, **kwargs):
         'description': about.get('description', ''),
         'license': about.get('license'),
         'license_url': about.get('license_url'),
+        'license_family': about.get('license_family'),
         'dev_url': about.get('dev_url'),
         'doc_url': about.get('doc_url'),
         'home': about.get('home'),
@@ -141,11 +142,16 @@ def inspect_conda_package(filename, fileobj, *args, **kwargs):
         'version': index.pop('version'),
         'home_page': about.get('home'),
         'description': about.get('description', ''),
+        'summary': about.get('summary', ''),
+        'dev_url': about.get('dev_url'),
+        'doc_url': about.get('doc_url'),
+        'home': about.get('home'),
+        'source_git_url': about.get('source_git_url'),
         'source_git_tag': about.get('source_git_tag'),
-        # TODO: Add summary and license as per release attributes
-        # 'summary': about.get('summary', ''),
-        # 'license': about.get('license'),
         'icon': icon_b64,
+        'license': about.get('license'),
+        'license_url': about.get('license_url'),
+        'license_family': about.get('license_family'),
     }
     file_data = {
         'basename': '%s/%s' % (subdir, path.basename(filename)),
