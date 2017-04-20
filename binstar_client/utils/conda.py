@@ -1,4 +1,4 @@
-from os.path import basename, dirname, join
+from os.path import basename, dirname, join, exists
 import json
 import sys
 import subprocess
@@ -6,8 +6,8 @@ import subprocess
 WINDOWS = sys.platform.startswith('win')
 CONDA_PREFIX = sys.prefix
 BIN_DIR = 'Scripts' if WINDOWS else 'bin'
-CONDA_EXE = join(CONDA_PREFIX, BIN_DIR,
-                 'conda.exe' if WINDOWS else 'conda')
+CONDA_EXE = join(CONDA_PREFIX, BIN_DIR, 'conda.exe' if WINDOWS else 'conda')
+CONDA_BAT = join(CONDA_PREFIX, BIN_DIR, 'conda.bat')
 
 
 # this function is broken out for monkeypatch by unit tests,
@@ -19,7 +19,11 @@ def _import_conda_root():
 
 def _conda_root_from_conda_info():
     try:
-        output = subprocess.check_output([CONDA_EXE, 'info', '--json']).decode("utf-8")
+        command = CONDA_EXE
+        if WINDOWS:
+            command = CONDA_EXE if exists(CONDA_EXE) else CONDA_BAT
+
+        output = subprocess.check_output([command, 'info', '--json']).decode("utf-8")
         conda_info = json.loads(output)
         return conda_info['root_prefix']
     except (ValueError, KeyError, subprocess.CalledProcessError):
