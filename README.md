@@ -14,10 +14,22 @@ First create an account on [Anaconda Cloud](https://anaconda.org)
 
 ### Install the client:
 
-#### With Conda:
+#### With Conda (recommended):
 
 ```
 $ conda install anaconda-client
+```
+
+#### With pip:
+
+```
+pip install anaconda-client
+```
+
+#### With pip from source:
+
+```
+pip install git+https://github.com/Anaconda-Server/anaconda-client
 ```
 
 ### Login
