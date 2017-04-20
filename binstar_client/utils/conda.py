@@ -17,12 +17,22 @@ def _import_conda_root():
     return conda.config.root_dir
 
 
-def _conda_root_from_conda_info():
-    try:
-        command = CONDA_EXE
-        if WINDOWS:
-            command = CONDA_EXE if exists(CONDA_EXE) else CONDA_BAT
+def _get_conda_exe():
+    command = CONDA_EXE
+    if WINDOWS:
+        command = CONDA_EXE if exists(CONDA_EXE) else CONDA_BAT
 
+    if not exists(command):
+        command = None
+
+    return command
+
+def _conda_root_from_conda_info():
+    command = _get_conda_exe()
+    if not command:
+        return None
+
+    try:
         output = subprocess.check_output([command, 'info', '--json']).decode("utf-8")
         conda_info = json.loads(output)
         return conda_info['root_prefix']
