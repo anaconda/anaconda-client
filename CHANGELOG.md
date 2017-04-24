@@ -1,5 +1,20 @@
 # CHANGELOG:
 
+## Version 1.6.3 (2017/04/24)
+
+### Issues Closed
+
+* [Issue 398](https://github.com/Anaconda-Platform/anaconda-client/issues/398) - Trouble build 1.6.2 on Windows
+
+### Pull Requests Merged
+
+* [PR 390](https://github.com/Anaconda-Platform/anaconda-client/pull/390) - Send more package metadata when uploading a file
+* [PR 394](https://github.com/Anaconda-Platform/anaconda-client/pull/394) - Send metadata attributes when uploading a new release
+* [PR 395](https://github.com/Anaconda-Platform/anaconda-client/pull/395) - Switch from conda-kapsel to anaconda-project
+* [PR 402](https://github.com/Anaconda-Platform/anaconda-client/pull/402) - Allows to upload private packages
+* [PR 405](https://github.com/Anaconda-Platform/anaconda-client/pull/405) - Put some JSON in test notebook foo.ipynb
+* [PR 407](https://github.com/Anaconda-Platform/anaconda-client/pull/407) - Trying with conda.bat if conda.exe doesn't exists
+
 ## Version 1.6.2 (2017/02/15)
 
 ### Issues Closed
