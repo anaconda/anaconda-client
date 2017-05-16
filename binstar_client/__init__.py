@@ -57,6 +57,8 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
 
         if domain.endswith('/'):
             domain = domain[:-1]
+        if not domain.startswith(('http://', 'https://')):
+            domain = 'https://' + domain
         self.domain = domain
 
     @property
