@@ -1,5 +1,11 @@
 # CHANGELOG:
 
+## Next Release
+
+### Added
+
+* Add `https://` to domain URL when is missing
+
 ## Version 1.6.3 (2017/04/24)
 
 ### Issues Closed
