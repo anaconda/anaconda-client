@@ -55,8 +55,14 @@ def binstar_main(sub_command_module, args=None, exit=True, description=None, ver
 
     args = parser.parse_args(args)
 
-    setup_logging(logger, args.log_level, use_color=args.color,
-                  logfile=logfile, show_tb=args.show_traceback)
+    # Let clyent handle the logging
+    logger.disabled = True
+    logger.propagate = False
+    logger.addHandler(logging.NullHandler())
+    setup_logging(
+        logger, args.log_level, use_color=args.color,
+        logfile=logfile, show_tb=args.show_traceback
+    )
 
     try:
         try:

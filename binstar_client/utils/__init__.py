@@ -23,6 +23,10 @@ try:
 except NameError:
     input = input
 
+logging.basicConfig(
+    level=logging.CRITICAL,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 log = logging.getLogger('binstar')
 
 

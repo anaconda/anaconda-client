@@ -69,7 +69,9 @@ def determine_package_type(filename, args):
         sys.stdout.flush()
         package_type = detect_package_type(filename)
         if package_type is None:
-            raise errors.BinstarError('Could not detect package type of file %r please specify package type with option --package-type' % filename)
+            message = 'Could not detect package type of file %r please specify package type with option --package-type' % filename
+            log.error(message)
+            raise errors.BinstarError(message)
         log.info(package_type)
 
     return package_type
@@ -77,12 +79,17 @@ def determine_package_type(filename, args):
 def get_package_name(args, package_attrs, filename, package_type):
     if args.package:
         if 'name' in package_attrs and package_attrs['name'].lower() != args.package.lower():
-            msg = 'Package name on the command line " %s" does not match the package name in the file "%s"'
-            raise errors.BinstarError(msg % (args.package.lower(), package_attrs['name'].lower()))
+            msg = 'Package name on the command line " {}" does not match the package name in the file "{}"'.format(
+                args.package.lower(), package_attrs['name'].lower()
+            )
+            log.error(msg)
+            raise errors.BinstarError(msg)
         package_name = args.package
     else:
         if 'name' not in package_attrs:
-            raise errors.BinstarError("Could not detect package name for package type %s, please use the --package option" % (package_type,))
+            message = "Could not detect package name for package type %s, please use the --package option" % (package_type,)
+            log.error(message)
+            raise errors.BinstarError(message)
         package_name = package_attrs['name']
 
     return package_name
@@ -93,7 +100,9 @@ def get_version(args, release_attrs, package_type):
         version = args.version
     else:
         if 'version' not in release_attrs:
-            raise errors.BinstarError("Could not detect package version for package type %s, please use the --version option" % (package_type,))
+            message = "Could not detect package version for package type %s, please use the --version option" % (package_type,)
+            log.error(message)
+            raise errors.BinstarError(message)
         version = release_attrs['version']
     return version
 
@@ -102,15 +111,22 @@ def add_package(aserver_api, args, username, package_name, package_attrs, packag
         aserver_api.package(username, package_name)
     except errors.NotFound:
         if not args.auto_register:
-            raise errors.UserError('Anaconda Cloud package %s/%s does not exist. '
-                            'Please run "anaconda package --create" to create this package namespace in the cloud.' % (username, package_name))
+            message = (
+                'Anaconda Cloud package %s/%s does not exist. '
+                'Please run "anaconda package --create" to create this package namespace in the cloud.' %
+                (username, package_name)
+            )
+            log.error(message)
+            raise errors.UserError(message)
         else:
 
             if args.summary:
                 summary = args.summary
             else:
                 if 'summary' not in package_attrs:
-                    raise errors.BinstarError("Could not detect package summary for package type %s, please use the --summary option" % (package_type,))
+                    message = "Could not detect package summary for package type %s, please use the --summary option" % (package_type,)
+                    log.error(message)
+                    raise errors.BinstarError(message)
                 summary = package_attrs['summary']
 
             public = not args.private
@@ -165,8 +181,11 @@ def upload_package(filename, package_type, aserver_api, username, args):
     except Exception:
         if args.show_traceback:
             raise
-        raise errors.BinstarError(('Trouble reading metadata from {}.'
-                                   ' Is this a valid {} package').format(filename, package_type))
+        message = 'Trouble reading metadata from {}. Is this a valid {} package'.format(
+            filename, package_type
+        )
+        log.error(message)
+        raise errors.BinstarError(message)
 
     if args.build_id:
         file_attrs['attrs']['binstar_build'] = args.build_id
@@ -227,7 +246,9 @@ def main(args):
     for filename in files:
 
         if not exists(filename):
-            raise errors.BinstarError('file %s does not exist' % (filename))
+            message = 'file %s does not exist' % (filename)
+            log.error(message)
+            raise errors.BinstarError(message)
 
         package_type = determine_package_type(filename, args)
 
