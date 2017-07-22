@@ -290,7 +290,7 @@ def add_parser(subparsers):
 
     label_help = (
         '{deprecation}Add this file to a specific {label}. '
-        'Warning: if the file {label}s do not include "main",'
+        'Warning: if the file {label}s do not include "main", '
         'the file will not show up in your user {label}')
 
     parser.add_argument('-c', '--channel', action='append', default=[], dest='labels',
