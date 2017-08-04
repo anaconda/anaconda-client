@@ -411,6 +411,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         payload = {
             'requirements': requirements,
             'announce': announce,
+            'description': None,  # Will be updated with the one on release_attrs
         }
         payload.update(release_attrs)
 
