@@ -9,7 +9,7 @@ machine:
     PY_VERSIONS: "2.7 3.4 3.5"
     # Used by astropy-ci helpers
     TRAVIS_OS_NAME: "linux"
-    CONDA_CHANNELS: "https://conda.anaconda.org/t/an-1126452d-8e3d-439a-9763-03b5696f4f97/binstar conda-kapsel"
+    CONDA_CHANNELS: "https://conda.anaconda.org/t/$ANACONDA_ORG_TOKEN/binstar conda-kapsel"
     CONDA_DEPENDENCIES: "pip setuptools=23.0.0 clyent pillow psutil nbformat anaconda-project mock"
     PIP_DEPENDENCIES: "coverage==3.7.1"
 
