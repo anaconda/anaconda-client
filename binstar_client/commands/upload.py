@@ -12,7 +12,9 @@
 '''
 from __future__ import unicode_literals
 
+import tempfile
 import argparse
+import subprocess
 from glob import glob
 import logging
 import os
@@ -226,6 +228,28 @@ def upload_package(filename, package_type, aserver_api, username, args):
         return [package_name, upload_info]
 
 
+def get_convert_files(files):
+    tmpdir = tempfile.mkdtemp()
+
+    for filepath in files:
+        log.info('Running conda convert on %s', filepath)
+        process = subprocess.Popen(
+            ['conda-convert', '-p', 'all', filepath, '-o', tmpdir],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        stdout, stderr = process.communicate()
+
+        if stderr:
+            log.warning('Couldn\'t generate platform packages for %s: %s', filepath, stderr)
+
+    result = []
+    for path, dirs, files in os.walk(tmpdir):
+        for filename in files:
+            result.append(os.path.join(path, filename))
+
+    return result
+
+
 def main(args):
 
     aserver_api = get_server_api(args.token, args.site, args.log_level)
@@ -243,8 +267,10 @@ def main(args):
     # Flatten file list because of 'windows_glob' function
     files = [f for fglob in args.files for f in fglob]
 
-    for filename in files:
+    if args.all:
+        files += get_convert_files(files)
 
+    for filename in files:
         if not exists(filename):
             message = 'file %s does not exist' % (filename)
             log.error(message)
@@ -300,6 +326,8 @@ def add_parser(subparsers):
                         help=label_help.format(deprecation='', label='label'))
     parser.add_argument('--no-progress', help="Don't show upload progress", action='store_true')
     parser.add_argument('-u', '--user', help='User account or Organization, defaults to the current user')
+    parser.add_argument('--all', help='Use conda convert to generate packages for all platforms and upload them',
+                        action='store_true')
 
     mgroup = parser.add_argument_group('metadata options')
     mgroup.add_argument('-p', '--package', help='Defaults to the package name in the uploaded file')
