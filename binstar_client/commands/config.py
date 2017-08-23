@@ -14,7 +14,7 @@ anaconda-client comes with two pre-configured sites `alpha` and
 `binstar` you may use these in one of two ways:
 
   * Invoke the anaconda command with the `-s/--site` option
-    e.g. to use the aplha testing site:
+    e.g. to use the alpha testing site:
 
         anaconda -s alpha whoami
 
@@ -36,7 +36,7 @@ you can add a site named **site_name** like this:
 All options can be set as global options - affecting all sites,
 or site options - affecting only one site
 
-By default options are set gobaly e.g.:
+By default options are set globally e.g.:
 
     anaconda config --set OPTION VALUE
 

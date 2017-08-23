@@ -219,7 +219,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
 
     def user(self, login=None):
         '''
-        Get user infomration.
+        Get user information.
 
         :param login: (optional) the login name of the user or None. If login is None
                       this method will return the information of the authenticated user.
@@ -280,7 +280,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
 
     def package(self, login, package_name):
         '''
-        Get infomration about a specific package
+        Get information about a specific package
 
         :param login: the login of the package owner
         :param package_name: the name of the package
@@ -331,7 +331,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
 
         :param login: the login of the package owner
         :param package_name: the name of the package to be created
-        :param package_type: A type identifyer for the package (eg. 'pypi' or 'conda', etc.)
+        :param package_type: A type identifier for the package (eg. 'pypi' or 'conda', etc.)
         :param summary: A short summary about the package
         :param license: the name of the package license
         :param license_url: the url of the package license
@@ -444,7 +444,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
 
     def download(self, login, package_name, release, basename, md5=None):
         '''
-        Dowload a package distribution
+        Download a package distribution
 
         :param login: the login of the package owner
         :param package_name: the name of the package

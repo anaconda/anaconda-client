@@ -39,7 +39,7 @@ expected_version_data_121 = {
     'source_git_tag': None,
     'description': '',
     'home_page': None,
-    'icon': None,  # The icon if found on the conda folder is uplaoded here.
+    'icon': None,  # The icon if found on the conda folder is uploaded here.
     'version': '1.2.1',
 }
 
@@ -56,7 +56,7 @@ expected_version_data_221 = {
     'source_git_tag': None,
     'description': '',
     'home_page': None,
-    'icon': None,  # The icon if found on the conda folder is uplaoded here.
+    'icon': None,  # The icon if found on the conda folder is uploaded here.
     'version': '2.2.1',
 }
 
