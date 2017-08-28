@@ -13,11 +13,6 @@ class DataURIConverterTestCase(unittest.TestCase):
         output = DataURIConverter(location)()
         self.assertEqual(output[0:5], "iVBOR")
 
-    def test_remote_image(self):
-        location = 'http://continuum.io/media/img/anaconda_server_logo.png'
-        output = DataURIConverter(location)()
-        self.assertEqual(output[0:5], "iVBOR")
-
     def test_file_not_found(self):
         location = self.data_dir('no-exists.png')
         with self.assertRaises(IOError):
