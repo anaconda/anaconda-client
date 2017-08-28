@@ -1,27 +1,40 @@
 '''
 Search Anaconda Cloud for packages
 '''
+import logging
+
 from binstar_client.utils import get_server_api
 from binstar_client.utils.pprint import pprint_packages
-import logging
+
 log = logging.getLogger('binstar.search')
+
 
 def search(args):
 
     aserver_api = get_server_api(args.token, args.site, args.log_level)
 
-    log.info("Run 'anaconda show <USER/PACKAGE>' to get more details:")
-    packages = aserver_api.search(args.name, package_type=args.package_type)
+    packages = aserver_api.search(args.name, package_type=args.package_type, platform=args.platform)
     pprint_packages(packages, access=False)
     log.info("Found %i packages" % len(packages))
+    log.info("\nRun 'anaconda show <USER/PACKAGE>' to get installation details")
 
 
 def add_parser(subparsers):
-    parser1 = subparsers.add_parser('search',
-                                      help='Search Anaconda Cloud',
-                                      description='Search Anaconda Cloud',
-                                      epilog=__doc__)
-    parser1.add_argument('name', nargs=1, help='Search string')
-    parser1.add_argument('-t', '--package-type', choices=['conda', 'pypi'],
-                         help='only search for packages of this type')
-    parser1.set_defaults(main=search)
+    parser = subparsers.add_parser(
+        'search',
+        help='Search Anaconda Cloud',
+        description='Search Anaconda Cloud',
+        epilog=__doc__
+    )
+    parser.add_argument('name', nargs=1, help='Search string')
+    parser.add_argument(
+        '-t', '--package-type', choices=['conda', 'pypi'],
+        help='only search for packages of this type'
+    )
+    parser.add_argument(
+        '-p', '--platform',
+        choices=['osx-32', 'osx-64', 'win-32', 'win-64', 'linux-32', 'linux-64',
+                 'linux-armv6l', 'linux-armv7l', 'linux-ppc64le', 'noarch'],
+        help='only search for packages of this type'
+    )
+    parser.set_defaults(main=search)

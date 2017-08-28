@@ -542,9 +542,13 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
 
         return res.json()
 
-    def search(self, query, package_type=None):
+    def search(self, query, package_type=None, platform=None):
         url = '%s/search' % self.domain
-        res = self.session.get(url, params={'name':query, 'type':package_type})
+        res = self.session.get(url, params={
+            'name': query,
+            'type': package_type,
+            'platform': platform,
+        })
         self._check_response(res)
         return res.json()
 
