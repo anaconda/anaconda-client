@@ -35,6 +35,6 @@ def add_parser(subparsers):
         '-p', '--platform',
         choices=['osx-32', 'osx-64', 'win-32', 'win-64', 'linux-32', 'linux-64',
                  'linux-armv6l', 'linux-armv7l', 'linux-ppc64le', 'noarch'],
-        help='only search for packages of this type'
+        help='only search for packages of the chosen platform'
     )
     parser.set_defaults(main=search)
