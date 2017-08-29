@@ -5,6 +5,8 @@
 ### Added
 
 * Add `https://` to domain URL when is missing
+* Added `--platform` filter
+* Displaying build information on packages table
 
 ## Version 1.6.3 (2017/04/24)
 
