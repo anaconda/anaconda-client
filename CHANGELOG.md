@@ -7,6 +7,7 @@
 * Add `https://` to domain URL when is missing
 * Added `--platform` filter
 * Displaying build information on packages table
+* Notebook validation on upload
 
 ## Version 1.6.3 (2017/04/24)
 
