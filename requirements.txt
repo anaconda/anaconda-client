@@ -1,6 +1,7 @@
 nbformat
-PyYAML
+clyent
 requests>=2.9.1
+PyYAML
 python-dateutil
 pytz
 pillow

@@ -1,5 +1,10 @@
+import os
 from setuptools import setup, find_packages
 import versioneer
+
+base_dir = os.path.dirname(os.path.abspath(__file__))
+requirements_file = open(os.path.join(base_dir, 'requirements.txt'))
+requirements = requirements_file.read().splitlines()
 
 setup(
     name='anaconda-client',
@@ -10,11 +15,7 @@ setup(
     url='http://github.com/Anaconda-Platform/anaconda-client',
     description='Anaconda Cloud command line client library',
     packages=find_packages(),
-    install_requires=['clyent',
-                      'requests>=2.9.1',
-                      'pyyaml',
-                      'python-dateutil',
-                      'pytz'],
+    install_requires=requirements,
     entry_points={
         'console_scripts': [
             'anaconda = binstar_client.scripts.cli:main',
