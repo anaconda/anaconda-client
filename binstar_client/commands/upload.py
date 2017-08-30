@@ -21,6 +21,8 @@ import os
 from os.path import exists
 import sys
 
+import nbformat
+
 from binstar_client import errors
 from binstar_client.utils import bool_input
 from binstar_client.utils import get_server_api
@@ -281,6 +283,14 @@ def main(args):
         if package_type == 'project':
             uploaded_projects.append(upload_project(filename, args, username))
         else:
+            if package_type == 'ipynb' and not args.mode == 'force':
+                try:
+                    nbformat.read(open(filename), nbformat.NO_CONVERT)
+                except Exception as error:
+                    log.error("Invalid notebook file '%s': %s", filename, error)
+                    log.info("Use --force to upload the file anyways")
+                    continue
+
             package_info = upload_package(
                 filename,
                 package_type=package_type,
