@@ -44,6 +44,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         self.session.verify = verify
         self.session.auth = NullAuth()
         self.token = token
+        self._token_warning_sent = False
 
         user_agent = 'Anaconda-Client/{} (+https://anaconda.org)'.format(__version__)
         self._session.headers.update({
@@ -194,6 +195,10 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
                    + 'Please update your client with pip install -U binstar or conda update binstar')
             warnings.warn(msg, stacklevel=4)
 
+        if not self._token_warning_sent and 'Conda-Token-Warning' in res.headers:
+            msg = 'Token warning: {}'.format(res.headers['Conda-Token-Warning'])
+            warnings.warn(msg, stacklevel=4)
+            self._token_warning_sent = True
 
         if not res.status_code in allowed:
             short, long = STATUS_CODES.get(res.status_code, ('?', 'Undefined error'))
