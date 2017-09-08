@@ -1,6 +1,6 @@
 # CHANGELOG:
 
-## Next Release
+## Version 1.6.4 (2017/09/08)
 
 ### Added
 
