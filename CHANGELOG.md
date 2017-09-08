@@ -4,6 +4,7 @@
 
 ### Fixed
 
+* Fixes to allow conda 3 to build
 * Removed unused dependency
 
 ## Version 1.6.4 (2017/09/08)
