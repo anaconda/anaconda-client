@@ -1481,8 +1481,6 @@ def get_cmdclass():
                 version = versions['version']
                 build = '0'
 
-            write_conda_files(version, build)
-
     cmds["build_py"] = cmd_build_py
 
     if "cx_Freeze" in sys.modules:  # cx_freeze enabled?
@@ -1701,20 +1699,6 @@ def scan_setup_py():
         print("")
         errors += 1
     return errors
-
-def write_conda_files(version, build):
-    SRC_DIR = os.environ.get('SRC_DIR', '.')
-
-    conda_version_path = os.path.join(SRC_DIR, '__conda_version__.txt')
-    print("Writing %s" % conda_version_path)
-    with open(conda_version_path, 'w') as conda_version:
-        conda_version.write(version)
-
-    conda_buildnum_path = os.path.join(SRC_DIR, '__conda_buildnum__.txt')
-    print("Writing %s" % conda_buildnum_path)
-
-    with open(conda_buildnum_path, 'w') as conda_buildnum:
-        conda_buildnum.write(build)
 
 if __name__ == "__main__":
     cmd = sys.argv[1]
