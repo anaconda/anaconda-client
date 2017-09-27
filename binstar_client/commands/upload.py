@@ -143,7 +143,8 @@ def add_package(aserver_api, args, username, package_name, package_attrs, packag
                 public=public,
                 attrs=package_attrs,
                 license_url=package_attrs.get('license_url'),
-                license_family=package_attrs.get('license_family')
+                license_family=package_attrs.get('license_family'),
+                package_type=package_type,
             )
 
 

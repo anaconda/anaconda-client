@@ -1,5 +1,12 @@
 # CHANGELOG:
 
+# Next Release
+
+### Fixed
+
+* Using seconds on environment version
+* Sending package_type field on upload
+
 ## Version 1.6.5 (2017/09/08)
 
 ### Fixed
