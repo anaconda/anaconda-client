@@ -330,7 +330,8 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
                     public=True,
                     license_url=None,
                     license_family=None,
-                    attrs=None):
+                    attrs=None,
+                    package_type=None):
         '''
         Add a new package to a users account
 
@@ -347,6 +348,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
 
         attrs = attrs or {}
         attrs['summary'] = summary
+        attrs['package_types'] = [package_type]
         attrs['license'] = {
             'name': license,
             'url': license_url,
