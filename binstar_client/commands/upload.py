@@ -20,6 +20,7 @@ import logging
 import os
 from os.path import exists
 import sys
+from collections import defaultdict
 
 import nbformat
 
@@ -40,6 +41,9 @@ except NameError:
 
 
 log = logging.getLogger('binstar.upload')
+
+
+PACKAGE_TYPES = defaultdict(lambda: 'Package', {'env': 'Environment', 'ipynb': 'Notebook'})
 
 
 def create_release(aserver_api, username, package_name, version, release_attrs, announce=None):
@@ -69,7 +73,7 @@ def determine_package_type(filename, args):
     if args.package_type:
         package_type = args.package_type
     else:
-        log.info('detecting package type ...')
+        log.info('detecting file type ...')
         sys.stdout.flush()
         package_type = detect_package_type(filename)
         if package_type is None:
@@ -177,7 +181,7 @@ def remove_existing_file(aserver_api, args, username, package_name, version, fil
 
 
 def upload_package(filename, package_type, aserver_api, username, args):
-    log.info('extracting package attributes for upload ...')
+    log.info('extracting {} attributes for upload ...'.format(PACKAGE_TYPES[package_type].lower()))
     sys.stdout.flush()
     try:
         package_attrs, release_attrs, file_attrs = get_attrs(package_type,
@@ -302,7 +306,7 @@ def main(args):
 
     for package, upload_info in uploaded_packages:
         package_url = upload_info.get('url', 'https://anaconda.org/%s/%s' % (username, package))
-        log.info("Package located at:\n%s\n" % package_url)
+        log.info("{} located at:\n{}\n".format(PACKAGE_TYPES[package_type], package_url))
 
     for project_name, url in uploaded_projects:
         log.info("Project {} uploaded to {}.\n".format(project_name, url))
