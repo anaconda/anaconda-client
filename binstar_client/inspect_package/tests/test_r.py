@@ -1,11 +1,10 @@
 from __future__ import print_function, unicode_literals
 
 import unittest
-from os import path
-from binstar_client.inspect_package import r
 
-def data_path(filename):
-    return path.join(path.dirname(__file__), 'data', filename)
+from binstar_client.inspect_package import r
+from binstar_client.utils.test.utils import data_dir
+
 
 expected_package_data = {
     'license': 'GPL-2 | GPL-3',
@@ -43,7 +42,7 @@ expected_file_data = {
 class Test(unittest.TestCase):
     maxDiff = None
     def test_r(self):
-        filename = data_path('rfordummies_0.1.2.tar.gz')
+        filename = data_dir('rfordummies_0.1.2.tar.gz')
         with open(filename, 'rb') as fd:
             package_data, version_data, file_data = r.inspect_r_package(filename, fd)
 

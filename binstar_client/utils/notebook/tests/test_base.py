@@ -1,7 +1,8 @@
-from os.path import join, dirname
 import unittest
-from binstar_client.utils.notebook import notebook_url, parse, has_environment
+
 from binstar_client.errors import BinstarError
+from binstar_client.utils.notebook import notebook_url, parse, has_environment
+from binstar_client.utils.test.utils import data_dir
 
 
 class ParseTestCase(unittest.TestCase):
@@ -26,15 +27,11 @@ class NotebookURLTestCase(unittest.TestCase):
 
 
 class HasEnvironmentTestCase(unittest.TestCase):
-    def data_dir(self, filename):
-        test_data = join(dirname(__file__), 'data')
-        return join(test_data, filename)
-
     def test_has_no_environment(self):
-        self.assertEqual(False, has_environment(self.data_dir('notebook.ipynb')))
+        self.assertFalse(has_environment(data_dir('notebook.ipynb')))
 
     def test_has_environment(self):
-        assert has_environment(self.data_dir('notebook_with_env.ipynb'))
+        self.assertTrue(has_environment(data_dir('notebook_with_env.ipynb')))
 
     def test_no_file(self):
         self.assertFalse(has_environment("no-file"))

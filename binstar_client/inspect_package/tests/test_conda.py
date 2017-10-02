@@ -1,16 +1,12 @@
 from __future__ import print_function, unicode_literals
 
 # Standard libary imports
-from os import path
 import unittest
 
 # Local imports
 from binstar_client.inspect_package import conda
 from binstar_client.utils.notebook.data_uri import data_uri_from
-
-
-def data_path(filename):
-    return path.join(path.dirname(__file__), 'data', filename)
+from binstar_client.utils.test.utils import data_dir
 
 
 expected_package_data = {
@@ -104,7 +100,7 @@ expected_file_data_221 = {
 
 # Test package application data
 # -----------------------------------------------------------------------------
-ICON_B64 = data_uri_from(data_path('43c9b994a4d96f779dad87219d645c9f.png'))
+ICON_B64 = data_uri_from(data_dir('43c9b994a4d96f779dad87219d645c9f.png'))
 app_expected_package_data = {
     'name': u'test-app-package-icon',
     'summary': u'',
@@ -139,7 +135,7 @@ app_expected_version_data = {
 class Test(unittest.TestCase):
 
     def test_conda_old(self):
-        filename = data_path('conda_gc_test-1.2.1-py27_3.tar.bz2')
+        filename = data_dir('conda_gc_test-1.2.1-py27_3.tar.bz2')
         with open(filename, 'rb') as fd:
             package_data, version_data, file_data = conda.inspect_conda_package(filename, fd)
 
@@ -148,7 +144,7 @@ class Test(unittest.TestCase):
         self.assertEqual(expected_file_data_121, file_data)
 
     def test_conda(self):
-        filename = data_path('conda_gc_test-2.2.1-py27_3.tar.bz2')
+        filename = data_dir('conda_gc_test-2.2.1-py27_3.tar.bz2')
         with open(filename, 'rb') as fd:
             package_data, version_data, file_data = conda.inspect_conda_package(filename, fd)
 
@@ -157,7 +153,7 @@ class Test(unittest.TestCase):
         self.assertEqual(expected_file_data_221, file_data)
 
     def test_conda_app_image(self):
-        filename = data_path('test-app-package-icon-0.1-0.tar.bz2')
+        filename = data_dir('test-app-package-icon-0.1-0.tar.bz2')
         with open(filename, 'rb') as fd:
             package_data, version_data, file_data = conda.inspect_conda_package(filename, fd)
 
