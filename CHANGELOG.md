@@ -6,6 +6,7 @@
 
 * Using seconds on environment version
 * Sending package_type field on upload
+* Display correct file type when uploading
 
 ## Version 1.6.5 (2017/09/08)
 
