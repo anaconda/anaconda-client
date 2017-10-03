@@ -5,12 +5,11 @@ Created on Feb 22, 2014
 '''
 import logging
 import io
-import mock
 import unittest
-from binstar_client import tests
-from os.path import join, dirname
+import mock
 
-test_data = join(dirname(tests.__file__), 'data')
+from binstar_client import tests
+
 
 class AnyIO(io.StringIO):
     def write(self, msg):
@@ -20,12 +19,7 @@ class AnyIO(io.StringIO):
 
 
 class CLITestCase(unittest.TestCase):
-
-    def data_dir(self, filename):
-        return join(test_data, filename)
-
     def setUp(self):
-
         self.get_config_patch = mock.patch('binstar_client.utils.get_config')
         self.get_config = self.get_config_patch.start()
         self.get_config.return_value = {}
@@ -47,7 +41,6 @@ class CLITestCase(unittest.TestCase):
         hndlr.setLevel(logging.INFO)
         logger.addHandler(hndlr)
 
-
     def tearDown(self):
         self.setup_logging_patch.stop()
         self.get_config_patch.stop()
@@ -55,4 +48,3 @@ class CLITestCase(unittest.TestCase):
         self.store_token_patch.stop()
 
         self.logger.removeHandler(self.hndlr)
-

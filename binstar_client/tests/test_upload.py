@@ -4,19 +4,20 @@ Created on Feb 18, 2014
 @author: sean
 '''
 from __future__ import unicode_literals
+
+import unittest
+from mock import patch
+
+from binstar_client import errors
 from binstar_client.scripts.cli import main
 from binstar_client.tests.fixture import CLITestCase
 from binstar_client.tests.urlmock import urlpatch
-import unittest
-from binstar_client import errors
-from mock import patch
+from binstar_client.utils.test.utils import data_dir
 
 
 class Test(CLITestCase):
-
     @urlpatch
     def test_upload_bad_package(self, registry):
-
         registry.register(method='HEAD', path='/', status=200)
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
         registry.register(method='GET', path='/package/eggs/foo', content='{}', status=404)
@@ -29,27 +30,23 @@ class Test(CLITestCase):
 
         registry.register(method='POST', path='/s3_url', status=201)
         registry.register(method='POST', path='/commit/eggs/foo/0.1/osx-64/foo-0.1-0.tar.bz2', status=200, content={})
-
-        main(['--show-traceback', 'upload', self.data_dir('foo-0.1-0.tar.bz2')], False)
-
+        main(['--show-traceback', 'upload', data_dir('foo-0.1-0.tar.bz2')], False)
         registry.assertAllCalled()
 
 
     @urlpatch
     def test_upload_bad_package_no_register(self, registry):
-
         registry.register(method='HEAD', path='/', status=200)
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
         registry.register(method='GET', path='/package/eggs/foo', status=404)
 
         with self.assertRaises(errors.UserError):
-            main(['--show-traceback', 'upload', '--no-register', self.data_dir('foo-0.1-0.tar.bz2')], False)
+            main(['--show-traceback', 'upload', '--no-register', data_dir('foo-0.1-0.tar.bz2')], False)
 
         registry.assertAllCalled()
 
     @urlpatch
     def test_upload_conda(self, registry):
-
         registry.register(method='HEAD', path='/', status=200)
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
         registry.register(method='GET', path='/package/eggs/foo', content='{}')
@@ -62,13 +59,12 @@ class Test(CLITestCase):
         registry.register(method='POST', path='/s3_url', status=201)
         registry.register(method='POST', path='/commit/eggs/foo/0.1/osx-64/foo-0.1-0.tar.bz2', status=200, content={})
 
-        main(['--show-traceback', 'upload', self.data_dir('foo-0.1-0.tar.bz2')], False)
+        main(['--show-traceback', 'upload', data_dir('foo-0.1-0.tar.bz2')], False)
 
         registry.assertAllCalled()
 
     @urlpatch
     def test_upload_pypi(self, registry):
-
         registry.register(method='HEAD', path='/', status=200)
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
         registry.register(method='GET', path='/package/eggs/test-package34', content='{}')
@@ -81,7 +77,7 @@ class Test(CLITestCase):
         registry.register(method='POST', path='/s3_url', status=201)
         registry.register(method='POST', path='/commit/eggs/test-package34/0.3.1/test_package34-0.3.1.tar.gz', status=200, content={})
 
-        main(['--show-traceback', 'upload', self.data_dir('test_package34-0.3.1.tar.gz')], False)
+        main(['--show-traceback', 'upload', data_dir('test_package34-0.3.1.tar.gz')], False)
 
         registry.assertAllCalled()
 
@@ -103,7 +99,7 @@ class Test(CLITestCase):
               '--package-type', 'file',
               '--package', 'test-package34',
               '--version', '0.3.1',
-              self.data_dir('test_package34-0.3.1.tar.gz')], False)
+              data_dir('test_package34-0.3.1.tar.gz')], False)
 
         registry.assertAllCalled()
 
@@ -124,7 +120,7 @@ class Test(CLITestCase):
 
         main(['--show-traceback', 'upload',
               '--package-type', 'project',
-              self.data_dir('bar')], False)
+              data_dir('bar')], False)
 
         registry.assertAllCalled()
 
@@ -142,7 +138,7 @@ class Test(CLITestCase):
 
         main(['--show-traceback', 'upload',
               '--package-type', 'project',
-              self.data_dir('foo.ipynb')], False)
+              data_dir('foo.ipynb')], False)
 
         registry.assertAllCalled()
 
@@ -160,7 +156,7 @@ class Test(CLITestCase):
         main(['--show-traceback', 'upload',
               '--package-type', 'project',
               '--user', 'alice',
-              self.data_dir('bar')], False)
+              data_dir('bar')], False)
 
         registry.assertAllCalled()
 
@@ -181,7 +177,7 @@ class Test(CLITestCase):
         main(['--show-traceback', '--token', 'abcdefg',
               'upload',
               '--package-type', 'project',
-              self.data_dir('bar')], False)
+              data_dir('bar')], False)
 
         registry.assertAllCalled()
 
@@ -198,7 +194,7 @@ class Test(CLITestCase):
         # don't overwrite
         bool_input.return_value = False
 
-        main(['--show-traceback', 'upload', '-i', self.data_dir('foo-0.1-0.tar.bz2')], False)
+        main(['--show-traceback', 'upload', '-i', data_dir('foo-0.1-0.tar.bz2')], False)
 
     @urlpatch
     def test_upload_private_package(self, registry):
@@ -216,7 +212,7 @@ class Test(CLITestCase):
         registry.register(method='POST', path='/s3_url', status=201)
         registry.register(method='POST', path='/commit/eggs/foo/0.1/osx-64/foo-0.1-0.tar.bz2', status=200, content={})
 
-        main(['--show-traceback', 'upload', '--private', self.data_dir('foo-0.1-0.tar.bz2')], False)
+        main(['--show-traceback', 'upload', '--private', data_dir('foo-0.1-0.tar.bz2')], False)
 
         registry.assertAllCalled()
 
@@ -229,7 +225,7 @@ class Test(CLITestCase):
         registry.register(method='POST', path='/package/eggs/foo', content='{"error": "You can not create a private package."}', status=400)
 
         with self.assertRaises(errors.BinstarError):
-            main(['--show-traceback', 'upload', '--private', self.data_dir('foo-0.1-0.tar.bz2')], False)
+            main(['--show-traceback', 'upload', '--private', data_dir('foo-0.1-0.tar.bz2')], False)
 
 
 if __name__ == '__main__':
