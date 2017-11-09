@@ -8,6 +8,7 @@
 * Sending package_type field on upload
 * Display correct file type when uploading
 * Refactor of `data_dir`/`data_path` function
+* Fixed token generation when server uses Kerberos authentication
 
 ## Version 1.6.5 (2017/09/08)
 
