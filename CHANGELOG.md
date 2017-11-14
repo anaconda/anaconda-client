@@ -9,6 +9,7 @@
 * Display correct file type when uploading
 * Refactor of `data_dir`/`data_path` function
 * Fixed token generation when server uses Kerberos authentication
+* Using session to upload packages when the storage is in the same server as the API
 
 ## Version 1.6.5 (2017/09/08)
 
