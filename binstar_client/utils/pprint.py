@@ -43,16 +43,16 @@ def pprint_package(package, access=True, full_name=True, revision=False):
     package['access'] = 'published' if package.get('published') else 'public' if package['public'] else 'private'
 
     if package.get('conda_platforms'):
-        package['conda_platforms'] = ', '.join([str(x) for x in package['conda_platforms'] if x is not None])
+        package['conda_platforms'] = ', '.join(str(x) for x in package['conda_platforms'] if x is not None)
 
     if not full_name:
         package['full_name'] = package['name']
 
     if package.get('package_types'):
-        package['package_types'] = ', '.join([str(x) for x in package['package_types'] if x is not None])
+        package['package_types'] = ', '.join(str(x) for x in package['package_types'] if x is not None)
 
     if package.get('builds'):
-        package['builds'] = ', '.join([str(x) for x in package['builds'] if x is not None])
+        package['builds'] = ', '.join(str(x) for x in package['builds'] if x is not None)
     else:
         package['builds'] = ''
 
