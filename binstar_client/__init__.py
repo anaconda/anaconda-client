@@ -5,6 +5,7 @@ import json
 import os
 import requests
 import warnings
+import urllib
 
 # For backwards compatibility
 from .errors import *
@@ -502,7 +503,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         :param attrs: any extra attributes about the file (eg. build=1, pyversion='2.7', os='osx')
 
         '''
-        url = '%s/stage/%s/%s/%s/%s' % (self.domain, login, package_name, release, basename)
+        url = '%s/stage/%s/%s/%s/%s' % (self.domain, login, package_name, release, urllib.quote_plus(basename))
         if attrs is None:
             attrs = {}
         if not isinstance(attrs, dict):
@@ -546,7 +547,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
             log.info('')
             raise errors.BinstarError('Error uploading package', s3res.status_code)
 
-        url = '%s/commit/%s/%s/%s/%s' % (self.domain, login, package_name, release, basename)
+        url = '%s/commit/%s/%s/%s/%s' % (self.domain, login, package_name, release, urllib.quote_plus(basename))
         payload = dict(dist_id=obj['dist_id'])
         data, headers = jencode(payload)
         res = self.session.post(url, data=data, headers=headers)
