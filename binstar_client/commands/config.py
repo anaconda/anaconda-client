@@ -48,8 +48,8 @@ prefix the option with `sites.site_name` e.g.
 ###### Common anaconda-client configuration options
 
   * `url`: Set the anaconda api url (default: https://api.anaconda.org)
-  * `verify_ssl`: Perform ssl validation on the https requests.
-    verify_ssl may be `True`, `False` or a path to a root CA pem file.
+  * `ssl_verify`: Perform ssl validation on the https requests.
+    ssl_verify may be `True`, `False` or a path to a root CA pem file.
 
 
 ###### Toggle auto_register when doing anaconda upload
