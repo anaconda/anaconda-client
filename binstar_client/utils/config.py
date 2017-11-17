@@ -62,6 +62,7 @@ CONFIGURATION_KEYS = [
     'sites',
     'url',
     'verify_ssl',
+    'ssl_verify',
 ]
 SEARCH_PATH = (
     dirs.site_data_dir,
@@ -108,7 +109,7 @@ def get_server_api(token=None, site=None, log_level=logging.INFO, cls=None, **kw
     else:
         token = load_token(url)
 
-    verify = config.get('verify_ssl', True)
+    verify = config.get('ssl_verify', config.get('verify_ssl', True))
     return cls(token, domain=url, verify=verify, **kwargs)
 
 

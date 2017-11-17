@@ -2,6 +2,9 @@
 
 # Next Release
 
+### Added
+* Deprecated verify_ssl in favor of ssl_verify
+
 ### Fixed
 
 * Using seconds on environment version

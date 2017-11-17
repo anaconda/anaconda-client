@@ -48,8 +48,8 @@ prefix the option with `sites.site_name` e.g.
 ###### Common anaconda-client configuration options
 
   * `url`: Set the anaconda api url (default: https://api.anaconda.org)
-  * `verify_ssl`: Perform ssl validation on the https requests.
-    verify_ssl may be `True`, `False` or a path to a root CA pem file.
+  * `ssl_verify`: Perform ssl validation on the https requests.
+    ssl_verify may be `True`, `False` or a path to a root CA pem file.
 
 
 ###### Toggle auto_register when doing anaconda upload
@@ -72,6 +72,11 @@ from binstar_client.utils.config import (SEARCH_PATH, USER_CONFIG, SYSTEM_CONFIG
                                          get_config, save_config, load_config, load_file_configs)
 log = logging.getLogger('binstar.config')
 
+DEPRECATED = {
+    'verify_ssl': 'Please use ssl_verify instead'
+}
+
+
 def recursive_set(config_data, key, value, ty):
     while '.' in key:
         prefix, key = key.split('.', 1)
@@ -79,6 +84,11 @@ def recursive_set(config_data, key, value, ty):
 
     if key not in CONFIGURATION_KEYS:
         log.warn('"%s" is not a known configuration key', key)
+
+    if key in DEPRECATED.keys():
+        message = "{} is deprecated: {}".format(key, DEPRECATED[key])
+        log.warn(message)
+
     config_data[key] = ty(value)
 
 def recursive_remove(config_data, key):
