@@ -16,8 +16,8 @@ def main(args):
     channels = aserver_api.list_channels(spec.user)
     label_text = 'label' if (args.from_label and args.to_label) else 'channel'
 
-    from_label = args.from_channel or args.from_label
-    to_label = args.to_channel or args.to_label
+    from_label = args.from_label
+    to_label = args.to_label
     if from_label not in channels:
         raise errors.UserError(
             "{} {} does not exist\n\tplease choose from: {}".format(
@@ -26,9 +26,11 @@ def main(args):
                 ', '.join(channels)
             ))
 
-    # TODO: add/replace from_channel => from_label and to_channel => to_label
-    files = aserver_api.copy(spec.user, spec.package, spec.version, spec._basename,
-                    to_owner=args.to_owner, from_channel=from_label, to_channel=to_label)
+    files = aserver_api.copy(
+        spec.user, spec.package, spec.version, spec._basename,
+        to_owner=args.to_owner, from_label=from_label, to_label=to_label
+    )
+
     for binstar_file in files:
         print("Copied file: %(basename)s" % binstar_file)
 
@@ -49,9 +51,6 @@ def add_parser(subparsers):
 
     _from = parser.add_mutually_exclusive_group()
     _to = parser.add_mutually_exclusive_group()
-
-    _from.add_argument('--from-channel', help='[DEPRECATED]Channel to copy packages from')
-    _to.add_argument('--to-channel', help='[DEPRECATED]Channel to put all packages into')
 
     _from.add_argument('--from-label', help='Label to copy packages from', default='main')
     _to.add_argument('--to-label', help='Label to put all packages into', default='main')
