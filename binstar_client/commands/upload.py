@@ -205,9 +205,9 @@ def upload_package(filename, package_type, aserver_api, username, args):
     version = get_version(args, release_attrs, package_type)
 
     package = add_package(aserver_api, args, username, package_name, package_attrs, package_type)
-    if package_type not in package.get('package_types'):
+    if package_type not in package.get('package_types', []):
         message = 'You already have a {} named \'{}\'. Use a different name for this {}.'.format(
-            PACKAGE_TYPES[package.get('package_types')[0]].lower(),
+            PACKAGE_TYPES[package.get('package_types', ['conda'])[0]].lower(),
             package_name,
             PACKAGE_TYPES[package_type].lower()
         )
