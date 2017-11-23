@@ -4,6 +4,7 @@
 
 ### Added
 * Deprecated verify_ssl in favor of ssl_verify
+* Validation to prevent uploading package with more than one type
 
 ### Fixed
 

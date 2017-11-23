@@ -116,7 +116,7 @@ def get_version(args, release_attrs, package_type):
 
 def add_package(aserver_api, args, username, package_name, package_attrs, package_type):
     try:
-        aserver_api.package(username, package_name)
+        return aserver_api.package(username, package_name)
     except errors.NotFound:
         if not args.auto_register:
             message = (
@@ -139,7 +139,7 @@ def add_package(aserver_api, args, username, package_name, package_attrs, packag
 
             public = not args.private
 
-            aserver_api.add_package(
+            return aserver_api.add_package(
                 username,
                 package_name,
                 summary,
@@ -204,7 +204,15 @@ def upload_package(filename, package_type, aserver_api, username, args):
     package_name = get_package_name(args, package_attrs, filename, package_type)
     version = get_version(args, release_attrs, package_type)
 
-    add_package(aserver_api, args, username, package_name, package_attrs, package_type)
+    package = add_package(aserver_api, args, username, package_name, package_attrs, package_type)
+    if package_type not in package.get('package_types', []):
+        message = 'You already have a {} named \'{}\'. Use a different name for this {}.'.format(
+            PACKAGE_TYPES[package.get('package_types', ['conda'])[0]].lower(),
+            package_name,
+            PACKAGE_TYPES[package_type].lower()
+        )
+        log.error(message)
+        raise errors.BinstarError(message)
     add_release(aserver_api, args, username, package_name, version, release_attrs)
     binstar_package_type = file_attrs.pop('binstar_package_type', package_type)
 
