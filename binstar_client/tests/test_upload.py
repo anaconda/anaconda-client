@@ -21,7 +21,8 @@ class Test(CLITestCase):
         registry.register(method='HEAD', path='/', status=200)
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
         registry.register(method='GET', path='/package/eggs/foo', content='{}', status=404)
-        registry.register(method='POST', path='/package/eggs/foo', content='{}', status=200)
+        content = {"package_types": ['conda']}
+        registry.register(method='POST', path='/package/eggs/foo', content=content, status=200)
         registry.register(method='GET', path='/release/eggs/foo/0.1', content='{}')
         registry.register(method='GET', path='/dist/eggs/foo/0.1/osx-64/foo-0.1-0.tar.bz2', status=404, content='{}')
 
@@ -49,7 +50,8 @@ class Test(CLITestCase):
     def test_upload_conda(self, registry):
         registry.register(method='HEAD', path='/', status=200)
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
-        registry.register(method='GET', path='/package/eggs/foo', content='{}')
+        content = {'package_types': ['conda']}
+        registry.register(method='GET', path='/package/eggs/foo', content=content)
         registry.register(method='GET', path='/release/eggs/foo/0.1', content='{}')
         registry.register(method='GET', path='/dist/eggs/foo/0.1/osx-64/foo-0.1-0.tar.bz2', status=404, content='{}')
 
@@ -67,7 +69,8 @@ class Test(CLITestCase):
     def test_upload_pypi(self, registry):
         registry.register(method='HEAD', path='/', status=200)
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
-        registry.register(method='GET', path='/package/eggs/test-package34', content='{}')
+        content = {'package_types': 'pypi'}
+        registry.register(method='GET', path='/package/eggs/test-package34', content=content)
         registry.register(method='GET', path='/release/eggs/test-package34/0.3.1', content='{}')
         registry.register(method='GET', path='/dist/eggs/test-package34/0.3.1/test_package34-0.3.1.tar.gz', status=404, content='{}')
 
@@ -85,7 +88,8 @@ class Test(CLITestCase):
     def test_upload_file(self, registry):
         registry.register(method='HEAD', path='/', status=200)
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
-        registry.register(method='GET', path='/package/eggs/test-package34', content='{}')
+        content = {'package_types': ['file']}
+        registry.register(method='GET', path='/package/eggs/test-package34', content=content)
         registry.register(method='GET', path='/release/eggs/test-package34/0.3.1', content='{}')
         registry.register(method='GET', path='/dist/eggs/test-package34/0.3.1/test_package34-0.3.1.tar.gz', status=404, content='{}')
 
@@ -96,10 +100,10 @@ class Test(CLITestCase):
         registry.register(method='POST', path='/commit/eggs/test-package34/0.3.1/test_package34-0.3.1.tar.gz', status=200, content={})
 
         main(['--show-traceback', 'upload',
-              '--package-type', 'file',
-              '--package', 'test-package34',
-              '--version', '0.3.1',
-              data_dir('test_package34-0.3.1.tar.gz')], False)
+            '--package-type', 'file',
+            '--package', 'test-package34',
+            '--version', '0.3.1',
+            data_dir('test_package34-0.3.1.tar.gz')], False)
 
         registry.assertAllCalled()
 
@@ -187,7 +191,8 @@ class Test(CLITestCase):
         # regression test for #364
         registry.register(method='HEAD', path='/', status=200)
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
-        registry.register(method='GET', path='/package/eggs/foo', content='{}')
+        content = {'package_types': 'conda'}
+        registry.register(method='GET', path='/package/eggs/foo', content=content)
         registry.register(method='GET', path='/release/eggs/foo/0.1', content='{}')
         registry.register(method='GET', path='/dist/eggs/foo/0.1/osx-64/foo-0.1-0.tar.bz2', status=200, content='{}')
 
@@ -202,7 +207,8 @@ class Test(CLITestCase):
         registry.register(method='HEAD', path='/', status=200)
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
         registry.register(method='GET', path='/package/eggs/foo', content='{}', status=404)
-        registry.register(method='POST', path='/package/eggs/foo', content='{}', status=200)
+        content = {'package_types': ['conda']}
+        registry.register(method='POST', path='/package/eggs/foo', content=content, status=200)
         registry.register(method='GET', path='/release/eggs/foo/0.1', content='{}')
         registry.register(method='GET', path='/dist/eggs/foo/0.1/osx-64/foo-0.1-0.tar.bz2', status=404, content='{}')
 
