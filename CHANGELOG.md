@@ -17,6 +17,7 @@
 * Fixed file uploads with special characters
 * Fixed problems with pretty printing
 * Removed from-channel and to-channel options from copy command
+* Raise exception after logging error message when package upload fails
 
 ## Version 1.6.5 (2017/09/08)
 
