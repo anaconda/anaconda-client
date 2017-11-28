@@ -45,6 +45,11 @@ log = logging.getLogger('binstar.upload')
 
 PACKAGE_TYPES = defaultdict(lambda: 'Package', {'env': 'Environment', 'ipynb': 'Notebook'})
 
+def verbose_package_type(pkg_type, lowercase=True):
+    verbose_type = PACKAGE_TYPES[pkg_type]
+    if lowercase:
+        verbose_type = verbose_type.lower()
+    return verbose_type
 
 def create_release(aserver_api, username, package_name, version, release_attrs, announce=None):
     aserver_api.add_release(username, package_name, version, [], announce, release_attrs)
@@ -181,19 +186,17 @@ def remove_existing_file(aserver_api, args, username, package_name, version, fil
 
 
 def upload_package(filename, package_type, aserver_api, username, args):
-    log.info('extracting {} attributes for upload ...'.format(PACKAGE_TYPES[package_type].lower()))
+    log.info('extracting {} attributes for upload ...'.format(verbose_package_type(package_type)))
     sys.stdout.flush()
     try:
-        package_attrs, release_attrs, file_attrs = get_attrs(package_type,
-                                                             filename,
-                                                             parser_args=args)
+        package_attrs, release_attrs, file_attrs = get_attrs(package_type, filename, parser_args=args)
     except Exception:
-        if args.show_traceback:
-            raise
-        message = 'Trouble reading metadata from {}. Is this a valid {} package'.format(
-            filename, package_type
+        message = 'Trouble reading metadata from {}. Is this a valid {} package?'.format(
+            filename, verbose_package_type(package_type)
         )
         log.error(message)
+        if args.show_traceback:
+            raise
         raise errors.BinstarError(message)
 
     if args.build_id:
@@ -207,9 +210,9 @@ def upload_package(filename, package_type, aserver_api, username, args):
     package = add_package(aserver_api, args, username, package_name, package_attrs, package_type)
     if package_type not in package.get('package_types', []):
         message = 'You already have a {} named \'{}\'. Use a different name for this {}.'.format(
-            PACKAGE_TYPES[package.get('package_types', ['conda'])[0]].lower(),
+            verbose_package_type(package.get('package_types', ['conda'])[0]),
             package_name,
-            PACKAGE_TYPES[package_type].lower()
+            verbose_package_type(package_type),
         )
         log.error(message)
         raise errors.BinstarError(message)
@@ -314,7 +317,7 @@ def main(args):
 
     for package, upload_info in uploaded_packages:
         package_url = upload_info.get('url', 'https://anaconda.org/%s/%s' % (username, package))
-        log.info("{} located at:\n{}\n".format(PACKAGE_TYPES[package_type], package_url))
+        log.info("{} located at:\n{}\n".format(verbose_package_type(package_type), package_url))
 
     for project_name, url in uploaded_projects:
         log.info("Project {} uploaded to {}.\n".format(project_name, url))
