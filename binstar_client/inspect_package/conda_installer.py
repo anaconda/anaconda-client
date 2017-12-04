@@ -8,6 +8,7 @@ log = logging.getLogger(__name__)
 
 PACKAGE_TYPE = 'installer'
 
+
 def is_installer(filename):
     # TODO: allow
     if not filename.endswith('.sh'):
@@ -35,8 +36,8 @@ def is_installer(filename):
 
     return False
 
-def inspect_package(filename, fileobj):
 
+def inspect_package(filename, fileobj, *args, **kwarg):
     # skip #!/bin/bash
     line = fileobj.readline()
     lines = []
@@ -50,26 +51,25 @@ def inspect_package(filename, fileobj):
     finally:
         log.error("Could not load installer info as YAML")
 
-
     summary = "Conda installer for platform %s" % installer_data.pop('PLAT')
     name = installer_data.pop('NAME')
     version = installer_data.pop('VER')
 
     attrs = installer_data
 
-    package_data = {'name': name,
-                    'summary': summary,
-                    'license': None,
-
-                    }
+    package_data = {
+        'name': name,
+        'summary': summary,
+        'license': None,
+    }
     release_data = {
-                    'version': version,
-                    'description': summary,
-                    }
+        'version': version,
+        'description': summary,
+    }
     file_data = {
-                 'basename': path.basename(filename),
-                 'attrs': attrs,
-                 'binstar_package_type': 'file',
-                 }
+        'basename': path.basename(filename),
+        'attrs': attrs,
+        'binstar_package_type': 'file',
+    }
 
     return package_data, release_data, file_data

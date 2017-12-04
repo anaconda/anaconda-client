@@ -1,15 +1,12 @@
 from __future__ import print_function, unicode_literals
-
-import unittest
-from os import path
-from binstar_client.inspect_package import pypi
-from pprint import pprint
 import os
 import shutil
 import tempfile
+import unittest
+from pprint import pprint
 
-def data_path(filename):
-    return path.join(path.dirname(__file__), 'data', filename)
+from binstar_client.inspect_package import pypi
+from binstar_client.utils.test.utils import data_dir
 
 
 expected_package_data = {'name': 'test-package34',
@@ -64,7 +61,7 @@ class Test(unittest.TestCase):
 
     maxDiff = None
     def test_sdist(self):
-        filename = data_path('test_package34-0.3.1.tar.gz')
+        filename = data_dir('test_package34-0.3.1.tar.gz')
         with open(filename, 'rb') as fd:
             package_data, version_data, file_data = pypi.inspect_pypi_package(filename, fd)
 
@@ -81,7 +78,7 @@ class Test(unittest.TestCase):
             self.assertEqual(expected_file_data[key], file_data[key])
 
     def test_bdist_wheel(self):
-        filename = data_path('test_package34-0.3.1-py2-none-any.whl')
+        filename = data_dir('test_package34-0.3.1-py2-none-any.whl')
 
         with open(filename, 'rb') as fd:
             package_data, version_data, file_data = pypi.inspect_pypi_package(filename, fd)
@@ -103,7 +100,7 @@ class Test(unittest.TestCase):
 
 
     def test_bdist_egg(self):
-        filename = data_path('test_package34-0.3.1-py2.7.egg')
+        filename = data_dir('test_package34-0.3.1-py2.7.egg')
 
         with open(filename, 'rb') as fd:
             package_data, version_data, file_data = pypi.inspect_pypi_package(filename, fd)
@@ -117,11 +114,11 @@ class Test(unittest.TestCase):
             self.assertEqual(expected_egg_file_data[key], file_data[key])
 
     def test_bdist_egg_dashed_path(self):
-        filename = data_path('test_package34-0.3.1-py2.7.egg')
+        filename = data_dir('test_package34-0.3.1-py2.7.egg')
         tmpdir = tempfile.gettempdir()
         dash_count = tmpdir.count('-')
         if dash_count == 0:
-            tmpdir = path.join(tmpdir, 'has-dash')
+            tmpdir = os.path.join(tmpdir, 'has-dash')
             try:
                 os.mkdir(tmpdir)
             except (IOError, OSError):
@@ -134,7 +131,7 @@ class Test(unittest.TestCase):
         except (IOError, OSError):
             raise unittest.SkipTest('Cannot copy package to temporary directory')
 
-        tmpfilename = path.join(tmpdir, 'test_package34-0.3.1-py2.7.egg')
+        tmpfilename = os.path.join(tmpdir, 'test_package34-0.3.1-py2.7.egg')
 
         with open(tmpfilename, 'rb') as fd:
             package_data, version_data, file_data = pypi.inspect_pypi_package(tmpfilename, fd)
@@ -154,7 +151,7 @@ class Test(unittest.TestCase):
                          file_data['attrs']['python_version'])
 
     def test_sdist_distutils(self):
-        filename = data_path('test_package34-distutils-0.3.1.tar.gz')
+        filename = data_dir('test_package34-distutils-0.3.1.tar.gz')
         with open(filename, 'rb') as fd:
             package_data, version_data, file_data = pypi.inspect_pypi_package(filename, fd)
 

@@ -141,11 +141,16 @@ def main(args):
         log.info(SCOPE_EXAMPLES)
 
     elif args.create:
+        auth_type = aserver_api.authentication_type()
 
         try:
             current_user = aserver_api.user()
             username = current_user['login']
         except:
+            if auth_type == 'kerberos':
+                log.error("Kerberos authentication needed, please use 'anaconda login' to authenticate")
+                return
+
             current_user = None
             sys.stderr.write('Username: ')
             sys.stderr.flush()
@@ -159,17 +164,32 @@ def main(args):
 
         for _ in range(3):
             try:
-                sys.stderr.write("Please re-enter %s's " % username)
-                password = getpass.getpass()
-
-                token = aserver_api.authenticate(username, password,
-                                           args.name, application_url=args.url,
-                                           scopes=scopes,
-                                           for_user=args.organization,
-                                           max_age=args.max_age,
-                                           created_with=' '.join(sys.argv),
-                                           strength=args.strength,
-                                           fail_if_already_exists=True)
+                if auth_type == 'kerberos':
+                    token = aserver_api._authenticate(
+                        None,
+                        args.name,
+                        application_url=args.url,
+                        scopes=scopes,
+                        for_user=args.organization,
+                        max_age=args.max_age,
+                        created_with=' '.join(sys.argv),
+                        strength=args.strength,
+                        fail_if_already_exists=True
+                    )
+                else:
+                    sys.stderr.write("Please re-enter %s's " % username)
+                    password = getpass.getpass()
+                    token = aserver_api.authenticate(
+                        username, password,
+                        args.name,
+                        application_url=args.url,
+                        scopes=scopes,
+                        for_user=args.organization,
+                        max_age=args.max_age,
+                        created_with=' '.join(sys.argv),
+                        strength=args.strength,
+                        fail_if_already_exists=True
+                    )
                 args.out.write(token)
                 break
             except errors.Unauthorized:

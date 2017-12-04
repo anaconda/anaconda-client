@@ -5,6 +5,11 @@ import json
 import os
 import requests
 import warnings
+try:
+    from urllib import quote
+except ImportError:
+    from urllib.parse import quote
+
 
 # For backwards compatibility
 from .errors import *
@@ -330,7 +335,8 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
                     public=True,
                     license_url=None,
                     license_family=None,
-                    attrs=None):
+                    attrs=None,
+                    package_type=None):
         '''
         Add a new package to a users account
 
@@ -347,6 +353,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
 
         attrs = attrs or {}
         attrs['summary'] = summary
+        attrs['package_types'] = [package_type]
         attrs['license'] = {
             'name': license,
             'url': license_url,
@@ -500,7 +507,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         :param attrs: any extra attributes about the file (eg. build=1, pyversion='2.7', os='osx')
 
         '''
-        url = '%s/stage/%s/%s/%s/%s' % (self.domain, login, package_name, release, basename)
+        url = '%s/stage/%s/%s/%s/%s' % (self.domain, login, package_name, release, quote(basename))
         if attrs is None:
             attrs = {}
         if not isinstance(attrs, dict):
@@ -531,7 +538,12 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         data_stream, headers = stream_multipart(s3data, files={'file':(basename, fd)},
                                                 callback=callback)
 
-        s3res = requests.post(s3url, data=data_stream, verify=self.session.verify, timeout=10 * 60 * 60, headers=headers)
+        request_method = self.session if s3url.startswith(self.domain) else requests
+        s3res = request_method.post(
+            s3url, data=data_stream,
+            verify=self.session.verify, timeout=10 * 60 * 60,
+            headers=headers
+        )
 
         if s3res.status_code != 201:
             log.info(s3res.text)
@@ -539,7 +551,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
             log.info('')
             raise errors.BinstarError('Error uploading package', s3res.status_code)
 
-        url = '%s/commit/%s/%s/%s/%s' % (self.domain, login, package_name, release, basename)
+        url = '%s/commit/%s/%s/%s/%s' % (self.domain, login, package_name, release, quote(basename))
         payload = dict(dist_id=obj['dist_id'])
         data, headers = jencode(payload)
         res = self.session.post(url, data=data, headers=headers)

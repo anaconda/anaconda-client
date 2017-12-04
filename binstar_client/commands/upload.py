@@ -20,6 +20,7 @@ import logging
 import os
 from os.path import exists
 import sys
+from collections import defaultdict
 
 import nbformat
 
@@ -41,6 +42,14 @@ except NameError:
 
 log = logging.getLogger('binstar.upload')
 
+
+PACKAGE_TYPES = defaultdict(lambda: 'Package', {'env': 'Environment', 'ipynb': 'Notebook'})
+
+def verbose_package_type(pkg_type, lowercase=True):
+    verbose_type = PACKAGE_TYPES[pkg_type]
+    if lowercase:
+        verbose_type = verbose_type.lower()
+    return verbose_type
 
 def create_release(aserver_api, username, package_name, version, release_attrs, announce=None):
     aserver_api.add_release(username, package_name, version, [], announce, release_attrs)
@@ -69,7 +78,7 @@ def determine_package_type(filename, args):
     if args.package_type:
         package_type = args.package_type
     else:
-        log.info('detecting package type ...')
+        log.info('detecting file type ...')
         sys.stdout.flush()
         package_type = detect_package_type(filename)
         if package_type is None:
@@ -112,7 +121,7 @@ def get_version(args, release_attrs, package_type):
 
 def add_package(aserver_api, args, username, package_name, package_attrs, package_type):
     try:
-        aserver_api.package(username, package_name)
+        return aserver_api.package(username, package_name)
     except errors.NotFound:
         if not args.auto_register:
             message = (
@@ -135,7 +144,7 @@ def add_package(aserver_api, args, username, package_name, package_attrs, packag
 
             public = not args.private
 
-            aserver_api.add_package(
+            return aserver_api.add_package(
                 username,
                 package_name,
                 summary,
@@ -143,7 +152,8 @@ def add_package(aserver_api, args, username, package_name, package_attrs, packag
                 public=public,
                 attrs=package_attrs,
                 license_url=package_attrs.get('license_url'),
-                license_family=package_attrs.get('license_family')
+                license_family=package_attrs.get('license_family'),
+                package_type=package_type,
             )
 
 
@@ -176,19 +186,17 @@ def remove_existing_file(aserver_api, args, username, package_name, version, fil
 
 
 def upload_package(filename, package_type, aserver_api, username, args):
-    log.info('extracting package attributes for upload ...')
+    log.info('extracting {} attributes for upload ...'.format(verbose_package_type(package_type)))
     sys.stdout.flush()
     try:
-        package_attrs, release_attrs, file_attrs = get_attrs(package_type,
-                                                             filename,
-                                                             parser_args=args)
+        package_attrs, release_attrs, file_attrs = get_attrs(package_type, filename, parser_args=args)
     except Exception:
-        if args.show_traceback:
-            raise
-        message = 'Trouble reading metadata from {}. Is this a valid {} package'.format(
-            filename, package_type
+        message = 'Trouble reading metadata from {}. Is this a valid {} package?'.format(
+            filename, verbose_package_type(package_type)
         )
         log.error(message)
+        if args.show_traceback:
+            raise
         raise errors.BinstarError(message)
 
     if args.build_id:
@@ -199,7 +207,15 @@ def upload_package(filename, package_type, aserver_api, username, args):
     package_name = get_package_name(args, package_attrs, filename, package_type)
     version = get_version(args, release_attrs, package_type)
 
-    add_package(aserver_api, args, username, package_name, package_attrs, package_type)
+    package = add_package(aserver_api, args, username, package_name, package_attrs, package_type)
+    if package_type not in package.get('package_types', []):
+        message = 'You already have a {} named \'{}\'. Use a different name for this {}.'.format(
+            verbose_package_type(package.get('package_types', ['conda'])[0]),
+            package_name,
+            verbose_package_type(package_type),
+        )
+        log.error(message)
+        raise errors.BinstarError(message)
     add_release(aserver_api, args, username, package_name, version, release_attrs)
     binstar_package_type = file_attrs.pop('binstar_package_type', package_type)
 
@@ -301,7 +317,7 @@ def main(args):
 
     for package, upload_info in uploaded_packages:
         package_url = upload_info.get('url', 'https://anaconda.org/%s/%s' % (username, package))
-        log.info("Package located at:\n%s\n" % package_url)
+        log.info("{} located at:\n{}\n".format(verbose_package_type(package_type), package_url))
 
     for project_name, url in uploaded_projects:
         log.info("Project {} uploaded to {}.\n".format(project_name, url))

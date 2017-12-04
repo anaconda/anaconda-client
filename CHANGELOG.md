@@ -1,5 +1,34 @@
 # CHANGELOG:
 
+# Next Release
+
+## Version 1.6.6 (2017/12/04)
+
+### Added
+* Deprecated verify_ssl in favor of ssl_verify
+* Validation to prevent uploading package with more than one type
+
+### Fixed
+
+* Using seconds on environment version
+* Sending package_type field on upload
+* Display correct file type when uploading
+* Refactor of `data_dir`/`data_path` function
+* Fixed token generation when server uses Kerberos authentication
+* Using session to upload packages when the storage is in the same server as the API
+* Fixed file uploads with special characters
+* Fixed problems with pretty printing
+* Removed from-channel and to-channel options from copy command
+* Raise exception after logging error message when package upload fails
+* Fixed installer detection
+
+## Version 1.6.5 (2017/09/08)
+
+### Fixed
+
+* Fixes to allow conda 3 to build
+* Removed unused dependency
+
 ## Version 1.6.4 (2017/09/08)
 
 ### Added

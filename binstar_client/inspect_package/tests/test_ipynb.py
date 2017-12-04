@@ -1,13 +1,9 @@
 
-from os import path
 import unittest
-
-from binstar_client.inspect_package.ipynb import IPythonNotebook, inspect_ipynb_package
 import io
 
-
-def data_path(filename):
-    return path.join(path.dirname(__file__), 'data', filename)
+from binstar_client.inspect_package.ipynb import IPythonNotebook, inspect_ipynb_package
+from binstar_client.utils.test.utils import data_dir
 
 
 class IPythonNotebookTestCase(unittest.TestCase):
@@ -22,13 +18,13 @@ class IPythonNotebookTestCase(unittest.TestCase):
         self.assertEqual(IPythonNotebook(b'na\xcc\x83o.ipynb', fileobj).name, 'nao')
 
     def test_version(self):
-        with open(data_path('notebook.ipynb')) as fileobj:
+        with open(data_dir('notebook.ipynb')) as fileobj:
             self.assertIsInstance(IPythonNotebook('notebook.ipynb', fileobj).version, str)
 
 
 class InspectIPYNBPackageTest(unittest.TestCase):
     def test_inspect_ipynb_package(self):
-        with open(data_path('notebook.ipynb')) as fileobj:
+        with open(data_dir('notebook.ipynb')) as fileobj:
             package_data, release_data, file_data = inspect_ipynb_package('notebook.ipynb', fileobj)
 
         self.assertEqual({
