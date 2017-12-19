@@ -62,14 +62,15 @@ If no, then an upload will fail if the package name does not already exist on th
 '''
 from __future__ import print_function
 
-from argparse import RawDescriptionHelpFormatter
-from ast import literal_eval
 import logging
 
+from argparse import RawDescriptionHelpFormatter
+
 from binstar_client.errors import ShowHelp, UserError
-import yaml
 from binstar_client.utils.config import (SEARCH_PATH, USER_CONFIG, SYSTEM_CONFIG, CONFIGURATION_KEYS,
                                          get_config, save_config, load_config, load_file_configs)
+from ..utils.yaml import yaml_load, yaml_dump
+
 log = logging.getLogger('binstar.config')
 
 DEPRECATED = {
@@ -101,19 +102,18 @@ def recursive_remove(config_data, key):
     del config_data[key]
 
 
-
 def main(args):
     config = get_config()
 
     if args.show:
-        log.info(yaml.safe_dump(config, default_flow_style=False))
+        log.info(yaml_dump(config))
         return
 
     if args.show_sources:
         config_files = load_file_configs(SEARCH_PATH)
         for path in config_files:
             log.info('==> %s <==', path)
-            log.info(yaml.safe_dump(config_files[path], default_flow_style=False))
+            log.info(yaml_dump(config_files[path]))
         return
 
     if args.get:
@@ -150,13 +150,12 @@ def main(args):
 def add_parser(subparsers):
     description = 'Anaconda client configuration'
     parser = subparsers.add_parser('config',
-                                      help=description,
-                                      description=description,
-                                      epilog=__doc__,
-                                      formatter_class=RawDescriptionHelpFormatter
-                                      )
+                                   help=description,
+                                   description=description,
+                                   epilog=__doc__,
+                                   formatter_class=RawDescriptionHelpFormatter)
 
-    parser.add_argument('--type', default=yaml.safe_load,
+    parser.add_argument('--type', default=str,
                         help='The type of the values in the set commands')
 
     agroup = parser.add_argument_group('actions')

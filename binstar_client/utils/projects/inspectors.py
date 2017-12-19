@@ -1,5 +1,6 @@
 import logging
-import yaml
+
+from ..yaml import yaml_load
 
 log = logging.getLogger('binstar.auth')
 
@@ -57,8 +58,8 @@ class ConfigurationInspector(object):
         try:
             if self.has_config():
                 with open(self.config_pfile.fullpath) as configfile:
-                    metadata['configuration'] = yaml.load(configfile)
-        except yaml.YAMLError:
+                    metadata['configuration'] = yaml_load(configfile)
+        except:
             log.warn("Could not parse configuration file.")
         return metadata
 

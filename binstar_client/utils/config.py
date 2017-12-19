@@ -17,11 +17,11 @@ try:
 except ImportError:
     from urllib.parse import quote_plus
 
-import yaml
-
 from binstar_client.utils.conda import CONDA_PREFIX, CONDA_ROOT
 from binstar_client.utils.appdirs import AppDirs, EnvAppDirs
 from binstar_client.errors import BinstarError
+
+from .yaml import yaml_load, yaml_dump
 
 
 def expandvars(path):
@@ -184,7 +184,7 @@ def remove_token(args):
 def load_config(config_file):
     if exists(config_file):
         with open(config_file) as fd:
-            data = yaml.load(fd)
+            data = yaml_load(fd)
             if data:
                 return data
 
@@ -251,7 +251,7 @@ def save_config(data, config_file):
             os.makedirs(data_dir)
 
         with open(config_file, 'w') as fd:
-            yaml.safe_dump(data, fd, default_flow_style=False)
+            yaml_dump(data, stream=fd)
     except EnvironmentError as exc:
         raise BinstarError('%s: %s' % (exc.filename, exc.strerror,))
 
