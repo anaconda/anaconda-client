@@ -21,7 +21,7 @@ requirements:
     - setuptools
     - pytz
     - six
-    - nbformat >= 4.4.0
+    - nbformat >=4.4.0
     - clyent >=1.2.2
     - requests >=2.9.1
     - ruamel_yaml <0.15
