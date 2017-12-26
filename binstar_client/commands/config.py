@@ -66,7 +66,7 @@ import logging
 
 from argparse import RawDescriptionHelpFormatter
 
-from builtins import str
+from six import text_type
 
 from binstar_client.errors import ShowHelp, UserError
 from binstar_client.utils.config import (SEARCH_PATH, USER_CONFIG, SYSTEM_CONFIG, CONFIGURATION_KEYS,
@@ -157,7 +157,7 @@ def add_parser(subparsers):
                                    epilog=__doc__,
                                    formatter_class=RawDescriptionHelpFormatter)
 
-    parser.add_argument('--type', default=str,
+    parser.add_argument('--type', default=text_type,
                         help='The type of the values in the set commands')
 
     agroup = parser.add_argument_group('actions')
