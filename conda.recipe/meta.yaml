@@ -20,6 +20,7 @@ requirements:
     - python
     - setuptools
     - pytz
+    - future
     - six
     - nbformat >=4.4.0
     - clyent >=1.2.0

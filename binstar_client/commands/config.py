@@ -66,6 +66,8 @@ import logging
 
 from argparse import RawDescriptionHelpFormatter
 
+from builtins import str
+
 from binstar_client.errors import ShowHelp, UserError
 from binstar_client.utils.config import (SEARCH_PATH, USER_CONFIG, SYSTEM_CONFIG, CONFIGURATION_KEYS,
                                          get_config, save_config, load_config, load_file_configs)
