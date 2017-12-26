@@ -6,7 +6,7 @@ from .decorators import memoize
 
 @memoize
 def get_yaml():
-    """Tries to import the """
+    """Tries to import the YAML library."""
     try:
         import ruamel_yaml as yaml
     except ImportError:                                         # pragma: no cover
