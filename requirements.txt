@@ -2,7 +2,7 @@ setuptools
 pytz
 six
 nbformat >=4.4.0
-clyent >=1.2.2
+clyent >=1.2.0
 requests >=2.9.1
 ruamel.yaml <0.15
 python-dateutil >=2.6.1
