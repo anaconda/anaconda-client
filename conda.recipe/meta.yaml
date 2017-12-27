@@ -19,11 +19,13 @@ requirements:
   run:
     - python
     - setuptools
-    - clyent >=1.2.2
-    - requests >=2.9.1
-    - pyyaml
-    - dateutil
     - pytz
+    - six
+    - nbformat >=4.4.0
+    - clyent >=1.2.0
+    - requests >=2.9.1
+    - ruamel_yaml <0.15
+    - python-dateutil >=2.6.1
 
 about:
   home: {{data.get('url')}}

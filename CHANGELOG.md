@@ -2,9 +2,14 @@
 
 # Next Release
 
+### Added
+
+* Replaced PyYAML with ruamel.yaml.
+
 ## Version 1.6.6 (2017/12/04)
 
 ### Added
+
 * Deprecated verify_ssl in favor of ssl_verify
 * Validation to prevent uploading package with more than one type
 
