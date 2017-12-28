@@ -8,7 +8,7 @@ source:
 
 build:
   entry_points:
-    - anaconda = binstar.scripts.cli:main
+    - anaconda = binstar_client.scripts.cli:main
     - binstar = binstar_client.scripts.cli:main
     - conda-server = binstar_client.scripts.cli:main
 
