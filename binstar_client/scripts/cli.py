@@ -56,7 +56,7 @@ def binstar_main(sub_command_module, args=None, exit=True, description=None, ver
     args = parser.parse_args(args)
 
     # Let clyent handle the logging
-    logger.disabled = True
+    logger.disabled = False
     logger.propagate = False
     logger.addHandler(logging.NullHandler())
     setup_logging(
