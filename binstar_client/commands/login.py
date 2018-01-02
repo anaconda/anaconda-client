@@ -17,7 +17,7 @@ from binstar_client.utils import get_config, get_server_api, store_token, \
 import platform
 
 
-log = logging.getLogger('binstar.login')
+logger = logging.getLogger('binstar.login')
 
 try:
     input = raw_input
@@ -35,10 +35,10 @@ def try_replace_token(authenticate, **kwargs):
         return authenticate(**kwargs)
     except errors.BinstarError as err:
         if kwargs.get('fail_if_already_exists') and len(err.args) > 1 and err.args[1] == 400:
-            log.warn('It appears you are already logged in from host %s' % socket.gethostname())
-            log.warn('Logging in again will remove the previous token. '
+            logger.warn('It appears you are already logged in from host %s' % socket.gethostname())
+            logger.warn('Logging in again will remove the previous token. '
                      ' (This could cause troubles with virtual machines with the same hostname)')
-            log.warn('Otherwise you can login again and specify a '
+            logger.warn('Otherwise you can login again and specify a '
                       'different hostname with "--hostname"')
             if bool_input("Would you like to continue"):
                 kwargs['fail_if_already_exists'] = False
@@ -90,7 +90,6 @@ def interactive_get_token(args, fail_if_already_exists=True):
         else:
             username = input('Username: ')
 
-
         password = getattr(args, 'login_password', None)
 
         for _ in range(3):
@@ -113,7 +112,7 @@ def interactive_get_token(args, fail_if_already_exists=True):
                 break
 
             except errors.Unauthorized:
-                log.error('Invalid Username password combination, please try again')
+                logger.error('Invalid Username password combination, please try again')
                 password = None
                 continue
 
@@ -135,7 +134,7 @@ def interactive_get_token(args, fail_if_already_exists=True):
 def interactive_login(args):
     token = interactive_get_token(args)
     store_token(token, args)
-    log.info('login successful')
+    logger.info('login successful')
 
 def main(args):
     interactive_login(args)

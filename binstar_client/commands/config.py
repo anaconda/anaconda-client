@@ -73,7 +73,7 @@ from binstar_client.utils.config import (SEARCH_PATH, USER_CONFIG, SYSTEM_CONFIG
                                          get_config, save_config, load_config, load_file_configs)
 from ..utils.yaml import yaml_load, yaml_dump
 
-log = logging.getLogger('binstar.config')
+logger = logging.getLogger('binstar.config')
 
 DEPRECATED = {
     'verify_ssl': 'Please use ssl_verify instead'
@@ -86,13 +86,14 @@ def recursive_set(config_data, key, value, ty):
         config_data = config_data.setdefault(prefix, {})
 
     if key not in CONFIGURATION_KEYS:
-        log.warn('"%s" is not a known configuration key', key)
+        logger.warn('"%s" is not a known configuration key', key)
 
     if key in DEPRECATED.keys():
         message = "{} is deprecated: {}".format(key, DEPRECATED[key])
-        log.warn(message)
+        logger.warn(message)
 
     config_data[key] = ty(value)
+
 
 def recursive_remove(config_data, key):
     while '.' in key:
@@ -108,26 +109,26 @@ def main(args):
     config = get_config()
 
     if args.show:
-        log.info(yaml_dump(config))
+        logger.info(yaml_dump(config))
         return
 
     if args.show_sources:
         config_files = load_file_configs(SEARCH_PATH)
         for path in config_files:
-            log.info('==> %s <==', path)
-            log.info(yaml_dump(config_files[path]))
+            logger.info('==> %s <==', path)
+            logger.info(yaml_dump(config_files[path]))
         return
 
     if args.get:
         if args.get in config:
-            log.info(config[args.get])
+            logger.info(config[args.get])
         else:
-            log.info("The value of '%s' is not set." % args.get)
+            logger.info("The value of '%s' is not set." % args.get)
         return
 
     if args.files:
-        log.info('User Config: %s' % USER_CONFIG)
-        log.info('System Config: %s' % SYSTEM_CONFIG)
+        logger.info('User Config: %s' % USER_CONFIG)
+        logger.info('System Config: %s' % SYSTEM_CONFIG)
         return
 
     config_file = USER_CONFIG if args.user else SYSTEM_CONFIG
@@ -141,7 +142,7 @@ def main(args):
         try:
             recursive_remove(config, key)
         except KeyError:
-            log.error("Key %s does not exist" % key)
+            logger.error("Key %s does not exist" % key)
 
     if not (args.set or args.remove):
         raise ShowHelp()
@@ -179,6 +180,5 @@ def add_parser(subparsers):
                         help='set a variable for this user')
     lgroup.add_argument('-s', '--system', '--site', action='store_false', dest='user',
                         help='set a variable for all users on this machine')
-
 
     parser.set_defaults(main=main, sub_parser=parser)

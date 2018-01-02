@@ -24,11 +24,11 @@ class CLITestCase(unittest.TestCase):
         self.get_config = self.get_config_patch.start()
         self.get_config.return_value = {}
 
-        self.load_token_patch = mock.patch('binstar_client.utils.load_token')
+        self.load_token_patch = mock.patch('binstar_client.utils.config.load_token')
         self.load_token = self.load_token_patch.start()
         self.load_token.return_value = '123'
 
-        self.store_token_patch = mock.patch('binstar_client.utils.store_token')
+        self.store_token_patch = mock.patch('binstar_client.utils.config.store_token')
         self.store_token = self.store_token_patch.start()
 
         self.setup_logging_patch = mock.patch('binstar_client.scripts.cli._setup_logging')
