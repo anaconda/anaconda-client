@@ -45,7 +45,6 @@ class Test(CLITestCase):
         )
         with self.assertRaises(BinstarError):
             main(['--show-traceback', 'auth', '--remove', 'tokenname', '-o', 'wrong_org'], False)
-        self.assertEqual('', self.stream.getvalue())
 
         remove_token.assertCalled()
 

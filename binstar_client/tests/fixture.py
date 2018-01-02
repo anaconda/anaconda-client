@@ -31,7 +31,7 @@ class CLITestCase(unittest.TestCase):
         self.store_token_patch = mock.patch('binstar_client.utils.store_token')
         self.store_token = self.store_token_patch.start()
 
-        self.setup_logging_patch = mock.patch('binstar_client.scripts.cli.setup_logging')
+        self.setup_logging_patch = mock.patch('binstar_client.scripts.cli._setup_logging')
         self.setup_logging_patch.start()
 
         self.logger = logger = logging.getLogger('binstar')
