@@ -119,7 +119,7 @@ def show_auths(authentications):
 
 
 def main(args):
-    aserver_api = get_server_api(args.token, args.site, args.log_level)
+    aserver_api = get_server_api(args.token, args.site)
     if args.info:
         data = aserver_api.authentication()
         log.info('Name: %s' % data['application'])

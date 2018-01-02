@@ -12,7 +12,7 @@ log = logging.getLogger('binstar.channel')
 
 
 def main(args, name, deprecated=False):
-    aserver_api = get_server_api(args.token, args.site, args.log_level)
+    aserver_api = get_server_api(args.token, args.site)
 
     if args.organization:
         owner = args.organization

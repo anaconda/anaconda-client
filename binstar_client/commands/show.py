@@ -41,7 +41,7 @@ def install_info(package, package_type):
 
 def main(args):
 
-    aserver_api = get_server_api(args.token, args.site, args.log_level)
+    aserver_api = get_server_api(args.token, args.site)
 
     spec = args.spec
     if spec._basename:

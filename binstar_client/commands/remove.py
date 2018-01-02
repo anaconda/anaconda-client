@@ -16,7 +16,7 @@ log = logging.getLogger('binstar.remove')
 
 def main(args):
 
-    aserver_api = get_server_api(args.token, args.site, args.log_level)
+    aserver_api = get_server_api(args.token, args.site)
 
     for spec in args.specs:
         try:

@@ -101,7 +101,7 @@ def add_download_parser(subparsers):
 
 
 def upload(args):
-    aserver_api = get_server_api(args.token, args.site, args.log_level)
+    aserver_api = get_server_api(args.token, args.site)
 
     uploader = Uploader(aserver_api, args.notebook, user=args.user, summary=args.summary,
                         version=args.version, thumbnail=args.thumbnail, name=args.name)

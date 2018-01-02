@@ -9,7 +9,7 @@ from binstar_client import errors
 log = logging.getLogger('binstar.whoami')
 
 def main(args):
-    aserver_api = get_server_api(args.token, args.site, args.log_level)
+    aserver_api = get_server_api(args.token, args.site)
 
     spec = args.spec
 

@@ -10,7 +10,7 @@ import logging
 log = logging.getLogger('binstar.whoami')
 
 def main(args):
-    aserver_api = get_server_api(args.token, args.site, args.log_level)
+    aserver_api = get_server_api(args.token, args.site)
 
     try:
         user = aserver_api.user()

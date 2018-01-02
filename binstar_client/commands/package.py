@@ -8,7 +8,7 @@ import logging
 log = logging.getLogger('binstar.package')
 def main(args):
 
-    aserver_api = get_server_api(args.token, args.site, args.log_level)
+    aserver_api = get_server_api(args.token, args.site)
     spec = args.spec
 
     owner = spec.user

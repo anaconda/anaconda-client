@@ -11,7 +11,7 @@ log = logging.getLogger('binstar.logout')
 
 def main(args):
 
-    aserver_api = get_server_api(args.token, args.site, args.log_level)
+    aserver_api = get_server_api(args.token, args.site)
     if aserver_api.token:
     # TODO: named 'application' because I was using the github model
     # Change it to name once we release the latest version of binstar server

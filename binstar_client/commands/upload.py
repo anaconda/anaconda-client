@@ -45,14 +45,17 @@ log = logging.getLogger('binstar.upload')
 
 PACKAGE_TYPES = defaultdict(lambda: 'Package', {'env': 'Environment', 'ipynb': 'Notebook'})
 
+
 def verbose_package_type(pkg_type, lowercase=True):
     verbose_type = PACKAGE_TYPES[pkg_type]
     if lowercase:
         verbose_type = verbose_type.lower()
     return verbose_type
 
+
 def create_release(aserver_api, username, package_name, version, release_attrs, announce=None):
     aserver_api.add_release(username, package_name, version, [], announce, release_attrs)
+
 
 def create_release_interactive(aserver_api, username, package_name, version, release_attrs):
     log.info('\nThe release %s/%s/%s does not exist' % (username, package_name, version))
@@ -69,6 +72,7 @@ def create_release_interactive(aserver_api, username, package_name, version, rel
         announce = ''
 
     aserver_api.add_release(username, package_name, version, [], announce, release_attrs)
+
 
 def determine_package_type(filename, args):
     """
@@ -88,6 +92,7 @@ def determine_package_type(filename, args):
         log.info(package_type)
 
     return package_type
+
 
 def get_package_name(args, package_attrs, filename, package_type):
     if args.package:
@@ -118,6 +123,7 @@ def get_version(args, release_attrs, package_type):
             raise errors.BinstarError(message)
         version = release_attrs['version']
     return version
+
 
 def add_package(aserver_api, args, username, package_name, package_attrs, package_type):
     try:
@@ -269,7 +275,7 @@ def get_convert_files(files):
 
 
 def main(args):
-    aserver_api = get_server_api(args.token, args.site, args.log_level)
+    aserver_api = get_server_api(args.token, args.site)
     aserver_api.check_server()
 
     if args.user:
@@ -329,8 +335,8 @@ def windows_glob(item):
     else:
         return [item]
 
-def add_parser(subparsers):
 
+def add_parser(subparsers):
     description = 'Upload packages to Anaconda Cloud'
     parser = subparsers.add_parser('upload',
                                    formatter_class=argparse.RawDescriptionHelpFormatter,

@@ -11,7 +11,7 @@ log = logging.getLogger('binstar.search')
 
 def search(args):
 
-    aserver_api = get_server_api(args.token, args.site, args.log_level)
+    aserver_api = get_server_api(args.token, args.site)
 
     packages = aserver_api.search(args.name, package_type=args.package_type, platform=args.platform)
     pprint_packages(packages, access=False)

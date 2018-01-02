@@ -15,7 +15,7 @@ from binstar_client.utils.spec import group_spec
 
 def main(args):
 
-    aserver_api = get_server_api(args.token, args.site, args.log_level)
+    aserver_api = get_server_api(args.token, args.site)
     spec = args.spec
     action = args.action
     verbose = args.log_level == logging.DEBUG

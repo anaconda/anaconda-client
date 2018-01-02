@@ -48,7 +48,7 @@ def add_parser(subparsers):
 
 
 def main(args):
-    aserver_api = get_server_api(args.token, args.site, args.log_level)
+    aserver_api = get_server_api(args.token, args.site)
     username, notebook = parse(args.handle)
     username = username or aserver_api.user()['login']
     downloader = Downloader(aserver_api, username, notebook)

@@ -5,6 +5,7 @@ import json
 import os
 import requests
 import warnings
+
 try:
     from urllib import quote
 except ImportError:
@@ -26,7 +27,7 @@ from .mixins.package import PackageMixin
 import logging
 import platform
 
-log = logging.getLogger('binstar')
+logger = logging.getLogger('binstar')
 
 from ._version import get_versions
 
@@ -546,9 +547,9 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         )
 
         if s3res.status_code != 201:
-            log.info(s3res.text)
-            log.info('')
-            log.info('')
+            logger.info(s3res.text)
+            logger.info('')
+            logger.info('')
             raise errors.BinstarError('Error uploading package', s3res.status_code)
 
         url = '%s/commit/%s/%s/%s/%s' % (self.domain, login, package_name, release, quote(basename))
