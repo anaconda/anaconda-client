@@ -22,7 +22,7 @@ def main(args, name, deprecated=False):
         owner = current_user['login']
 
     if deprecated:
-        logger.warn('channel command is deprecated in favor of label')
+        logger.warning('channel command is deprecated in favor of label')
 
     if args.copy:
         aserver_api.copy_channel(args.copy[0], owner, args.copy[1])
