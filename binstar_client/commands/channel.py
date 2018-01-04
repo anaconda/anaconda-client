@@ -1,14 +1,15 @@
-'''
+"""
 Manage your Anaconda Cloud channels
+"""
 
-'''
 from __future__ import unicode_literals, print_function
+
 from binstar_client.utils import get_server_api
 import functools
 import logging
 import argparse
 
-log = logging.getLogger('binstar.channel')
+logger = logging.getLogger('binstar.channel')
 
 
 def main(args, name, deprecated=False):
@@ -21,37 +22,37 @@ def main(args, name, deprecated=False):
         owner = current_user['login']
 
     if deprecated:
-        log.warn('channel command is deprecated in favor of label')
+        logger.warn('channel command is deprecated in favor of label')
 
     if args.copy:
         aserver_api.copy_channel(args.copy[0], owner, args.copy[1])
-        log.info("Copied {} {} to {}".format(name, *tuple(args.copy)))
+        logger.info("Copied {} {} to {}".format(name, *tuple(args.copy)))
     elif args.remove:
         aserver_api.remove_channel(args.remove, owner)
-        log.info("Removed {} {}".format(name, args.remove))
+        logger.info("Removed {} {}".format(name, args.remove))
     elif args.list:
-        log.info('{}s'.format(name.title()))
+        logger.info('{}s'.format(name.title()))
         for channel, info in aserver_api.list_channels(owner).items():
             if isinstance(info, int):  # OLD API
-                log.info((' + %s ' % channel))
+                logger.info((' + %s ' % channel))
             else:
-                log.info((' + %s ' % channel) + ('[locked]' if info['is_locked'] else ''))
+                logger.info((' + %s ' % channel) + ('[locked]' if info['is_locked'] else ''))
 
     elif args.show:
         info = aserver_api.show_channel(args.show, owner)
-        log.info('{} {} {}'.format(
+        logger.info('{} {} {}'.format(
             name.title(),
             args.show,
             ('[locked]' if info['is_locked'] else '')
         ))
         for f in info['files']:
-            log.info('  + %(full_name)s' % f)
+            logger.info('  + %(full_name)s' % f)
     elif args.lock:
         aserver_api.lock_channel(args.lock, owner)
-        log.info("{} {} is now locked".format(name.title(), args.lock))
+        logger.info("{} {} is now locked".format(name.title(), args.lock))
     elif args.unlock:
         aserver_api.unlock_channel(args.unlock, owner)
-        log.info("{} {} is now unlocked".format(name.title(), args.unlock))
+        logger.info("{} {} is now unlocked".format(name.title(), args.unlock))
     else:
         raise NotImplementedError()
 

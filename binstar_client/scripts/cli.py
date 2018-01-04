@@ -1,6 +1,6 @@
-'''
+"""
 Anaconda Cloud command line manager
-'''
+"""
 from __future__ import print_function, unicode_literals
 
 import logging
@@ -18,7 +18,7 @@ from binstar_client import errors
 from binstar_client.utils import USER_LOGDIR
 
 from clyent import add_subparser_modules
-
+from six import PY2
 
 logger = logging.getLogger('binstar')
 
@@ -53,6 +53,17 @@ def _custom_excepthook(logger, show_traceback=False):
     return excepthook
 
 
+class ConsoleFormatter(logging.Formatter):
+    def format(self, record):
+        fmt = '%(message)s' if record.levelno == logging.INFO \
+            else '[%(levelname)s] %(message)s'
+        if PY2:
+            self._fmt = fmt
+        else:
+            self._style._fmt = fmt
+        return super(ConsoleFormatter, self).format(record)
+
+
 def _setup_logging(logger, log_level=logging.INFO, show_traceback=False):
     logger.setLevel(logging.DEBUG)
 
@@ -67,7 +78,7 @@ def _setup_logging(logger, log_level=logging.INFO, show_traceback=False):
     console_handler = logging.StreamHandler()
     console_handler.setLevel(log_level)
 
-    console_handler.setFormatter(logging.Formatter('%(message)s'))
+    console_handler.setFormatter(ConsoleFormatter())
     file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)-8s %(name)-15s %(message)s'))
 
     logger.addHandler(console_handler)

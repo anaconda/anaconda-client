@@ -86,11 +86,11 @@ def recursive_set(config_data, key, value, ty):
         config_data = config_data.setdefault(prefix, {})
 
     if key not in CONFIGURATION_KEYS:
-        logger.warn('"%s" is not a known configuration key', key)
+        logger.warning('"%s" is not a known configuration key', key)
 
     if key in DEPRECATED.keys():
         message = "{} is deprecated: {}".format(key, DEPRECATED[key])
-        logger.warn(message)
+        logger.warning(message)
 
     config_data[key] = ty(value)
 

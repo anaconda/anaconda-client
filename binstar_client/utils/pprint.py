@@ -7,16 +7,16 @@ from __future__ import unicode_literals
 from dateutil.parser import parse as parse_date
 import logging
 
-log = logging.getLogger('binstar.pprint')
+logger = logging.getLogger('binstar.pprint')
 
 fmt_access = '     %(full_name)-25s | %(latest_version)8s | %(access)-12s | %(package_types)-15s | %(conda_platforms)-15s | %(builds)-10s'
 fmt_no_access = '     %(full_name)-25s | %(latest_version)8s | %(package_types)-15s | %(conda_platforms)-15s | %(builds)-10s'
 
 
 def pprint_orgs(orgs):
-    log.info('Organizations:')
+    logger.info('Organizations:')
     for org in orgs:
-        log.info('   + %(login)25s' % org)
+        logger.info('   + %(login)25s' % org)
 
 
 def pprint_package_header(access=True, revisions=False):
@@ -34,7 +34,7 @@ def pprint_package_header(access=True, revisions=False):
     if revisions:
         fmt = '%(revision)-6s | ' + fmt
 
-    log.info(fmt % package_header)
+    logger.info(fmt % package_header)
 
 
 def pprint_package(package, access=True, full_name=True, revision=False):
@@ -60,16 +60,16 @@ def pprint_package(package, access=True, full_name=True, revision=False):
     if revision:
         fmt = '%(revision)-6s | ' + fmt
 
-    log.info(fmt % package)
+    logger.info(fmt % package)
     if package.get('summary'):
-        log.info(' ' * 34 + '        : %s' % package.get('summary'))
+        logger.info(' ' * 34 + '        : %s' % package.get('summary'))
 
 
 def pprint_packages(packages, access=True, full_name=True, revisions=False):
     if packages:
-        log.info('Packages:')
+        logger.info('Packages:')
     else:
-        log.info('No packages found')
+        logger.info('No packages found')
 
     fmt = fmt_access if access else fmt_no_access
     if revisions:
@@ -86,7 +86,7 @@ def pprint_packages(packages, access=True, full_name=True, revisions=False):
         'builds': '-' * 10
     }
 
-    log.info(fmt % package_header)
+    logger.info(fmt % package_header)
 
     for package in sorted(packages, key=lambda pkg: pkg['full_name'] if full_name else pkg['name']):
         pprint_package(package, access, full_name, revision=revisions)
@@ -94,16 +94,16 @@ def pprint_packages(packages, access=True, full_name=True, revisions=False):
 
 def pprint_user(user):
     user = user.copy()
-    log.info('Username: %s', user.pop('login'))
-    log.info('Member since: %s', parse_date(user.pop('created_at')).ctime())
+    logger.info('Username: %s', user.pop('login'))
+    logger.info('Member since: %s', parse_date(user.pop('created_at')).ctime())
 
     for key_value in user.items():
-        log.info('  +%s: %s' % key_value)
+        logger.info('  +%s: %s' % key_value)
 
 
 def pprint_collections(collections):
     if collections:
-        log.info('Collections:')
+        logger.info('Collections:')
     for collection in collections:
         collection['permission'] = 'public' if collection['public'] else 'private'
-        log.info('   + %(name)25s: [%(permission)s] %(description)s' % collection)
+        logger.info('   + %(name)25s: [%(permission)s] %(description)s' % collection)

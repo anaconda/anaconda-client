@@ -1,14 +1,14 @@
 from __future__ import print_function
 
-from binstar_client import errors
 import logging
 import os
 import shutil
 import sys
 import tempfile
 
+from binstar_client import errors
 
-log = logging.getLogger('binstar.projects.upload')
+logger = logging.getLogger('binstar.projects.upload')
 
 
 class _TmpDir(object):

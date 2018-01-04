@@ -1,12 +1,12 @@
-'''
+"""
 Search Anaconda Cloud for packages
-'''
+"""
 import logging
 
 from binstar_client.utils import get_server_api
 from binstar_client.utils.pprint import pprint_packages
 
-log = logging.getLogger('binstar.search')
+logger = logging.getLogger('binstar.search')
 
 
 def search(args):
@@ -15,8 +15,8 @@ def search(args):
 
     packages = aserver_api.search(args.name, package_type=args.package_type, platform=args.platform)
     pprint_packages(packages, access=False)
-    log.info("Found %i packages" % len(packages))
-    log.info("\nRun 'anaconda show <USER/PACKAGE>' to get installation details")
+    logger.info("Found %i packages" % len(packages))
+    logger.info("\nRun 'anaconda show <USER/PACKAGE>' to get installation details")
 
 
 def add_parser(subparsers):

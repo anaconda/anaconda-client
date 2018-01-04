@@ -35,7 +35,7 @@ import pytz
 from binstar_client import errors
 import logging
 
-log = logging.getLogger('binstar.auth')
+logger = logging.getLogger('binstar.auth')
 
 try:
     input = raw_input
@@ -86,9 +86,9 @@ def show_auths(authentications):
               'scopes':'Scopes'}
 
     template = '%(id)-25s | %(application)-35s | %(remote_addr)-20s | %(hostname)-25s | %(expires)-15s | %(scopes)-25s'
-    log.info('')
-    log.info(template % header)
-    log.info('%s-+-%s-+-%s-+-%s-+-%s-+-%s' % ('-' * 25, '-' * 35, '-' * 20, '-' * 25, '-' * 15, '-' * 25))
+    logger.info('')
+    logger.info(template % header)
+    logger.info('%s-+-%s-+-%s-+-%s-+-%s-+-%s' % ('-' * 25, '-' * 35, '-' * 20, '-' * 25, '-' * 15, '-' * 25))
 
     for auth in authentications:
         if auth['expires']:
@@ -103,7 +103,7 @@ def show_auths(authentications):
             for scope in scope_items:
                 if first_time:
                     auth['scopes'] = scope
-                    log.info(template % auth)
+                    logger.info(template % auth)
                     first_time = False
                 else:
                     auth['id'] = ''
@@ -112,33 +112,33 @@ def show_auths(authentications):
                     auth['hostname'] = ''
                     auth['expires'] = ''
                     auth['scopes'] = scope
-                    log.info(template % auth)
+                    logger.info(template % auth)
         else:
             auth['scopes'] = 'NO_SCOPE'
-            log.info(template % auth)
+            logger.info(template % auth)
 
 
 def main(args):
     aserver_api = get_server_api(args.token, args.site)
     if args.info:
         data = aserver_api.authentication()
-        log.info('Name: %s' % data['application'])
-        log.info('Id: %s' % data['id'])
+        logger.info('Name: %s' % data['application'])
+        logger.info('Id: %s' % data['id'])
     if args.list:
         show_auths(aserver_api.authentications())
         return
     elif args.remove:
         for auth_name in args.remove:
             aserver_api.remove_authentication(auth_name, args.organization)
-            log.info("Removed token %s" % auth_name)
+            logger.info("Removed token %s" % auth_name)
         return
     elif args.list_scopes:
         scopes = aserver_api.list_scopes()
         for key in sorted(scopes):
-            log.info(key)
-            log.info('  ' + scopes[key])
-            log.info('')
-        log.info(SCOPE_EXAMPLES)
+            logger.info(key)
+            logger.info('  ' + scopes[key])
+            logger.info('')
+        logger.info(SCOPE_EXAMPLES)
 
     elif args.create:
         auth_type = aserver_api.authentication_type()
@@ -148,7 +148,7 @@ def main(args):
             username = current_user['login']
         except:
             if auth_type == 'kerberos':
-                log.error("Kerberos authentication needed, please use 'anaconda login' to authenticate")
+                logger.error("Kerberos authentication needed, please use 'anaconda login' to authenticate")
                 return
 
             current_user = None
@@ -158,9 +158,9 @@ def main(args):
 
         scopes = [scope for scopes in args.scopes for scope in scopes.split()]
         if not scopes:
-            log.warn("You have not specified the scope of this token with the '--scopes' argument.")
-            log.warn("This token will grant full access to %s's account" % (args.organization or username))
-            log.warn("Use the --list-scopes option to see a listing of your options")
+            logger.warning("You have not specified the scope of this token with the '--scopes' argument.")
+            logger.warning("This token will grant full access to %s's account" % (args.organization or username))
+            logger.warning("Use the --list-scopes option to see a listing of your options")
 
         for _ in range(3):
             try:
@@ -193,7 +193,7 @@ def main(args):
                 args.out.write(token)
                 break
             except errors.Unauthorized:
-                log.error('Invalid Username password combination, please try again')
+                logger.error('Invalid Username password combination, please try again')
                 continue
 
 

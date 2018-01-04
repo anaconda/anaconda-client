@@ -35,10 +35,10 @@ def try_replace_token(authenticate, **kwargs):
         return authenticate(**kwargs)
     except errors.BinstarError as err:
         if kwargs.get('fail_if_already_exists') and len(err.args) > 1 and err.args[1] == 400:
-            logger.warn('It appears you are already logged in from host %s' % socket.gethostname())
-            logger.warn('Logging in again will remove the previous token. '
+            logger.warning('It appears you are already logged in from host %s' % socket.gethostname())
+            logger.warning('Logging in again will remove the previous token. '
                      ' (This could cause troubles with virtual machines with the same hostname)')
-            logger.warn('Otherwise you can login again and specify a '
+            logger.warning('Otherwise you can login again and specify a '
                       'different hostname with "--hostname"')
             if bool_input("Would you like to continue"):
                 kwargs['fail_if_already_exists'] = False

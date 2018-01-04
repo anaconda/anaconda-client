@@ -1,8 +1,8 @@
-'''
+"""
 Usage:
     anaconda download notebook
     anaconda download user/notebook
-'''
+"""
 
 from __future__ import unicode_literals
 
@@ -13,7 +13,7 @@ from binstar_client import errors
 from binstar_client.utils import get_server_api
 from binstar_client.utils.notebook import Downloader, parse, has_environment
 
-log = logging.getLogger("binstar.download")
+logger = logging.getLogger("binstar.download")
 
 
 def add_parser(subparsers):
@@ -54,11 +54,11 @@ def main(args):
     downloader = Downloader(aserver_api, username, notebook)
     try:
         download_info = downloader(output=args.output, force=args.force)
-        log.info("{} has been downloaded as {}.".format(args.handle, download_info[0]))
+        logger.info("{} has been downloaded as {}.".format(args.handle, download_info[0]))
         if has_environment(download_info[0]):
-            log.info("{} has an environment embedded.".format(download_info[0]))
-            log.info("Run:")
-            log.info("    conda env create {}".format(download_info[0]))
-            log.info("To install the environment in your system")
+            logger.info("{} has an environment embedded.".format(download_info[0]))
+            logger.info("Run:")
+            logger.info("    conda env create {}".format(download_info[0]))
+            logger.info("To install the environment in your system")
     except (errors.DestionationPathExists, errors.NotFound, errors.BinstarError, OSError) as err:
-        log.info(err)
+        logger.info(err)
