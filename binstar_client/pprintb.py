@@ -1,22 +1,17 @@
-'''
-Created on May 7, 2013
+from pprint import pformat
 
-@author: sean
-'''
-from __future__ import print_function
-from pprint import pprint
 
 def package_list(lst, verbose=True):
     if verbose:
-        pprint(lst)
+        result = pformat(lst)
     else:
-        for pkg in lst:
-            print('%-25s %s' % (pkg['full_name'], pkg['summary']))
+        result = '\n'.join('%-25s %s' % (pkg['full_name'], pkg['summary']) for pkg in lst)
+    return result
+
 
 def user_list(lst, verbose=True):
     if verbose:
-        pprint(lst)
+        result = pformat(lst)
     else:
-        for user in lst:
-            print('%-25s %s' % (user['login'], user['name']))
-
+        result = '\n'.join('%-25s %s' % (user['login'], user['name']) for user in lst)
+    return result

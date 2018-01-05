@@ -24,6 +24,9 @@ from binstar_client.errors import BinstarError
 from .yaml import yaml_load, yaml_dump
 
 
+logger = logging.getLogger('binstar')
+
+
 def expandvars(path):
     environ = dict(CONDA_ROOT=CONDA_ROOT, CONDA_PREFIX=CONDA_PREFIX)
     environ.update(os.environ)
@@ -33,8 +36,6 @@ def expandvars(path):
 def expand(path):
     return abspath(expanduser(expandvars(path)))
 
-
-log = logging.getLogger('binstar')
 
 if 'BINSTAR_CONFIG_DIR' in os.environ:
     dirs = EnvAppDirs('binstar', 'ContinuumIO', os.environ['BINSTAR_CONFIG_DIR'])
@@ -84,7 +85,7 @@ def recursive_update(d, u):
     return d
 
 
-def get_server_api(token=None, site=None, log_level=logging.INFO, cls=None, **kwargs):
+def get_server_api(token=None, site=None, cls=None, **kwargs):
     """
     Get the anaconda server api class
     """
@@ -95,15 +96,15 @@ def get_server_api(token=None, site=None, log_level=logging.INFO, cls=None, **kw
     config = get_config(remote_site=site)
     url = config.get('url', DEFAULT_URL)
 
-    if log_level >= logging.INFO:
-        sys.stderr.write("Using Anaconda API: %s\n" % url)
+    logger.info("Using Anaconda API: %s", url)
+
     if token:
-        log.debug("Using token from command line args")
+        logger.debug("Using token from command line args")
     elif 'BINSTAR_API_TOKEN' in os.environ:
-        log.debug("Using token from environment variable BINSTAR_API_TOKEN")
+        logger.debug("Using token from environment variable BINSTAR_API_TOKEN")
         token = os.environ['BINSTAR_API_TOKEN']
     elif 'ANACONDA_API_TOKEN' in os.environ:
-        log.debug("Using token from environment variable ANACONDA_API_TOKEN")
+        logger.debug("Using token from environment variable ANACONDA_API_TOKEN")
         token = os.environ['ANACONDA_API_TOKEN']
 
     else:
@@ -126,10 +127,9 @@ def get_binstar(args=None, cls=None):
     )
 
     token = getattr(args, 'token', None)
-    log_level = getattr(args, 'log_level', logging.INFO)
     site = getattr(args, 'site', None)
 
-    aserver_api = get_server_api(token, site, log_level, cls)
+    aserver_api = get_server_api(token, site, cls)
     return aserver_api
 
 
@@ -160,15 +160,15 @@ def load_token(url):
     for token_dir in TOKEN_DIRS:
         tokenfile = join(token_dir, '%s.token' % quote_plus(url))
         if isfile(tokenfile):
-            log.debug("Found login token: {}".format(tokenfile))
+            logger.debug("Found login token: {}".format(tokenfile))
             with open(tokenfile) as fd:
                 token = fd.read().strip()
 
             if token:
                 return token
             else:
-                log.debug("Token file is empty: {}".format(tokenfile))
-                log.debug("Removing file: {}".format(tokenfile))
+                logger.debug("Token file is empty: {}".format(tokenfile))
+                logger.debug("Removing file: {}".format(tokenfile))
                 os.unlink(tokenfile)
 
 
@@ -236,7 +236,7 @@ def get_config(user=True, site=True, remote_site=None):
     if remote_site:
         remote_site = str(remote_site)
         if remote_site not in sites:
-            log.warn("Remote site alias %s does not exist in the config file" % remote_site)
+            logger.warning("Remote site alias %s does not exist in the config file" % remote_site)
         else:
             recursive_update(config, sites.get(remote_site, {}))
 

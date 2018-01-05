@@ -1,11 +1,12 @@
-'''
+"""
 Package type detection and meta-data extraction
-'''
+"""
 from __future__ import print_function, unicode_literals
 
 import logging
-from os import path
 import tarfile
+
+from os import path
 
 from binstar_client.inspect_package.conda import inspect_conda_package
 from binstar_client.inspect_package import conda_installer
@@ -14,10 +15,8 @@ from binstar_client.inspect_package.r import inspect_r_package
 from binstar_client.inspect_package.ipynb import inspect_ipynb_package
 from binstar_client.inspect_package.env import inspect_env_package
 
-log = logging.getLogger('binstar.detect')
-#===============================================================================
-#
-#===============================================================================
+logger = logging.getLogger('binstar.detect')
+
 
 def file_handler(filename, fileobj, *args, **kwargs):
     return ({}, {'description': ''},
@@ -35,21 +34,21 @@ detectors = {
 
 
 def is_environment(filename):
-    log.debug("Testing if environment file ..")
+    logger.debug("Testing if environment file ..")
     if filename.endswith('.yml') or filename.endswith('.yaml'):
         return True
-    log.debug("No environment file")
+    logger.debug("No environment file")
 
 
 def is_ipynb(filename):
-    log.debug("Testing if ipynb file ..")
+    logger.debug("Testing if ipynb file ..")
     if filename.endswith('.ipynb'):
         return True
-    log.debug("No ipynb file")
+    logger.debug("No ipynb file")
 
 
 def is_project(filename):
-    log.debug("Testing if project ..")
+    logger.debug("Testing if project ..")
 
     def is_python_file():
         return filename.endswith('.py')
@@ -59,11 +58,11 @@ def is_project(filename):
 
     if is_directory() or is_python_file():
         return True
-    log.debug("Not a project")
+    logger.debug("Not a project")
 
 
 def is_conda(filename):
-    log.debug("Testing if conda package ..")
+    logger.debug("Testing if conda package ..")
     
     if filename.endswith('.tar.bz2'):  # Could be a conda package
         try:
@@ -74,31 +73,32 @@ def is_conda(filename):
                 else:
                     raise KeyError
         except KeyError:
-            log.debug("Not conda  package no 'info/index.json' file in the tarball")
+            logger.debug("Not conda  package no 'info/index.json' file in the tarball")
             return False
         else:
-            log.debug("This is a conda package")
+            logger.debug("This is a conda package")
             return True
-    log.debug("Not conda package (file ext is not .tar.bz2)")
+    logger.debug("Not conda package (file ext is not .tar.bz2)")
 
 
 def is_pypi(filename):
-    log.debug("Testing if pypi package ..")
+    logger.debug("Testing if pypi package ..")
     if filename.endswith('.whl'):
-        log.debug("This is a pypi wheel package")
+        logger.debug("This is a pypi wheel package")
         return True
     if filename.endswith('.tar.gz') or filename.endswith('.tgz'):  # Could be a setuptools sdist or r source package
         with tarfile.open(filename) as tf:
             if any(name.endswith('/PKG-INFO') for name in tf.getnames()):
                 return True
             else:
-                log.debug("This not is a pypi package (no '/PKG-INFO' in tarball)")
+                logger.debug("This not is a pypi package (no '/PKG-INFO' in tarball)")
                 return False
 
-    log.debug("This not is a pypi package (expected .tgz, .tar.gz or .whl)")
+    logger.debug("This not is a pypi package (expected .tgz, .tar.gz or .whl)")
+
 
 def is_r(filename):
-    log.debug("Testing if R package ..")
+    logger.debug("Testing if R package ..")
     if filename.endswith('.tar.gz') or filename.endswith('.tgz'):  # Could be a setuptools sdist or r source package
         with tarfile.open(filename) as tf:
 
@@ -106,9 +106,10 @@ def is_r(filename):
                 any(name.endswith('/NAMESPACE') for name in tf.getnames())):
                 return True
             else:
-                log.debug("This not is an R package (no '*/DESCRIPTION' and '*/NAMESPACE' files).")
+                logger.debug("This not is an R package (no '*/DESCRIPTION' and '*/NAMESPACE' files).")
     else:
-        log.debug("This not is an R package (expected .tgz, .tar.gz).")
+        logger.debug("This not is an R package (expected .tgz, .tar.gz).")
+
 
 def detect_package_type(filename):
     if isinstance(filename, bytes):
