@@ -153,11 +153,6 @@ def binstar_main(sub_command_module, args=None, exit=True, description=None, ver
             raise SystemExit(1)
         else:
             return 1
-    except errors.BinstarError as e:
-        if args.show_traceback:
-            logger.error('', exc_info=e)
-        else:
-            logger.error('%s', e)
 
 
 def main(args=None, exit=True):
