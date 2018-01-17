@@ -7,6 +7,10 @@
 * Refactored logging.
 * Replaced PyYAML with ruamel.yaml.
 
+###
+
+* Fixed logging of error messages.
+
 ## Version 1.6.6 (2017/12/04)
 
 ### Added

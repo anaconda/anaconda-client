@@ -6,19 +6,22 @@ from __future__ import print_function, unicode_literals
 import logging
 import sys
 
+import requests
+
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from os import makedirs
 from os.path import join, exists, isfile
 from logging.handlers import RotatingFileHandler
+
+from clyent import add_subparser_modules
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
+from six import PY2
 
 from binstar_client import __version__ as version
 from binstar_client import commands as command_module
 from binstar_client.commands.login import interactive_login
 from binstar_client import errors
 from binstar_client.utils import USER_LOGDIR
-
-from clyent import add_subparser_modules
-from six import PY2
 
 logger = logging.getLogger('binstar')
 
@@ -42,13 +45,13 @@ def file_or_token(value):
 
 def _custom_excepthook(logger, show_traceback=False):
     def excepthook(exc_type, exc_value, exc_traceback):
-        if issubclass(exc_type, KeyboardInterrupt) or issubclass(exc_type, errors.BinstarError):
+        if issubclass(exc_type, KeyboardInterrupt):
             return
 
         if show_traceback:
             logger.error('', exc_info=(exc_type, exc_value, exc_traceback))
         else:
-            logger.error('Error: %s', exc_value)
+            logger.error('%s', exc_value)
 
     return excepthook
 
@@ -64,7 +67,7 @@ class ConsoleFormatter(logging.Formatter):
         return super(ConsoleFormatter, self).format(record)
 
 
-def _setup_logging(logger, log_level=logging.INFO, show_traceback=False):
+def _setup_logging(logger, log_level=logging.INFO, show_traceback=False, disable_ssl_warnings=False):
     logger.setLevel(logging.DEBUG)
 
     if not exists(USER_LOGDIR):
@@ -86,9 +89,14 @@ def _setup_logging(logger, log_level=logging.INFO, show_traceback=False):
 
     sys.excepthook = _custom_excepthook(logger, show_traceback=show_traceback)
 
+    if disable_ssl_warnings:
+        requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+
 
 def add_default_arguments(parser, version=None):
     output_group = parser.add_argument_group('output')
+    output_group.add_argument('--disable-ssl-warnings', action='store_true', default=False,
+                              help='Disable SSL warnings (default: %(default)s)')
     output_group.add_argument('--show-traceback', action='store_true',
                               help='Show the full traceback for chalmers user errors (default: %(default)s)')
     output_group.add_argument('-v', '--verbose',
@@ -120,7 +128,8 @@ def binstar_main(sub_command_module, args=None, exit=True, description=None, ver
 
     args = parser.parse_args(args)
 
-    _setup_logging(logger, log_level=args.log_level, show_traceback=args.show_traceback)
+    _setup_logging(logger, log_level=args.log_level, show_traceback=args.show_traceback,
+                   disable_ssl_warnings=args.disable_ssl_warnings)
 
     try:
         try:
