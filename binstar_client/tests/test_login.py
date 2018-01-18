@@ -19,6 +19,7 @@ except ImportError:
 else:
     have_kerberos = True
 
+
 class Test(CLITestCase):
     @patch('binstar_client.commands.login.store_token')
     @patch('getpass.getpass')
@@ -100,7 +101,3 @@ class Test(CLITestCase):
         urls.assertAllCalled()
         self.assertTrue(store_token.called)
         self.assertEqual(store_token.call_args[0][0], 'a-token')
-
-
-if __name__ == '__main__':
-    unittest.main()

@@ -1,45 +1,36 @@
 from __future__ import unicode_literals
 
-from os.path import join, exists
 import os
-import unittest
 import shutil
 import tempfile
-import subprocess
-import sys
 
-from binstar_client.scripts import cli
+from os.path import join, exists
+from operator import delitem
+
+import mock
+
+from binstar_client.scripts.cli import main
 from binstar_client.tests.fixture import CLITestCase
 
 
 class Test(CLITestCase):
-
     def test_write_env(self):
         tmpdir = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, tmpdir)
 
-        env = dict(os.environ)
-        env[str('BINSTAR_CONFIG_DIR')] = str(tmpdir)
+        with mock.patch('binstar_client.commands.config.USER_CONFIG', join(tmpdir, 'config.yaml')), \
+             mock.patch('binstar_client.commands.config.SEARCH_PATH', [tmpdir]):
+            main(['config', '--set', 'url', 'http://localhost:5000'], False)
 
-        def main(*args):
-            return subprocess.check_output((sys.executable, cli.__file__) + args, env=env)
+            self.assertTrue(exists(join(tmpdir, 'config.yaml')))
 
-        main('config', '--set', 'url', 'http://localhost:5000')
+            with open(join(tmpdir, 'config.yaml')) as f:
+                config_output = f.read()
+            expected_config_output = 'url: http://localhost:5000\n'
+            self.assertEqual(config_output, expected_config_output)
 
-        self.assertTrue(exists(join(tmpdir, 'data')))
-        self.assertTrue(exists(join(tmpdir, 'data', 'config.yaml')))
-        self.assertEqual(open(join(tmpdir, 'data', 'config.yaml')).read(), '''\
-url: http://localhost:5000
-''')
+            main(['config', '--show-sources'], False)
+            expected_show_sources_output = '==> {config} <==\nurl: http://localhost:5000\n\n'.format(
+                config=join(tmpdir, 'config.yaml'))
 
-        output = main('config', '--show-sources')
-
-        self.assertEqual(output.replace(b'\r', b''), u'''\
-==> {config} <==
-url: http://localhost:5000
-
-'''.format(config=join(tmpdir, 'data', 'config.yaml')).encode('utf-8'))
-
-
-if __name__ == '__main__':
-    unittest.main()
+            self.assertIn(expected_show_sources_output, self.stream.getvalue())

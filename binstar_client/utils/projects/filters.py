@@ -1,8 +1,9 @@
 import fnmatch
 import logging
+
 from os.path import exists, isfile, join
 
-log = logging.getLogger('binstar.projects.upload')
+logger = logging.getLogger('binstar.projects.upload')
 
 
 class NoIgnoreFileException(IOError):
@@ -81,7 +82,7 @@ class ProjectIgnoreFilter(FilterBase):
             try:
                 self._patterns = ignore_patterns(self.basepath)
             except NoIgnoreFileException:
-                log.debug("No ignore file")
+                logger.debug("No ignore file")
         return self._patterns
 
     def can_filter(self):
@@ -101,7 +102,7 @@ def get_ignore_file(basepath):
     for ignore_file in ignore_files:
         ignore_file_path = join(basepath, ignore_file)
         if exists(ignore_file_path) and isfile(ignore_file_path):
-            log.debug("Ignore patterns file: {}".format(ignore_file_path))
+            logger.debug("Ignore patterns file: {}".format(ignore_file_path))
             return ignore_file_path
     raise NoIgnoreFileException("There is no .projectignore or .gitignore")
 

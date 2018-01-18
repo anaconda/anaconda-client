@@ -11,7 +11,7 @@ from binstar_client import errors
 from binstar_client.utils import get_server_api
 from binstar_client.utils.notebook import Uploader, Downloader, parse, notebook_url, has_environment
 
-log = logging.getLogger("binstar.notebook")
+logger = logging.getLogger("binstar.notebook")
 
 
 def add_parser(subparsers):
@@ -101,19 +101,19 @@ def add_download_parser(subparsers):
 
 
 def upload(args):
-    aserver_api = get_server_api(args.token, args.site, args.log_level)
+    aserver_api = get_server_api(args.token, args.site)
 
     uploader = Uploader(aserver_api, args.notebook, user=args.user, summary=args.summary,
                         version=args.version, thumbnail=args.thumbnail, name=args.name)
 
     try:
         upload_info = uploader.upload(force=args.force)
-        log.warn("`anaconda notebook` is going to be deprecated")
-        log.warn("use `anaconda upload` instead.")
-        log.info("{} has been uploaded.".format(args.notebook))
-        log.info("You can visit your notebook at {}".format(notebook_url(upload_info)))
+        logger.warning("`anaconda notebook` is going to be deprecated")
+        logger.warning("use `anaconda upload` instead.")
+        logger.info("{} has been uploaded.".format(args.notebook))
+        logger.info("You can visit your notebook at {}".format(notebook_url(upload_info)))
     except (errors.BinstarError, IOError) as e:
-        log.error(str(e))
+        logger.error(str(e))
 
 
 def download(args):
@@ -124,13 +124,13 @@ def download(args):
     downloader = Downloader(aserver_api, username, notebook)
     try:
         download_info = downloader(output=args.output, force=args.force)
-        log.warn("`anaconda notebook` is going to be deprecated")
-        log.warn("use `anaconda download` instead.")
-        log.info("{} has been downloaded as {}.".format(args.handle, download_info[0]))
+        logger.warning("`anaconda notebook` is going to be deprecated")
+        logger.warning("use `anaconda download` instead.")
+        logger.info("{} has been downloaded as {}.".format(args.handle, download_info[0]))
         if has_environment(download_info[0]):
-            log.info("{} has an environment embedded.".format(download_info[0]))
-            log.info("Run:")
-            log.info("    conda env create {}".format(download_info[0]))
-            log.info("To install the environment in your system")
+            logger.info("{} has an environment embedded.".format(download_info[0]))
+            logger.info("Run:")
+            logger.info("    conda env create {}".format(download_info[0]))
+            logger.info("To install the environment in your system")
     except (errors.DestionationPathExists, errors.NotFound, OSError) as err:
-        log.info(err.msg)
+        logger.info(err.msg)
