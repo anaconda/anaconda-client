@@ -7,7 +7,7 @@
 * Refactored logging.
 * Replaced PyYAML with ruamel.yaml.
 
-###
+### Fixed
 
 * Fixed logging of error messages.
 
