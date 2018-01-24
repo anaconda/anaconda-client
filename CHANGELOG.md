@@ -1,13 +1,19 @@
 # CHANGELOG:
 
-# Next Release
+## Next release
+
+### Fixed
+
+* Fixed ruamel.yaml dependency.
+
+## Version 1.6.7 (2018/01/18)
 
 ### Added
 
 * Refactored logging.
 * Replaced PyYAML with ruamel.yaml.
 
-###
+### Fixed
 
 * Fixed logging of error messages.
 
