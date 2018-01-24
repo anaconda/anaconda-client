@@ -23,11 +23,7 @@ try:
 except NameError:
     input = input
 
-logging.basicConfig(
-    level=logging.CRITICAL,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-log = logging.getLogger('binstar')
+logger = logging.getLogger('binstar')
 
 
 def jencode(*E, **F):
@@ -91,6 +87,7 @@ def upload_with_progress(fd):
     it = upload_in_chunks(fd)
     IterableToFileAdapter(it)
 
+
 class IterableToFileAdapter(object):
     def __init__(self, iterable):
         self.iterator = iter(iterable)
@@ -103,21 +100,20 @@ class IterableToFileAdapter(object):
         return self.length
 
 
-
 def bool_input(prompt, default=True):
-        default_str = '[Y|n]' if default else '[y|N]'
-        while 1:
-            inpt = input('%s %s: ' % (prompt, default_str))
-            if inpt.lower() in ['y', 'yes'] and not default:
-                return True
-            elif inpt.lower() in ['', 'n', 'no'] and not default:
-                return False
-            elif inpt.lower() in ['', 'y', 'yes']:
-                return True
-            elif inpt.lower() in ['n', 'no']:
-                return False
-            else:
-                sys.stderr.write('please enter yes or no\n')
+    default_str = '[Y|n]' if default else '[y|N]'
+    while 1:
+        inpt = input('%s %s: ' % (prompt, default_str))
+        if inpt.lower() in ['y', 'yes'] and not default:
+            return True
+        elif inpt.lower() in ['', 'n', 'no'] and not default:
+            return False
+        elif inpt.lower() in ['', 'y', 'yes']:
+            return True
+        elif inpt.lower() in ['n', 'no']:
+            return False
+        else:
+            sys.stderr.write('please enter yes or no\n')
 
 WAIT_SECONDS = 15
 

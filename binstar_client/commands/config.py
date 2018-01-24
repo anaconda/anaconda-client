@@ -62,15 +62,18 @@ If no, then an upload will fail if the package name does not already exist on th
 '''
 from __future__ import print_function
 
-from argparse import RawDescriptionHelpFormatter
-from ast import literal_eval
 import logging
 
+from argparse import RawDescriptionHelpFormatter
+
+from six import text_type
+
 from binstar_client.errors import ShowHelp, UserError
-import yaml
 from binstar_client.utils.config import (SEARCH_PATH, USER_CONFIG, SYSTEM_CONFIG, CONFIGURATION_KEYS,
                                          get_config, save_config, load_config, load_file_configs)
-log = logging.getLogger('binstar.config')
+from ..utils.yaml import yaml_load, yaml_dump
+
+logger = logging.getLogger('binstar.config')
 
 DEPRECATED = {
     'verify_ssl': 'Please use ssl_verify instead'
@@ -83,13 +86,14 @@ def recursive_set(config_data, key, value, ty):
         config_data = config_data.setdefault(prefix, {})
 
     if key not in CONFIGURATION_KEYS:
-        log.warn('"%s" is not a known configuration key', key)
+        logger.warning('"%s" is not a known configuration key', key)
 
     if key in DEPRECATED.keys():
         message = "{} is deprecated: {}".format(key, DEPRECATED[key])
-        log.warn(message)
+        logger.warning(message)
 
     config_data[key] = ty(value)
+
 
 def recursive_remove(config_data, key):
     while '.' in key:
@@ -101,31 +105,30 @@ def recursive_remove(config_data, key):
     del config_data[key]
 
 
-
 def main(args):
     config = get_config()
 
     if args.show:
-        log.info(yaml.safe_dump(config, default_flow_style=False))
+        logger.info(yaml_dump(config))
         return
 
     if args.show_sources:
         config_files = load_file_configs(SEARCH_PATH)
         for path in config_files:
-            log.info('==> %s <==', path)
-            log.info(yaml.safe_dump(config_files[path], default_flow_style=False))
+            logger.info('==> %s <==', path)
+            logger.info(yaml_dump(config_files[path]))
         return
 
     if args.get:
         if args.get in config:
-            log.info(config[args.get])
+            logger.info(config[args.get])
         else:
-            log.info("The value of '%s' is not set." % args.get)
+            logger.info("The value of '%s' is not set." % args.get)
         return
 
     if args.files:
-        log.info('User Config: %s' % USER_CONFIG)
-        log.info('System Config: %s' % SYSTEM_CONFIG)
+        logger.info('User Config: %s' % USER_CONFIG)
+        logger.info('System Config: %s' % SYSTEM_CONFIG)
         return
 
     config_file = USER_CONFIG if args.user else SYSTEM_CONFIG
@@ -139,7 +142,7 @@ def main(args):
         try:
             recursive_remove(config, key)
         except KeyError:
-            log.error("Key %s does not exist" % key)
+            logger.error("Key %s does not exist" % key)
 
     if not (args.set or args.remove):
         raise ShowHelp()
@@ -150,13 +153,12 @@ def main(args):
 def add_parser(subparsers):
     description = 'Anaconda client configuration'
     parser = subparsers.add_parser('config',
-                                      help=description,
-                                      description=description,
-                                      epilog=__doc__,
-                                      formatter_class=RawDescriptionHelpFormatter
-                                      )
+                                   help=description,
+                                   description=description,
+                                   epilog=__doc__,
+                                   formatter_class=RawDescriptionHelpFormatter)
 
-    parser.add_argument('--type', default=yaml.safe_load,
+    parser.add_argument('--type', default=text_type,
                         help='The type of the values in the set commands')
 
     agroup = parser.add_argument_group('actions')
@@ -178,6 +180,5 @@ def add_parser(subparsers):
                         help='set a variable for this user')
     lgroup.add_argument('-s', '--system', '--site', action='store_false', dest='user',
                         help='set a variable for all users on this machine')
-
 
     parser.set_defaults(main=main, sub_parser=parser)

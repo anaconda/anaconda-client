@@ -1,10 +1,10 @@
 import logging
 from os import path
 
-import yaml
+from ..utils.yaml import yaml_load
 
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 PACKAGE_TYPE = 'installer'
 
@@ -47,9 +47,9 @@ def inspect_package(filename, fileobj, *args, **kwarg):
         line = fileobj.readline()
 
     try:
-        installer_data = yaml.load("\n".join(lines))
+        installer_data = yaml_load("\n".join(lines))
     finally:
-        log.error("Could not load installer info as YAML")
+        logger.error("Could not load installer info as YAML")
 
     summary = "Conda installer for platform %s" % installer_data.pop('PLAT')
     name = installer_data.pop('NAME')

@@ -1,10 +1,26 @@
 # CHANGELOG:
 
-# Next Release
+## Next release
+
+### Fixed
+
+* Fixed ruamel.yaml dependency.
+
+## Version 1.6.7 (2018/01/18)
+
+### Added
+
+* Refactored logging.
+* Replaced PyYAML with ruamel.yaml.
+
+### Fixed
+
+* Fixed logging of error messages.
 
 ## Version 1.6.6 (2017/12/04)
 
 ### Added
+
 * Deprecated verify_ssl in favor of ssl_verify
 * Validation to prevent uploading package with more than one type
 

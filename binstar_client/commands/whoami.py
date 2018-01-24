@@ -1,22 +1,25 @@
-'''
+"""
 Print the information of the current user
-'''
+"""
 from __future__ import unicode_literals
+
+import logging
+
 from binstar_client import errors
 from binstar_client.utils import get_server_api
 from binstar_client.utils.pprint import pprint_user
-import logging
 
-log = logging.getLogger('binstar.whoami')
+logger = logging.getLogger('binstar.whoami')
+
 
 def main(args):
-    aserver_api = get_server_api(args.token, args.site, args.log_level)
+    aserver_api = get_server_api(args.token, args.site)
 
     try:
         user = aserver_api.user()
     except errors.Unauthorized as err:
-        log.debug(err)
-        log.info('Anonymous User')
+        logger.debug(err)
+        logger.info('Anonymous User')
         return 1
 
     pprint_user(user)

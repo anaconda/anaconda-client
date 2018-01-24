@@ -12,11 +12,12 @@ from argparse import RawTextHelpFormatter
 from binstar_client import errors
 
 import logging
-log = logging.getLogger('binstar.remove')
+
+logger = logging.getLogger('binstar.remove')
 
 def main(args):
 
-    aserver_api = get_server_api(args.token, args.site, args.log_level)
+    aserver_api = get_server_api(args.token, args.site)
 
     for spec in args.specs:
         try:
@@ -25,25 +26,25 @@ def main(args):
                 if args.force or bool_input(msg, False):
                     aserver_api.remove_dist(spec.user, spec.package, spec.version, spec.basename)
                 else:
-                    log.warn('Not removing file %s' % (spec))
+                    logger.warning('Not removing file %s' % (spec))
             elif spec._version:
                 msg = 'Are you sure you want to remove the package release %s ? (and all files under it?)' % (spec,)
                 if args.force or bool_input(msg, False):
                     aserver_api.remove_release(spec.user, spec.package, spec.version)
                 else:
-                    log.warn('Not removing release %s' % (spec))
+                    logger.warning('Not removing release %s' % (spec))
             elif spec._package:
                 msg = 'Are you sure you want to remove the package %s ? (and all data with it?)' % (spec,)
                 if args.force or bool_input(msg, False):
                     aserver_api.remove_package(spec.user, spec.package)
                 else:
-                    log.warn('Not removing release %s' % (spec))
+                    logger.warning('Not removing release %s' % (spec))
             else:
-                log.error('Invalid package specification: %s', spec)
+                logger.error('Invalid package specification: %s', spec)
 
         except errors.NotFound:
             if args.force:
-                log.warn('', exc_info=True)
+                logger.warning('', exc_info=True)
                 continue
             else:
                 raise

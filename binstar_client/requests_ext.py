@@ -1,22 +1,18 @@
-'''
-Created on Jun 6, 2013
-
-@author: sean
-'''
 from __future__ import unicode_literals
 
-# Standard library imports
-from io import BytesIO, StringIO
 import codecs
 import logging
 
-# Third party imports
-from requests.packages.urllib3.filepost import choose_boundary, iter_fields
-from requests.packages.urllib3.packages import six
+from io import BytesIO, StringIO
+
 import requests
 
+from requests.packages.urllib3.filepost import choose_boundary, iter_fields
+from requests.packages.urllib3.packages import six
+
 encoder = codecs.lookup('utf-8')[0]
-log = logging.getLogger('binstar.requests_ext')
+
+logger = logging.getLogger('binstar.requests_ext')
 
 def writer(lst):
     encoder()

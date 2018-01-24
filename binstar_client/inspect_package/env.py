@@ -1,6 +1,8 @@
 import os
 import time
-import yaml
+
+
+from ..utils.yaml import yaml_load
 
 
 class EnvInspector(object):
@@ -8,7 +10,7 @@ class EnvInspector(object):
         self._name = None
         self._version = None
         self.filename = filename
-        self.content = yaml.load(fileobj)
+        self.content = yaml_load(fileobj)
 
     @property
     def basename(self):

@@ -1,15 +1,16 @@
-'''
+"""
 Copy packages from one account to another
-'''
+"""
 from __future__ import unicode_literals, print_function
 from binstar_client.utils import get_server_api, parse_specs
 import logging
 from binstar_client import errors
 
-log = logging.getLogger('binstar.whoami')
+logger = logging.getLogger('binstar.copy')
+
 
 def main(args):
-    aserver_api = get_server_api(args.token, args.site, args.log_level)
+    aserver_api = get_server_api(args.token, args.site)
 
     spec = args.spec
 
@@ -35,9 +36,9 @@ def main(args):
         print("Copied file: %(basename)s" % binstar_file)
 
     if files:
-        log.info("Copied %i files" % len(files))
+        logger.info("Copied %i files" % len(files))
     else:
-        log.warning("Did not copy any files. Please check your inputs with\n\n\tanaconda show %s" % spec)
+        logger.warning("Did not copy any files. Please check your inputs with\n\n\tanaconda show %s" % spec)
 
 
 def add_parser(subparsers):
