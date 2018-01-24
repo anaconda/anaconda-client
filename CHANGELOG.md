@@ -1,5 +1,11 @@
 # CHANGELOG:
 
+## Next release
+
+### Fixed
+
+* Fixed ruamel.yaml dependency.
+
 ## Version 1.6.7 (2018/01/18)
 
 ### Added
