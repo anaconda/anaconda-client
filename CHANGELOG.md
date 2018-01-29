@@ -5,6 +5,7 @@
 ### Fixed
 
 * Fixed upload message when package_types is empty
+* Revert to using PyYAML instead of ruamel.yaml
 
 ## Version 1.6.8 (2018/01/24)
 
