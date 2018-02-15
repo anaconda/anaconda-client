@@ -28,10 +28,7 @@ import nbformat
 from six.moves import input
 
 from binstar_client import errors
-from binstar_client.utils import bool_input
-from binstar_client.utils import get_server_api
-from binstar_client.utils import DEFAULT_CONFIG
-from binstar_client.utils import upload_print_callback
+from binstar_client.utils import bool_input, DEFAULT_CONFIG, get_config, get_server_api, upload_print_callback
 from binstar_client.utils.projects import upload_project
 from binstar_client.utils.detect import detect_package_type, get_attrs
 
@@ -272,11 +269,15 @@ def get_convert_files(files):
 
 
 def main(args):
-    aserver_api = get_server_api(args.token, args.site)
+    config = get_config(site=args.site)
+
+    aserver_api = get_server_api(token=args.token, site=args.site, config=config)
     aserver_api.check_server()
 
     if args.user:
         username = args.user
+    elif 'upload_user' in config:
+        username = config['upload_user']
     else:
         user = aserver_api.user()
         username = user['login']

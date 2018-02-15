@@ -20,20 +20,20 @@ logger = logging.getLogger('binstar.login')
 
 
 def try_replace_token(authenticate, **kwargs):
-    '''
+    """
     Authenticates using the given *authenticate*, retrying if the token needs
     to be replaced.
-    '''
+    """
 
     try:
         return authenticate(**kwargs)
     except errors.BinstarError as err:
         if kwargs.get('fail_if_already_exists') and len(err.args) > 1 and err.args[1] == 400:
             logger.warning('It appears you are already logged in from host %s' % socket.gethostname())
-            logger.warning('Logging in again will remove the previous token. '
-                     ' (This could cause troubles with virtual machines with the same hostname)')
-            logger.warning('Otherwise you can login again and specify a '
-                      'different hostname with "--hostname"')
+            logger.warning('Logging in again will remove the previous token. (This could cause troubles with virtual '
+                           'machines with the same hostname)')
+            logger.warning('Otherwise you can login again and specify a different hostname with "--hostname"')
+
             if bool_input("Would you like to continue"):
                 kwargs['fail_if_already_exists'] = False
                 return authenticate(**kwargs)
@@ -53,7 +53,7 @@ def interactive_get_token(args, fail_if_already_exists=True):
     url = config.get('url', 'https://api.anaconda.org')
 
     auth_name = 'binstar_client:'
-    if site and site != 'binstar':
+    if site and site not in ('binstar', 'anaconda'):
         # For testing with binstar alpha site
         auth_name += '%s:' % site
 
@@ -76,9 +76,7 @@ def interactive_get_token(args, fail_if_already_exists=True):
             raise errors.BinstarError(
                 'Unable to authenticate via Kerberos. Try refreshing your '
                 'authentication using `kinit`')
-
     else:
-
         if getattr(args, 'login_username', None):
             username = args.login_username
         else:
@@ -110,7 +108,6 @@ def interactive_get_token(args, fail_if_already_exists=True):
                 password = None
                 continue
 
-
         if token is None:
             parsed_url = urlparse(url)
             if parsed_url.netloc.startswith('api.anaconda.org'):
@@ -125,30 +122,23 @@ def interactive_get_token(args, fail_if_already_exists=True):
 
     return token
 
+
 def interactive_login(args):
     token = interactive_get_token(args)
     store_token(token, args)
     logger.info('login successful')
 
+
 def main(args):
     interactive_login(args)
 
+
 def add_parser(subparsers):
-    subparser = subparsers.add_parser('login',
-                                      help='Authenticate a user',
-                                      description=__doc__)
+    subparser = subparsers.add_parser('login', help='Authenticate a user', description=__doc__)
     subparser.add_argument('--hostname', default=platform.node(),
-                           help="Specify the host name of this login, "
-                                "this should be unique (default: %(default)s)"
-                           )
-    subparser.add_argument('--username',
-                           dest='login_username',
-                           help="Specify your username. "
-                                "If this is not given, you will be prompted"
-                           )
-    subparser.add_argument('--password',
-                           dest='login_password',
-                           help="Specify your password. "
-                                "If this is not given, you will be prompted"
-                           )
+                           help="Specify the host name of this login, this should be unique (default: %(default)s)")
+    subparser.add_argument('--username', dest='login_username',
+                           help="Specify your username. If this is not given, you will be prompted")
+    subparser.add_argument('--password', dest='login_password',
+                           help="Specify your password. If this is not given, you will be prompted")
     subparser.set_defaults(main=main)

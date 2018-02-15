@@ -77,12 +77,12 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         try:
             response = self.session.head(self.domain)
         except Exception as e:
-            raise_from(errors.NotFound(msg), e)
+            raise_from(errors.ServerError(msg), e)
 
         try:
             self._check_response(response)
         except errors.NotFound as e:
-            raise raise_from(errors.NotFound(msg), e)
+            raise raise_from(errors.ServerError(msg), e)
 
     def authentication_type(self):
         url = '%s/authentication-type' % self.domain
