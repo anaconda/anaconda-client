@@ -1,5 +1,11 @@
 # CHANGELOG:
 
+## Next version
+
+## Added
+
+* Show warnings when lock down and read-only headers are present
+
 ## Version 1.6.9 (2018/01/31)
 
 ### Fixed
