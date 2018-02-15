@@ -1,4 +1,4 @@
-'''
+"""
 
     anaconda upload CONDA_PACKAGE_1.bz2
     anaconda upload notebook.ipynb
@@ -9,20 +9,23 @@
   * [Uploading a Conda Package](http://docs.anaconda.org/using.html#Uploading)
   * [Uploading a PyPI Package](http://docs.anaconda.org/using.html#UploadingPypiPackages)
 
-'''
+"""
 from __future__ import unicode_literals
 
-import tempfile
 import argparse
-import subprocess
-from glob import glob
+import tempfile
 import logging
 import os
-from os.path import exists
+import subprocess
 import sys
+
+from glob import glob
+from os.path import exists
 from collections import defaultdict
 
 import nbformat
+
+from six.moves import input
 
 from binstar_client import errors
 from binstar_client.utils import bool_input
@@ -31,13 +34,6 @@ from binstar_client.utils import DEFAULT_CONFIG
 from binstar_client.utils import upload_print_callback
 from binstar_client.utils.projects import upload_project
 from binstar_client.utils.detect import detect_package_type, get_attrs
-
-
-# Python 3 Support
-try:
-    input = raw_input
-except NameError:
-    input = input
 
 
 logger = logging.getLogger('binstar.upload')

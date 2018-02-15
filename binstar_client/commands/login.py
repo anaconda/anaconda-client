@@ -1,28 +1,22 @@
-'''
+"""
 Authenticate a user
-'''
+"""
 from __future__ import unicode_literals
 
 import getpass
 import logging
+import platform
 import socket
 import sys
-try:
-    from urlparse import urlparse
-except ImportError:
-    from urllib.parse import urlparse
+
+from six.moves.urllib.parse import urlparse
+from six.moves import input
+
 from binstar_client import errors
-from binstar_client.utils import get_config, get_server_api, store_token, \
-    bool_input
-import platform
+from binstar_client.utils import get_config, get_server_api, store_token, bool_input
 
 
 logger = logging.getLogger('binstar.login')
-
-try:
-    input = raw_input
-except NameError:
-    input = input
 
 
 def try_replace_token(authenticate, **kwargs):

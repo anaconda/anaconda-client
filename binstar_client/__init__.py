@@ -1,21 +1,14 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
-import base64
 import collections
-import json
 import os
 import requests
 import warnings
 import logging
 import platform
 
-
-try:
-    from urllib import quote
-except ImportError:
-    from urllib.parse import quote
-
 from six import raise_from
+from six.moves.urllib.parse import quote
 
 # For backwards compatibility
 from .errors import *

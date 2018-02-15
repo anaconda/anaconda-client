@@ -1,12 +1,13 @@
 from __future__ import print_function, absolute_import, unicode_literals
 
-from hashlib import md5
 import base64
 import json
 import logging
 import os
 import sys
 import time
+
+from hashlib import md5
 
 # re-export parse_version
 from pkg_resources import parse_version as pv
@@ -16,11 +17,8 @@ from .spec import PackageSpec, package_specs, parse_specs
 from .config import (get_server_api, dirs, load_token, store_token, remove_token, get_config, set_config, load_config,
                      USER_CONFIG, USER_LOGDIR, SITE_CONFIG, DEFAULT_CONFIG)
 
+from six.moves import input
 
-try:
-    input = raw_input
-except NameError:
-    input = input
 
 logger = logging.getLogger('binstar')
 
@@ -114,7 +112,9 @@ def bool_input(prompt, default=True):
         else:
             sys.stderr.write('please enter yes or no\n')
 
+
 WAIT_SECONDS = 15
+
 
 def upload_print_callback(args):
     start_time = time.time()
