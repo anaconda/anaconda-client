@@ -1,14 +1,13 @@
 from __future__ import print_function, absolute_import, unicode_literals
 
-import glob
-import json
-from os.path import exists, join, dirname, isfile, isdir, basename, abspath, expanduser
 import collections
 import logging
 import os
 import stat
 import warnings
 import itertools
+
+from os.path import exists, join, dirname, isfile, isdir, abspath, expanduser
 from string import Template
 
 try:
