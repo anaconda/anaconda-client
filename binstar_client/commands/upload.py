@@ -27,7 +27,7 @@ import nbformat
 from binstar_client import errors
 from binstar_client.utils import bool_input
 from binstar_client.utils import get_server_api
-from binstar_client.utils import get_config
+from binstar_client.utils import DEFAULT_CONFIG
 from binstar_client.utils import upload_print_callback
 from binstar_client.utils.projects import upload_project
 from binstar_client.utils.detect import detect_package_type, get_attrs
@@ -375,7 +375,7 @@ def add_parser(subparsers):
                         help='Don\'t create a new package namespace if it does not exist')
     register_group.add_argument("--register", dest="auto_register", action="store_true",
                         help='Create a new package namespace if it does not exist')
-    parser.set_defaults(auto_register=bool(get_config().get('auto_register', True)))
+    parser.set_defaults(auto_register=DEFAULT_CONFIG.get('auto_register', True))
     parser.add_argument('--build-id', help='Anaconda Cloud Build ID (internal only)')
 
     group = parser.add_mutually_exclusive_group()

@@ -49,7 +49,7 @@ def try_replace_token(authenticate, **kwargs):
 
 def interactive_get_token(args, fail_if_already_exists=True):
     bs = get_server_api(args.token, args.site)
-    config = get_config(remote_site=args.site)
+    config = get_config(site=args.site)
 
     token = None
     # This function could be called from a totally different CLI, so we don't
