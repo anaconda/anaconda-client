@@ -282,6 +282,8 @@ def main(args):
         user = aserver_api.user()
         username = user['login']
 
+    logger.info('Using "%s" as upload username', username)
+
     uploaded_packages = []
     uploaded_projects = []
 
