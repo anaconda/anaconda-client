@@ -276,22 +276,26 @@ def main(args):
     aserver_api = get_server_api(token=args.token, site=args.site, config=config)
     aserver_api.check_server()
 
+    validate_username = True
+
     if args.user:
         username = args.user
     elif 'upload_user' in config:
         username = config['upload_user']
     else:
+        validate_username = False
         user = aserver_api.user()
         username = user['login']
 
     logger.info('Using "%s" as upload username', username)
 
-    try:
-        aserver_api.user(username)
-    except errors.NotFound:
-        message = 'User "{}" does not exist'.format(username)
-        logger.error(message)
-        raise errors.BinstarError(message)
+    if validate_username:
+        try:
+            aserver_api.user(username)
+        except errors.NotFound:
+            message = 'User "{}" does not exist'.format(username)
+            logger.error(message)
+            raise errors.BinstarError(message)
 
     uploaded_packages = []
     uploaded_projects = []
