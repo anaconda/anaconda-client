@@ -1,21 +1,14 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
-import base64
 import collections
-import json
 import os
 import requests
 import warnings
 import logging
 import platform
 
-
-try:
-    from urllib import quote
-except ImportError:
-    from urllib.parse import quote
-
 from six import raise_from
+from six.moves.urllib.parse import quote
 
 # For backwards compatibility
 from .errors import *
@@ -47,7 +40,6 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
     """
 
     def __init__(self, token=None, domain='https://api.anaconda.org', verify=True, **kwargs):
-
         self._session = requests.Session()
         self._session.headers['x-binstar-api-version'] = __version__
         self.session.verify = verify
@@ -85,12 +77,12 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         try:
             response = self.session.head(self.domain)
         except Exception as e:
-            raise_from(errors.NotFound(msg), e)
+            raise_from(errors.ServerError(msg), e)
 
         try:
             self._check_response(response)
         except errors.NotFound as e:
-            raise raise_from(errors.NotFound(msg), e)
+            raise raise_from(errors.ServerError(msg), e)
 
     def authentication_type(self):
         url = '%s/authentication-type' % self.domain
@@ -201,18 +193,23 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
     def _check_response(self, res, allowed=[200]):
         api_version = res.headers.get('x-binstar-api-version', '0.2.1')
         if pv(api_version) > pv(__version__):
-            msg = ('The api server is running the binstar-api version %s. you are using %s\n' % (api_version, __version__)
-                   + 'Please update your client with pip install -U binstar or conda update binstar')
-            warnings.warn(msg, stacklevel=4)
+            logger.warning('The api server is running the binstar-api version %s. you are using %s\nPlease update your '
+                           'client with pip install -U binstar or conda update binstar' % (api_version, __version__))
 
         if not self._token_warning_sent and 'Conda-Token-Warning' in res.headers:
-            msg = 'Token warning: {}'.format(res.headers['Conda-Token-Warning'])
-            warnings.warn(msg, stacklevel=4)
+            logger.warning('Token warning: {}'.format(res.headers['Conda-Token-Warning']))
             self._token_warning_sent = True
+
+        if 'X-Anaconda-Lockdown' in res.headers:
+            logger.warning('Anaconda repository is currently in LOCKDOWN mode.')
+
+        if 'X-Anaconda-Read-Only' in res.headers:
+            logger.warning('Anaconda repository is currently in READ ONLY mode.')
 
         if not res.status_code in allowed:
             short, long = STATUS_CODES.get(res.status_code, ('?', 'Undefined error'))
             msg = '%s: %s ([%s] %s -> %s)' % (short, long, res.request.method, res.request.url, res.status_code)
+
             try:
                 data = res.json()
             except:

@@ -2,12 +2,11 @@ import base64
 import io
 import os
 import sys
-try:
-    from urlparse import urlparse
-except ImportError:
-    from urllib.parse import urlparse
 
 import requests
+
+from six.moves.urllib.parse import urlparse
+
 try:
     from PIL import Image
 except ImportError:

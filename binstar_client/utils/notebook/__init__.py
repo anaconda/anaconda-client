@@ -3,10 +3,8 @@ try:
 except ImportError:
     nbformat = None
 
-try:
-    from urlparse import urlparse
-except ImportError:
-    from urllib.parse import urlparse
+from six.moves.urllib.parse import urlparse
+
 from .uploader import *
 from .downloader import *
 from ...errors import BinstarError

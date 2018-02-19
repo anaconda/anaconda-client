@@ -1,3 +1,5 @@
+from six.moves.urllib.parse import urlparse
+
 from binstar_client.errors import UserError
 
 
