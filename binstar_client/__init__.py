@@ -1,21 +1,14 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
-import base64
 import collections
-import json
 import os
 import requests
 import warnings
 import logging
 import platform
 
-
-try:
-    from urllib import quote
-except ImportError:
-    from urllib.parse import quote
-
 from six import raise_from
+from six.moves.urllib.parse import quote
 
 # For backwards compatibility
 from .errors import *
@@ -47,7 +40,6 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
     """
 
     def __init__(self, token=None, domain='https://api.anaconda.org', verify=True, **kwargs):
-
         self._session = requests.Session()
         self._session.headers['x-binstar-api-version'] = __version__
         self.session.verify = verify
@@ -85,12 +77,12 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         try:
             response = self.session.head(self.domain)
         except Exception as e:
-            raise_from(errors.NotFound(msg), e)
+            raise_from(errors.ServerError(msg), e)
 
         try:
             self._check_response(response)
         except errors.NotFound as e:
-            raise raise_from(errors.NotFound(msg), e)
+            raise raise_from(errors.ServerError(msg), e)
 
     def authentication_type(self):
         url = '%s/authentication-type' % self.domain

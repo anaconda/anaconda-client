@@ -1,15 +1,13 @@
 from __future__ import print_function, absolute_import, unicode_literals
 
-import glob
-import json
-from os.path import exists, join, dirname, isfile, isdir, basename, abspath, expanduser
 import collections
 import logging
 import os
 import stat
-import sys
 import warnings
 import itertools
+
+from os.path import exists, join, dirname, isfile, isdir, abspath, expanduser
 from string import Template
 
 try:
@@ -44,27 +42,33 @@ else:
     dirs = AppDirs('binstar', 'ContinuumIO')
     USER_CONFIG = expand('~/.continuum/anaconda-client/config.yaml')
 
+
 USER_LOGDIR = dirs.user_log_dir
 SITE_CONFIG = expand('$CONDA_ROOT/etc/anaconda-client/config.yaml')
 SYSTEM_CONFIG = SITE_CONFIG
 
-
 DEFAULT_URL = 'https://api.anaconda.org'
-ALPHA_URL = 'http://api.alpha.binstar.org'
 DEFAULT_CONFIG = {
     'sites': {
+        'anaconda': {'url': DEFAULT_URL},
         'binstar': {'url': DEFAULT_URL},
-        'alpha': {'url': ALPHA_URL},
-    }
+    },
+    'auto_register': True,
+    'default_site': 'anaconda',
+    'url': DEFAULT_URL,
+    'ssl_verify': True
 }
+
 CONFIGURATION_KEYS = [
     'auto_register',
     'default_site',
+    'upload_user',
     'sites',
     'url',
     'verify_ssl',
     'ssl_verify',
 ]
+
 SEARCH_PATH = (
     dirs.site_data_dir,
     '/etc/anaconda-client/',
@@ -75,25 +79,27 @@ SEARCH_PATH = (
 )
 
 
-def recursive_update(d, u):
-    for k, v in u.items():
-        if isinstance(v, collections.Mapping):
-            r = recursive_update(d.get(k, {}), v)
-            d[k] = r
+def recursive_update(config, update_dict):
+    for update_key, updated_value in update_dict.items():
+        if isinstance(updated_value, collections.Mapping):
+            updated_value_dict = recursive_update(config.get(update_key, {}), updated_value)
+            config[update_key] = updated_value_dict
         else:
-            d[k] = u[k]
-    return d
+            config[update_key] = update_dict[update_key]
+
+    return config
 
 
-def get_server_api(token=None, site=None, cls=None, **kwargs):
+def get_server_api(token=None, site=None, cls=None, config=None, **kwargs):
     """
     Get the anaconda server api class
     """
-
     if not cls:
         from binstar_client import Binstar
         cls = Binstar
-    config = get_config(remote_site=site)
+
+    config = config if config is not None else get_config(site=site)
+
     url = config.get('url', DEFAULT_URL)
 
     logger.info("Using Anaconda API: %s", url)
@@ -106,31 +112,12 @@ def get_server_api(token=None, site=None, cls=None, **kwargs):
     elif 'ANACONDA_API_TOKEN' in os.environ:
         logger.debug("Using token from environment variable ANACONDA_API_TOKEN")
         token = os.environ['ANACONDA_API_TOKEN']
-
     else:
         token = load_token(url)
 
     verify = config.get('ssl_verify', config.get('verify_ssl', True))
+
     return cls(token, domain=url, verify=verify, **kwargs)
-
-
-def get_binstar(args=None, cls=None):
-    """
-    DEPRECATED METHOD,
-
-    use `get_server_api`
-    """
-
-    warnings.warn(
-        'method get_binstar is deprecated, please use `get_server_api`',
-        DeprecationWarning
-    )
-
-    token = getattr(args, 'token', None)
-    site = getattr(args, 'site', None)
-
-    aserver_api = get_server_api(token, site, cls)
-    return aserver_api
 
 
 TOKEN_DIRS = [
@@ -141,10 +128,11 @@ TOKEN_DIR = TOKEN_DIRS[-1]
 
 
 def store_token(token, args):
-    config = get_config(remote_site=args and args.site)
+    config = get_config(site=args and args.site)
 
     for token_dir in TOKEN_DIRS:
         url = config.get('url', DEFAULT_URL)
+
         if not isdir(token_dir):
             os.makedirs(token_dir)
         tokenfile = join(token_dir, '%s.token' % quote_plus(url))
@@ -159,6 +147,7 @@ def store_token(token, args):
 def load_token(url):
     for token_dir in TOKEN_DIRS:
         tokenfile = join(token_dir, '%s.token' % quote_plus(url))
+
         if isfile(tokenfile):
             logger.debug("Found login token: {}".format(tokenfile))
             with open(tokenfile) as fd:
@@ -173,8 +162,9 @@ def load_token(url):
 
 
 def remove_token(args):
-    config = get_config(remote_site=args and args.site)
+    config = get_config(site=args and args.site)
     url = config.get('url', DEFAULT_URL)
+
     for token_dir in TOKEN_DIRS:
         tokenfile = join(token_dir, '%s.token' % quote_plus(url))
         if isfile(tokenfile):
@@ -221,24 +211,28 @@ def load_file_configs(search_path):
                   for path, st_mode in zip(expanded_paths, stat_paths)
                   if st_mode is not None)
     raw_data = collections.OrderedDict(kv for kv in itertools.chain.from_iterable(load_paths))
+
     return raw_data
 
 
-def get_config(user=True, site=True, remote_site=None):
+def get_config(site=None):
     config = DEFAULT_CONFIG.copy()
+
     file_configs = load_file_configs(SEARCH_PATH)
     for fn in file_configs:
         recursive_update(config, file_configs[fn])
 
-    remote_site = remote_site or config.get('default_site')
+    site = site or config.get('default_site')
     sites = config.get('sites', {})
 
-    if remote_site:
-        remote_site = str(remote_site)
-        if remote_site not in sites:
-            logger.warning("Remote site alias %s does not exist in the config file" % remote_site)
+    if site:
+        site = str(site)
+
+        if site not in sites:
+            logger.warning('Site alias "%s" does not exist in the config file', site)
         else:
-            recursive_update(config, sites.get(remote_site, {}))
+            # This takes whatever keys are set for the site into the top level of the config dict
+            recursive_update(config, sites.get(site, {}))
 
     return config
 

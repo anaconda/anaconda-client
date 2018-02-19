@@ -114,6 +114,7 @@ def is_r(filename):
 def detect_package_type(filename):
     if isinstance(filename, bytes):
         filename = filename.decode('utf-8', errors='ignore')
+
     if is_conda(filename):
         return 'conda'
     elif is_pypi(filename):

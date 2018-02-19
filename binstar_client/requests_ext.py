@@ -5,27 +5,13 @@ import logging
 
 from io import BytesIO, StringIO
 
+import six
 import requests
 
 from requests.packages.urllib3.filepost import choose_boundary, iter_fields
-from requests.packages.urllib3.packages import six
-
-encoder = codecs.lookup('utf-8')[0]
 
 logger = logging.getLogger('binstar.requests_ext')
 
-def writer(lst):
-    encoder()
-    pass
-
-try:
-    long
-except NameError:
-    long = int
-try:
-    unicode
-except NameError:
-    unicode = str
 
 def encode_multipart_formdata_stream(fields, boundary=None):
     """
@@ -47,10 +33,11 @@ def encode_multipart_formdata_stream(fields, boundary=None):
         :func:`mimetools.choose_boundary`.
     """
     body = []
+
     def body_write(item):
-        if isinstance(item, bytes):
+        if isinstance(item, six.binary_type):
             item = BytesIO(item)
-        elif isinstance(item, (str, unicode)):
+        elif isinstance(item, six.text_type):
             item = StringIO(item)
         body.append(item)
 
@@ -81,8 +68,8 @@ def encode_multipart_formdata_stream(fields, boundary=None):
                                % (fieldname))
             body_write(b'\r\n')
 
-        if isinstance(data, (int, long)):
-            data = str(data)  # Backwards compatibility
+        if isinstance(data, six.integer_types):
+            data = six.text_type(data)  # Backwards compatibility
 
         if isinstance(data, six.text_type):
             body_write_encode(data)
@@ -97,8 +84,8 @@ def encode_multipart_formdata_stream(fields, boundary=None):
 
     return body, content_type
 
-class MultiPartIO(object):
 
+class MultiPartIO(object):
     def __init__(self, body, callback=None):
         self.to_read = body
         self.have_read = []
@@ -161,7 +148,7 @@ def stream_multipart(data, files=None, callback=None):
 
 
 class NullAuth(requests.auth.AuthBase):
-    '''force requests to ignore the ``.netrc``
+    """force requests to ignore the ``.netrc``
 
     Some sites do not support regular authentication, but we still
     want to store credentials in the ``.netrc`` file and submit them
@@ -173,7 +160,6 @@ class NullAuth(requests.auth.AuthBase):
     Use with::
 
         requests.get(url, auth=NullAuth())
-    '''
-
+    """
     def __call__(self, r):
         return r

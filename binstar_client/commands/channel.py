@@ -56,6 +56,7 @@ def main(args, name, deprecated=False):
     else:
         raise NotImplementedError()
 
+
 def _add_parser(subparsers, name, deprecated=False):
     deprecated_warn = ""
     if deprecated:
@@ -73,7 +74,6 @@ def _add_parser(subparsers, name, deprecated=False):
     group = subparser.add_mutually_exclusive_group(required=True)
 
     group.add_argument('--copy', nargs=2, metavar=name.upper())
-
     group.add_argument(
         '--list',
         action='store_true',
@@ -93,7 +93,6 @@ def _add_parser(subparsers, name, deprecated=False):
         metavar=name.upper(),
         help="{}Unlock a {}".format(deprecated_warn, name)
     )
-
     group.add_argument(
         '--remove',
         metavar=name.upper(),

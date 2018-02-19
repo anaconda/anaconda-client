@@ -1,18 +1,35 @@
-'''
+"""
 Manage Authentication tokens
 
 See also:
 
   * [Using Anaconda Cloud Tokens](http://docs.anaconda.org/using.html#Tokens)
 
-'''
+"""
 from __future__ import print_function
-import socket
-from argparse import FileType
+
 import argparse
+import getpass
+import logging
+import socket
+import sys
+
+from argparse import FileType
+from datetime import datetime
+
+import pytz
+
+from dateutil.parser import parse as parse_date
+from six.moves import input
+
+from binstar_client import errors
+from binstar_client.utils import get_server_api
 
 
-SCOPE_EXAMPLES = '''
+logger = logging.getLogger('binstar.auth')
+
+
+SCOPE_EXAMPLES = """
 
 Examples
 
@@ -24,27 +41,13 @@ To allow full access to your account:
 
     anaconda auth --create --scopes 'all'
 
-'''
+"""
 
-from datetime import datetime
-from binstar_client.utils import get_server_api
-import getpass
-from dateutil.parser import parse as parse_date
-import sys
-import pytz
-from binstar_client import errors
-import logging
-
-logger = logging.getLogger('binstar.auth')
-
-try:
-    input = raw_input
-except NameError:
-    pass  # Python 3
 
 def utcnow():
     now = datetime.utcnow()
     return now.replace(tzinfo=pytz.utc)
+
 
 def format_timedelta(date, expired=True):
     if not date:
@@ -225,7 +228,6 @@ def add_parser(subparsers):
 
     g.add_argument('--out', default=sys.stdout,
                         type=FileType('w'))
-
 
     group = parser.add_argument_group("actions")
     group = group.add_mutually_exclusive_group(required=True)
