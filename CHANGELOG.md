@@ -1,8 +1,14 @@
 # CHANGELOG:
 
+## Next version
+
+### Fixed
+
+* Fixed loading of tagged config files under Python 3
+
 ## Version 1.6.10 (2018/02/19)
 
-## Added
+### Added
 
 * Added support for setting a default upload user
 * Show warnings when lock down and read-only headers are present
