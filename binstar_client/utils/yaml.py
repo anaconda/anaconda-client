@@ -1,14 +1,17 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-from yaml import dump, load, safe_load
+from yaml import safe_load, safe_dump, SafeLoader
+
+
+SafeLoader.add_constructor('tag:yaml.org,2002:python/unicode', SafeLoader.construct_yaml_str)
 
 
 def yaml_load(stream):
     """Loads a dictionary from a stream"""
-    return load(stream)
+    return safe_load(stream)
 
 
 def yaml_dump(data, stream=None):
     """Dumps an object to a YAML string"""
-    return dump(data, stream=stream, default_flow_style=False)
+    return safe_dump(data, stream=stream, default_flow_style=False)
