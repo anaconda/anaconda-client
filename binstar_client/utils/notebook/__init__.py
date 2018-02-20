@@ -1,7 +1,4 @@
-try:
-    import nbformat
-except ImportError:
-    nbformat = None
+import nbformat
 
 from six.moves.urllib.parse import urlparse
 
