@@ -4,14 +4,12 @@ import os
 import re
 import time
 
+from datetime import datetime
+
 import nbformat
 
 from ..utils.notebook.data_uri import data_uri_from
 from ..utils.notebook.inflection import parameterize
-
-
-def _get_name(filename):
-    return re.sub('\-ipynb$', '', parameterize(os.path.basename(filename)))
 
 
 def inspect_ipynb_package(filename, fileobj, *args, **kwargs):
@@ -20,7 +18,7 @@ def inspect_ipynb_package(filename, fileobj, *args, **kwargs):
     description = notebook['metadata'].get('description', 'Jupyter Notebook')
 
     package_data = {
-        'name': _get_name(filename),
+        'name': re.sub('\-ipynb$', '', parameterize(os.path.basename(filename))),
         'summary': summary,
         'description': description,
     }
@@ -29,7 +27,7 @@ def inspect_ipynb_package(filename, fileobj, *args, **kwargs):
         package_data['thumbnail'] = data_uri_from(kwargs['parser_args'].thumbnail)
 
     release_data = {
-        'version': time.strftime('%Y.%m.%d.%H%M'),
+        'version': datetime.now().strftime('%Y.%m.%d.%H%M'),
         'summary': summary,
         'description': description,
     }
