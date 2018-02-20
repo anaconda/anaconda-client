@@ -11,24 +11,27 @@ from ..utils.notebook.inflection import parameterize
 
 
 def _get_name(filename):
-    re.sub('\-ipynb$', '', parameterize(os.path.basename(filename)))
+    return re.sub('\-ipynb$', '', parameterize(os.path.basename(filename)))
 
 
 def inspect_ipynb_package(filename, fileobj, *args, **kwargs):
-    notebook = nbformat.read(fileobj)
+    notebook = nbformat.read(fileobj, nbformat.NO_CONVERT)
     summary = notebook['metadata'].get('summary', 'Jupyter Notebook')
+    description = notebook['metadata'].get('description', 'Jupyter Notebook')
 
     package_data = {
         'name': _get_name(filename),
-        'summary': summary
+        'summary': summary,
+        'description': description,
     }
 
-    if 'parser_args' in kwargs:
+    if 'parser_args' in kwargs and kwargs['parser_args'].thumbnail:
         package_data['thumbnail'] = data_uri_from(kwargs['parser_args'].thumbnail)
 
     release_data = {
         'version': time.strftime('%Y.%m.%d.%H%M'),
-        'description': summary
+        'summary': summary,
+        'description': description,
     }
 
     file_data = {
