@@ -49,3 +49,34 @@ sites:
                     }
                 }
             })
+
+    def test_support_tags(self):
+        tmpdir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmpdir)
+
+        user_dir = join(tmpdir, 'user')
+        os.mkdir(user_dir)
+
+        with open(join(user_dir, 'config.yaml'), 'wb') as fd:
+            fd.write(b'''
+!!python/unicode 'sites':
+   !!python/unicode 'alpha': {!!python/unicode 'url': !!python/unicode 'foobar'}
+   !!python/unicode 'binstar': {!!python/unicode 'url': !!python/unicode 'barfoo'}
+ssl_verify: False
+''')
+
+        with mock.patch('binstar_client.utils.config.SEARCH_PATH', [user_dir]), \
+                mock.patch('binstar_client.utils.config.DEFAULT_CONFIG', {}):
+            cfg = config.get_config()
+
+            self.assertEqual(cfg, {
+                'ssl_verify': False,
+                'sites': {
+                    'alpha': {
+                        'url': 'foobar',
+                    },
+                    'binstar': {
+                        'url': 'barfoo',
+                    },
+                }
+            })

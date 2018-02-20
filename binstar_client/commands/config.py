@@ -68,10 +68,10 @@ from argparse import RawDescriptionHelpFormatter
 
 from six import text_type
 
-from binstar_client.errors import ShowHelp, UserError
+from binstar_client.errors import ShowHelp
 from binstar_client.utils.config import (SEARCH_PATH, USER_CONFIG, SYSTEM_CONFIG, CONFIGURATION_KEYS,
                                          get_config, save_config, load_config, load_file_configs)
-from ..utils.yaml import yaml_load, yaml_dump
+from ..utils.yaml import yaml_dump, safe_load
 
 logger = logging.getLogger('binstar.config')
 
@@ -80,7 +80,7 @@ DEPRECATED = {
 }
 
 
-def recursive_set(config_data, key, value, ty):
+def recursive_set(config_data, key, value, type_):
     while '.' in key:
         prefix, key = key.split('.', 1)
         config_data = config_data.setdefault(prefix, {})
@@ -92,7 +92,7 @@ def recursive_set(config_data, key, value, ty):
         message = "{} is deprecated: {}".format(key, DEPRECATED[key])
         logger.warning(message)
 
-    config_data[key] = ty(value)
+    config_data[key] = type_(value)
 
 
 def recursive_remove(config_data, key):
@@ -158,7 +158,7 @@ def add_parser(subparsers):
                                    epilog=__doc__,
                                    formatter_class=RawDescriptionHelpFormatter)
 
-    parser.add_argument('--type', default=text_type,
+    parser.add_argument('--type', default=safe_load,
                         help='The type of the values in the set commands')
 
     agroup = parser.add_argument_group('actions')
