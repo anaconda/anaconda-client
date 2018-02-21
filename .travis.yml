@@ -10,7 +10,8 @@ env:
   global:
     # Environment variables used by astropy helpers
     - CONDA_CHANNELS="https://conda.anaconda.org/t/$ANACONDA_ORG_TOKEN/binstar conda-kapsel"
-    - CONDA_DEPENDENCIES="pip setuptools=23.0.0  clyent pillow psutil nbformat anaconda-project coverage==3.7.1 mock "
+    - CONDA_DEPENDENCIES="pip setuptools=23.0.0 clyent pillow psutil nbformat anaconda-project mock"
+    - PIP_DEPENDENCIES="coverage==3.7.1 freezegun==0.3.9"
 
 matrix:
   include:
