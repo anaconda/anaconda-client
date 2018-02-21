@@ -2,7 +2,6 @@ from __future__ import unicode_literals
 
 import unittest
 
-from freezegun import freeze_time
 from mock import patch
 
 from binstar_client import errors
