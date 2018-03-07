@@ -46,14 +46,15 @@ class Test(unittest.TestCase):
         with open(join(user_dir, 'config.yaml'), 'wb') as fd:
             fd.write(b'')
 
-        data = config.DEFAULT_CONFIG.copy()
-        data.update({'url': 'https://blob.org'})
+        url_data = {'url': 'https://blob.org'}
+        config_data = config.DEFAULT_CONFIG.copy()
+        config_data.update(url_data)
 
         with mock.patch('binstar_client.utils.config.SEARCH_PATH',
                         [system_dir, user_dir]):
-            config.save_config(data, join(user_dir, 'config.yaml'))
+            config.save_config(url_data, join(user_dir, 'config.yaml'))
             cfg = config.get_config()
-            self.assertEqual(cfg, data)
+            self.assertEqual(cfg, config_data)
 
     def test_merge(self):
         user_dir, system_dir = self.create_config_dirs()
