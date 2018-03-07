@@ -1,25 +1,62 @@
+# -*- coding: utf-8 -*-
+"""Test anaconda-client configuration set/get."""
+
+# Standard library imports
 from os.path import join
 import os
-import unittest
-import inspect
 import shutil
 import tempfile
+import unittest
 
+# Third party imports
 import mock
 
+# Local imports
 from binstar_client.utils import config
 
 
 class Test(unittest.TestCase):
-    def test_merge(self):
+
+    def create_config_dirs(self):
         tmpdir = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, tmpdir)
-
         system_dir = join(tmpdir, 'system')
         user_dir = join(tmpdir, 'user')
         os.mkdir(system_dir)
         os.mkdir(user_dir)
+        return user_dir, system_dir
 
+    def test_defaults(self):
+        user_dir, system_dir = self.create_config_dirs()
+        with open(join(user_dir, 'config.yaml'), 'wb') as fd:
+            fd.write(b'')
+
+        with mock.patch('binstar_client.utils.config.SEARCH_PATH',
+                        [system_dir, user_dir]):
+            cfg = config.get_config()
+            self.assertEqual(cfg, config.DEFAULT_CONFIG)
+
+    def test_global_url(self):
+        """
+        Test regression reported on:
+
+        https://github.com/Anaconda-Platform/anaconda-client/issues/464
+        """
+        user_dir, system_dir = self.create_config_dirs()
+        with open(join(user_dir, 'config.yaml'), 'wb') as fd:
+            fd.write(b'')
+
+        data = config.DEFAULT_CONFIG.copy()
+        data.update({'url': 'https://blob.org'})
+
+        with mock.patch('binstar_client.utils.config.SEARCH_PATH',
+                        [system_dir, user_dir]):
+            config.save_config(data, join(user_dir, 'config.yaml'))
+            cfg = config.get_config()
+            self.assertEqual(cfg, data)
+
+    def test_merge(self):
+        user_dir, system_dir = self.create_config_dirs()
         with open(join(system_dir, 'config.yaml'), 'wb') as fd:
             fd.write(b'''
 ssl_verify: false
@@ -51,12 +88,7 @@ sites:
             })
 
     def test_support_tags(self):
-        tmpdir = tempfile.mkdtemp()
-        self.addCleanup(shutil.rmtree, tmpdir)
-
-        user_dir = join(tmpdir, 'user')
-        os.mkdir(user_dir)
-
+        user_dir, system_dir = self.create_config_dirs()
         with open(join(user_dir, 'config.yaml'), 'wb') as fd:
             fd.write(b'''
 !!python/unicode 'sites':
