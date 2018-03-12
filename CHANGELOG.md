@@ -4,6 +4,8 @@
 
 ## Fixed
 
+* Fixed behavior of the url config setting
+* Fixed upload command help
 * Upload now reads Jupyter notebooks metadata
 
 ## Version 1.6.11 (2018/02/20)
