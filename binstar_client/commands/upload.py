@@ -378,7 +378,7 @@ def add_parser(subparsers):
     mgroup.add_argument('-p', '--package', help='Defaults to the package name in the uploaded file')
     mgroup.add_argument('-v', '--version', help='Defaults to the package version in the uploaded file')
     mgroup.add_argument('-s', '--summary', help='Set the summary of the package')
-    pkg_types = ', '.join(PACKAGE_TYPES.keys())
+    pkg_types = ', '.join(list(PACKAGE_TYPES.keys()))
     mgroup.add_argument('-t', '--package-type', help='Set the package type [{0}]. Defaults to autodetect'.format(pkg_types))
     mgroup.add_argument('-d', '--description', help='description of the file(s)')
     mgroup.add_argument('--thumbnail', help='Notebook\'s thumbnail image')
