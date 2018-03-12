@@ -54,7 +54,7 @@ DEFAULT_CONFIG = {
         'binstar': {'url': DEFAULT_URL},
     },
     'auto_register': True,
-    'default_site': 'anaconda',
+    'default_site': None,
     'url': DEFAULT_URL,
     'ssl_verify': True
 }
