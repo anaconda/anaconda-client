@@ -1,74 +1,39 @@
-from __future__ import unicode_literals
+from __future__ import absolute_import, print_function, unicode_literals
+
 import os
 import re
 import time
-from ..utils.notebook.inflection import parameterize
+
+from datetime import datetime
+
+import nbformat
+
 from ..utils.notebook.data_uri import data_uri_from
-
-
-class IPythonNotebook(object):
-    _name = None
-    _version = None
-    thumbnail_file = None
-
-    def __init__(self, filename, fileobj, *args, **kwargs):
-
-        if isinstance(filename, bytes):
-            filename = filename.decode('utf-8', errors='ignore')
-
-        self.filename = filename
-        self.thumbnail_file = kwargs.get('thumbnail_file', None)
-
-    @property
-    def basename(self):
-        return os.path.basename(self.filename)
-
-    @property
-    def name(self):
-        if self._name is None:
-            return re.sub('\-ipynb$', '', parameterize(os.path.basename(self.filename)))
-        return self._name
-
-    @property
-    def version(self):
-        if self._version is None:
-            self._version = time.strftime('%Y.%m.%d.%H%M')
-        return self._version
-
-    @property
-    def thumbnail(self):
-        if self.thumbnail_file is None:
-            return None
-        return data_uri_from(self.thumbnail_file)
-
-    def get_package_data(self):
-        if self.thumbnail_file is None:
-            return {
-                'name': self.name,
-                'summary': 'IPython notebook'
-            }
-        else:
-            return {
-                'name': self.name,
-                'summary': 'IPython notebook',
-                'thumbnail': self.thumbnail
-            }
+from ..utils.notebook.inflection import parameterize
 
 
 def inspect_ipynb_package(filename, fileobj, *args, **kwargs):
-    if 'parser_args' in kwargs:
-        thumbnail_file = kwargs['parser_args'].thumbnail
-        ipython_notebook = IPythonNotebook(filename, fileobj, thumbnail_file=thumbnail_file)
-    else:
-        ipython_notebook = IPythonNotebook(filename, fileobj)
+    notebook = nbformat.read(fileobj, nbformat.NO_CONVERT)
+    summary = notebook['metadata'].get('summary', 'Jupyter Notebook')
+    description = notebook['metadata'].get('description', 'Jupyter Notebook')
 
-    package_data = ipython_notebook.get_package_data()
-    release_data = {
-        'version': ipython_notebook.version,
-        'description': ''
+    package_data = {
+        'name': re.sub('\-ipynb$', '', parameterize(os.path.basename(filename))),
+        'summary': summary,
+        'description': description,
     }
+
+    if 'parser_args' in kwargs and kwargs['parser_args'].thumbnail:
+        package_data['thumbnail'] = data_uri_from(kwargs['parser_args'].thumbnail)
+
+    release_data = {
+        'version': datetime.now().strftime('%Y.%m.%d.%H%M'),
+        'summary': summary,
+        'description': description,
+    }
+
     file_data = {
-        'basename': ipython_notebook.basename,
+        'basename': os.path.basename(filename),
         'attrs': {}
     }
 

@@ -1,11 +1,7 @@
-'''
-Created on Feb 18, 2014
-
-@author: sean
-'''
 from __future__ import unicode_literals
 
 import unittest
+
 from mock import patch
 
 from binstar_client import errors
