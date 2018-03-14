@@ -120,6 +120,26 @@ def get_server_api(token=None, site=None, cls=None, config=None, **kwargs):
     return cls(token, domain=url, verify=verify, **kwargs)
 
 
+def get_binstar(args=None, cls=None):
+    """
+    DEPRECATED METHOD,
+
+    use `get_server_api`
+    """
+
+    warnings.warn(
+        'method get_binstar is deprecated, please use `get_server_api`',
+        DeprecationWarning
+    )
+
+    token = getattr(args, 'token', None)
+    log_level = getattr(args, 'log_level', logging.INFO)
+    site = getattr(args, 'site', None)
+
+    aserver_api = get_server_api(token, site, log_level, cls)
+    return aserver_api
+
+
 TOKEN_DIRS = [
     dirs.user_data_dir,
     join(dirname(USER_CONFIG), 'tokens'),

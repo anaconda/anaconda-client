@@ -14,7 +14,9 @@ from pkg_resources import parse_version as pv
 from .spec import PackageSpec, package_specs, parse_specs
 
 # Re-export config
-from .config import (get_server_api, dirs, load_token, store_token, remove_token, get_config, set_config, load_config,
+from .config import (get_server_api, dirs, load_token, store_token,
+                     remove_token, get_config, set_config, load_config,
+                     get_binstar,
                      USER_CONFIG, USER_LOGDIR, SITE_CONFIG, DEFAULT_CONFIG)
 
 from six.moves import input
