@@ -1,6 +1,6 @@
 # CHANGELOG:
 
-## Next version
+## Version 1.6.13 (2018/03/13)
 
 ### Fixed
 
