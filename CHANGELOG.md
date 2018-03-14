@@ -1,8 +1,14 @@
 # CHANGELOG:
 
+## Next version
+
+### Fixed
+
+* Re-added get_binstar function
+
 ## Version 1.6.12 (2018/03/12)
 
-## Fixed
+### Fixed
 
 * Fixed behavior of the url config setting
 * Fixed upload command help
