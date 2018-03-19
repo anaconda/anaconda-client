@@ -1,5 +1,11 @@
 # CHANGELOG:
 
+## Next version
+
+### Fixed
+
+* Fixed get_server_api call on get_binstar
+
 ## Version 1.6.13 (2018/03/13)
 
 ### Fixed
