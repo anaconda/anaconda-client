@@ -136,7 +136,7 @@ def get_binstar(args=None, cls=None):
     log_level = getattr(args, 'log_level', logging.INFO)
     site = getattr(args, 'site', None)
 
-    aserver_api = get_server_api(token, site, log_level, cls)
+    aserver_api = get_server_api(token=token, site=site, log_level=log_level, cls=cls)
     return aserver_api
 
 
