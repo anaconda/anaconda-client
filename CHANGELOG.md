@@ -2,7 +2,7 @@
 
 ## Next version
 
-### Fixed
+### Version 1.6.14 (2018/03/19)
 
 * Fixed get_server_api call on get_binstar
 
