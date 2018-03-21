@@ -1,4 +1,24 @@
-# Release process
+# Release Checklist
+- [ ] Release to beta
+- [ ] Email Aamna about the beta release
+- [ ] Update Internal Change Log: https://github.com/Anaconda-Server/anaconda-server/blob/develop/CHANGELOG.md
+- [ ] If docs changed, coordinate release with Kerry
+- [ ] Release to production
+  - [ ] Ensure static assets are released as needed
+- [ ] Create this ticket for next release and put it in the backlog
+- [ ] Update the label to the installer on anaconda cloud (https://anaconda.org/binstar/binstar-server/files)
+
+# Include CLI Client
+- [ ] If Anaconda-Client changes then release with other changes
+
+# Minor Release
+- [ ] Update Public Docs Landing Page - http://docs.continuum.io/anaconda-server/index
+      source: https://github.com/ContinuumIO/docs/blob/master/build/anaconda-server/index.rst
+- [ ] Update Public Docs Change Log - http://docs.continuum.io/anaconda-server/changelog
+- [ ] Post to @ everyone in FlowDock with an update announcing the release and providing the short summary of changes
+
+
+# Release process (deprecated?)
 
 ## To release a new version of **anaconda-client**:
 
@@ -27,3 +47,4 @@
     git push --tags
 
 **6.)** Inform build team that new release is available
+
