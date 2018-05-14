@@ -6,7 +6,7 @@ from binstar_client.errors import DestionationPathExists
 
 class Downloader(object):
     """
-    Download notebook from anaconda.org
+    Download notebook from your Anaconda repository.
     """
     def __init__(self, aserver_api, username, notebook):
         self.aserver_api = aserver_api

@@ -1,5 +1,5 @@
 """
-Manage your Anaconda Cloud channels
+Manage your Anaconda repository channels.
 """
 
 from __future__ import unicode_literals, print_function
@@ -64,7 +64,7 @@ def _add_parser(subparsers, name, deprecated=False):
 
     subparser = subparsers.add_parser(
         name,
-        help='{}Manage your Anaconda Cloud {}s'.format(deprecated_warn, name),
+        help='{}Manage your Anaconda repository {}s'.format(deprecated_warn, name),
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description=__doc__)
 
