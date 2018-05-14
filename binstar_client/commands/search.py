@@ -1,5 +1,5 @@
 """
-Search Anaconda Cloud for packages
+Search your Anaconda repository for packages.
 """
 import logging
 
@@ -22,8 +22,8 @@ def search(args):
 def add_parser(subparsers):
     parser = subparsers.add_parser(
         'search',
-        help='Search Anaconda Cloud',
-        description='Search Anaconda Cloud',
+        help='Search in your Anaconda repository',
+        description='Search in your Anaconda repository',
         epilog=__doc__
     )
     parser.add_argument('name', nargs=1, help='Search string')

@@ -17,7 +17,7 @@ logger = logging.getLogger("binstar.download")
 
 
 def add_parser(subparsers):
-    description = 'Download notebooks from Anaconda Cloud'
+    description = 'Download notebooks from your Anaconda repository'
     parser = subparsers.add_parser(
         'download',
         formatter_class=argparse.RawDescriptionHelpFormatter,

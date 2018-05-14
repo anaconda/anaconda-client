@@ -6,7 +6,7 @@ Get, Set, Remove or Show the anaconda-client configuration.
 ###### anaconda-client sites
 
 anaconda-client sites are a mechanism to allow users to quickly switch
-between Anaconda Cloud instances. This is primarily used for testing
+between Anaconda repository instances. This is primarily used for testing
 the anaconda alpha site. But also has applications for the
 on-site [Anaconda Enterprise](http://continuum.io/anaconda-server).
 

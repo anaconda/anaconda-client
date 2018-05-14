@@ -127,7 +127,7 @@ def add_package(aserver_api, args, username, package_name, package_attrs, packag
     except errors.NotFound:
         if not args.auto_register:
             message = (
-                'Anaconda Cloud package %s/%s does not exist. '
+                'Anaconda repository package %s/%s does not exist. '
                 'Please run "anaconda package --create" to create this package namespace in the cloud.' %
                 (username, package_name)
             )
@@ -351,7 +351,7 @@ def windows_glob(item):
 
 
 def add_parser(subparsers):
-    description = 'Upload packages to Anaconda Cloud'
+    description = 'Upload packages to your Anaconda repository'
     parser = subparsers.add_parser('upload',
                                    formatter_class=argparse.RawDescriptionHelpFormatter,
                                    help=description, description=description,
@@ -390,7 +390,7 @@ def add_parser(subparsers):
     register_group.add_argument("--register", dest="auto_register", action="store_true",
                         help='Create a new package namespace if it does not exist')
     parser.set_defaults(auto_register=DEFAULT_CONFIG.get('auto_register', True))
-    parser.add_argument('--build-id', help='Anaconda Cloud Build ID (internal only)')
+    parser.add_argument('--build-id', help='Anaconda repository Build ID (internal only)')
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-i', '--interactive', action='store_const', help='Run an interactive prompt if any packages are missing',

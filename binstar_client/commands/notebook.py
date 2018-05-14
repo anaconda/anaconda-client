@@ -15,7 +15,7 @@ logger = logging.getLogger("binstar.notebook")
 
 
 def add_parser(subparsers):
-    description = 'Interact with notebooks in anaconda.org'
+    description = 'Interact with notebooks in your Anaconda repository'
     parser = subparsers.add_parser('notebook',
                                    formatter_class=argparse.RawDescriptionHelpFormatter,
                                    help=description,
@@ -28,7 +28,7 @@ def add_parser(subparsers):
 
 
 def add_upload_parser(subparsers):
-    description = "Upload a notebook to anaconda.org"
+    description = "Upload a notebook to your Anaconda repository"
     epilog = """
     [Deprecation warning]
     `anaconda notebook` is going to be deprecated
@@ -67,7 +67,7 @@ def add_upload_parser(subparsers):
 
 
 def add_download_parser(subparsers):
-    description = "Download notebooks from anaconda.org"
+    description = "Download notebooks from your Anaconda repository"
     epilog = """
     [Deprecation warning]
     `anaconda notebook` is going to be deprecated

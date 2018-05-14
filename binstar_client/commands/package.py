@@ -1,5 +1,5 @@
 """
-Anaconda Cloud package utilities
+Anaconda repository package utilities
 """
 from __future__ import print_function
 
