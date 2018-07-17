@@ -37,7 +37,7 @@ logger = logging.getLogger('binstar.upload')
 
 
 def verbose_package_type(pkg_type, lowercase=True):
-    verbose_type = PACKAGE_TYPES[pkg_type]
+    verbose_type = PACKAGE_TYPES.get(pkg_type, 'unknown')
     if lowercase:
         verbose_type = verbose_type.lower()
     return verbose_type

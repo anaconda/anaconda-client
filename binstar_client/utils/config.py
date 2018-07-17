@@ -46,10 +46,10 @@ else:
 # Package types used in upload/download
 PACKAGE_TYPES = {
     'env': 'Environment',
-    'ipynb': 'Notebook'
+    'ipynb': 'Notebook',
+    'conda' : 'Conda Package',
+    'pypi': 'Python Package',
 }
-ALL_PACKAGE_TYPES = PACKAGE_TYPES.copy()
-ALL_PACKAGE_TYPES['conda'] = 'Conda Package'
 
 USER_LOGDIR = dirs.user_log_dir
 SITE_CONFIG = expand('$CONDA_ROOT/etc/anaconda-client/config.yaml')

@@ -11,7 +11,7 @@ import logging
 
 from binstar_client import errors
 from binstar_client.utils import get_server_api
-from binstar_client.utils.config import ALL_PACKAGE_TYPES
+from binstar_client.utils.config import PACKAGE_TYPES
 from binstar_client.utils.notebook import Downloader, parse, has_environment
 
 logger = logging.getLogger("binstar.download")
@@ -44,7 +44,10 @@ def add_parser(subparsers):
         help='Download as',
         default='.'
     )
-    pkg_types = ', '.join(list(ALL_PACKAGE_TYPES.keys()))
+    pkgs = PACKAGE_TYPES.copy()
+    pkgs.pop('conda')
+    pkgs.pop('pypi')
+    pkg_types = ', '.join(list(pkgs.keys()))
     parser.add_argument(
         '-t', '--package-type',
         help='Set the package type [{0}]. Defaults to downloading all '
