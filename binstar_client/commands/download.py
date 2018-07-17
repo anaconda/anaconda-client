@@ -45,9 +45,7 @@ def add_parser(subparsers):
         default='.'
     )
     pkgs = PACKAGE_TYPES.copy()
-    pkgs.pop('conda')
-    pkgs.pop('pypi')
-    pkg_types = ', '.join(list(pkgs.keys()))
+    pkg_types = ', '.join(list(PACKAGE_TYPES.keys()))
     parser.add_argument(
         '-t', '--package-type',
         help='Set the package type [{0}]. Defaults to downloading all '
