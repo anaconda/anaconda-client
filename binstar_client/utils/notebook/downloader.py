@@ -6,31 +6,35 @@ from binstar_client.errors import DestionationPathExists
 
 class Downloader(object):
     """
-    Download notebook from your Anaconda repository.
+    Download files from your Anaconda repository.
     """
+
     def __init__(self, aserver_api, username, notebook):
         self.aserver_api = aserver_api
         self.username = username
         self.notebook = notebook
 
-    def __call__(self, output='.', force=False):
+    def __call__(self, package_types, output='.', force=False):
         self.output = output
         self.ensure_output()
-        return self.download_files(force)
+        return self.download_files(package_types, force)
 
-    def download_files(self, force=False):
+    def download_files(self, package_types, force=False):
         output = []
         for f in self.list_files():
-            if self.can_download(f, force):
-                self.download(f)
-                output.append(f['basename'])
-            else:
-                raise DestionationPathExists(f['basename'])
-        return output
+            # Check type
+            pkg_type = f.get('type') or ''
+            if pkg_type in package_types:
+                if self.can_download(f, force):
+                    self.download(f)
+                    output.append(f['basename'])
+                else:
+                    raise DestionationPathExists(f['basename'])
+        return sorted(output)
 
     def download(self, dist):
         """
-        Download file into location
+        Download file into location.
         """
         filename = dist['basename']
         requests_handle = self.aserver_api.download(
@@ -65,7 +69,7 @@ class Downloader(object):
 
     def list_files(self):
         """
-        List available files in a project (aka notebook)
+        List available files in a project (aka notebook).
         :return: list
         """
         output = []

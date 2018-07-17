@@ -20,7 +20,6 @@ import subprocess
 
 from glob import glob
 from os.path import exists
-from collections import defaultdict
 
 import nbformat
 
@@ -28,6 +27,7 @@ from six.moves import input
 
 from binstar_client import errors
 from binstar_client.utils import bool_input, DEFAULT_CONFIG, get_config, get_server_api, upload_print_callback
+from binstar_client.utils.config import PACKAGE_TYPES
 from binstar_client.utils.projects import upload_project
 from binstar_client.utils.detect import detect_package_type, get_attrs
 
@@ -35,11 +35,9 @@ from binstar_client.utils.detect import detect_package_type, get_attrs
 logger = logging.getLogger('binstar.upload')
 
 
-PACKAGE_TYPES = defaultdict(lambda: 'Package', {'env': 'Environment', 'ipynb': 'Notebook'})
-
 
 def verbose_package_type(pkg_type, lowercase=True):
-    verbose_type = PACKAGE_TYPES[pkg_type]
+    verbose_type = PACKAGE_TYPES.get(pkg_type, 'unknown')
     if lowercase:
         verbose_type = verbose_type.lower()
     return verbose_type
@@ -378,7 +376,11 @@ def add_parser(subparsers):
     mgroup.add_argument('-p', '--package', help='Defaults to the package name in the uploaded file')
     mgroup.add_argument('-v', '--version', help='Defaults to the package version in the uploaded file')
     mgroup.add_argument('-s', '--summary', help='Set the summary of the package')
-    pkg_types = ', '.join(list(PACKAGE_TYPES.keys()))
+    # To preserve current behavior
+    pkgs = PACKAGE_TYPES.copy()
+    pkgs.pop('conda')
+    pkgs.pop('pypi')
+    pkg_types = ', '.join(list(pkgs.keys()))
     mgroup.add_argument('-t', '--package-type', help='Set the package type [{0}]. Defaults to autodetect'.format(pkg_types))
     mgroup.add_argument('-d', '--description', help='description of the file(s)')
     mgroup.add_argument('--thumbnail', help='Notebook\'s thumbnail image')

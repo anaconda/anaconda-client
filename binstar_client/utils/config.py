@@ -1,5 +1,7 @@
 from __future__ import print_function, absolute_import, unicode_literals
 
+from os.path import exists, join, dirname, isfile, isdir, abspath, expanduser
+from string import Template
 import collections
 import logging
 import os
@@ -7,8 +9,6 @@ import stat
 import warnings
 import itertools
 
-from os.path import exists, join, dirname, isfile, isdir, abspath, expanduser
-from string import Template
 
 try:
     from urllib import quote_plus
@@ -42,6 +42,14 @@ else:
     dirs = AppDirs('binstar', 'ContinuumIO')
     USER_CONFIG = expand('~/.continuum/anaconda-client/config.yaml')
 
+
+# Package types used in upload/download
+PACKAGE_TYPES = {
+    'env': 'Environment',
+    'ipynb': 'Notebook',
+    'conda' : 'Conda Package',
+    'pypi': 'Python Package',
+}
 
 USER_LOGDIR = dirs.user_log_dir
 SITE_CONFIG = expand('$CONDA_ROOT/etc/anaconda-client/config.yaml')
