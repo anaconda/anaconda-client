@@ -2,8 +2,16 @@
 
 ## Next version
 
+* 
+
+## Version 1.7.0 (2018/07/16)
+
 ### Fixed
 
+* Add move subcommand for label handling
+* Add option to download specific package type
+* Fix text mentions of Anaconda Cloud
+* Clear in-line help for "package type" option in "upload" command
 * Fixed get_server_api call on get_binstar
 
 ## Version 1.6.13 (2018/03/13)
