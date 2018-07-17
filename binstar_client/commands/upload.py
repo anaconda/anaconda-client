@@ -20,7 +20,6 @@ import subprocess
 
 from glob import glob
 from os.path import exists
-from collections import defaultdict
 
 import nbformat
 
@@ -28,14 +27,13 @@ from six.moves import input
 
 from binstar_client import errors
 from binstar_client.utils import bool_input, DEFAULT_CONFIG, get_config, get_server_api, upload_print_callback
+from binstar_client.utils.config import PACKAGE_TYPES
 from binstar_client.utils.projects import upload_project
 from binstar_client.utils.detect import detect_package_type, get_attrs
 
 
 logger = logging.getLogger('binstar.upload')
 
-
-PACKAGE_TYPES = defaultdict(lambda: 'Package', {'env': 'Environment', 'ipynb': 'Notebook'})
 
 
 def verbose_package_type(pkg_type, lowercase=True):
