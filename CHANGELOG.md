@@ -2,13 +2,12 @@
 
 ## Next version
 
-* 
-
 ## Version 1.7.0 (2018/07/16)
 
 ### Fixed
 
-* Add move subcommand for label handling
+* Add move command for label handling
+* Add copy subcommand for label handling
 * Add option to download specific package type
 * Fix text mentions of Anaconda Cloud
 * Clear in-line help for "package type" option in "upload" command
