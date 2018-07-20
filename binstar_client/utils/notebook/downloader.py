@@ -1,6 +1,8 @@
-import os
 from time import mktime
 from dateutil.parser import parse
+from collections import OrderedDict
+import os
+
 from binstar_client.errors import DestionationPathExists
 
 
@@ -18,6 +20,24 @@ class Downloader(object):
         self.output = output
         self.ensure_output()
         return self.download_files(package_types, force)
+
+    def list_download_files(self, package_types, output='.', force=False):
+        """
+        This additional method was created to better handle the log output
+        as files are downloaded one by one on the commands/download.py.
+        """
+        self.output = output
+        self.ensure_output()
+        files = OrderedDict()
+        for f in self.list_files():
+            # Check type
+            pkg_type = f.get('type') or ''
+            if pkg_type in package_types:
+                if self.can_download(f, force):
+                    files[f['basename']] = f
+                else:
+                    raise DestionationPathExists(f['basename'])
+        return files
 
     def download_files(self, package_types, force=False):
         output = []

@@ -44,7 +44,6 @@ def add_parser(subparsers):
         help='Download as',
         default='.'
     )
-    pkgs = PACKAGE_TYPES.copy()
     pkg_types = ', '.join(list(PACKAGE_TYPES.keys()))
     parser.add_argument(
         '-t', '--package-type',
@@ -60,17 +59,18 @@ def main(args):
     username, notebook = parse(args.handle)
     username = username or aserver_api.user()['login']
     downloader = Downloader(aserver_api, username, notebook)
-    packages_types = args.package_type or list(ALL_PACKAGE_TYPES.keys())
+    packages_types = args.package_type or list(PACKAGE_TYPES.keys())
 
     # Check valid package type
     for ty in packages_types:
-        if ty not in list(ALL_PACKAGE_TYPES.keys()):
+        if ty not in list(PACKAGE_TYPES.keys()):
             raise Exception("Invalid package type '{}'".format(ty))
 
     try:
-        download_files = downloader(packages_types, output=args.output, force=args.force)
-        for download_file in download_files:
-            logger.info("{} has been downloaded as {}.".format(args.handle, download_file))
+        download_files = downloader.list_download_files(packages_types, output=args.output, force=args.force)
+        for download_file, download_dist in download_files.items():
+            downloader.download(download_dist)
+            logger.info("{} has been downloaded as {}".format(args.handle, download_file))
             if has_environment(download_file):
                 logger.info("{} has an environment embedded.".format(download_file))
                 logger.info("Run:")
