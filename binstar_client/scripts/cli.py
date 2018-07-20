@@ -100,11 +100,11 @@ def add_default_arguments(parser, version=None):
     output_group.add_argument('--show-traceback', action='store_true',
                               help='Show the full traceback for chalmers user errors (default: %(default)s)')
     output_group.add_argument('-v', '--verbose',
-                              action='store_const', help='print debug information ot the console',
+                              action='store_const', help='print debug information on the console',
                               dest='log_level',
                               default=logging.INFO, const=logging.DEBUG)
     output_group.add_argument('-q', '--quiet',
-                              action='store_const', help='Only show warnings or errors the console',
+                              action='store_const', help='Only show warnings or errors on the console',
                               dest='log_level', const=logging.WARNING)
 
     if version:
