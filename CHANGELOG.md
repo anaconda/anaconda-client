@@ -2,7 +2,13 @@
 
 ## Next version
 
-## Version 1.7.0 (2018/07/16)
+## Version 1.7.1 (2018/07/27) - Not released
+
+### Fixed
+
+* Fix files download and add more output information
+
+## Version 1.7.0 (2018/07/16) - Not released
 
 ### Fixed
 
