@@ -2,7 +2,7 @@
 
 ## Next version
 
-## Version 1.7.1 (2018/07/27) - Not released
+## Version 1.7.1 (2018/07/27)
 
 ### Fixed
 
@@ -17,6 +17,11 @@
 * Add option to download specific package type
 * Fix text mentions of Anaconda Cloud
 * Clear in-line help for "package type" option in "upload" command
+* Fixed get_server_api call on get_binstar
+
+## Version 1.6.14 (2018/03/19)
+### Fixed
+
 * Fixed get_server_api call on get_binstar
 
 ## Version 1.6.13 (2018/03/13)
