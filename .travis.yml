@@ -4,10 +4,10 @@ language: python
 sudo: false
 branches:
   only:
-    - 1.6.x
-    - 1.7.x
     - develop
-
+    - 1.7.x
+    - 1.6.x
+  
 env:
   global:
     # Environment variables used by astropy helpers
