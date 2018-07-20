@@ -4,6 +4,8 @@ language: python
 sudo: false
 branches:
   only:
+    - 1.6.x
+    - 1.7.x
     - develop
 
 env:
