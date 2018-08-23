@@ -42,10 +42,11 @@ expected_whl_dependencies = {u'depends': [{u'name': u'python-dateutil', u'specs'
                                u'environments': [{u'depends': [{u'name': u'argparse',
                                                                 u'specs': []}],
                                                   u'name': u'python_version=="2.6"'}],
-                               u'extras': [{u'depends': [{u'name': u'RXP',
+                               u'extras': [{u'depends': [{u'name': u'reportlab',
+                                                          u'specs': [(u'>=', u'1.2')]},
+                                                         {u'name': u'rxp',
                                                           u'specs': []},
-                                                         {u'name': u'reportlab',
-                                                          u'specs': [(u'>=', u'1.2')]}],
+                                                         ],
                                             u'name': u'PDF'},
                                            {u'depends': [{u'name': u'docutils',
                                                           u'specs': [(u'>=', u'0.3')]}],
@@ -93,11 +94,55 @@ class Test(unittest.TestCase):
         self.assertEqual(expected_package_data, package_data)
         self.assertEqual(expected_version_data, version_data)
 
-
         self.assertEqual(set(expected_file_data), set(file_data))
         for key in expected_file_data:
+            print(expected_file_data[key])
+            print(file_data[key])
             self.assertEqual(expected_file_data[key], file_data[key])
 
+    def test_bdist_wheel_newer_version(self):
+        filename_whl = 'azure_cli_extension-0.2.1-py2.py3-none-any.whl'
+        filename = data_dir(filename_whl)
+
+        with open(filename, 'rb') as fd:
+            package_data, version_data, file_data = pypi.inspect_pypi_package(filename, fd)
+
+        expected_file_data = {
+            'platform': None,
+            'basename': filename_whl,
+            'dependencies': {
+                u'depends': [
+                    {u'name': u'azure-cli-command-modules-nspkg', u'specs': [(u'>=', u'2.0.0')]},
+                    {u'name': u'azure-cli-core', u'specs': []}, {u'name': u'pip', u'specs': []},
+                    {u'name': u'wheel', u'specs': [(u'==', u'0.30.0')]}
+                ],
+                u'extras': [],
+                u'has_dep_errors': False,
+                u'environments': []},
+            u'attrs': {
+                'abi': None,
+                'packagetype': u'bdist_wheel',
+                'python_version': u'py2.py3',
+                'build_no': 0
+            }
+        }
+        expected_package_data = {
+            u'name': 'azure-cli-extension',
+            u'license': 'MIT',
+            u'summary': 'Microsoft Azure Command-Line Tools Extension Command Module',
+        }
+        expected_version_data = {
+            u'home_page': 'https://github.com/Azure/azure-cli',
+            u'version': '0.2.1',
+            u'description': u"Microsoft Azure CLI 'extension' Command Module",
+        }
+        self.assertEqual(expected_package_data, package_data)
+        self.assertEqual(expected_version_data, version_data)
+        self.assertEqual(set(expected_file_data), set(file_data))
+        for key in expected_file_data:
+            print(expected_file_data[key])
+            print(file_data[key])
+            self.assertEqual(expected_file_data[key], file_data[key])
 
     def test_bdist_egg(self):
         filename = data_dir('test_package34-0.3.1-py2.7.egg')
@@ -172,6 +217,8 @@ class Test(unittest.TestCase):
         self.assertEqual(set(expected_file_data), set(file_data))
 
         for key in expected_file_data:
+            print(expected_file_data[key])
+            print(file_data[key])
             self.assertEqual(expected_file_data[key], file_data[key])
 
 
