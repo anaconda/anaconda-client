@@ -6,34 +6,66 @@ branches:
   only:
     - 1.6.x
     - 1.7.x
-    - develop
+    - 1.8.x
+    - master
 
 env:
   global:
-    # Environment variables used by astropy helpers
-    - CONDA_CHANNELS="https://conda.anaconda.org/t/$ANACONDA_ORG_TOKEN/binstar conda-kapsel"
-    - CONDA_DEPENDENCIES="pip setuptools=23.0.0 clyent pillow psutil nbformat anaconda-project mock pytest pytest-cov"
-    - PIP_DEPENDENCIES="codecov coverage==3.7.1 freezegun==0.3.9"
+    - CONDA_TEST_DEPENDENCIES="anaconda-project flake8 mock pillow pytest pytest-cov"
+    - PIP_TEST_DEPENDENCIES="codecov freezegun"
 
 matrix:
   include:
     - os: osx
       language: generic
-      env: TRAVIS_PYTHON_VERSION=2.7
+      env: PYTHON_VERSION=2.7
     - os: osx
       language: generic
-      env: TRAVIS_PYTHON_VERSION=3.5
+      env: PYTHON_VERSION=3.5
     - os: osx
       language: generic
-      env: TRAVIS_PYTHON_VERSION=3.6
+      env: PYTHON_VERSION=3.6
+    - os: osx
+      language: generic
+      env: PYTHON_VERSION=3.7
+
+cache:
+  directories:
+    - $HOME/condacache/pkgs
+    - $HOME/.cache/pip
 
 install:
-  # Use Astropy ci helpers for initial setup
-  - git clone git://github.com/astropy/ci-helpers.git --depth=1
-  - source ci-helpers/travis/setup_conda_$TRAVIS_OS_NAME.sh
+  # Install latest miniconda
+  - if [[ "$PYTHON_VERSION" == "2.7" ]]; then
+      MINICONDA_PYVERSION=2;
+    else
+      MINICONDA_PYVERSION=3;
+    fi;
+    echo "Fetching Python $MINICONDA_PYVERSION miniconda";
+    wget https://repo.anaconda.com/miniconda/Miniconda$MINICONDA_PYVERSION-latest-MacOSX-x86_64.sh -O miniconda.sh;
+  - bash miniconda.sh -b -p "$HOME"/miniconda
+  - source "$HOME"/miniconda/etc/profile.d/conda.sh
+  - conda activate base
+
+  # Configure conda and update it
+  - conda config --set always_yes yes --set changeps1 no --set auto_update_conda false
+  - conda config --add pkgs_dirs ~/condacache/pkgs
+  - conda update -n root conda -q --no-pin
+
+  # Install dependencies. This include test and lint dependencies
+  - conda create -n test python=$PYTHON_VERSION
+  - conda install -n test --file requirements.txt -q --no-pin
+  - conda install -n test $CONDA_TEST_DEPENDENCIES -q --no-pin
+  - conda activate test
+  - pip install --upgrade pip
+  - pip install $PIP_TEST_DEPENDENCIES
+
+  # Install this package
   - python setup.py develop
 
 script:
+  - conda info --json
+  # - flake8 binstar_client
   - pytest binstar_client --cov=binstar_client
 
 after_success:

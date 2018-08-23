@@ -2,7 +2,7 @@
 
 branches:
   only:
-    - develop
+    - master
 
 matrix:
   fast_finish: true
@@ -22,8 +22,8 @@ environment:
 
   matrix:
     - PYTHON_VERSION: "2.7"
-    - PYTHON_VERSION: "3.4"
-    - PYTHON_VERSION: "3.5"
+    - PYTHON_VERSION: "3.6"
+    - PYTHON_VERSION: "3.7"
 
 platform:
   -x64
@@ -52,7 +52,3 @@ build: false
 
 test_script:
   - python binstar_client/tests/runtests.py
-
-#on_success:
-# For now only report codecov on Travis-CI
-

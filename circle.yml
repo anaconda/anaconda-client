@@ -4,14 +4,15 @@ machine:
   environment:
     # Used by test scripts
     PYTHON_TEST: "$HOME/miniconda/envs/test/bin/python"
+    PY_TEST: "$HOME/miniconda/envs/test/bin/pytest"
+    PIP_TEST: "$HOME/miniconda/envs/test/bin/pip"
     PATH: "$HOME/miniconda/bin:$PATH"  # To avoid prepending this to the commands on circle-ci
     # Python versions to test (Maximum of 2 different versions for now)
-    PY_VERSIONS: "2.7 3.4 3.5 3.6"
+    PY_VERSIONS: "2.7 3.5 3.6 3.7"
+    PIP_TEST_DEPENDENCIES: "freezegun"
     # Used by astropy-ci helpers
     TRAVIS_OS_NAME: "linux"
-    CONDA_CHANNELS: "https://conda.anaconda.org/t/$ANACONDA_ORG_TOKEN/binstar conda-kapsel"
-    CONDA_DEPENDENCIES: "pip setuptools=23.0.0 clyent pillow psutil nbformat anaconda-project mock"
-    PIP_DEPENDENCIES: "coverage==3.7.1 freezegun==0.3.9"
+    CONDA_DEPENDENCIES: "pytest pytest-cov pip setuptools pytz six clyent pillow requests nbformat pyyaml anaconda-project mock python-dateutil"
 
 dependencies:
   override:
@@ -22,11 +23,11 @@ dependencies:
       git clone git://github.com/astropy/ci-helpers.git &&
       source ci-helpers/travis/setup_conda_$TRAVIS_OS_NAME.sh &&
       "$PYTHON_TEST" setup.py develop;
+    - $PIP_TEST install $PIP_TEST_DEPENDENCIES;
 
 test:
   override:
     - conda info --json: # note the colon
         parallel: true
-    - "$PYTHON_TEST binstar_client/tests/runtests.py": # note the colon
+    - "$PY_TEST binstar_client --cov=binstar_client": # note the colon
         parallel: true
-
