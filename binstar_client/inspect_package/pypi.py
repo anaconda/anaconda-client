@@ -34,6 +34,10 @@ PARTIAL_PYPI_SPEC_PATTERN = re.compile(r'''
 ''', re.VERBOSE | re.IGNORECASE)
 
 
+def norm_package_name(name):
+    return name.replace('.', '-').replace('_', '-').lower() if name else ''
+
+
 def norm_package_version(version):
     """Normalize a version by removing extra spaces and parentheses."""
     if version:
@@ -62,15 +66,16 @@ def split_spec(spec, sep):
 def parse_specification(spec):
     """
     Parse a requirement from a python distribution metadata and return a
-    namedtuple with name, extras, constraints, marker and url components.
+    tuple with name, extras, constraints, marker and url components.
 
     This method does not enforce strict specifications but extracts the
     information which is assumed to be *correct*. As such no errors are raised.
 
     Example
     -------
-    PySpec(name='requests', extras=['security'], constraints='>=3.3.0',
-           marker='foo >= 2.7 or bar == 1', url=''])
+    spec = 'requests[security, tests] >=3.3.0 ; foo >= 2.7 or bar == 1'
+
+    ('requests', ['security', 'pyfoo'], '>=3.3.0', 'foo >= 2.7 or bar == 1', '')
     """
     name, extras, const = spec, [], ''
 
@@ -104,12 +109,21 @@ def parse_specification(spec):
 
 
 def get_header_description(filedata):
+    """Get description from metadata file and remove any empty lines at end."""
     python_version = sys.version_info.major
     if python_version == 3:
         filedata = Parser().parsestr(filedata)
     else:
         filedata = Parser().parsestr(filedata.encode("UTF-8", "replace"))
-    return filedata.get_payload()
+
+    payload = filedata.get_payload()
+    lines = payload.split('\n')
+    while True:
+        if lines and lines[-1] == '':
+            lines.pop()
+        else:
+            break
+    return '\n'.join(lines)
 
 
 # Original helper functions
@@ -129,9 +143,9 @@ def parse_requirement(line, deps, extras, extra):
     req = pkg_resources.Requirement.parse(line)
     req.specs.sort(key=sort_ver)
     if extra:
-        extras[extra].append({'name':req.key, 'specs': req.specs or []})
+        extras[extra].append({'name': req.key, 'specs': req.specs or []})
     else:
-        deps.append({'name':req.key, 'specs': req.specs or []})
+        deps.append({'name': req.key, 'specs': req.specs or []})
 
     deps.sort(key=sort_key)
     for extra in extras.values():
@@ -184,7 +198,9 @@ def format_requirements(requires):
 
         req_spec = req.split(' ', 1)
         if len(req_spec) == 1:
-            obj.append({'name': req, 'specs': []})
+            # Note: req.lower() was introduced here to enforce the same parsing
+            # using metadata.json and METADATA
+            obj.append({'name': req.lower(), 'specs': []})
         else:
             req, spec = req_spec
             spec = spec.strip()
@@ -200,7 +216,6 @@ def format_requirements(requires):
             obj.append({
                 'name': req.key,
                 'specs': req.specs or [],
-                'marker': marker,
             })
     return obj
 
@@ -224,6 +239,7 @@ def format_run_requires_metadata(run_requires):
             extras.append({'name': extra, 'depends': obj})
 
         obj.extend(format_requirements(requires))
+        print(obj)
 
     deps.sort(key=sort_key)
     extras.sort(key=sort_key)
@@ -231,7 +247,8 @@ def format_run_requires_metadata(run_requires):
         extra['depends'].sort(key=sort_key)
 
     attrs = {
-        'has_dep_errors': False, 'depends': sorted(deps, key=sort_key),
+        'has_dep_errors': False,
+        'depends': sorted(deps, key=sort_key),
         'extras': extras,
         'environments': environments
     }
@@ -314,9 +331,12 @@ def format_sdist_header_metadata(data, filename):
 
     # Parse multiple keys
     deps = []
+    exts = {}
+    environments = {}
     for key, val in config_items:
         if key in ['Requires-Dist', 'Requires']:
             name, extras, const, marker, url = parse_specification(val)
+            name = norm_package_name(name)
             specs = const.split(',')
             new_specs = []
             for spec in specs:
@@ -326,14 +346,48 @@ def format_sdist_header_metadata(data, filename):
                     comp, spec_ = spec[:pos].strip(), spec[pos:].strip()
                     new_specs.append((comp, spec_))
 
-            deps.append({
-                'name': name,
-                'extras': extras,
-                'marker': marker,
-                'specs': new_specs,
-                'url': url,
-            })
-    file_data.update(dependencies=deps)
+            # TODO: All this is to preserve the format used originally
+            # but is this really needed?
+            if marker:
+                if marker.startswith('extra'):
+                    marker = marker.replace('extra', '')
+                    marker = marker.replace('==', '').strip()
+                    ext = marker.rsplit(' ')[-1]
+                    if '"' in ext or "'" in ext:
+                        ext = ext[1:-1]
+
+                    if ext not in exts:
+                        exts[ext] = [{'name': name, 'specs': new_specs}]
+                    else:
+                        exts[ext].append({'name': name, 'specs': new_specs})
+                else:
+                    if marker not in environments:
+                        environments[marker] = [{'name': name, 'specs': new_specs}]
+                    else:
+                        environments[marker].append({'name': name, 'specs': new_specs})
+            else:
+                deps.append({
+                    'name': name,
+                    'specs': new_specs,
+                })
+
+    deps.sort(key=lambda o: o['name'])
+
+    new_exts = []
+    for key, values in exts.items():
+        new_exts.append({'name': key, 'depends': values})
+
+    new_environments = []
+    for key, values in environments.items():
+        new_environments.append({'name': key, 'depends': values})
+
+    file_data.update(dependencies={
+        'has_dep_errors': False,
+        'depends': deps,
+        'extras': new_exts,
+        'environments': new_environments,
+    })
+
     return package_data, release_data, file_data
 
 
@@ -391,16 +445,15 @@ def inspect_pypi_package_whl(filename, fileobj):
     if json_data is None:
         json_data = extract_first(tf, '*.dist-info/pydist.json')
 
-    # Metadata 2.1 removed metatada.json so using good old distutils
+    # Metadata 2.1 removed metatada.json. Using good old distutils as fallback
     data = None
     data = extract_first(tf, '*.dist-info/METADATA')
 
-    # Always prefer the header format, not the json one
-    if data:
+    if json_data:
+        package_data, release_data, file_data = format_wheel_json_metadata(json.loads(json_data),                                                                              filename, tf)
+    elif data:
+        # Metadata 2.1 removed metatada.json
         package_data, release_data, file_data = format_sdist_header_metadata(data, filename)
-    elif json_data:
-        package_data, release_data, file_data = format_wheel_json_metadata(json.loads(json_data),
-                                                                           filename, tf)
     else:
         package_data, release_data, file_data = {}, {}, {}
 
@@ -448,16 +501,40 @@ def inspect_pypi_package_sdist(filename, fileobj):
 
     data = extract_first(tf, '*.egg-info/PKG-INFO')
 
+    distribute = False
     if data is None:
         data = extract_first(tf, '*/PKG-INFO')
         distribute = True
         if data is None:
             raise errors.NoMetadataError("Could not find *.egg-info/PKG-INFO "
                                          "file in pypi sdist")
-
     config_items = python_version_check(data)
-    package_data, release_data, file_data = format_sdist_header_metadata(
-        data, filename)
+    attrs = dict(config_items)
+    name = pop_key(attrs, 'Name', None)
+
+    if name is None:
+        basename = path.basename(filename)
+        name = basename.split('-')[0]
+
+    package_data = {
+        'name': name,
+        'summary': pop_key(attrs, 'Summary', None),
+        'license': pop_key(attrs, 'License', None),
+    }
+
+    release_data = {
+        'version': pop_key(attrs, 'Version'),
+        'description': pop_key(attrs, 'Description', None),
+        'home_page': pop_key(attrs, 'Home-page', None),
+    }
+
+    file_data = {
+        'basename': path.basename(filename),
+        'attrs': {
+            'packagetype': 'sdist',
+            'python_version': 'source',
+        },
+    }
 
     if distribute:  # Distribute does not create dep files
         file_data.update(dependencies=disutils_dependencies(config_items))
