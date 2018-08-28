@@ -16,13 +16,19 @@ main_test: &main_test
              bash miniconda.sh -b -p "$HOME"/miniconda
              source /home/circleci/miniconda/etc/profile.d/conda.sh
              conda activate base
-             conda config --set always_yes yes --set changeps1 no --set auto_update_conda false
+             # Conda configuration
+             conda config --set always_yes yes --set auto_update_conda false
+             # Update conda
+             conda update conda
+             # Create test environment
              conda create -n test python=$PYTHON_VERSION
              conda activate test
+             # Install run requirements
              conda install -n test --file requirements.txt
-             conda install -n test anaconda-project pillow mock pytest pytest-cov
+             # Install test requirements
+             conda install -n test anaconda-project flake8 pillow mock pytest pytest-cov
              pip install freezegun
-             # conda update conda -c conda-canary -q --no-pin
+             # Install development package
              python setup.py develop
       - run:
           name: Conda information
