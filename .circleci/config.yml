@@ -1,0 +1,85 @@
+# https://circleci.com/gh/Anaconda-Platform/anaconda-client/
+
+version: 2
+
+# Reuse variables
+# -----------------------------------------------------------------------------
+main_test: &main_test
+    docker:
+      - image: circleci/node:6.10-browsers  # Needed to run GUI tests
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+             wget https://repo.anaconda.com/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh
+             bash miniconda.sh -b -p "$HOME"/miniconda
+             source /home/circleci/miniconda/etc/profile.d/conda.sh
+             conda activate base
+             # Conda configuration
+             conda config --set always_yes yes --set auto_update_conda false
+             # Update conda
+             conda update conda
+             # Create test environment
+             conda create -n test python=$PYTHON_VERSION
+             conda activate test
+             # Install run requirements
+             conda install -n test --file requirements.txt
+             # Install test requirements
+             conda install -n test anaconda-project flake8 pillow mock pytest pytest-cov
+             pip install freezegun
+             # Install development package
+             python setup.py develop
+      - run:
+          name: Conda information
+          command: |
+             source /home/circleci/miniconda/etc/profile.d/conda.sh
+             conda activate test
+             conda info
+             conda config --show
+             conda list --show-channel-urls
+      - run:
+          name: Run lint and format checks
+          command: |
+             source /home/circleci/miniconda/etc/profile.d/conda.sh
+             conda activate test
+             # flake8 binstar_client
+      - run:
+          name: Run tests
+          command: |
+             source /home/circleci/miniconda/etc/profile.d/conda.sh
+             conda activate test
+             pytest binstar_client --cov=binstar_client
+
+# -----------------------------------------------------------------------------
+jobs:
+  py27:
+    <<: *main_test
+    environment:
+      - PYTHON_VERSION: 2.7
+      - CONDA_SH: 
+
+  py35:
+    <<: *main_test
+    environment:
+      - PYTHON_VERSION: 3.5
+
+  py36:
+    <<: *main_test
+    environment:
+      - PYTHON_VERSION: 3.6
+
+  py37:
+    <<: *main_test
+    environment:
+      - PYTHON_VERSION: 3.7
+
+
+workflows:
+  version: 2
+  lint-and-test:
+    jobs:
+      - py27
+      - py37
+      - py36
+      - py35

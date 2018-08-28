@@ -21,13 +21,13 @@ matrix:
       env: PYTHON_VERSION=2.7
     - os: osx
       language: generic
-      env: PYTHON_VERSION=3.5
+      env: PYTHON_VERSION=3.7
     - os: osx
       language: generic
       env: PYTHON_VERSION=3.6
     - os: osx
       language: generic
-      env: PYTHON_VERSION=3.7
+      env: PYTHON_VERSION=3.5
 
 cache:
   directories:
@@ -48,7 +48,7 @@ install:
   - conda activate base
 
   # Configure conda and update it
-  - conda config --set always_yes yes --set changeps1 no --set auto_update_conda false
+  - conda config --set always_yes yes --set auto_update_conda false
   - conda config --add pkgs_dirs ~/condacache/pkgs
   - conda update -n root conda -q --no-pin
 
