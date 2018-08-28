@@ -339,9 +339,10 @@ def main(args):
                 username=username,
                 args=args)
 
-            _package, _upload_info = package_info
-            if _upload_info:
-                uploaded_packages.append(package_info)
+            if package_info:
+                _package, _upload_info = package_info
+                if _upload_info:
+                    uploaded_packages.append(package_info)
 
     for package, upload_info in uploaded_packages:
         package_url = upload_info.get('url', 'https://anaconda.org/%s/%s' % (username, package))
