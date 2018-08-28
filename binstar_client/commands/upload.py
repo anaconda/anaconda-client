@@ -339,7 +339,7 @@ def main(args):
                 username=username,
                 args=args)
 
-            if package_info:
+            if package_info is not None and len(package_info) == 2:
                 _package, _upload_info = package_info
                 if _upload_info:
                     uploaded_packages.append(package_info)
