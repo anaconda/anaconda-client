@@ -237,11 +237,18 @@ def upload_package(filename, package_type, aserver_api, username, args):
                                              dependencies=file_attrs.get('dependencies'), attrs=file_attrs['attrs'],
                                              channels=args.labels, callback=upload_print_callback(args))
         except errors.Conflict:
-            logger.info('Distribution already exists. Please use the -i/--interactive or --force options or `anaconda '
-                        'remove %s/%s/%s/%s', username, package_name, version, file_attrs['basename'])
-            raise
+            upload_info = {}
+            if args.mode != 'skip':
+                logger.info('Distribution already exists. Please use the -i/--interactive or --force or --skip options '
+                            'or `anaconda remove %s/%s/%s/%s', username, package_name, version, file_attrs['basename'])
+                raise
+            else:
+                logger.info('Distribution already exists. Skipping upload.\n')
 
-        logger.info("Upload complete")
+        if upload_info:
+            logger.info("Upload complete\n")
+        else:
+            pass
 
         return [package_name, upload_info]
 
@@ -309,6 +316,8 @@ def main(args):
             message = 'File "{}" does not exist'.format(filename)
             logger.error(message)
             raise errors.BinstarError(message)
+        else:
+            logger.info("Processing '%s'", filename)
 
         package_type = determine_package_type(filename, args)
 
@@ -330,8 +339,10 @@ def main(args):
                 username=username,
                 args=args)
 
-            if package_info:
-                uploaded_packages.append(package_info)
+            if package_info is not None and len(package_info) == 2:
+                _package, _upload_info = package_info
+                if _upload_info:
+                    uploaded_packages.append(package_info)
 
     for package, upload_info in uploaded_packages:
         package_url = upload_info.get('url', 'https://anaconda.org/%s/%s' % (username, package))
@@ -401,5 +412,7 @@ def add_parser(subparsers):
                                         action='store_const', dest='mode', const='fail')
     group.add_argument('--force', help='Force a package upload regardless of errors',
                                         action='store_const', dest='mode', const='force')
+    group.add_argument('--skip-existing', help='Skip errors on package batch upload if it already exists',
+                                        action='store_const', dest='mode', const='skip')
 
     parser.set_defaults(main=main)
