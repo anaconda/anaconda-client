@@ -2,6 +2,13 @@
 
 ## Next version
 
+## Version 1.7.2 (2018/08/29)
+
+### Fixed
+
+* Wheels upload doesn't work with wheel==0.31.0
+* Add `--skip-existing` flag for uploading large batches of packages
+
 ## Version 1.7.1 (2018/08/02)
 
 ### Fixed
