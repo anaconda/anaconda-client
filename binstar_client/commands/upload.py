@@ -412,7 +412,7 @@ def add_parser(subparsers):
                                         action='store_const', dest='mode', const='fail')
     group.add_argument('--force', help='Force a package upload regardless of errors',
                                         action='store_const', dest='mode', const='force')
-    group.add_argument('--skip-existing', help='Skip a package in a batch upload if it already exists',
+    group.add_argument('--skip-existing', help='Skip errors on package batch upload if it already exists',
                                         action='store_const', dest='mode', const='skip')
 
     parser.set_defaults(main=main)
