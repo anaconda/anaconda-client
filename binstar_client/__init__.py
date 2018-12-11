@@ -215,19 +215,19 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
             except:
                 pass
             else:
-                msg = data.get('error', msg)
+                msg += '\n' + data['error'] if data.get('error', None) else ''
 
-            ErrCls = errors.BinstarError
+            ErrCls = errors.BinstarError(msg)
             if res.status_code == 401:
-                ErrCls = errors.Unauthorized
+                ErrCls = errors.Unauthorized(msg)
             elif res.status_code == 404:
-                ErrCls = errors.NotFound
+                ErrCls = errors.NotFound(msg)
             elif res.status_code == 409:
-                ErrCls = errors.Conflict
+                ErrCls = errors.Conflict(msg)
             elif res.status_code >= 500:
-                ErrCls = errors.ServerError
+                ErrCls = errors.ServerError(msg)
 
-            raise ErrCls(msg, res.status_code)
+            raise ErrCls
 
     def user(self, login=None):
         '''
