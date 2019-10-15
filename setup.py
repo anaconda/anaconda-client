@@ -20,7 +20,8 @@ setup(
         'console_scripts': [
             'anaconda = binstar_client.scripts.cli:main',
             'binstar = binstar_client.scripts.cli:main',
-            'conda-server = binstar_client.scripts.cli:main'
+            'conda-server = binstar_client.scripts.cli:main',
+            'conda-repo = repo_cli.main:main'
         ]
     },
     license='BSD License',
