@@ -15,7 +15,7 @@ from six.moves import input
 
 from binstar_client import errors
 from binstar_client.utils import bool_input
-from ..utils.config import store_token, get_config, load_token
+from ..utils.config import store_token, get_config, load_token, DEFAULT_URL
 from .. import errors
 
 
@@ -61,8 +61,8 @@ def create_access_token(jwt_token, token_url):
         msg = 'Error requesting a new user token! Server responded with %s: %s' % (resp.status_code, resp.content)
         logger.error(msg)
         raise errors.RepoCLIError(msg)
-    import pdb; pdb.set_trace()
-    return True
+
+    return resp.json()['token']
 
 
 def get_access_token(jwt_token, token_url):
@@ -75,14 +75,18 @@ def get_access_token(jwt_token, token_url):
     user_tokens = token_resp.json().get('items', [])
     if user_tokens:
         # ok, we got the token. Now we need to refresh it
-        refresh_url = join(token_url, user_tokens[0]['id'])
+        token_to_refresh = user_tokens[0]['id']
+        refresh_url = join(token_url, token_to_refresh)
+        logger.debug('[ACCESS_TOKEN] Refreshing token.. {token_to_refresh}')
         token_resp = requests.put(refresh_url, headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {jwt_token}'})
         if token_resp.status_code != 200:
             msg = 'Error refreshing user token! Server responded with %s: %s' % (token_resp.status_code, token_resp.content)
             logger.error(msg)
             raise errors.RepoCLIError(msg)
-        return token_resp.json()['token']
-        import pdb; pdb.set_trace()
+        new_token = token_resp.json()['token']
+        logger.debug('[ACCESS_TOKEN] Refreshed with token..{}')
+        return new_token
+
     return None
 
 
@@ -98,6 +102,7 @@ def login_user(username='john', password='password', base_url='http://conda.rock
     resp = s.post(url, data=json.dumps(data), headers={
         'Content-Type': 'application/json'
     })
+
     jwt_token = resp.json()['token']
     user_token = get_access_token(jwt_token, token_url)
 
@@ -122,8 +127,7 @@ def interactive_get_token(args, fail_if_already_exists=True):
     # This function could be called from a totally different CLI, so we don't
     # know if the attribute hostname exists.
     # args.site or config.get('default_site')
-    url = args.site or config.get('url', 'http://conda.rocks')
-
+    url = config.get('url', DEFAULT_URL)
     if getattr(args, 'login_username', None):
         username = args.login_username
     else:
@@ -141,7 +145,7 @@ def interactive_get_token(args, fail_if_already_exists=True):
                 msg = 'Unable to request the user token. Server was unable to return any valid token!'
                 logger.error(msg)
                 raise errors.RepoCLIError(msg)
-            return token
+            return token['user']
 
         except errors.Unauthorized:
             logger.error('Invalid Username password combination, please try again')
