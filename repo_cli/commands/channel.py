@@ -12,7 +12,6 @@ import argparse
 import requests
 from .. import errors
 from ..utils.config import get_config, DEFAULT_URL
-from binstar_client.utils import get_server_api
 
 logger = logging.getLogger('repo_cli')
 
@@ -20,15 +19,15 @@ logger = logging.getLogger('repo_cli')
 def create_channel(base_url, token, channel):
     url = join(base_url, 'channels')
     data = {'name': channel}
-    logger.error(f'Creating channel {channel} on {base_url}')
-    logger.error(f'Using token {token} on {base_url}')
+    logger.debug(f'Creating channel {channel} on {base_url}')
+    logger.debug(f'Using token {token} on {base_url}')
     response = requests.post(url, json=data, headers={
         'X-Auth': f'{token}',
         'Content-Type': 'application/json',
     })
     if response.status_code in [201]:
-        logger.error(f'Channel {channel} successfully created on {base_url} with response {response.status_code}')
-        logger.error(f'Server responded with {response.content}')
+        logger.info(f'Channel {channel} successfully created on {base_url} with response {response.status_code}')
+        logger.debug(f'Server responded with {response.content}')
     else:
         msg = f'Error creating {channel} on {base_url}.' \
             f'Server responded with status code {response.status_code}.\n' \
@@ -38,8 +37,9 @@ def create_channel(base_url, token, channel):
             raise errors.Unauthorized()
     return response
 
+
 def main(args, name, deprecated=False):
-    aserver_api = get_server_api(args.token, args.site)
+    # aserver_api = get_server_api(args.token, args.site)
 
     # if args.organization:
     channel = args.name
@@ -61,34 +61,40 @@ def main(args, name, deprecated=False):
     if args.create:
         create_channel(url, token, channel)
     elif args.copy:
-        aserver_api.copy_channel(args.copy[0], channel, args.copy[1])
-        logger.info("Copied {} {} to {}".format(name, *tuple(args.copy)))
+        # aserver_api.copy_channel(args.copy[0], channel, args.copy[1])
+        # logger.info("Copied {} {} to {}".format(name, *tuple(args.copy)))
+        logger.info("Copy operation not yet implemented.")
     elif args.remove:
-        aserver_api.remove_channel(args.remove, channel)
-        logger.info("Removed {} {}".format(name, args.remove))
+        # aserver_api.remove_channel(args.remove, channel)
+        # logger.info("Removed {} {}".format(name, args.remove))
+        logger.info("Remove operation not yet implemented.")
     elif args.list:
-        logger.info('{}s'.format(name.title()))
-        for channel, info in aserver_api.list_channels(channel).items():
-            if isinstance(info, int):  # OLD API
-                logger.info((' + %s ' % channel))
-            else:
-                logger.info((' + %s ' % channel) + ('[locked]' if info['is_locked'] else ''))
+        # logger.info('{}s'.format(name.title()))
+        # for channel, info in aserver_api.list_channels(channel).items():
+        #     if isinstance(info, int):  # OLD API
+        #         logger.info((' + %s ' % channel))
+        #     else:
+        #         logger.info((' + %s ' % channel) + ('[locked]' if info['is_locked'] else ''))
+        logger.info("List operation not yet implemented.")
 
     elif args.show:
-        info = aserver_api.show_channel(args.show, channel)
-        logger.info('{} {} {}'.format(
-            name.title(),
-            args.show,
-            ('[locked]' if info['is_locked'] else '')
-        ))
-        for f in info['files']:
-            logger.info('  + %(full_name)s' % f)
+        # info = aserver_api.show_channel(args.show, channel)
+        # logger.info('{} {} {}'.format(
+        #     name.title(),
+        #     args.show,
+        #     ('[locked]' if info['is_locked'] else '')
+        # ))
+        # for f in info['files']:
+        #     logger.info('  + %(full_name)s' % f)
+        logger.info("Show operation not yet implemented.")
     elif args.lock:
-        aserver_api.lock_channel(args.lock, channel)
-        logger.info("{} {} is now locked".format(name.title(), args.lock))
+        # aserver_api.lock_channel(args.lock, channel)
+        # logger.info("{} {} is now locked".format(name.title(), args.lock))
+        logger.info("Lock operation not yet implemented.")
     elif args.unlock:
-        aserver_api.unlock_channel(args.unlock, channel)
-        logger.info("{} {} is now unlocked".format(name.title(), args.unlock))
+        # aserver_api.unlock_channel(args.unlock, channel)
+        # logger.info("{} {} is now unlocked".format(name.title(), args.unlock))
+        logger.info("Unlock operation not yet implemented.")
     else:
         raise NotImplementedError()
 
