@@ -35,12 +35,18 @@ def expand(path):
     return abspath(expanduser(expandvars(path)))
 
 
+# if 'BINSTAR_CONFIG_DIR' in os.environ:
+#     dirs = EnvAppDirs('.conda', os.environ['BINSTAR_CONFIG_DIR'])
+#     USER_CONFIG = join(dirs.user_data_dir, 'repo-cli-config.yaml')
+# else:
+#     dirs = AppDirs('conda-repo-cli', 'Anaconda')
+#     USER_CONFIG = expand('~/.conda/repo-cli-config.yaml')
 if 'BINSTAR_CONFIG_DIR' in os.environ:
-    dirs = EnvAppDirs('.conda', os.environ['BINSTAR_CONFIG_DIR'])
-    USER_CONFIG = join(dirs.user_data_dir, 'repo-cli-config.yaml')
+    dirs = EnvAppDirs('binstar', 'ContinuumIO', os.environ['BINSTAR_CONFIG_DIR'])
+    USER_CONFIG = join(dirs.user_data_dir, 'config.yaml')
 else:
-    dirs = AppDirs('conda-repo-cli', 'Anaconda')
-    USER_CONFIG = expand('~/.conda/repo-cli-config.yaml')
+    dirs = AppDirs('binstar', 'ContinuumIO')
+    USER_CONFIG = expand('~/.continuum/anaconda-client/config.yaml')
 
 
 # Package types used in upload/download
@@ -55,15 +61,19 @@ USER_LOGDIR = dirs.user_log_dir
 SITE_CONFIG = expand('$CONDA_ROOT/etc/anaconda-client/config.yaml')
 SYSTEM_CONFIG = SITE_CONFIG
 
-DEFAULT_URL = 'http://conda.rocks'
+DEFAULT_URL = 'http://repo-demo.dev.anaconda.com/api'
+DEFAULT_SITE = 'repo-demo'
 
 
 DEFAULT_CONFIG = {
     'sites': {
         'anaconda': {'url': DEFAULT_URL},
         'binstar': {'url': DEFAULT_URL},
-        'conda.rocks': {'url': 'http://conda.rocks'},
+        'repo.conda.rocks': {'url': 'http://repo.conda.rocks'},
         'http://localhost:5002': {'url': 'http://localhost:5002'},
+        'http://repo.conda.rocks': {'url': 'http://repo.conda.rocks'},
+        'http://repo-demo.dev.anaconda.com/api': {'url': 'http://repo-demo.dev.anaconda.com/api'},
+        'repo-demo': {'url': 'http://repo-demo.dev.anaconda.com/api'},
     },
     'auto_register': True,
     'default_site': None,
@@ -177,12 +187,21 @@ def store_token(token, args):
         with open(tokenfile, 'w') as fd:
             logger.warning(f"Saving token {token} to {tokenfile}")
             fd.write(token)
+        os.chmod(tokenfile, stat.S_IWRITE | stat.S_IREAD)
 
+        # TODO: This is a hack
+        tokenfile = join(token_dir, '%s.token' % quote_plus(join(url, 'repo')))
+        logger.warning(f"OOOOOOSaving token {token} to {tokenfile}")
+        with open(tokenfile, 'w') as fd:
+            logger.warning(f"Saving token {token} to {tokenfile}")
+            fd.write(token)
         os.chmod(tokenfile, stat.S_IWRITE | stat.S_IREAD)
 
 
-def load_token(url):
+def load_token(site):
     for token_dir in TOKEN_DIRS:
+        config = get_config(site=site)
+        url = config.get('url', DEFAULT_URL)
         logger.debug(f"[LOAD TOKEN] Looking for token in {token_dir}")
         tokenfile = join(token_dir, '%s.token' % quote_plus(url))
         _is_file = exists(tokenfile)
