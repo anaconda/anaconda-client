@@ -185,7 +185,7 @@ def store_token(token, args):
 
         logger.debug(f"Saving token {token} to {tokenfile}")
         with open(tokenfile, 'w') as fd:
-            logger.warning(f"Saving token {token} to {tokenfile}")
+            logger.debug(f"Saving token {token} to {tokenfile}")
             fd.write(token)
         os.chmod(tokenfile, stat.S_IWRITE | stat.S_IREAD)
 
@@ -193,7 +193,7 @@ def store_token(token, args):
         tokenfile = join(token_dir, '%s.token' % quote_plus(join(url, 'repo')))
         logger.debug(f"Saving token {token} to {tokenfile}")
         with open(tokenfile, 'w') as fd:
-            logger.warning(f"Saving token {token} to {tokenfile}")
+            logger.debug(f"Saving token {token} to {tokenfile}")
             fd.write(token)
         os.chmod(tokenfile, stat.S_IWRITE | stat.S_IREAD)
 
