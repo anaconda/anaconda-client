@@ -183,7 +183,7 @@ def store_token(token, args):
         if isfile(tokenfile):
             os.unlink(tokenfile)
 
-        logger.warning(f"OOOOOOSaving token {token} to {tokenfile}")
+        logger.debug(f"Saving token {token} to {tokenfile}")
         with open(tokenfile, 'w') as fd:
             logger.warning(f"Saving token {token} to {tokenfile}")
             fd.write(token)
@@ -191,7 +191,7 @@ def store_token(token, args):
 
         # TODO: This is a hack
         tokenfile = join(token_dir, '%s.token' % quote_plus(join(url, 'repo')))
-        logger.warning(f"OOOOOOSaving token {token} to {tokenfile}")
+        logger.debug(f"Saving token {token} to {tokenfile}")
         with open(tokenfile, 'w') as fd:
             logger.warning(f"Saving token {token} to {tokenfile}")
             fd.write(token)
