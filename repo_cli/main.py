@@ -4,8 +4,8 @@ from argparse import ArgumentParser, RawDescriptionHelpFormatter
 
 from binstar_client import __version__ as version
 from repo_cli import commands as command_module
-from .commands import login, logout, upload
-from .utils import _setup_logging, file_or_token
+from .commands import login, logout, upload, channel
+from .utils import _setup_logging, file_or_token, config
 from . import errors
 
 logger = logging.getLogger('repo_cli')
@@ -38,8 +38,9 @@ def _main(sub_command_module, args=None, exit=True, description=None, version=No
 
     subparsers = parser.add_subparsers(help='sub-command help')
     login.add_parser(subparsers)
+    logout.add_parser(subparsers)
     upload.add_parser(subparsers)
-
+    channel.add_parser(subparsers)
     # login_parser = subparsers.add_parser('login', help='login help')
 
 
@@ -48,7 +49,7 @@ def _main(sub_command_module, args=None, exit=True, description=None, version=No
                         help="Authentication token to use. "
                              "May be a token or a path to a file containing a token")
     bgroup.add_argument('-s', '--site',
-                        help='select the anaconda-client site to use', default=None)
+                        help='select the anaconda-client site to use', default=config.DEFAULT_SITE)
 
     # add_subparser_modules(parser, sub_command_module, 'conda_server.subcommand')
 
@@ -57,6 +58,8 @@ def _main(sub_command_module, args=None, exit=True, description=None, version=No
 
     _setup_logging(logger, log_level=_args.log_level, show_traceback=_args.show_traceback,
                    disable_ssl_warnings=_args.disable_ssl_warnings)
+
+    site_config = config.get_config(site=_args.site)
 
     if not _args.token:
         # we don't have a valid token... try to get it from local files

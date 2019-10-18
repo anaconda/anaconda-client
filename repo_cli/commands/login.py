@@ -66,13 +66,15 @@ def create_access_token(jwt_token, token_url):
 
 
 def get_access_token(jwt_token, token_url):
+    logger.debug('[LOGIN] Getting access token.. ')
     token_resp = requests.get(token_url, headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {jwt_token}'})
     if token_resp.status_code != 200:
         msg = 'Error retrieving user token! Server responded with %s: %s' % (token_resp.status_code, token_resp.content)
         logger.error(msg)
         raise errors.RepoCLIError(msg)
-    
+
     user_tokens = token_resp.json().get('items', [])
+    logger.debug(f'[LOGIN] Access token retrieved.. {len(user_tokens)}')
     if user_tokens:
         # ok, we got the token. Now we need to refresh it
         token_to_refresh = user_tokens[0]['id']
@@ -84,7 +86,7 @@ def get_access_token(jwt_token, token_url):
             logger.error(msg)
             raise errors.RepoCLIError(msg)
         new_token = token_resp.json()['token']
-        logger.debug('[ACCESS_TOKEN] Refreshed with token..{}')
+        logger.debug('[ACCESS_TOKEN] Token Refreshed')
         return new_token
 
     return None
@@ -99,17 +101,20 @@ def login_user(username='john', password='password', base_url='http://conda.rock
     s = requests.Session()
     url = join(base_url, 'auth', 'login')
     token_url = join(base_url, 'account', 'tokens')
+    logger.debug('[LOGIN] Authenticating user {username}...')
     resp = s.post(url, data=json.dumps(data), headers={
         'Content-Type': 'application/json'
     })
-
+    logger.debug('[LOGIN] Done')
     jwt_token = resp.json()['token']
+
     user_token = get_access_token(jwt_token, token_url)
 
     if not user_token:
+        logger.debug('[LOGIN] Access token not found. Creating one...')
         # Looks like user doesn't have any valid token. Let's create a new one
         user_token = create_access_token(jwt_token, token_url)
-        # user_token = get_access_tokens(jwt_token, token_url)
+        logger.debug('[LOGIN] Done.')
         if resp.status_code != 200:
             msg = 'Unable to request user tokens. Server was unable to return any valid token!'
             logger.error(msg)

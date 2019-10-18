@@ -4,16 +4,14 @@ Log out from binstar
 from ..utils .config import get_server_api, remove_token
 
 import logging
-from .. import errors
 
 logger = logging.getLogger('repo_cli')
 
 
 def main(args):
-
     aserver_api = get_server_api(args.token, args.site)
     if aserver_api.token:
-    # TODO: named 'application' because I was using the github model
+
     # Change it to name once we release the latest version of binstar server
     #     try:
         #     aserver_api.remove_authentication()

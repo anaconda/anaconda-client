@@ -10,7 +10,7 @@ setup(
     name='anaconda-client',
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
-    author='Sean Ross-Ross',
+    author='Anaconda, Inc',
     author_email='srossross@gmail.com',
     url='http://github.com/Anaconda-Platform/anaconda-client',
     description='Anaconda Cloud command line client library',

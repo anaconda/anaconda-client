@@ -19,8 +19,7 @@ from glob import glob
 
 from six.moves import input
 
-from binstar_client.utils import bool_input, get_config, get_server_api, upload_print_callback
-from ..utils.config import PACKAGE_TYPES, DEFAULT_CONFIG
+from ..utils.config import get_config, PACKAGE_TYPES, DEFAULT_CONFIG, DEFAULT_URL
 from ..utils.detect import detect_package_type, get_attrs
 from .. import errors
 
@@ -62,11 +61,10 @@ from os.path import join, basename
 
 
 def upload_file(base_url, token, filepath, channel):
-    # url = join(base_url, 'repo', channel)
     url = join(base_url, 'channels', channel, 'artifacts')
     statinfo = os.stat(filepath)
     filename = basename(filepath)
-    # package_type = determine_package_type(filename, args)
+    logger.debug(f'[UPLOAD] Using token {token} on {base_url}')
     multipart_form_data = {
         'content': (filename, open(filepath, 'rb')),
         'filetype': (None, 'conda1'),
@@ -74,15 +72,14 @@ def upload_file(base_url, token, filepath, channel):
     }
     logger.info(f'uploading to {url}')
     # user_token, jwt = token['user'], token['jwt']
-    # user_token = t
     response = requests.post(url, files=multipart_form_data, headers={ 'X-Auth': f'{token}'})
     # response = requests.post(url, files=multipart_form_data, headers={ 'Authorization': f'Bearer {jwt}'})
-    # import pdb; pdb.set_trace()
     return response
 
 
 def main(args):
-    url = args.site #or config.get('url', 'http://conda.rocks')
+    config = get_config(site=args.site)
+    url = config.get('url', DEFAULT_URL)
     try:
         token = args.token
     except AttributeError:
@@ -96,7 +93,7 @@ def main(args):
             for channel in args.labels:
                 logger.debug(f'Using token {token}')
                 resp = upload_file(url, token, fp, channel)
-                if resp.status_code in [201, 204]:
+                if resp.status_code in [201, 200]:
                     logger.info(f'File {fp} successfully uploaded to {url}::{channel} with response {resp.status_code}')
                     logger.debug(f'Server responded with {resp.content}')
                 else:
