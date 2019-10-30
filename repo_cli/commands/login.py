@@ -124,6 +124,15 @@ def login_user(username='john', password='password', base_url='http://conda.rock
     return {"user": user_token, "jwt": jwt_token}
 
 
+def get_login_and_password(args):
+    if getattr(args, 'login_username', None):
+        username = args.login_username
+    else:
+        username = input('Username: ')
+    #
+    password = getattr(args, 'login_password', None)
+    return username, password
+
 def interactive_get_token(args, fail_if_already_exists=True):
     # bs = get_server_api(args.token, args.site)
     config = get_config(site=args.site)
@@ -133,12 +142,7 @@ def interactive_get_token(args, fail_if_already_exists=True):
     # know if the attribute hostname exists.
     # args.site or config.get('default_site')
     url = config.get('url', DEFAULT_URL)
-    if getattr(args, 'login_username', None):
-        username = args.login_username
-    else:
-        username = input('Username: ')
-    #
-    password = getattr(args, 'login_password', None)
+    username, password = get_login_and_password(args)
 
     for _ in range(3):
         try:
