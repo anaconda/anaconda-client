@@ -16,6 +16,21 @@ from ..utils.config import get_config, DEFAULT_URL
 logger = logging.getLogger('repo_cli')
 
 
+
+def handle_response(response, channel, base_url, success_codes, authz_fail_codes, action, success_handler=None):
+    if response.status_code in success_codes:
+        logger.info(f'Channel {channel} {action} action successful on {base_url} with response {response.status_code}')
+        if callable(success_handler):
+            success_handler(response)
+        logger.debug(f'Server responded with {response.content}')
+    else:
+        msg = f'Error executing {channel} {action} action on {base_url}.' \
+            f'Server responded with status code {response.status_code}.\n' \
+            f'Error details: {response.content}'
+        logger.error(msg)
+        if response.status_code in authz_fail_codes:
+            raise errors.Unauthorized()
+
 def create_channel(base_url, token, channel):
     url = join(base_url, 'channels')
     data = {'name': channel}
@@ -38,11 +53,42 @@ def create_channel(base_url, token, channel):
     return response
 
 
+def show_channel_detail(response):
+    data = response.json()
+    resp = ["Channel details:", '']
+    keymap = {'download_count': 'downloads', 'artifact_count': 'artifacts'}
+    for key in ['name', 'description', 'privacy', ]:
+        resp.append("%s: %s" % (keymap.get(key, key), data.get(key, '')))
+
+    logger.info('\n'.join(resp))
+
+
+def lsit_channels(response):
+    data = response.json()
+    resp = ["Channels available to the user:", '']
+
+    for channel in data:
+        resp.append(channel)
+    resp.append('')
+    logger.info('\n'.join(resp))
+
+
+def show_channel(base_url, token, channel):
+    url = join(base_url, 'channels', channel)
+    logger.debug(f'Getting channek info with token {token} on {base_url}')
+    response = requests.get(url, headers={
+        'X-Auth': f'{token}',
+        'Content-Type': 'application/json',
+    })
+    handle_response(response, channel, base_url, success_codes=[200], authz_fail_codes=[401, 403],
+                    action='show', success_handler=show_channel_detail)
+
+
 def main(args, name, deprecated=False):
     # aserver_api = get_server_api(args.token, args.site)
 
     # if args.organization:
-    channel = args.name
+    channel = args.name or args.organization
     # else:
     #     current_user = aserver_api.user()
     #     owner = current_user['login']
@@ -59,6 +105,11 @@ def main(args, name, deprecated=False):
         logger.warning('channel command is deprecated in favor of label')
 
     if args.create:
+        if not channel:
+            raise errors.RepoCLIError('Channel name not specified. '
+                                      'Please use -n or -o to specify your channel.\n'
+                                      'Use --help for help.')
+
         create_channel(url, token, channel)
     elif args.copy:
         # aserver_api.copy_channel(args.copy[0], channel, args.copy[1])
@@ -78,6 +129,7 @@ def main(args, name, deprecated=False):
         logger.info("List operation not yet implemented.")
 
     elif args.show:
+        show_channel(url, token, args.show)
         # info = aserver_api.show_channel(args.show, channel)
         # logger.info('{} {} {}'.format(
         #     name.title(),
@@ -86,7 +138,7 @@ def main(args, name, deprecated=False):
         # ))
         # for f in info['files']:
         #     logger.info('  + %(full_name)s' % f)
-        logger.info("Show operation not yet implemented.")
+
     elif args.lock:
         # aserver_api.lock_channel(args.lock, channel)
         # logger.info("{} {} is now locked".format(name.title(), args.lock))
@@ -110,8 +162,14 @@ def _add_parser(subparsers, name, deprecated=False):
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description=__doc__)
 
+
+    # keeping both these to support old anaconda-client interface
+    # TODO: Maybe we should replace -n with -c as conda specified channels...
     subparser.add_argument('-n', '--name',
-                           help="Manage a {}s".format(name), required=True)
+                           help="Manage a {}s".format(name))
+
+    subparser.add_argument('-o', '--organization',
+                           help="Manage an organizations {}s".format(name))
 
     group = subparser.add_mutually_exclusive_group(required=True)
 
