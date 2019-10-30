@@ -1,5 +1,6 @@
 clyent >=1.2.0
 nbformat >=4.4.0
+pathlib
 python-dateutil >=2.6.1
 pytz
 PyYAML >=3.12
