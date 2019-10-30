@@ -19,6 +19,12 @@ from glob import glob
 
 from six.moves import input
 
+
+import requests
+import os
+from os.path import join, basename
+
+
 from ..utils.config import get_config, PACKAGE_TYPES, DEFAULT_CONFIG, DEFAULT_URL
 from ..utils.detect import detect_package_type, get_attrs
 from .. import errors
@@ -46,7 +52,8 @@ def determine_package_type(filename, args):
         package_type = detect_package_type(filename)
 
         if package_type is None:
-            message = 'Could not detect package type of file %r please specify package type with option --package-type' % filename
+            message = 'Could not detect package type of file %r please specify package ' \
+                      'type with option --package-type' % filename
             logger.error(message)
             raise errors.RepoCLIError(message)
 
@@ -55,9 +62,11 @@ def determine_package_type(filename, args):
     return package_type
 
 
-import requests
-import os
-from os.path import join, basename
+def get_default_channel(base_url, token):
+    url = join(base_url, 'account', 'me')
+    logger.debug(f'[UPLOAD] Getting user default channel from {url}')
+    response = requests.get(url, headers={'X-Auth': f'{token}'})
+    return response
 
 
 def upload_file(base_url, token, filepath, channel):
@@ -70,10 +79,8 @@ def upload_file(base_url, token, filepath, channel):
         'filetype': (None, 'conda1'),
         'size': (None, statinfo.st_size)
     }
-    logger.info(f'uploading to {url}')
-    # user_token, jwt = token['user'], token['jwt']
-    response = requests.post(url, files=multipart_form_data, headers={ 'X-Auth': f'{token}'})
-    # response = requests.post(url, files=multipart_form_data, headers={ 'Authorization': f'Bearer {jwt}'})
+    logger.info(f'Uploading to {url}...')
+    response = requests.post(url, files=multipart_form_data, headers={'X-Auth': f'{token}'})
     return response
 
 
@@ -88,9 +95,15 @@ def main(args):
     if not token:
         raise errors.Unauthorized
 
+    channels = args.labels
+    if not channels:
+        # In this case the user didn't specify any channel. Means we need to get
+        # the user default channel
+        channels = get_default_channel(url, token)
+
     for filepath in args.files:
         for fp in filepath:
-            for channel in args.labels:
+            for channel in channels:
                 logger.debug(f'Using token {token}')
                 resp = upload_file(url, token, fp, channel)
                 if resp.status_code in [201, 200]:
