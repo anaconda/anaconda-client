@@ -19,10 +19,10 @@ logger = logging.getLogger('repo_cli')
 
 def handle_response(response, channel, base_url, success_codes, authz_fail_codes, action, success_handler=None):
     if response.status_code in success_codes:
-        logger.info(f'Channel {channel} {action} action successful on {base_url} with response {response.status_code}')
+        logger.info(f'Channel {channel} {action} action successful on {base_url}')
         if callable(success_handler):
             success_handler(response)
-        logger.debug(f'Server responded with {response.content}')
+        logger.debug(f'Server responded with response {response.status_code}\nData: {response.content}')
     else:
         msg = f'Error executing {channel} {action} action on {base_url}.' \
             f'Server responded with status code {response.status_code}.\n' \
@@ -41,8 +41,28 @@ def create_channel(base_url, token, channel):
         'Content-Type': 'application/json',
     })
     if response.status_code in [201]:
-        logger.info(f'Channel {channel} successfully created on {base_url} with response {response.status_code}')
-        logger.debug(f'Server responded with {response.content}')
+        logger.info(f'Channel {channel} successfully created on {base_url}')
+        logger.debug(f'Server responded with {response.status_code}\nData: {response.content}')
+    else:
+        msg = f'Error creating {channel} on {base_url}.' \
+            f'Server responded with status code {response.status_code}.\n' \
+            f'Error details: {response.content}'
+        logger.error(msg)
+        if response.status_code in [403, 401]:
+            raise errors.Unauthorized()
+    return response
+
+def remove_channel(base_url, token, channel):
+    url = join(base_url, 'channels', channel)
+    logger.debug(f'Deleting channel {channel} on {base_url}')
+    logger.debug(f'Using token {token} on {base_url}')
+    response = requests.delete(url, headers={
+        'X-Auth': f'{token}',
+        'Content-Type': 'application/json',
+    })
+    if response.status_code in [201]:
+        logger.info(f'Channel {channel} successfully deleted on {base_url}')
+        logger.debug(f'Server responded with {response.status_code}\nData: {response.content}')
     else:
         msg = f'Error creating {channel} on {base_url}.' \
             f'Server responded with status code {response.status_code}.\n' \
@@ -53,25 +73,27 @@ def create_channel(base_url, token, channel):
     return response
 
 
-def show_channel_detail(response):
-    data = response.json()
-    resp = ["Channel details:", '']
-    keymap = {'download_count': 'downloads', 'artifact_count': 'artifacts'}
-    for key in ['name', 'description', 'privacy', ]:
-        resp.append("%s: %s" % (keymap.get(key, key), data.get(key, '')))
-
-    logger.info('\n'.join(resp))
-
-
-def lsit_channels(response):
-    data = response.json()
-    resp = ["Channels available to the user:", '']
-
-    for channel in data:
-        resp.append(channel)
-    resp.append('')
-    logger.info('\n'.join(resp))
-
+def update_channel(base_url, token, channel, success_message=None, **data):
+    url = join(base_url, 'channels', channel)
+    logger.debug(f'Updating channel {channel} on {base_url}')
+    logger.debug(f'Using token {token} on {base_url}')
+    response = requests.put(url, json=data, headers={
+        'X-Auth': f'{token}',
+        'Content-Type': 'application/json',
+    })
+    if not success_message:
+        success_message = f'Channel {channel} successfully update on {base_url}.'
+    if response.status_code in [204]:
+        logger.info(success_message)
+        logger.debug(f'Server responded with {response.status_code}\nData: {response.content}')
+    else:
+        msg = f'Error creating {channel} on {base_url}.' \
+            f'Server responded with status code {response.status_code}.\n' \
+            f'Error details: {response.content}'
+        logger.error(msg)
+        if response.status_code in [403, 401]:
+            raise errors.Unauthorized()
+    return response
 
 def show_channel(base_url, token, channel):
     url = join(base_url, 'channels', channel)
@@ -82,6 +104,41 @@ def show_channel(base_url, token, channel):
     })
     handle_response(response, channel, base_url, success_codes=[200], authz_fail_codes=[401, 403],
                     action='show', success_handler=show_channel_detail)
+
+
+def list_channels(base_url, token):
+    url = join(base_url, 'channels')
+    logger.debug(f'Getting channels info with token {token} on {base_url}')
+    response = requests.get(url, headers={
+        'X-Auth': f'{token}',
+        'Content-Type': 'application/json',
+    })
+    handle_response(response, '', base_url, success_codes=[200], authz_fail_codes=[401, 403],
+                    action='list', success_handler=show_list_channels)
+
+
+def show_channel_detail(response):
+    data = response.json()
+    resp = ["Channel details:", '']
+    keymap = {'download_count': 'downloads', 'artifact_count': 'artifacts'}
+    for key in ['name', 'description', 'privacy', ]:
+        resp.append("%s: %s" % (keymap.get(key, key), data.get(key, '')))
+    resp.append("")
+    logger.info('\n'.join(resp))
+
+
+def show_list_channels(response):
+    data = response.json()
+    resp = ["Channels available to the user:", '']
+    keymap = {'download_count': 'downloads', 'artifact_count': 'artifacts'}
+    cols_ = ['name', 'privacy', 'description', 'artifact_count', 'download_count']
+    cols = [keymap.get(key, key) for key in cols_]
+    resp.append('\t'.join(cols))
+    for ch in data:
+        resp.append('\t'.join([str(ch.get(key, '')) for key in cols_]))
+
+    resp.append('')
+    logger.info('\n'.join(resp))
 
 
 def main(args, name, deprecated=False):
@@ -104,11 +161,13 @@ def main(args, name, deprecated=False):
     if deprecated:
         logger.warning('channel command is deprecated in favor of label')
 
+    logger.info("")
     if args.create:
         if not channel:
-            raise errors.RepoCLIError('Channel name not specified. '
-                                      'Please use -n or -o to specify your channel.\n'
-                                      'Use --help for help.')
+            msg = 'Channel name not specified. Please use -n or -o to specify your channel.\n'\
+                  'Use --help for help.'
+            logger.info(msg)
+            raise errors.RepoCLIError(msg)
 
         create_channel(url, token, channel)
     elif args.copy:
@@ -116,37 +175,24 @@ def main(args, name, deprecated=False):
         # logger.info("Copied {} {} to {}".format(name, *tuple(args.copy)))
         logger.info("Copy operation not yet implemented.")
     elif args.remove:
-        # aserver_api.remove_channel(args.remove, channel)
-        # logger.info("Removed {} {}".format(name, args.remove))
+        remove_channel(url, token, args.remove)
         logger.info("Remove operation not yet implemented.")
     elif args.list:
-        # logger.info('{}s'.format(name.title()))
-        # for channel, info in aserver_api.list_channels(channel).items():
-        #     if isinstance(info, int):  # OLD API
-        #         logger.info((' + %s ' % channel))
-        #     else:
-        #         logger.info((' + %s ' % channel) + ('[locked]' if info['is_locked'] else ''))
-        logger.info("List operation not yet implemented.")
-
+        list_channels(url, token)
     elif args.show:
         show_channel(url, token, args.show)
-        # info = aserver_api.show_channel(args.show, channel)
-        # logger.info('{} {} {}'.format(
-        #     name.title(),
-        #     args.show,
-        #     ('[locked]' if info['is_locked'] else '')
-        # ))
-        # for f in info['files']:
-        #     logger.info('  + %(full_name)s' % f)
-
     elif args.lock:
-        # aserver_api.lock_channel(args.lock, channel)
-        # logger.info("{} {} is now locked".format(name.title(), args.lock))
-        logger.info("Lock operation not yet implemented.")
+        channel = args.lock
+        msg = "{} {} is now locked".format(name.title(), channel)
+        update_channel(url, token, channel, privacy='private', success_message=msg)
+    elif args.soft_lock:
+        channel = args.soft_lock
+        msg = "{} {} is now soft-locked".format(name.title(), channel)
+        update_channel(url, token, channel, privacy='authenticated', success_message=msg)
     elif args.unlock:
-        # aserver_api.unlock_channel(args.unlock, channel)
-        # logger.info("{} {} is now unlocked".format(name.title(), args.unlock))
-        logger.info("Unlock operation not yet implemented.")
+        channel = args.unlock
+        msg = "{} {} is now unlocked".format(name.title(), channel)
+        update_channel(url, token, channel, privacy='public', success_message=msg)
     else:
         raise NotImplementedError()
 
@@ -193,6 +239,10 @@ def _add_parser(subparsers, name, deprecated=False):
         '--lock',
         metavar=name.upper(),
         help="{}Lock a {}".format(deprecated_warn, name))
+    group.add_argument(
+        '--soft-lock',
+        metavar=name.upper(),
+        help="{}Soft Lock a {}, so that only authenticated users can see it.".format(deprecated_warn, name))
     group.add_argument(
         '--unlock',
         metavar=name.upper(),
