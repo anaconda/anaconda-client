@@ -12,6 +12,7 @@ build:
     - binstar = binstar_client.scripts.cli:main
     - conda-server = binstar_client.scripts.cli:main
     - conda-repo = repo_cli.main:main
+  noarch: python
 
 requirements:
   build:
