@@ -32,6 +32,17 @@ def handle_response(response, channel, base_url, success_codes, authz_fail_codes
             raise errors.Unauthorized()
 
 def create_channel(base_url, token, channel):
+    '''Create a new channel with name `channel` on the repo server at `base_url` using `token`
+    to authenticate.
+
+    Args:
+          base_url(str): url to the repo server api
+          token(str): user token to be use for authentication and authorization
+          channel(str): name of the channel to be created
+
+    Returns:
+          response (http response object)
+    '''
     url = join(base_url, 'channels')
     data = {'name': channel}
     logger.debug(f'Creating channel {channel} on {base_url}')
