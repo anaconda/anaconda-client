@@ -105,7 +105,7 @@ def main(args):
         for fp in filepath:
             for channel in channels:
                 logger.debug(f'Using token {token}')
-                resp = upload_file(url, token, fp, channel)
+                resp = upload_file(url, token, fp, str(channel))
                 if resp.status_code in [201, 200]:
                     logger.info(f'File {fp} successfully uploaded to {url}::{channel} with response {resp.status_code}')
                     logger.debug(f'Server responded with {resp.content}')
