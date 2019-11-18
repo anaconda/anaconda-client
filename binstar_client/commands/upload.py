@@ -6,8 +6,8 @@
 
 ##### See Also
 
-  * [Uploading a Conda Package](http://docs.anaconda.org/using.html#Uploading)
-  * [Uploading a PyPI Package](http://docs.anaconda.org/using.html#UploadingPypiPackages)
+  * [Uploading a Conda Package](https://docs.anaconda.com/anaconda-repository/user-guide/tasks/pkgs/use-pkg-managers/#uploading-a-conda-package)
+  * [Uploading a PyPI Package](https://docs.anaconda.com/anaconda-repository/user-guide/tasks/pkgs/use-pkg-managers/#uploading-pypi-packages)
 
 """
 from __future__ import unicode_literals
