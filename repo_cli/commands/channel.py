@@ -187,7 +187,6 @@ def main(args, name, deprecated=False):
         logger.info("Copy operation not yet implemented.")
     elif args.remove:
         remove_channel(url, token, args.remove)
-        logger.info("Remove operation not yet implemented.")
     elif args.list:
         list_channels(url, token)
     elif args.show:

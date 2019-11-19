@@ -105,15 +105,18 @@ def main(args):
         for fp in filepath:
             for channel in channels:
                 logger.debug(f'Using token {token}')
-                resp = upload_file(url, token, fp, str(channel))
+                resp = upload_file(url, token, fp, channel)
                 if resp.status_code in [201, 200]:
                     logger.info(f'File {fp} successfully uploaded to {url}::{channel} with response {resp.status_code}')
                     logger.debug(f'Server responded with {resp.content}')
                 else:
-                    msg = f'Error uploading {fp} to {url}::{channel}. ' \
-                        f'Server responded with status code {resp.status_code}.\n' \
-                        f'Error details: {resp.content}'
-                    logger.error(msg)
+                    if resp.status_code == 401:
+                        raise errors.Unauthorized()
+                    else:
+                        msg = f'Error uploading {fp} to {url}::{channel}. ' \
+                            f'Server responded with status code {resp.status_code}.\n' \
+                            f'Error details: {resp.content}\n'
+                        logger.error(msg)
 
 
 def windows_glob(item):
