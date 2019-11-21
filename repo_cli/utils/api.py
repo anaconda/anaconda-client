@@ -1,8 +1,9 @@
 from __future__ import unicode_literals
 import json
 import datetime
-from os.path import join
+from os.path import join, basename
 import logging
+import os
 import platform
 import socket
 import sys
@@ -21,8 +22,14 @@ class RepoApi:
         self._urls = {
             'account': join(self.base_url, 'account'),
             'account_tokens': join(self.base_url, 'account', 'tokens'),
+            'account_me': join(self.base_url, 'account', 'me'),
             'login': join(self.base_url, 'auth', 'login'),
             'logout': join(self.base_url, 'logout'),
+            'channels': join(self.base_url, 'channels'),
+            'user_channels': join(self.base_url, 'account', 'channels'),
+            'token_info': join(self.base_url, 'account', 'token-info'),
+            'user_tokens': join(self.base_url, 'account', 'tokens'),
+            'scopes': join(self.base_url, 'system', 'scopes'),
         }
 
 
@@ -50,9 +57,19 @@ class RepoApi:
 
     @property
     def bearer_headers(self, content_type='application/json'):
-        headers = {'Authorization': f'Bearer {self.jwt}'}
+        headers = {'Authorization': f'Bearer {self._jwt}'}
         if content_type:
             headers['Content-Type'] = content_type
+        return headers
+
+    @property
+    def xauth_headers(self):
+        return self.get_xauth_headers()
+
+    def get_xauth_headers(self, extra_headers=None):
+        headers = {'X-Auth': self._access_token}
+        if extra_headers:
+            headers.update(extra_headers)
         return headers
 
     def get_access_token(self):
@@ -101,7 +118,7 @@ class RepoApi:
             logger.debug(f'Server responded with response {resp.status_code}\nData: {resp.content}')
             raise errors.Unauthorized()
 
-        self.jwt = jwt_token = resp.json()['token']
+        self._jwt = jwt_token = resp.json()['token']
 
         # user_token = self.get_access_token(jwt_token, self._urls['account_tokens'])
         user_token = self.get_access_token()
@@ -119,3 +136,175 @@ class RepoApi:
 
         # TODO: we are assuming the first token is the one we need... We need to improve this waaaaay more
         return {"user": user_token, "jwt": jwt_token}
+
+
+    def get_default_channel(self):
+        url = self._urls['account_me']
+        logger.debug(f'[UPLOAD] Getting user default channel from {url}')
+        response = requests.get(url, headers=self.xauth_headers)
+        return response
+
+
+    def upload_file(self, filepath, channel):
+        url = join(self.base_url, 'channels', channel, 'artifacts')
+        statinfo = os.stat(filepath)
+        filename = basename(filepath)
+        logger.debug(f'[UPLOAD] Using token {self._access_token} on {self.base_url}')
+        multipart_form_data = {
+            'content': (filename, open(filepath, 'rb')),
+            'filetype': (None, 'conda1'),
+            'size': (None, statinfo.st_size)
+        }
+        logger.info(f'Uploading to {url}...')
+        response = requests.post(url, files=multipart_form_data, headers=self.xauth_headers)
+        return response
+
+    def create_channel(self, channel):
+        '''Create a new channel with name `channel` on the repo server at `base_url` using `token`
+        to authenticate.
+
+        Args:
+              channel(str): name of the channel to be created
+
+        Returns:
+              response (http response object)
+        '''
+        url = self._urls['channels']
+        data = {'name': channel}
+        logger.debug(f'Creating channel {channel} on {self.base_url}')
+        headers = self.get_xauth_headers({'Content-Type': 'application/json'})
+        response = requests.post(url, json=data, headers=headers)
+        if response.status_code in [201]:
+            logger.info(f'Channel {channel} successfully created')
+            logger.debug(f'Server responded with {response.status_code}\nData: {response.content}')
+        else:
+            msg = f'Error creating {channel}.' \
+                f'Server responded with status code {response.status_code}.\n' \
+                f'Error details: {response.content}'
+            logger.error(msg)
+            if response.status_code in [403, 401]:
+                raise errors.Unauthorized()
+        return response
+
+    def remove_channel(self, channel):
+        url = join(self._urls['channels'], channel)
+        logger.debug(f'Removing channel {channel} on {self.base_url}')
+        logger.debug(f'Using token {self._access_token}')
+        response = requests.delete(url, headers=self.get_xauth_headers({'Content-Type': 'application/json'}))
+        if response.status_code in [202]:
+            logger.info(f'Channel {channel} successfully removed')
+            logger.debug(f'Server responded with {response.status_code}\nData: {response.content}')
+        else:
+            msg = f'Error creating {channel}.' \
+                f'Server responded with status code {response.status_code}.\n' \
+                f'Error details: {response.content}'
+            logger.error(msg)
+            if response.status_code in [403, 401]:
+                raise errors.Unauthorized()
+        return response
+
+    def update_channel(self, channel, success_message=None, **data):
+        url = join(self._urls['channels'], channel)
+        logger.debug(f'Updating channel {channel} on {self.base_url}')
+        logger.debug(f'Using token {self._access_token}')
+        response = requests.put(url, json=data, headers=self.get_xauth_headers({'Content-Type': 'application/json'}))
+        if not success_message:
+            success_message = f'Channel {channel} successfully updated.'
+        if response.status_code in [200, 204]:
+            logger.info(success_message)
+            logger.debug(f'Server responded with {response.status_code}\nData: {response.content}')
+        else:
+            msg = f'Error creating {channel} .' \
+                f'Server responded with status code {response.status_code}.\n' \
+                f'Error details: {response.content}'
+            logger.error(msg)
+            if response.status_code in [403, 401]:
+                raise errors.Unauthorized()
+            # TODO: We should probably need to manage other error states
+        return response
+
+    def get_channel(self, channel):
+        url = join(self._urls['channels'], channel)
+        logger.debug(f'Getting channel {channel} on {self.base_url}')
+        response = requests.get(url, headers=self.get_xauth_headers({'Content-Type': 'application/json'}))
+        return response
+
+    def list_user_channels(self):
+        logger.debug(f'Getting user channels from {self.base_url}')
+        response = requests.get(self._urls['user_channels'],
+                                headers=self.get_xauth_headers({'Content-Type': 'application/json'}))
+        return response
+
+
+    # TOKEN RELATED URLS
+    def _manage_reponse(self, response, action='', success_codes=None, auth_fail_codes=None):
+        if not success_codes:
+            success_codes = [200]
+        if not auth_fail_codes:
+            auth_fail_codes = [401, 403]
+        if response.status_code in success_codes:
+            # deletes shouldn't return anythings
+            if response.status_code == 204:
+                return
+            return response.json()
+        else:
+            msg = f'Error {action}' \
+                f'Server responded with status code {response.status_code}.\n' \
+                f'Error details: {response.content}'
+            logger.error(msg)
+            if response.status_code in auth_fail_codes:
+                raise errors.Unauthorized()
+            errors.RepoCLIError("%s operation failed.")
+        return {}
+
+    def get_token_info(self):
+        response = requests.get(self._urls['token_info'], headers=self.xauth_headers)
+
+        if response.status_code in [200, 204]:
+            return response.json()
+        else:
+            msg = f'Error getting token info.' \
+                f'Server responded with status code {response.status_code}.\n' \
+                f'Error details: {response.content}'
+            logger.error(msg)
+            if response.status_code in [403, 401]:
+                raise errors.Unauthorized()
+        return {}
+
+    def get_user_tokens(self):
+        response = requests.get(self._urls['account_tokens'], headers=self.bearer_headers)
+
+        if response.status_code in [200, 204]:
+            return response.json()
+        else:
+            msg = f'Error getting user tokens.' \
+                f'Server responded with status code {response.status_code}.\n' \
+                f'Error details: {response.content}'
+            logger.error(msg)
+            if response.status_code in [403, 401]:
+                raise errors.Unauthorized()
+        return []
+
+    def remove_user_token(self, token):
+        url = join(self._urls['account_tokens'], token)
+        response = requests.delete(url, headers=self.bearer_headers)
+        return self._manage_reponse(response, 'removing user token', success_codes=[204])
+
+    def create_user_token(self, name, expiration, scopes=None, resources=None):
+        data = {
+            'name': name,
+            'expires_at': expiration,
+        }
+        if scopes:
+            data['scopes'] = scopes
+
+        if resources:
+            data['resources'] = resources
+
+        response = requests.post(self._urls['account_tokens'], data=json.dumps(data),
+                                 headers=self.bearer_headers)
+        return self._manage_reponse(response, "creating user token", success_codes=[200])
+
+    def get_scopes(self):
+        response = requests.get(self._urls['scopes'], headers=self.bearer_headers)
+        return self._manage_reponse(response, "getting scopes")
