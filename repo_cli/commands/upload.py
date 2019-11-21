@@ -28,6 +28,7 @@ from os.path import join, basename
 from ..utils.config import get_config, PACKAGE_TYPES, DEFAULT_CONFIG, DEFAULT_URL
 from ..utils.detect import detect_package_type, get_attrs
 from .. import errors
+from .base import SubCommandBase
 
 logger = logging.getLogger('repo_cli')
 
@@ -183,3 +184,99 @@ def add_parser(subparsers):
                                         action='store_const', dest='mode', const='skip')
 
     parser.set_defaults(main=main)
+
+
+class SubCommand(SubCommandBase):
+    name = "upload"
+
+
+    def main(self):
+        # config = get_config(site=args.site)
+        # url = config.get('url', DEFAULT_URL)
+        if not self.access_token:
+            raise errors.Unauthorized
+
+        channels = self.args.labels
+        if not channels:
+            # In this case the user didn't specify any channel. Means we need to get
+            # the user default channel
+            channels = self.api.get_default_channel()
+
+        for filepath in self.args.files:
+            for fp in filepath:
+                for channel in channels:
+                    logger.debug(f'Using token {self.access_token}')
+                    resp = self.api.upload_file(fp, channel)
+                    if resp.status_code in [201, 200]:
+                        logger.info(
+                            f'File {fp} successfully uploaded to {self.api.base_url}::{channel} with response {resp.status_code}')
+                        logger.debug(f'Server responded with {resp.content}')
+                    else:
+                        if resp.status_code == 401:
+                            raise errors.Unauthorized()
+                        else:
+                            msg = f'Error uploading {fp} to {self.api.base_url}::{channel}. ' \
+                                f'Server responded with status code {resp.status_code}.\n' \
+                                f'Error details: {resp.content}\n'
+                            logger.error(msg)
+
+
+    def add_parser(self, subparsers):
+            description = 'Upload packages to your Anaconda repository'
+            self.subparser = parser = subparsers.add_parser('upload',
+                                           formatter_class=argparse.RawDescriptionHelpFormatter,
+                                           help=description, description=description,
+                                           epilog=__doc__)
+
+            parser.add_argument('files', nargs='+', help='Distributions to upload', default=[], type=windows_glob)
+
+            label_help = (
+                '{deprecation}Add this file to a specific {label}. '
+                'Warning: if the file {label}s do not include "main", '
+                'the file will not show up in your user {label}')
+
+            parser.add_argument('-c', '--channel', action='append', default=[], dest='labels',
+                                help=label_help.format(deprecation='[DEPRECATED]\n', label='channel'),
+                                metavar='CHANNELS')
+            parser.add_argument('-l', '--label', action='append', dest='labels',
+                                help=label_help.format(deprecation='', label='label'))
+            parser.add_argument('--no-progress', help="Don't show upload progress", action='store_true')
+            parser.add_argument('-u', '--user', help='User account or Organization, defaults to the current user')
+            parser.add_argument('--all', help='Use conda convert to generate packages for all platforms and upload them',
+                                action='store_true')
+
+            mgroup = parser.add_argument_group('metadata options')
+            mgroup.add_argument('-p', '--package', help='Defaults to the package name in the uploaded file')
+            mgroup.add_argument('-v', '--version', help='Defaults to the package version in the uploaded file')
+            mgroup.add_argument('-s', '--summary', help='Set the summary of the package')
+            # To preserve current behavior
+            pkgs = PACKAGE_TYPES.copy()
+            pkgs.pop('conda')
+            pkgs.pop('pypi')
+            pkg_types = ', '.join(list(pkgs.keys()))
+            mgroup.add_argument('-t', '--package-type',
+                                help='Set the package type [{0}]. Defaults to autodetect'.format(pkg_types))
+            mgroup.add_argument('-d', '--description', help='description of the file(s)')
+            mgroup.add_argument('--thumbnail', help='Notebook\'s thumbnail image')
+            mgroup.add_argument('--private', help="Create the package with private access", action='store_true')
+
+            register_group = parser.add_mutually_exclusive_group()
+            register_group.add_argument("--no-register", dest="auto_register", action="store_false",
+                                        help='Don\'t create a new package namespace if it does not exist')
+            register_group.add_argument("--register", dest="auto_register", action="store_true",
+                                        help='Create a new package namespace if it does not exist')
+            parser.set_defaults(auto_register=DEFAULT_CONFIG.get('auto_register', True))
+            parser.add_argument('--build-id', help='Anaconda repository Build ID (internal only)')
+
+            group = parser.add_mutually_exclusive_group()
+            group.add_argument('-i', '--interactive', action='store_const',
+                               help='Run an interactive prompt if any packages are missing',
+                               dest='mode', const='interactive')
+            group.add_argument('-f', '--fail', help='Fail if a package or release does not exist (default)',
+                               action='store_const', dest='mode', const='fail')
+            group.add_argument('--force', help='Force a package upload regardless of errors',
+                               action='store_const', dest='mode', const='force')
+            group.add_argument('--skip-existing', help='Skip errors on package batch upload if it already exists',
+                               action='store_const', dest='mode', const='skip')
+
+            parser.set_defaults(main=self.main)

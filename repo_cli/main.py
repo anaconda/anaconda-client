@@ -5,8 +5,10 @@ from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from binstar_client import __version__ as version
 from repo_cli import commands as command_module
 from .commands import login, logout, upload, channel
+from . import commands
 from .utils import _setup_logging, file_or_token, config
 from . import errors
+from .commands.base import RepoCommand
 
 logger = logging.getLogger('repo_cli')
 
@@ -44,7 +46,7 @@ def _main(sub_command_module, args=None, exit=True, description=None, version=No
     # login_parser = subparsers.add_parser('login', help='login help')
 
 
-    bgroup = parser.add_argument_group('rpoa-client options')
+    bgroup = parser.add_argument_group('repo-client options')
     bgroup.add_argument('-t', '--token', type=file_or_token,
                         help="Authentication token to use. "
                              "May be a token or a path to a file containing a token")
@@ -89,8 +91,13 @@ def _main(sub_command_module, args=None, exit=True, description=None, version=No
             return 1
 
 
+
+
+
 def main(args=None, exit=True):
-    _main(command_module, args, exit, description=__doc__, version=version)
+    main_cmd = RepoCommand(commands, args)
+    main_cmd.run()
+    # _main(command_module, args, exit, description=__doc__, version=version)
 
 
 if __name__ == '__main__':

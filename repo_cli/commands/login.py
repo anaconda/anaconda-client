@@ -17,7 +17,7 @@ from binstar_client.utils import bool_input
 from ..utils.config import store_token, get_config, load_token, DEFAULT_URL
 from .. import errors
 from ..utils.api import RepoApi
-from .base import SubCommand
+from .base import SubCommandBase
 
 logger = logging.getLogger('repo_cli')
 
@@ -185,11 +185,17 @@ def main(args):
     interactive_login(args)
 
 
-class Command(SubCommand):
-    def interactive_login(self):
+class SubCommand(SubCommandBase):
+    name = "login"
+    manages_auth = True
+
+    def main(self):
+        self.login()
+
+    def login(self):
         token = self.interactive_get_token()
-        store_token(token)
-        logger.info('login successful')
+        store_token(token, self.args)
+        self.log.info('login successful')
         return token  # ['id']
 
 
@@ -198,11 +204,12 @@ class Command(SubCommand):
             username = self.args.login_username
         else:
             username = input('Username: ')
+        self.username = username
         password = getattr(self.args, 'login_password', None)
         return username, password
 
 
-    def interactive_get_token(self, args, fail_if_already_exists=True):
+    def interactive_get_token(self):#, args, fail_if_already_exists=True):
         # config = get_config(site=args.site)
         #
         # token = None
@@ -210,8 +217,7 @@ class Command(SubCommand):
         # # know if the attribute hostname exists.
         # # args.site or config.get('default_site')
         # url = config.get('url', DEFAULT_URL)
-        username, password = get_login_and_password(args)
-
+        username, password = self.get_login_and_password()
         for _ in range(3):
             try:
                 if password is None:
@@ -233,6 +239,16 @@ class Command(SubCommand):
                 continue
 
         return token['user']
+
+    def add_parser(self, subparsers):
+        self.subparser = subparser = subparsers.add_parser('login', help='Authenticate a user', description=__doc__)
+        subparser.add_argument('--hostname', default=platform.node(),
+                               help="Specify the host name of this login, this should be unique (default: %(default)s)")
+        subparser.add_argument('--username', dest='login_username',
+                               help="Specify your username. If this is not given, you will be prompted")
+        subparser.add_argument('--password', dest='login_password',
+                               help="Specify your password. If this is not given, you will be prompted")
+        subparser.set_defaults(main=self.main)
 
 
 def add_parser(subparsers):
