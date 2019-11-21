@@ -10,8 +10,10 @@ import functools
 import logging
 import argparse
 import requests
+from pprint import pformat
 from .. import errors
 from ..utils.config import get_config, DEFAULT_URL
+from ..utils.artifacts import SimplePackageSpec
 from .base import SubCommandBase
 
 logger = logging.getLogger('repo_cli')
@@ -301,6 +303,12 @@ class SubCommand(SubCommandBase):
             self.api.remove_channel(self.args.remove)
         elif self.args.list:
             self.list_user_channels()
+        elif self.args.list_packages:
+            for spec in self.args.list_packages:
+                self.show_channel_packages(spec)
+        elif self.args.list_files:
+            for spec in self.args.list_files:
+                self.show_channel_files(spec, family=self.args.family, full_details=self.args.full_details)
         elif self.args.show:
             self.show_channel(self.args.show)
         elif self.args.lock:
@@ -318,11 +326,53 @@ class SubCommand(SubCommandBase):
         else:
             raise NotImplementedError()
 
+    def show_channel_packages(self, spec):
+        packages = self.api.get_channel_artifacts(spec.channel)
+        self.log.info('')
+        self.log.info('Total packages matching spec %s found: %s\n' % (spec, len(packages)))
+        for package in packages:
+            self.show_package_detail(package)
+        self.log.info('')
+
+    def show_package_detail(self, package):
+        keymap = {'download_count': '# of downloads', 'file_count': '# of files',}
+        pack = dict(package)
+        pack.update(package['metadata'])
+        resp = ["---------------"]
+
+        for key in ['name', 'file_count', 'download_count', 'license', 'description']:
+            label = keymap.get(key, key)
+            value = pack.get(key, '')
+            resp.append("%s: %s" % (label, value))
+
+        self.log.info('\n'.join(resp))
+
+    def show_channel_files(self, spec, family, full_details=False):
+        packages = self.api.get_channel_artifacts_files(
+            spec.channel, family, spec.package, spec.version, spec.filename, return_raw=full_details
+        )
+
+        if not packages:
+            logger.warning('No files matches were found for the provided spec: %s\n' % (spec))
+            return
+
+        files_descr = []
+        for filep in packages:
+            if full_details:
+                files_descr.append("----------------\n%s\n" % pformat(filep))
+            else:
+                files_descr.append(
+                    '----------------\n{name}/{version}//{ckey}\n'.format(**filep))
+
+        affected_files = '\n'.join(sorted(files_descr))
+        msg = 'Found %s files matching the specified spec %s:\n\n%s\n' % (len(files_descr), spec, affected_files)
+        self.log.info(msg)
+
     def show_channel(self, channel):
-            response = self.api.get_channel(channel)
-            handle_response(response, channel, self.api.base_url,
-                            success_codes=[200], authz_fail_codes=[401, 403],
-                            action='show', success_handler=self.show_channel_detail)
+        response = self.api.get_channel(channel)
+        handle_response(response, channel, self.api.base_url,
+                        success_codes=[200], authz_fail_codes=[401, 403],
+                        action='show', success_handler=self.show_channel_detail)
 
     def show_channel_detail(self, response):
         data = response.json()
@@ -365,6 +415,12 @@ class SubCommand(SubCommandBase):
             help='Manage your Anaconda repository {}s'.format(self.name),
             formatter_class=argparse.RawDescriptionHelpFormatter,
             description=__doc__)
+        subparser.add_argument('--family',
+                               default='conda',
+                               help='artifact family (i.e.: conda, pypy, cran). ONLY USED IN COMBINATION '
+                                    'WITH --list-files, ignored otherwise.', action='store_true')
+        subparser.add_argument('--full-details', help='Prints full file details. ONLY USED IN COMBINATION '
+                                    'WITH --list-files, ignored otherwise.', action='store_true')
 
         group = subparser.add_mutually_exclusive_group(required=True)
 
@@ -380,6 +436,12 @@ class SubCommand(SubCommandBase):
             action='store_true',
             help="list all {}s for a user".format(self.name)
         )
+        group.add_argument('--list-packages',
+                            help='Package written as <channel>/<subchannel>]]',
+                            type=SimplePackageSpec.from_string, nargs='+')
+        group.add_argument('--list-files',
+                           help='Package written as <channel>/<subchannel>[::<package>[/<version>[/<filename>]]]',
+                           type=SimplePackageSpec.from_string, nargs='+')
         group.add_argument(
             '--show',
             metavar=self.name.upper(),

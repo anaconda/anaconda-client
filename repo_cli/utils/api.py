@@ -308,3 +308,52 @@ class RepoApi:
     def get_scopes(self):
         response = requests.get(self._urls['scopes'], headers=self.bearer_headers)
         return self._manage_reponse(response, "getting scopes")
+
+    # --------
+    def channel_artifacts_bulk_actions(self, channel, action, artifacts):
+        url = join(self._urls['channels'], channel, 'artifacts', 'bulk')
+        data = {
+            "action": action,
+            "items": artifacts
+        }
+        resp = requests.put(url, data=json.dumps(data),
+                            headers=self.get_xauth_headers({'Content-Type': 'application/json'}))
+        return self._manage_reponse(resp, "%s articfacts" %action, success_codes=[202])
+
+    def get_channel_artifacts(self, channel):
+        url = join(self._urls['channels'], channel, 'artifacts')
+        resp = requests.get(url, headers=self.xauth_headers)
+        return self._manage_reponse(resp, "getting articfacts").get('items', [])
+
+    def get_channel_artifacts_files(self, channel, family, package=None, version=None, filename=None, return_raw=False):
+
+        artifact_files = []
+        if package:
+            packages = [package]
+        else:
+            # url = join(self._urls['channels'], channel, 'artifacts')
+            # resp = requests.get(url, headers=self.xauth_headers)
+            # data = self._manage_reponse(resp, "getting articfacts")
+            data = self.get_channel_artifacts(channel)
+            packages = [pkg['name'] for pkg in data]
+
+        for package in packages:
+            url = join(self._urls['channels'], channel, 'artifacts', family, package, 'files')
+            resp = requests.get(url, headers=self.xauth_headers)
+            files = self._manage_reponse(resp, "getting articfacts")
+
+            for file_ in files:
+                index_ = file_['metadata']['index.json']
+                # TODO: We need to improve version checking... for now it's exact match
+                if version and index_['version'] != version:
+                    continue
+                if filename and index_['fn'] != filename:
+                    continue
+                if return_raw:
+                    artifact_files.append(file_)
+                else:
+                    rec = {'name': file_['name'], 'ckey': file_['ckey']}
+                    rec.update({key: index_[key] for key in ['version', 'fn', 'platform']})
+                    artifact_files.append(rec)
+
+        return artifact_files

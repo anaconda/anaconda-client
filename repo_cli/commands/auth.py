@@ -18,7 +18,6 @@ logger = logging.getLogger('repo_cli')
 class SubCommand(SubCommandBase):
     name = "auth"
 
-
     def main(self):
         if self.args.info:
             self.show_token_info()
