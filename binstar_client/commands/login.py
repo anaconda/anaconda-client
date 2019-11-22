@@ -8,6 +8,7 @@ import logging
 import platform
 import socket
 import sys
+import os
 
 from six.moves.urllib.parse import urlparse
 from six.moves import input
@@ -79,10 +80,14 @@ def interactive_get_token(args, fail_if_already_exists=True):
     else:
         if getattr(args, 'login_username', None):
             username = args.login_username
+        elif os.getenv('ANACONDA_USERNAME'):
+            username = os.environ['ANACONDA_USERNAME']
         else:
             username = input('Username: ')
 
         password = getattr(args, 'login_password', None)
+        if password is None and os.getenv('ANACONDA_PASSWORD'):
+            password = os.environ['ANACONDA_PASSWORD']
 
         for _ in range(3):
             try:
@@ -138,7 +143,9 @@ def add_parser(subparsers):
     subparser.add_argument('--hostname', default=platform.node(),
                            help="Specify the host name of this login, this should be unique (default: %(default)s)")
     subparser.add_argument('--username', dest='login_username',
-                           help="Specify your username. If this is not given, you will be prompted")
+                           help="Specify your username. If this is not given, you will be prompted. "
+                                "This can also be specified via the ENV variable ANACONDA_USERNAME")
     subparser.add_argument('--password', dest='login_password',
-                           help="Specify your password. If this is not given, you will be prompted")
+                           help="Specify your password. If this is not given, you will be prompted. "
+                                "This can also be specified via the ENV variable ANACONDA_PASSWORD")
     subparser.set_defaults(main=main)
