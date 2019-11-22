@@ -26,10 +26,12 @@ class RepoApi:
             'login': join(self.base_url, 'auth', 'login'),
             'logout': join(self.base_url, 'logout'),
             'channels': join(self.base_url, 'channels'),
+            'artifacts': join(self.base_url, 'artifacts'),
             'user_channels': join(self.base_url, 'account', 'channels'),
             'token_info': join(self.base_url, 'account', 'token-info'),
             'user_tokens': join(self.base_url, 'account', 'tokens'),
             'scopes': join(self.base_url, 'system', 'scopes'),
+            'cves': join(self.base_url, 'cves'),
         }
 
 
@@ -56,10 +58,11 @@ class RepoApi:
         return self._access_token
 
     @property
-    def bearer_headers(self, content_type='application/json'):
-        headers = {'Authorization': f'Bearer {self._jwt}'}
-        if content_type:
-            headers['Content-Type'] = content_type
+    def bearer_headers(self):
+        headers = {
+            'Authorization': f'Bearer {self._jwt}',
+            'Content-Type': 'application/json'
+        }
         return headers
 
     @property
@@ -126,8 +129,7 @@ class RepoApi:
         if not user_token:
             logger.debug('[LOGIN] Access token not found. Creating one...')
             # Looks like user doesn't have any valid token. Let's create a new one
-            # user_token = self.create_access_token(jwt_token, self._urls['account_tokens'])
-            user_token = self.create_access_token()#jwt_token, self._urls['account_tokens'])
+            user_token = self.create_access_token()
             logger.debug('[LOGIN] Done.')
             if resp.status_code != 200:
                 msg = 'Unable to request user tokens. Server was unable to return any valid token!'
@@ -169,10 +171,18 @@ class RepoApi:
         Returns:
               response (http response object)
         '''
-        url = self._urls['channels']
-        data = {'name': channel}
         logger.debug(f'Creating channel {channel} on {self.base_url}')
-        headers = self.get_xauth_headers({'Content-Type': 'application/json'})
+        if '/' in channel:
+            # this is a subchannel....
+            channel, subchannel = channel.split('/')
+            url = join(self._urls['channels'], channel, 'subchannels')
+            data = {'name': subchannel}
+            headers = self.bearer_headers
+        else:
+            url = join(self._urls['channels'])
+            data = {'name': channel}
+            headers = self.get_xauth_headers({'Content-Type': 'application/json'})
+
         response = requests.post(url, json=data, headers=headers)
         if response.status_code in [201]:
             logger.info(f'Channel {channel} successfully created')
@@ -187,7 +197,7 @@ class RepoApi:
         return response
 
     def remove_channel(self, channel):
-        url = join(self._urls['channels'], channel)
+        url = self._get_channel_url(channel)
         logger.debug(f'Removing channel {channel} on {self.base_url}')
         logger.debug(f'Using token {self._access_token}')
         response = requests.delete(url, headers=self.get_xauth_headers({'Content-Type': 'application/json'}))
@@ -204,7 +214,8 @@ class RepoApi:
         return response
 
     def update_channel(self, channel, success_message=None, **data):
-        url = join(self._urls['channels'], channel)
+        # url = join(self._urls['channels'], channel)
+        url = self._get_channel_url(channel)
         logger.debug(f'Updating channel {channel} on {self.base_url}')
         logger.debug(f'Using token {self._access_token}')
         response = requests.put(url, json=data, headers=self.get_xauth_headers({'Content-Type': 'application/json'}))
@@ -223,9 +234,27 @@ class RepoApi:
             # TODO: We should probably need to manage other error states
         return response
 
+    def _get_channel_url(self, channel):
+        """Return a channel url based on the fact that it's a normal channel or
+         a subchannel
+
+        Args:
+            channel (str): name of the channel
+
+        Returns:
+            (str) url
+        """
+        if '/' in channel:
+            # this is a subchannel....
+            channel, subchannel = channel.split('/')
+            url = join(self._urls['channels'], channel, 'subchannels', subchannel)
+        else:
+            url = join(self._urls['channels'], channel)
+        return url
+
     def get_channel(self, channel):
-        url = join(self._urls['channels'], channel)
         logger.debug(f'Getting channel {channel} on {self.base_url}')
+        url = self._get_channel_url(channel)
         response = requests.get(url, headers=self.get_xauth_headers({'Content-Type': 'application/json'}))
         return response
 
@@ -357,3 +386,20 @@ class RepoApi:
                     artifact_files.append(rec)
 
         return artifact_files
+
+    def get_artifacts(self, query, limit=50, sort="-download_count"):
+        url = "%s?q=%s&limit=%s&offset=0&sort=%s" %(self._urls['artifacts'], query, limit, sort)
+        response = requests.get(url, headers=self.xauth_headers)
+        return self._manage_reponse(response, "searching artifacts")
+
+
+    # CVE related endpoints
+    def get_latest_cves(self, limit=25):
+        url = "%s?limit=%s" % (self._urls['cves'], limit)
+        response = requests.get(url, headers=self.xauth_headers)
+        return self._manage_reponse(response, "getting cves")
+
+    def get_cve_details(self, cve_id):
+        url = "%s/%s" % (self._urls['cves'], cve_id)
+        response = requests.get(url, headers=self.xauth_headers)
+        return self._manage_reponse(response, "getting cve id")
