@@ -1,19 +1,16 @@
 from .base import SubCommandBase
-
+from ..utils import format
 
 class SubCommand(SubCommandBase):
     name = "search"
 
     def main(self):
         self.search(self.args.name[0], package_type=self.args.package_type, platform=self.args.platform)
-        # pprint_packages(packages, access=False)
-        # logger.info("Found %i packages" % len(packages))
-        # logger.info("\nRun 'anaconda show <USER/PACKAGE>' to get installation details")
 
     def search(self, name, package_type=None, platform=None, limit=50):
         packages = self.api.get_artifacts(name)
-
-
+        format.format_packages(self.log, packages)
+        # logger.info("\nRun 'anaconda show <USER/PACKAGE>' to get installation details")
 
     def add_parser(self, subparsers):
         parser = subparsers.add_parser(
