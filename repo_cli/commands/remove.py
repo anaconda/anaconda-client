@@ -3,19 +3,14 @@ Remove an object from your Anaconda repository.
 
 example::
 
-    anaconda remove sean/meta/1.2.0/meta.tar.gz
+    anaconda remove mychannel/mypackage/1.2.0/mypackage.tar.gz
 
 '''
-# from binstar_client.utils import get_server_api, # parse_specs, \
-    # bool_input
 from six.moves.urllib.parse import urlparse
 import sys
 from argparse import RawTextHelpFormatter
 from .. import errors
 from .base import SubCommandBase
-import logging
-
-logger = logging.getLogger('binstar.remove')
 
 
 def bool_input(prompt, default=True):
@@ -125,11 +120,11 @@ class SubCommand(SubCommandBase):
                 elif spec._package:
                     self.remove_artifact(spec.channel, self.args.family, spec.package, spec=spec)
                 else:
-                    logger.error('Invalid package specification: %s', spec)
+                    self.log.error('Invalid package specification: %s', spec)
 
             except errors.NotFound:
                 if self.args.force:
-                    logger.warning('', exc_info=True)
+                    self.log.warning('', exc_info=True)
                     continue
                 else:
                     raise
@@ -145,7 +140,7 @@ class SubCommand(SubCommandBase):
             packages = self.api.get_channel_artifacts_files(channel, family, artifact, version, filename)
 
             if not packages:
-                logger.warning('No files matches were found for the provided spec: %s\n' % (spec))
+                self.log.warning('No files matches were found for the provided spec: %s\n' % (spec))
                 return
 
             files_descr = []
