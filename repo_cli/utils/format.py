@@ -1,6 +1,5 @@
 from __future__ import unicode_literals
 from dateutil.parser import parse as parse_date
-import logging
 
 INITIAL_SPACE = '     '
 fmt_package_headers = INITIAL_SPACE + '%(channel_path)-15s | %(name)-15s | %(version)8s | %(family)-12s ' \

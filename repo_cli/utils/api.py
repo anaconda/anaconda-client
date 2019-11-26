@@ -256,13 +256,13 @@ class RepoApi:
         logger.debug(f'Getting channel {channel} on {self.base_url}')
         url = self._get_channel_url(channel)
         response = requests.get(url, headers=self.get_xauth_headers({'Content-Type': 'application/json'}))
-        return response
+        return self._manage_reponse(response, f'getting channel {channel}')
 
     def list_user_channels(self):
         logger.debug(f'Getting user channels from {self.base_url}')
         response = requests.get(self._urls['user_channels'],
                                 headers=self.get_xauth_headers({'Content-Type': 'application/json'}))
-        return response
+        return self._manage_reponse(response, f'getting user channels')
 
 
     # TOKEN RELATED URLS
