@@ -35,12 +35,7 @@ class PackagesFormatter:
 
         self.log.info(fmt_package_headers % package)\
 
-    def format(self, packages):
-        if packages:
-            self.log.info('\n%s%i packages found:\n' % (INITIAL_SPACE, len(packages)))
-        else:
-            self.log.info('No packages found')
-
+    def format(self, packages, metadata):
         self.format_package_header()
 
         package_header = {
@@ -58,10 +53,18 @@ class PackagesFormatter:
 
         for package in packages:
             self.format_package(package)
+
+        if packages:
+            end_set = len(packages) + metadata['offset']
+            self.log.info('\n%s%i packages found.' % (INITIAL_SPACE, metadata['total_count']))
+            self.log.info('%sVisualizing %i-%i interval.' % (INITIAL_SPACE, len(packages), end_set))
+        else:
+            self.log.info('No packages found')
+
         self.log.info('')
 
-def format_packages(packages, logger):
+def format_packages(packages, meta, logger):
     formatter = PackagesFormatter(logger)
-    formatter.format(packages)
+    formatter.format(packages, meta)
     return formatter
 

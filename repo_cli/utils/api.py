@@ -387,8 +387,8 @@ class RepoApi:
 
         return artifact_files
 
-    def get_artifacts(self, query, limit=50, sort="-download_count"):
-        url = "%s?q=%s&limit=%s&offset=0&sort=%s" %(self._urls['artifacts'], query, limit, sort)
+    def get_artifacts(self, query, limit=50, offset=0, sort="-download_count"):
+        url = "%s?q=%s&limit=%s&offset=%s&sort=%s" %(self._urls['artifacts'], query, limit, offset, sort)
         response = requests.get(url, headers=self.xauth_headers)
         return self._manage_reponse(response, "searching artifacts")
 

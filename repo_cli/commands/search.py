@@ -5,12 +5,17 @@ class SubCommand(SubCommandBase):
     name = "search"
 
     def main(self):
-        self.search(self.args.name[0], package_type=self.args.package_type, platform=self.args.platform)
+        self.search(self.args.name[0], package_type=self.args.package_type, platform=self.args.platform,
+                    limit=self.args.limit, offset=self.args.offset, sort=self.args.sort)
 
-    def search(self, name, package_type=None, platform=None, limit=50):
-        packages = self.api.get_artifacts(name)
-        format.format_packages(self.log, packages)
-        # logger.info("\nRun 'anaconda show <USER/PACKAGE>' to get installation details")
+    def search(self, name, limit=50, offset=0, sort="-download_count",
+               package_type=None, platform=None):
+        data = self.api.get_artifacts(name, limit=limit, offset=offset, sort=sort)
+        packages = data.pop('items')
+        data['limit'] = limit
+        data['offset'] = offset
+        data['sort'] = sort
+        format.format_packages(packages, data, self.log)
 
     def add_parser(self, subparsers):
         parser = subparsers.add_parser(
@@ -20,6 +25,18 @@ class SubCommand(SubCommandBase):
             epilog=__doc__
         )
         parser.add_argument('name', nargs=1, type=str, help='Search string')
+        parser.add_argument(
+            '-o', '--offset', default=0, type=int,
+            help='Offset when displaying the results'
+        )
+        parser.add_argument(
+            '-l', '--limit', default=50, type=int,
+            help='Offset when displaying the results'
+        )
+        parser.add_argument(
+            '-s', '--sort', default='download_count', type=str,
+            help='Offset when displaying the results'
+        )
         parser.add_argument(
             '-t', '--package-type', choices=['conda', 'pypi'],
             help='only search for packages of this type'
