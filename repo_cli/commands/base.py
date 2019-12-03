@@ -119,6 +119,7 @@ class RepoCommand:
         if not self._access_token:
             # we don't have a valid token... try to get it from local files
             self.api._access_token = self._access_token = config.load_token(self.site)
+        return self._access_token
 
     def init_config(self):
         pass
