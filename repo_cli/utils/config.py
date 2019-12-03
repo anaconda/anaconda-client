@@ -67,20 +67,11 @@ DEFAULT_SITE = 'repo-demo'
 
 DEFAULT_CONFIG = {
     'sites': {
-        'anaconda': {'url': DEFAULT_URL},
-        'binstar': {'url': DEFAULT_URL},
-        'repo.conda.rocks': {'url': 'http://repo.conda.rocks'},
-        'http://localhost:5002': {'url': 'http://localhost:5002'},
-        'http://repo.conda.rocks': {'url': 'http://repo.conda.rocks'},
         'http://repo-demo.dev.anaconda.com/api': {'url': 'http://repo-demo.dev.anaconda.com/api'},
-        'http://repo-wip.dev.anaconda.com/api': {'url': 'http://repo-wip.dev.anaconda.com/api'},
-        'http://repo-wip.dev.anaconda.com': {'url': 'http://repo-wip.dev.anaconda.com/api'},
-        'http://repo-qa.dev.anaconda.com/api': {'url': 'http://repo-qa.dev.anaconda.com/api'},
-        'http://repo-qa.dev.anaconda.com': {'url': 'http://repo-qa.dev.anaconda.com/api'},
-        'repo-demo': {'url': 'http://repo-demo.dev.anaconda.com/api'},
     },
     'auto_register': True,
-    'default_site': None,
+    'default_site': DEFAULT_SITE,
+    'detault_url': DEFAULT_URL,
     'url': DEFAULT_URL,
     'ssl_verify': False
 }
@@ -104,7 +95,6 @@ SEARCH_PATH = (
     '~/.conda/',
     '$CONDA_PREFIX/etc/anaconda-client/',
 )
-
 
 def recursive_update(config, update_dict):
     for update_key, updated_value in update_dict.items():
@@ -293,7 +283,6 @@ def get_config(site=None):
 
         if site not in sites:
             logger.warning('Site alias "%s" does not exist in the config file', site)
-            # new_config = {'sites': {'conda.rocks': {'url': {site}}}
         else:
             # This takes whatever keys are set for the site into the top level of the config dict
             recursive_update(config, sites.get(site, {}))
