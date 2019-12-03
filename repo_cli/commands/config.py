@@ -1,34 +1,33 @@
 '''
-anaconda-client configuration
+`conda repo` configuration
 
-Get, Set, Remove or Show the anaconda-client configuration.
+Get, Set, Remove or Show the `conda repo` configuration.
 
-###### anaconda-client sites
+###### `conda repo` sites
 
-anaconda-client sites are a mechanism to allow users to quickly switch
-between Anaconda repository instances. This is primarily used for testing
-the anaconda alpha site. But also has applications for the
-on-site [Anaconda Enterprise](http://continuum.io/anaconda-server).
+`conda repo` sites are a mechanism to allow users to quickly switch
+between Anaconda repository instances, from anaconda.org to on-site
+[Anaconda Repo](http://continuum.io/anaconda-server) installations.
 
-anaconda-client comes with two pre-configured sites `alpha` and
-`binstar` you may use these in one of two ways:
+`conda repo` comes one two pre-configured site: `anaconda`. If you
+have configured more than one site, you can operate between them
+in 2 ways:
 
-  * Invoke the anaconda command with the `-s/--site` option
+  * Invoke the `conda repo` command with the `-s/--site` option
     e.g. to use the alpha testing site:
 
-        anaconda -s alpha whoami
+        conda repo -s mysite whoami
 
   * Set a site as the default:
 
-        anaconda config --set default_site alpha
+        anaconda config --set default_site mysite
         anaconda whoami
 
-###### Add a anaconda-client site
+###### Add a `conda repo` site
 
-After installing [Anaconda Enterprise](http://continuum.io/anaconda-server)
-you can add a site named **site_name** like this:
+You can add a site named **site_name** like this:
 
-    anaconda config --set sites.site_name.url "http://<anaconda-enterprise-ip>:<port>/api"
+    anaconda config --set sites.site_name.url "http://url_of_new_site/api"
     anaconda config --set default_site site_name
 
 ###### Site Options VS Global Options
@@ -38,21 +37,28 @@ or site options - affecting only one site
 
 By default options are set globally e.g.:
 
-    anaconda config --set OPTION VALUE
+    conda repo config --set OPTION VALUE
 
 If you want the option to be limited to a single site,
 prefix the option with `sites.site_name` e.g.
 
-    anaconda config --set sites.site_name.OPTION VALUE
+    conda repo config --set sites.site_name.OPTION VALUE
 
-###### Common anaconda-client configuration options
+###### Common `conda repo` configuration options
 
-  * `url`: Set the anaconda api url (default: https://api.anaconda.org)
+  * `url`: Set the conda repo api url (default: https://api.anaconda.org)
   * `ssl_verify`: Perform ssl validation on the https requests.
     ssl_verify may be `True`, `False` or a path to a root CA pem file.
 
 
-###### Toggle auto_register when doing anaconda upload
+###### Other `conda repo` configuration options
+  * `auto_register`: Toggle auto_register when doing conda repo upload
+  * 'default_site': Default site set to be used by default
+  * 'sites': Sites namespace that can be used to add new sites (for
+    more information, check the dedicated section above.
+
+
+###### Toggle auto_register when doing conda repo upload
 
 The default is yes, automatically create a new package when uploading.
 If no, then an upload will fail if the package name does not already exist on the server.
@@ -62,15 +68,7 @@ If no, then an upload will fail if the package name does not already exist on th
 '''
 from __future__ import print_function
 
-import logging
-
 from argparse import RawDescriptionHelpFormatter
-
-from six import text_type
-
-# from binstar_client.errors import ShowHelp
-# from binstar_client.utils.config import (SEARCH_PATH, USER_CONFIG, SYSTEM_CONFIG, CONFIGURATION_KEYS,
-#                                          get_config, save_config, load_config, load_file_configs)
 
 from .. import errors
 from ..utils.config import (SEARCH_PATH, USER_CONFIG, SYSTEM_CONFIG, CONFIGURATION_KEYS,
@@ -80,11 +78,7 @@ from ..utils.yaml import yaml_dump, safe_load
 from .base import SubCommandBase
 
 
-# self.log = logging.getself.log('binstar.config')
-#
 DEPRECATED = {}
-#     'verify_ssl': 'Please use ssl_verify instead'
-# }
 
 
 class SubCommand(SubCommandBase):
@@ -135,7 +129,6 @@ class SubCommand(SubCommandBase):
 
         save_config(config, config_file)
 
-
     def recursive_remove(self, config_data, key):
         while '.' in key:
             if not config_data:
@@ -144,7 +137,6 @@ class SubCommand(SubCommandBase):
             config_data = config_data.get(prefix, {})
 
         del config_data[key]
-
 
     def recursive_set(self, config_data, key, value, type_):
         while '.' in key:
@@ -159,7 +151,6 @@ class SubCommand(SubCommandBase):
             self.log.warning(message)
 
         config_data[key] = type_(value)
-
 
     def add_parser(self, subparsers):
         description = 'Anaconda client configuration'

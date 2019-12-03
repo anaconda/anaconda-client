@@ -67,11 +67,10 @@ DEFAULT_SITE = 'repo-demo'
 
 DEFAULT_CONFIG = {
     'sites': {
-        'http://repo-demo.dev.anaconda.com/api': {'url': 'http://repo-demo.dev.anaconda.com/api'},
+        'repo-demo': {'url': 'http://repo-demo.dev.anaconda.com/api'},
     },
     'auto_register': True,
     'default_site': DEFAULT_SITE,
-    'detault_url': DEFAULT_URL,
     'url': DEFAULT_URL,
     'ssl_verify': False
 }
@@ -79,7 +78,6 @@ DEFAULT_CONFIG = {
 CONFIGURATION_KEYS = [
     'auto_register',
     'default_site',
-    'upload_user',
     'sites',
     'url',
     'ssl_verify',
