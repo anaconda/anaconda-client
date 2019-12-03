@@ -160,6 +160,11 @@ class SubCommand(SubCommandBase):
                                        epilog=__doc__,
                                        formatter_class=RawDescriptionHelpFormatter)
 
+        parser.add_argument('--type', default=safe_load,
+                            help='The type of the values in the set commands. NOTE: This'
+                                 'argument is only used when combined with the `--set`'
+                                 'command and is ignored otherwise.')
+
         agroup = parser.add_argument_group('actions')
 
         agroup.add_argument('--set', nargs=2, action='append', default=[],
