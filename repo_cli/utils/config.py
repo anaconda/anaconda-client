@@ -1,5 +1,6 @@
 from __future__ import print_function, absolute_import, unicode_literals
 
+import sys
 from os.path import exists, join, dirname, isfile, isdir, abspath, expanduser
 from string import Template
 import collections
@@ -15,15 +16,14 @@ try:
 except ImportError:
     from urllib.parse import quote_plus
 
-from binstar_client.utils.conda import CONDA_PREFIX, CONDA_ROOT
-from binstar_client.utils.appdirs import AppDirs, EnvAppDirs
-from binstar_client.errors import BinstarError
-
+# from binstar_client.utils.appdirs import AppDirs, EnvAppDirs
+from .appdirs import AppDirs, EnvAppDirs
+# from binstar_client.errors import BinstarError
+from ..errors import RepoCLIError
+from .conda import CONDA_PREFIX, CONDA_ROOT
 from .yaml import yaml_load, yaml_dump
 
-
 logger = logging.getLogger('repo_cli')
-
 
 def expandvars(path):
     environ = dict(CONDA_ROOT=CONDA_ROOT, CONDA_PREFIX=CONDA_PREFIX)
@@ -35,18 +35,18 @@ def expand(path):
     return abspath(expanduser(expandvars(path)))
 
 
-# if 'BINSTAR_CONFIG_DIR' in os.environ:
-#     dirs = EnvAppDirs('.conda', os.environ['BINSTAR_CONFIG_DIR'])
-#     USER_CONFIG = join(dirs.user_data_dir, 'repo-cli-config.yaml')
-# else:
-#     dirs = AppDirs('conda-repo-cli', 'Anaconda')
-#     USER_CONFIG = expand('~/.conda/repo-cli-config.yaml')
-if 'BINSTAR_CONFIG_DIR' in os.environ:
-    dirs = EnvAppDirs('binstar', 'ContinuumIO', os.environ['BINSTAR_CONFIG_DIR'])
-    USER_CONFIG = join(dirs.user_data_dir, 'config.yaml')
+if 'REPO_CONFIG_DIR' in os.environ:
+    dirs = EnvAppDirs('.conda', os.environ['BINSTAR_CONFIG_DIR'])
+    USER_CONFIG = join(dirs.user_data_dir, 'repo-cli-config.yaml')
 else:
-    dirs = AppDirs('binstar', 'ContinuumIO')
-    USER_CONFIG = expand('~/.continuum/anaconda-client/config.yaml')
+    dirs = AppDirs('conda-repo-cli', 'Anaconda')
+    USER_CONFIG = expand('~/.conda/repo-cli-config.yaml')
+# if 'BINSTAR_CONFIG_DIR' in os.environ:
+#     dirs = EnvAppDirs('binstar', 'ContinuumIO', os.environ['BINSTAR_CONFIG_DIR'])
+#     USER_CONFIG = join(dirs.user_data_dir, 'config.yaml')
+# else:
+#     dirs = AppDirs('binstar', 'ContinuumIO')
+#     USER_CONFIG = expand('~/.continuum/anaconda-client/config.yaml')
 
 
 # Package types used in upload/download
@@ -82,17 +82,16 @@ CONFIGURATION_KEYS = [
     'upload_user',
     'sites',
     'url',
-    'verify_ssl',
     'ssl_verify',
 ]
 
 SEARCH_PATH = (
+    '~/.conda/',
     dirs.site_data_dir,
     '/etc/anaconda-client/',
     '$CONDA_ROOT/etc/anaconda-client/',
     dirs.user_data_dir,
     '~/.continuum/anaconda-client/',
-    '~/.conda/',
     '$CONDA_PREFIX/etc/anaconda-client/',
 )
 
@@ -107,54 +106,54 @@ def recursive_update(config, update_dict):
     return config
 
 
-def get_server_api(token=None, site=None, cls=None, config=None, **kwargs):
-    """
-    Get the anaconda server api class
-    """
-    if not cls:
-        from binstar_client import Binstar
-        cls = Binstar
+# def get_server_api(token=None, site=None, cls=None, config=None, **kwargs):
+#     """
+#     Get the anaconda server api class
+#     """
+#     if not cls:
+#         from binstar_client import Binstar
+#         cls = Binstar
+#
+#     config = config if config is not None else get_config(site=site)
+#
+#     url = config.get('url', DEFAULT_URL)
+#
+#     logger.info("Using Anaconda API: %s", url)
+#
+#     if token:
+#         logger.debug("Using token from command line args")
+#     elif 'BINSTAR_API_TOKEN' in os.environ:
+#         logger.debug("Using token from environment variable BINSTAR_API_TOKEN")
+#         token = os.environ['BINSTAR_API_TOKEN']
+#     elif 'ANACONDA_API_TOKEN' in os.environ:
+#         logger.debug("Using token from environment variable ANACONDA_API_TOKEN")
+#         token = os.environ['ANACONDA_API_TOKEN']
+#     else:
+#         token = load_token(url)
+#
+#     verify = config.get('ssl_verify', config.get('verify_ssl', True))
+#
+#     return cls(token, domain=url, verify=verify, **kwargs)
 
-    config = config if config is not None else get_config(site=site)
-
-    url = config.get('url', DEFAULT_URL)
-
-    logger.info("Using Anaconda API: %s", url)
-
-    if token:
-        logger.debug("Using token from command line args")
-    elif 'BINSTAR_API_TOKEN' in os.environ:
-        logger.debug("Using token from environment variable BINSTAR_API_TOKEN")
-        token = os.environ['BINSTAR_API_TOKEN']
-    elif 'ANACONDA_API_TOKEN' in os.environ:
-        logger.debug("Using token from environment variable ANACONDA_API_TOKEN")
-        token = os.environ['ANACONDA_API_TOKEN']
-    else:
-        token = load_token(url)
-
-    verify = config.get('ssl_verify', config.get('verify_ssl', True))
-
-    return cls(token, domain=url, verify=verify, **kwargs)
-
-
-def get_binstar(args=None, cls=None):
-    """
-    DEPRECATED METHOD,
-
-    use `get_server_api`
-    """
-
-    warnings.warn(
-        'method get_binstar is deprecated, please use `get_server_api`',
-        DeprecationWarning
-    )
-
-    token = getattr(args, 'token', None)
-    log_level = getattr(args, 'log_level', logging.INFO)
-    site = getattr(args, 'site', None)
-
-    aserver_api = get_server_api(token=token, site=site, log_level=log_level, cls=cls)
-    return aserver_api
+#
+# def get_binstar(args=None, cls=None):
+#     """
+#     DEPRECATED METHOD,
+#
+#     use `get_server_api`
+#     """
+#
+#     warnings.warn(
+#         'method get_binstar is deprecated, please use `get_server_api`',
+#         DeprecationWarning
+#     )
+#
+#     token = getattr(args, 'token', None)
+#     log_level = getattr(args, 'log_level', logging.INFO)
+#     site = getattr(args, 'site', None)
+#
+#     aserver_api = get_server_api(token=token, site=site, log_level=log_level, cls=cls)
+#     return aserver_api
 
 
 TOKEN_DIRS = [
@@ -300,7 +299,7 @@ def save_config(data, config_file):
         with open(config_file, 'w') as fd:
             yaml_dump(data, stream=fd)
     except EnvironmentError as exc:
-        raise BinstarError('%s: %s' % (exc.filename, exc.strerror,))
+        raise RepoCLIError('%s: %s' % (exc.filename, exc.strerror,))
 
 
 def set_config(data, user=True):
