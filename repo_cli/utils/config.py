@@ -106,56 +106,6 @@ def recursive_update(config, update_dict):
     return config
 
 
-# def get_server_api(token=None, site=None, cls=None, config=None, **kwargs):
-#     """
-#     Get the anaconda server api class
-#     """
-#     if not cls:
-#         from binstar_client import Binstar
-#         cls = Binstar
-#
-#     config = config if config is not None else get_config(site=site)
-#
-#     url = config.get('url', DEFAULT_URL)
-#
-#     logger.info("Using Anaconda API: %s", url)
-#
-#     if token:
-#         logger.debug("Using token from command line args")
-#     elif 'BINSTAR_API_TOKEN' in os.environ:
-#         logger.debug("Using token from environment variable BINSTAR_API_TOKEN")
-#         token = os.environ['BINSTAR_API_TOKEN']
-#     elif 'ANACONDA_API_TOKEN' in os.environ:
-#         logger.debug("Using token from environment variable ANACONDA_API_TOKEN")
-#         token = os.environ['ANACONDA_API_TOKEN']
-#     else:
-#         token = load_token(url)
-#
-#     verify = config.get('ssl_verify', config.get('verify_ssl', True))
-#
-#     return cls(token, domain=url, verify=verify, **kwargs)
-
-#
-# def get_binstar(args=None, cls=None):
-#     """
-#     DEPRECATED METHOD,
-#
-#     use `get_server_api`
-#     """
-#
-#     warnings.warn(
-#         'method get_binstar is deprecated, please use `get_server_api`',
-#         DeprecationWarning
-#     )
-#
-#     token = getattr(args, 'token', None)
-#     log_level = getattr(args, 'log_level', logging.INFO)
-#     site = getattr(args, 'site', None)
-#
-#     aserver_api = get_server_api(token=token, site=site, log_level=log_level, cls=cls)
-#     return aserver_api
-
-
 TOKEN_DIRS = [
     dirs.user_data_dir,
     join(dirname(USER_CONFIG), 'tokens'),

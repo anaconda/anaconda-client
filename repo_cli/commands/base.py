@@ -135,29 +135,6 @@ class RepoCommand:
         for sub_cmd in get_sub_commands(self._commands_module):
             self.register_sub_command(sub_cmd)
 
-        # for
-        # login.add_parser(subparsers)
-        # logout.add_parser(subparsers)
-        # upload.add_parser(subparsers)
-        # channel.add_parser(subparsers)
-
-        # def add_subparser_modules(parser, module=None, entry_point_name=None):
-
-        # subparsers = parser.add_subparsers(title='Commands', metavar='')
-        #
-        # if module:  # LOAD sub parsers from module
-        #     for command_module in get_sub_commands(module):
-        #         command_module.add_parser(subparsers)
-        #
-        # if entry_point_name:  # LOAD sub parsers from setup.py entry_point
-        #     for entry_point in iter_entry_points(entry_point_name):
-        #         add_parser = entry_point.load()
-        #         add_parser(subparsers)
-        #
-        # for key, sub_parser in subparsers.choices.items():
-        #     sub_parser.set_defaults(sub_command_name=key)
-        #     sub_parser.add_argument('--json-help', action=json_help)
-
     def register_sub_command(self, sub_command):
         sub_cmd = sub_command(self)
         self._sub_commands[sub_cmd.name] = sub_cmd
@@ -165,15 +142,6 @@ class RepoCommand:
 
         if sub_cmd.manages_auth:
             self.auth_manager = sub_cmd
-
-
-
-    # def register_from_module(self, subcommand):
-    #     subcommand = getattr(module, 'Command')(self)
-    #     self._subcommands[subcommand.name] = subcommand
-    #     if subcommand.manages_auth:
-    #         # TODO: We should handle the case where we already have an auth manager
-    #         self.auth_manager = subcommand
 
 
 class SubCommandBase:
