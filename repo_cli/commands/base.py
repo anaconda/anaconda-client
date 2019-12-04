@@ -42,7 +42,7 @@ def add_parser_default_arguments(parser, version):
                         help="Authentication token to use. "
                              "May be a token or a path to a file containing a token")
     bgroup.add_argument('-s', '--site',
-                        help='select the anaconda-client site to use', default=config.DEFAULT_SITE)
+                        help='select the anaconda-client site to use')
 
     # add_subparser_modules(parser, sub_command_module, 'conda_server.subcommand')
 
