@@ -2,6 +2,7 @@ from __future__ import print_function, absolute_import, unicode_literals
 
 from os.path import exists, join, dirname, isfile, isdir, abspath, expanduser
 from string import Template
+import collections
 import logging
 import os
 import stat
