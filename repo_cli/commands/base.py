@@ -230,7 +230,6 @@ class BulkActionCommand(SubCommandBase):
         if force or bool_input(msg, False):
             resp = self.api.channel_artifacts_bulk_actions(channel, self.name, items, target_channel=target_channel)
             # self.log.info('%s action successful\n' % self.name)
-            import pdb; pdb.set_trace()
         else:
             self.log.info('%s action not executed\n' % self.name)
 

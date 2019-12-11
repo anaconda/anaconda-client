@@ -25,6 +25,7 @@ class SubCommand(SubCommandBase):
                 raise errors.RepoCLIError(msg)
 
             self.api.create_channel(channel)
+            self.log.info("Channel %s successfully created" % channel)
         elif self.args.copy:
             # aserver_api.copy_channel(args.copy[0], channel, args.copy[1])
             # logger.info("Copied {} {} to {}".format(name, *tuple(args.copy)))

@@ -42,10 +42,10 @@ class RepoApi:
             'name': 'repo-cli-token',
             'expires_at': str(datetime.datetime.now().date() + datetime.timedelta(days=30)),
             'scopes': ['channel:view', 'channel:view-artifacts', 'artifact:view', 'artifact:download',
-                       'subchannel:view', 'subchannel:view-artifacts', 'channel:create', 'artifact:create',
+                       'subchannel:create', 'subchannel:edit', 'subchannel:view',
+                       'subchannel:view-artifacts', 'channel:create', 'artifact:create',
                        'channel:edit', 'channel:delete', 'channel:history', 'channel:manage-groups',
-                       'channel:set-default-channel',
-                       'artifact:edit', 'artifact:delete']
+                       'channel:set-default-channel', 'artifact:edit', 'artifact:delete']
 
         }
         resp = requests.post(self._urls['account_tokens'], data=json.dumps(data), headers=self.bearer_headers)
@@ -171,30 +171,21 @@ class RepoApi:
         Returns:
               response (http response object)
         '''
-        logger.debug(f'Creating channel {channel} on {self.base_url}')
+        _channel = channel
+        logger.debug(f'Creating channel {_channel} on {self.base_url}')
         if '/' in channel:
             # this is a subchannel....
             channel, subchannel = channel.split('/')
             url = join(self._urls['channels'], channel, 'subchannels')
             data = {'name': subchannel}
-            headers = self.bearer_headers
+            headers = self.get_xauth_headers({'Content-Type': 'application/json'})
         else:
             url = join(self._urls['channels'])
             data = {'name': channel}
             headers = self.get_xauth_headers({'Content-Type': 'application/json'})
 
         response = requests.post(url, json=data, headers=headers)
-        if response.status_code in [201]:
-            logger.info(f'Channel {channel} successfully created')
-            logger.debug(f'Server responded with {response.status_code}\nData: {response.content}')
-        else:
-            msg = f'Error creating {channel}.' \
-                f'Server responded with status code {response.status_code}.\n' \
-                f'Error details: {response.content}'
-            logger.error(msg)
-            if response.status_code in [403, 401]:
-                raise errors.Unauthorized()
-        return response
+        return self._manage_reponse(response, f'creating channel {_channel}', success_codes=[201])
 
     def remove_channel(self, channel):
         url = self._get_channel_url(channel)
@@ -331,7 +322,10 @@ class RepoApi:
             msg = f'Error {action}' \
                 f'Server responded with status code {response.status_code}.\n' \
                 f'Error details: {response.content}'
-            logger.error(msg)
+            if response.status_code == 401:
+                logger.debug(msg)
+            else:
+                logger.error(msg)
             if response.status_code in auth_fail_codes:
                 raise errors.Unauthorized()
             raise errors.RepoCLIError("%s operation failed.")
@@ -400,9 +394,6 @@ class RepoApi:
             if '/' in target_channel:
                 # this is a subchannel....
                 data['target_channel'], data['target_subchannel'] = target_channel.split('/')
-                # data['target_channel'] = target_channel
-                # url = join(self._urls['channels'], channel, 'subchannels', subchannel)
-                # data['target_subchannel'] = target_subchannel
             else:
                 data['target_channel'] = target_channel
 
@@ -414,7 +405,8 @@ class RepoApi:
                                     auth_fail_codes=[401, 403, 404])
 
     def get_channel_artifacts(self, channel):
-        url = join(self._urls['channels'], channel, 'artifacts')
+        # url = join(self._urls['channels'], channel, 'artifacts')
+        url = join(self._get_channel_url(channel), 'artifacts')
         resp = requests.get(url, headers=self.xauth_headers)
         return self._manage_reponse(resp, "getting artifacts").get('items', [])
 
