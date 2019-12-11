@@ -196,6 +196,14 @@ class BulkActionCommand(SubCommandBase):
                 "family": family,
         }
 
+        target_description = ''
+        if hasattr(self.args, 'destination'):
+            target_channel = self.args.destination
+            if not target_channel:
+                # destination channel not specified.. we need to get the user default channel and use it
+                pass
+            if target_channel:
+                target_description = 'to channel %s ' % target_channel
         items = []
         if version or filename:
             packages = self.api.get_channel_artifacts_files(channel, family, artifact, version, filename)
@@ -212,16 +220,17 @@ class BulkActionCommand(SubCommandBase):
                 items.append(item)
 
             affected_files = '\n'.join(files_descr)
-            msg = 'Are you sure you want to {self.name} the package release %s ? The following ' \
-                  'will be affected: \n\n %s\n\nConfirm?' % (spec, affected_files)
 
+            msg = 'Are you sure you want to %s the package release %s %s? The following ' \
+                  'will be affected: \n\n %s\n\nConfirm?' % (self.name, target_description, spec, affected_files)
         else:
             msg = 'Conform action %s on spec %s ? (and all data with it?)' % (self.name, spec)
             items = [base_item]
-
-        if self.args.force or bool_input(msg, False):
-            self.api.channel_artifacts_bulk_actions(channel, self.name, items)
-            self.log.info('%s action successful\n' % self.name)
+        force = getattr(self.args, 'force', False)
+        if force or bool_input(msg, False):
+            resp = self.api.channel_artifacts_bulk_actions(channel, self.name, items, target_channel=target_channel)
+            # self.log.info('%s action successful\n' % self.name)
+            import pdb; pdb.set_trace()
         else:
             self.log.info('%s action not executed\n' % self.name)
 
