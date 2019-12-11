@@ -9,7 +9,7 @@ from pprint import pformat
 from .. import errors
 from ..utils.artifacts import SimplePackageSpec
 from .base import SubCommandBase
-
+from ..utils import format
 
 class SubCommand(SubCommandBase):
     name = "channel"
@@ -40,7 +40,7 @@ class SubCommand(SubCommandBase):
             for spec in self.args.list_files:
                 self.show_channel_files(spec, family=self.args.family, full_details=self.args.full_details)
         elif self.args.show:
-            self.show_channel(self.args.show)
+            self.show_channel(self.args.show, full_details=self.args.full_details)
         elif self.args.lock:
             channel = self.args.lock
             msg = "{} {} is now locked".format(self.name.title(), channel)
@@ -98,8 +98,11 @@ class SubCommand(SubCommandBase):
         msg = 'Found %s files matching the specified spec %s:\n\n%s\n' % (len(files_descr), spec, affected_files)
         self.log.info(msg)
 
-    def show_channel(self, channel):
+    def show_channel(self, channel, full_details):
         channel_data = self.api.get_channel(channel)
+        if full_details and not self.api.is_subchannel(channel):
+            channel_data['subchannels'] = self.api.get_channel_subchannels(channel)
+
         self.show_channel_detail(channel_data)
 
     def show_channel_detail(self, data):
@@ -113,8 +116,20 @@ class SubCommand(SubCommandBase):
             value = data.get(key, '')
             resp.append("\t%s: %s" % (label, value))
 
-        owners = ', '.join(data['owners'])
+        try:
+            owners = ', '.join(data.get('owners', ['']))
+        except TypeError:
+            owners = ''
         resp.append('\towners: %s' % owners)
+        if 'subchannels' in data:
+            resp.append("")
+            resp.append("\tSubchannels:")
+            resp.append("\t------------")
+
+            resp.append(format.PackagesFormatter.format_channel_header())
+            for subchannel in data['subchannels']:
+                resp.append(format.PackagesFormatter.format_channel(subchannel))
+
         resp.append("")
         self.log.info('\n'.join(resp))
 
@@ -144,7 +159,7 @@ class SubCommand(SubCommandBase):
                                help='artifact family (i.e.: conda, pypy, cran). ONLY USED IN COMBINATION '
                                     'WITH --list-files, ignored otherwise.', action='store_true')
         subparser.add_argument('--full-details', help='Prints full file details. ONLY USED IN COMBINATION '
-                                    'WITH --list-files, ignored otherwise.', action='store_true')
+                                    'WITH --list-files or --show ignored otherwise.', action='store_true')
 
         group = subparser.add_mutually_exclusive_group(required=True)
 
