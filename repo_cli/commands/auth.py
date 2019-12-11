@@ -136,7 +136,7 @@ class SubCommand(SubCommandBase):
         group = group.add_mutually_exclusive_group(required=True)
         group.add_argument('-x', '--list-scopes', action='store_true', help='list all authentication scopes')
         group.add_argument('-l', '--list', action='store_true', help='list all user authentication tokens')
-        group.add_argument('-r', '--remove', metavar='NAME', nargs='+', help='remove authentication tokens')
+        group.add_argument('-r', '--remove', metavar='ID', nargs='+', help='remove authentication tokens')
         group.add_argument('-c', '--create', action='store_true', help='Create an authentication token')
         group.add_argument('-i', '--info', '--current-info', dest='info',
                            action='store_true', help='Show information about the current authentication token')
