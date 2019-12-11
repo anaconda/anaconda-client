@@ -234,6 +234,22 @@ class RepoApi:
             # TODO: We should probably need to manage other error states
         return response
 
+
+    def is_subchannel(self, channel):
+        """Return True if channel is a path to a subchannel, False otherwise. For example:
+
+        >> is_subchannel("main")
+            False
+        >> is_subchannel("main/stage")
+            True
+
+        Args:
+            channel (str): name of the channel
+
+        Returns:
+            (bool)"""
+        return '/' in channel
+
     def _get_channel_url(self, channel):
         """Return a channel url based on the fact that it's a normal channel or
          a subchannel
@@ -244,7 +260,7 @@ class RepoApi:
         Returns:
             (str) url
         """
-        if '/' in channel:
+        if self.is_subchannel(channel):
             # this is a subchannel....
             channel, subchannel = channel.split('/')
             url = join(self._urls['channels'], channel, 'subchannels', subchannel)
@@ -264,6 +280,41 @@ class RepoApi:
                                 headers=self.get_xauth_headers({'Content-Type': 'application/json'}))
         return self._manage_reponse(response, f'getting user channels')
 
+    def get_channel_subchannels(self, channel):
+        logger.debug(f'Getting channel {channel} subchannels on {self.base_url}')
+        url = join(self._urls['channels'], channel, 'subchannels')
+        response = requests.get(url, headers=self.get_xauth_headers({'Content-Type': 'application/json'}))
+        return self._manage_reponse(response, f'getting channel {channel} subchannel')
+
+    def create_mirror(self, channel, source_root, name, mode, type_, cron, run_now):
+        url = join(self._get_channel_url(channel), 'mirrors')
+        mirror_details = {
+            "mirror_name": name,
+            "source_root": source_root,
+            "mirror_mode": mode,
+            "cron": cron,
+            "mirror_type": type_,
+            # "filters": {"subdirs": ["osx-64"]},
+            "run_now": run_now,
+        }
+        resp = requests.post(url, data=json.dumps(mirror_details), headers=self.bearer_headers)
+        return self._manage_reponse(resp, f'creating mirror {name} on channel {channel}', success_codes=[201])
+
+    def get_mirrors(self, channel):
+        url = join(self._get_channel_url(channel), 'mirrors')
+        resp = requests.get(url, headers=self.xauth_headers)
+        return self._manage_reponse(resp, f'creating mirrors on channel {channel}')
+
+    def get_mirror(self, channel, mirror_name):
+        url = join(self._get_channel_url(channel), 'mirrors', mirror_name)
+        resp = requests.get(url, headers=self.xauth_headers)
+        return self._manage_reponse(resp, f'Getting mirror {mirror_name} on channel {channel}')
+
+    def delete_mirror(self, channel, mirror_name):
+        url = join(self._get_channel_url(channel), 'mirrors', mirror_name)
+        resp = requests.delete(url, headers=self.bearer_headers)
+        return self._manage_reponse(resp, f'Getting mirror {mirror_name} on channel {channel}',
+                                    success_codes=[204])
 
     # TOKEN RELATED URLS
     def _manage_reponse(self, response, action='', success_codes=None, auth_fail_codes=None):
@@ -283,7 +334,7 @@ class RepoApi:
             logger.error(msg)
             if response.status_code in auth_fail_codes:
                 raise errors.Unauthorized()
-            errors.RepoCLIError("%s operation failed.")
+            raise errors.RepoCLIError("%s operation failed.")
         return {}
 
     def get_token_info(self):
@@ -339,23 +390,36 @@ class RepoApi:
         return self._manage_reponse(response, "getting scopes")
 
     # --------
-    def channel_artifacts_bulk_actions(self, channel, action, artifacts):
+    def channel_artifacts_bulk_actions(self, channel, action, artifacts, target_channel=None):
         url = join(self._urls['channels'], channel, 'artifacts', 'bulk')
         data = {
             "action": action,
             "items": artifacts
         }
+        if target_channel:
+            if '/' in target_channel:
+                # this is a subchannel....
+                data['target_channel'], data['target_subchannel'] = target_channel.split('/')
+                # data['target_channel'] = target_channel
+                # url = join(self._urls['channels'], channel, 'subchannels', subchannel)
+                # data['target_subchannel'] = target_subchannel
+            else:
+                data['target_channel'] = target_channel
+
         resp = requests.put(url, data=json.dumps(data),
-                            headers=self.get_xauth_headers({'Content-Type': 'application/json'}))
-        return self._manage_reponse(resp, "%s articfacts" %action, success_codes=[202])
+                            # headers=self.get_xauth_headers({'Content-Type': 'application/json'}),
+                            headers=self.bearer_headers
+                            )
+        return self._manage_reponse(resp, "%s articfacts" % action, success_codes=[202],
+                                    auth_fail_codes=[401, 403, 404])
 
     def get_channel_artifacts(self, channel):
         url = join(self._urls['channels'], channel, 'artifacts')
         resp = requests.get(url, headers=self.xauth_headers)
-        return self._manage_reponse(resp, "getting articfacts").get('items', [])
+        return self._manage_reponse(resp, "getting artifacts").get('items', [])
 
-    def get_channel_artifacts_files(self, channel, family, package=None, version=None, filename=None, return_raw=False):
-
+    def get_channel_artifacts_files(self, channel, family, package=None, version=None, filename=None,
+                                    return_raw=False):
         artifact_files = []
         if package:
             packages = [package]
