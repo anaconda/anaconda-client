@@ -398,8 +398,8 @@ class RepoApi:
                 data['target_channel'] = target_channel
 
         resp = requests.put(url, data=json.dumps(data),
-                            # headers=self.get_xauth_headers({'Content-Type': 'application/json'}),
-                            headers=self.bearer_headers
+                            headers=self.get_xauth_headers({'Content-Type': 'application/json'}),
+                            # headers=self.bearer_headers
                             )
         return self._manage_reponse(resp, "%s articfacts" % action, success_codes=[202],
                                     auth_fail_codes=[401, 403, 404])
@@ -423,7 +423,8 @@ class RepoApi:
             packages = [pkg['name'] for pkg in data]
 
         for package in packages:
-            url = join(self._urls['channels'], channel, 'artifacts', family, package, 'files')
+            url = join(self._get_channel_url(channel), 'artifacts', family, package, 'files')
+            # url = join(self._urls['channels'], channel, 'artifacts', family, package, 'files')
             resp = requests.get(url, headers=self.xauth_headers)
             files = self._manage_reponse(resp, "getting articfacts")
 
@@ -450,12 +451,12 @@ class RepoApi:
 
 
     # CVE related endpoints
-    def get_latest_cves(self, limit=25):
-        url = "%s?limit=%s" % (self._urls['cves'], limit)
+    def get_cves(self, offset=0, limit=25):
+        url = "%s?offset=%s&limit=%s" % (self._urls['cves'], offset, limit)
         response = requests.get(url, headers=self.xauth_headers)
         return self._manage_reponse(response, "getting cves")
 
-    def get_cve_details(self, cve_id):
+    def get_cve(self, cve_id):
         url = "%s/%s" % (self._urls['cves'], cve_id)
         response = requests.get(url, headers=self.xauth_headers)
         return self._manage_reponse(response, "getting cve id")

@@ -24,7 +24,7 @@ class SubCommand(SubCommandBase):
             self.delete(args.channel, args.delete)
 
         elif args.list:
-            self.show_list(args.channel)
+            self.show_list(args.list)
 
         elif args.show:
             self.show(args.channel, args.show)
@@ -83,7 +83,8 @@ class SubCommand(SubCommandBase):
         )
         group.add_argument(
             '--list',
-            action='store_true',
+            '-l',
+            metavar=self.name.upper(),
             help="list all {}s for a user".format(self.name)
         )
         group.add_argument(

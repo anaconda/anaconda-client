@@ -156,6 +156,90 @@ class MirrorFormatter:
 
         return '\n'.join(lines)
 
+
+class CVEFormatter:
+    fmt_header_spacer = {
+        'cve': '-' * 12,
+        'score': '-' * 6,
+        'score_type': '-' * 6,
+        'description': '-' * 100,
+        # 'mode': '-' * 10,
+        # 'state': '-' * 10,
+        # 'source_root': '-' * 50,
+        # 'last_run_at': '-' * 30,
+        # 'updated_at': '-' * 30
+    }
+    fmt_headers = INITIAL_SPACE + '%(cve)-12s | %(score)6s | %(score_type)6s | %(description)-50s'
+
+    keymap = {'date_added': 'Published', 'updated_at': 'Updated at', 'last_run_at': 'Last run at'}
+
+    fields = ['cve', 'score', 'score_type', 'description','cvssv2accesscomplexity',
+              'cvssv2accessvector', 'cvssv2authentication', 'cvssv2availabilityimpact',
+              'cvssv2confidentialityimpact', 'cvssv2integrityimpact', 'cvssv2score', 'cvssv2severity',
+              'cvssv3attackvector', 'cvssv3availabilityimpact', 'cvssv3basescore', 'cvssv3baseseverity',
+              'cvssv3confidentialityimpact', 'cvssv3integrityimpact', 'cvssv3privilegesrequired',
+              'cvssv3scope', 'cvssv3userinteraction', 'date_added',
+              'packages']
+
+    @classmethod
+    def format_detail(cls, item):
+        item_ = cls.normalize_item(item)
+        resp = [INITIAL_SPACE + "CVE Details:", INITIAL_SPACE + "---------------"]
+
+        fields = ['cve', 'score', 'description']
+        for key in cls.fields:
+            label = cls.keymap.get(key, key).capitalize()
+            value = item_.get(key, '')
+            resp.append("%s%s: %s" % (INITIAL_SPACE, label, value))
+
+        return '\n'.join(resp)
+
+    @classmethod
+    def format_list_headers(cls):
+        cve_headers = {k: k.capitalize() for k in cls.fmt_header_spacer}
+        cve_headers.update(cls.keymap)
+        return cls.fmt_headers % cve_headers
+
+    @classmethod
+    def format_list_item(cls, item):
+        item_ = cls.normalize_item(item)
+        return cls.fmt_headers % item_
+
+    @staticmethod
+    def normalize_item(item):
+        item_ = {key: val for key, val in item.items()}
+        score = item_.get('cvssv3basescore')
+        if score:
+            item_['score'] = score
+            item_['score_type'] = 'CVSS3'
+        else:
+            item_['score'] = item_.get('cvssv2score')
+            item_['score_type'] = 'CVSS2'
+
+        def fmt_package(pack):
+            try:
+                if not 'subdir' in pack:
+                    pack['subdir'] = ''
+                return '{subdir}/{name}-{version} (sha258: {sha256})'.format(**pack)
+            except TypeError:
+                return pack
+
+        packages = [fmt_package(pack) for pack in item_.get('packages', [])]
+        item_['packages'] = ', '.join(packages)
+        return item_
+
+
+    @classmethod
+    def format_list(cls, items):
+        lines = []
+        lines.append(cls.format_list_headers())
+        lines.append(cls.fmt_headers % cls.fmt_header_spacer)
+
+        for item in items:
+            lines.append(cls.format_list_item(item))
+
+        return '\n'.join(lines)
+
 def format_packages(packages, meta, logger):
     formatter = PackagesFormatter(logger)
     formatter.format(packages, meta)
