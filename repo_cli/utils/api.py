@@ -265,6 +265,12 @@ class RepoApi:
         response = requests.get(url, headers=self.get_xauth_headers({'Content-Type': 'application/json'}))
         return self._manage_reponse(response, f'getting channel {channel}')
 
+    def get_channel_history(self, channel, offset=0, limit=50):
+        logger.debug(f'Getting channel {channel} history {self.base_url}')
+        url = join(self._get_channel_url(channel), 'history?offset=%s&limit=%s' % (offset, limit))
+        response = requests.get(url, headers=self.get_xauth_headers({'Content-Type': 'application/json'}))
+        return self._manage_reponse(response, f'getting channel {channel}')
+
     def list_user_channels(self):
         logger.debug(f'Getting user channels from {self.base_url}')
         response = requests.get(self._urls['user_channels'],

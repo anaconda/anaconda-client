@@ -157,17 +157,61 @@ class MirrorFormatter:
         return '\n'.join(lines)
 
 
-class CVEFormatter:
+class FormatterBase:
+    entity = ''
+    fmt_header_spacer = {}
+    fmt_headers = INITIAL_SPACE + ''
+
+    keymap = {'date_added': 'Published', 'updated_at': 'Updated at', 'last_run_at': 'Last run at'}
+
+    fields = []
+
+    @classmethod
+    def format_detail(cls, item):
+        item_ = cls.normalize_item(item)
+        resp = [INITIAL_SPACE + "%s Details:" % cls.entity, INITIAL_SPACE + "---------------"]
+
+        for key in cls.fields:
+            label = cls.keymap.get(key, key).capitalize()
+            value = item_.get(key, '')
+            resp.append("%s%s: %s" % (INITIAL_SPACE, label, value))
+
+        return '\n'.join(resp)
+
+    @classmethod
+    def format_list_headers(cls):
+        list_headers = {k: k.capitalize() for k in cls.fmt_header_spacer}
+        list_headers.update(cls.keymap)
+        return cls.fmt_headers % list_headers
+
+    @classmethod
+    def format_list_item(cls, item):
+        item_ = cls.normalize_item(item)
+        return cls.fmt_headers % item_
+
+    @staticmethod
+    def normalize_item(item):
+        raise NotImplementedError
+
+    @classmethod
+    def format_list(cls, items):
+        lines = []
+        lines.append(cls.format_list_headers())
+        lines.append(cls.fmt_headers % cls.fmt_header_spacer)
+
+        for item in items:
+            lines.append(cls.format_list_item(item))
+
+        return '\n'.join(lines)
+
+
+class CVEFormatter(FormatterBase):
+    entity = 'CVE'
     fmt_header_spacer = {
         'cve': '-' * 12,
         'score': '-' * 6,
         'score_type': '-' * 6,
         'description': '-' * 100,
-        # 'mode': '-' * 10,
-        # 'state': '-' * 10,
-        # 'source_root': '-' * 50,
-        # 'last_run_at': '-' * 30,
-        # 'updated_at': '-' * 30
     }
     fmt_headers = INITIAL_SPACE + '%(cve)-12s | %(score)6s | %(score_type)6s | %(description)-50s'
 
@@ -180,30 +224,6 @@ class CVEFormatter:
               'cvssv3confidentialityimpact', 'cvssv3integrityimpact', 'cvssv3privilegesrequired',
               'cvssv3scope', 'cvssv3userinteraction', 'date_added',
               'packages']
-
-    @classmethod
-    def format_detail(cls, item):
-        item_ = cls.normalize_item(item)
-        resp = [INITIAL_SPACE + "CVE Details:", INITIAL_SPACE + "---------------"]
-
-        fields = ['cve', 'score', 'description']
-        for key in cls.fields:
-            label = cls.keymap.get(key, key).capitalize()
-            value = item_.get(key, '')
-            resp.append("%s%s: %s" % (INITIAL_SPACE, label, value))
-
-        return '\n'.join(resp)
-
-    @classmethod
-    def format_list_headers(cls):
-        cve_headers = {k: k.capitalize() for k in cls.fmt_header_spacer}
-        cve_headers.update(cls.keymap)
-        return cls.fmt_headers % cve_headers
-
-    @classmethod
-    def format_list_item(cls, item):
-        item_ = cls.normalize_item(item)
-        return cls.fmt_headers % item_
 
     @staticmethod
     def normalize_item(item):
@@ -229,16 +249,47 @@ class CVEFormatter:
         return item_
 
 
+class HistoryFormatter(FormatterBase):
+    entity = 'Events'
+    fmt_header_spacer = {
+        'event_id': '-' * 36,
+        'event_type': '-' * 20,
+        'created': '-' * 32,
+        'data_summary': '-' * 100,
+    }
+    fmt_headers = INITIAL_SPACE + '%(event_id)-36s | %(event_type)20s | %(created)32s | %(data_summary)-50s'
+
+    keymap = {'event_id': 'id', 'event_type': 'Type', 'data_summary': 'Summary'}
+
+    fields = ['created', 'data', 'event_id', 'event_type', 'meta', 'data_summary']
+    short_summary_keys = {'ckey', 'artifact_family'}
+
     @classmethod
-    def format_list(cls, items):
+    def format_list_item(cls, item, short_summary=True):
+        item_ = cls.normalize_item(item, short_summary)
+        return cls.fmt_headers % item_
+
+    @classmethod
+    def normalize_item(cls, item, short_summary=True):
+        item_ = {key: val for key, val in item.items()}
+        if short_summary:
+            item_['data_summary'] = '; '.join(["%s: %s" % (k, v) for k, v in item['data'].items()
+                                               if k in cls.short_summary_keys])
+        else:
+            item_['data_summary'] = '; '.join(["%s: %s" % (k, v) for k, v in item['data'].items()])
+        return item_
+
+    @classmethod
+    def format_list(cls, items, short_summary=True):
         lines = []
         lines.append(cls.format_list_headers())
         lines.append(cls.fmt_headers % cls.fmt_header_spacer)
 
         for item in items:
-            lines.append(cls.format_list_item(item))
+            lines.append(cls.format_list_item(item, short_summary))
 
         return '\n'.join(lines)
+
 
 def format_packages(packages, meta, logger):
     formatter = PackagesFormatter(logger)

@@ -42,6 +42,8 @@ class SubCommand(SubCommandBase):
                 self.show_channel_files(spec, family=self.args.family, full_details=self.args.full_details)
         elif self.args.show:
             self.show_channel(self.args.show, full_details=self.args.full_details)
+        elif self.args.history:
+            self.show_channel_history(self.args.history, self.args.offset, self.args.limit, self.args.full_details)
         elif self.args.lock:
             channel = self.args.lock
             msg = "{} {} is now locked".format(self.name.title(), channel)
@@ -106,6 +108,11 @@ class SubCommand(SubCommandBase):
 
         self.show_channel_detail(channel_data)
 
+    def show_channel_history(self, channel, offset, limit, full_details):
+        data = self.api.get_channel_history(channel, offset, limit)
+        self.log.info(format.HistoryFormatter.format_list(data['items'], not full_details))
+        self.log.info('')
+
     def show_channel_detail(self, data):
         resp = ["Channel details:", '']
         keymap = {'download_count': '# of downloads', 'artifact_count': '# of artifacts', 'download_count': '# of downloads',
@@ -162,6 +169,15 @@ class SubCommand(SubCommandBase):
         subparser.add_argument('--full-details', help='Prints full file details. ONLY USED IN COMBINATION '
                                     'WITH --list-files or --show ignored otherwise.', action='store_true')
 
+        subparser.add_argument(
+            '-o', '--offset', default=0, type=int,
+            help='Offset when displaying the results'
+        )
+        subparser.add_argument(
+            '-l', '--limit', default=50, type=int,
+            help='Offset when displaying the results'
+        )
+
         group = subparser.add_mutually_exclusive_group(required=True)
 
         group.add_argument('--copy', nargs=2, metavar=self.name.upper())
@@ -184,6 +200,11 @@ class SubCommand(SubCommandBase):
                            type=SimplePackageSpec.from_string, nargs='+')
         group.add_argument(
             '--show',
+            metavar=self.name.upper(),
+            help="Show all of the files in a {}".format(self.name)
+        )
+        group.add_argument(
+            '--history',
             metavar=self.name.upper(),
             help="Show all of the files in a {}".format(self.name)
         )
