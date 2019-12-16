@@ -1,9 +1,9 @@
 '''
-Remove an object from your Anaconda repository.
+Copy an object within channels in your Anaconda Repository.
 
 example::
 
-    anaconda remove mychannel/mypackage/1.2.0/mypackage.tar.gz
+    anaconda copy mychannel/mypackage/1.2.0/mypackage.tar.gz -d another-channel
 
 '''
 from .base import BulkActionCommand, PackageSpec
