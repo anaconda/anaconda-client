@@ -42,10 +42,11 @@ class RepoApi:
             'name': 'repo-cli-token',
             'expires_at': str(datetime.datetime.now().date() + datetime.timedelta(days=30)),
             'scopes': ['channel:view', 'channel:view-artifacts', 'artifact:view', 'artifact:download',
-                       'subchannel:create', 'subchannel:edit', 'subchannel:view',
-                       'subchannel:view-artifacts', 'channel:create', 'artifact:create',
-                       'channel:edit', 'channel:delete', 'channel:history', 'channel:manage-groups',
-                       'channel:set-default-channel', 'artifact:edit', 'artifact:delete']
+                       'subchannel:create', 'subchannel:edit', 'subchannel:view', 'subchannel:delete',
+                       'subchannel:view-artifacts', 'channel:create', 'artifact:create', 'subchannel:history',
+                       'subchannel:manage-groups', 'channel:edit', 'channel:delete', 'channel:history',
+                       'channel:manage-groups', 'channel:set-default-channel', 'artifact:edit',
+                       'artifact:delete']
 
         }
         resp = requests.post(self._urls['account_tokens'], data=json.dumps(data), headers=self.bearer_headers)
