@@ -1,9 +1,9 @@
 '''
-Remove an object from your Anaconda repository.
+Move an artifact within Anaconda Repository.
 
 example::
 
-    anaconda remove mychannel/mypackage/1.2.0/mypackage.tar.gz
+    conda repo move mychannel/mypackage/1.2.0/mypackage.tar.gz
 
 '''
 from .base import BulkActionCommand, PackageSpec
@@ -14,7 +14,7 @@ class SubCommand(BulkActionCommand):
 
     def add_parser(self, subparsers):
         parser = subparsers.add_parser('move',
-                                       help='move packages from one channel to another',
+                                       help='Move packages from one channel to another.',
                                        description=__doc__)
 
         parser.add_argument('specs', help=('Package - written as '

@@ -39,7 +39,7 @@ class SubCommand(SubCommandBase):
     def add_parser(self, subparsers):
         subparser = subparsers.add_parser(
             self.name,
-            help='Manage your Anaconda repository {}s'.format(self.name),
+            help='Access Anaconda Repository {}s'.format(self.name),
             formatter_class=argparse.RawDescriptionHelpFormatter,
             description=__doc__)
 

@@ -153,7 +153,7 @@ class SubCommand(SubCommandBase):
         config_data[key] = type_(value)
 
     def add_parser(self, subparsers):
-        description = 'Anaconda client configuration'
+        description = 'Anaconda Repo Client Configuration'
         parser = subparsers.add_parser('config',
                                        help=description,
                                        description=description,
