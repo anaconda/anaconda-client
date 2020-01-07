@@ -449,7 +449,6 @@ class RepoApi:
 
     def _parse_conda_file(self, file_data, version, filename, return_raw = False):
         meta = file_data['metadata']['index.json']
-
         # TODO: We need to improve version checking... for now it's exact match
         if version and meta['version'] != version:
             return
@@ -463,8 +462,25 @@ class RepoApi:
 
         return rec
 
-    def _parse_cran_file(self, file_data, version, filename, return_raw = False):
-        raise NotImplementedError()
+    def _parse_cran_file(self, file_data, version, filename, return_raw=False):
+        meta = file_data['metadata']
+        fn = file_data['ckey'].split('/')[-1]
+
+        # TODO: We need to improve version checking... for now it's exact match
+        if version and meta['Version'] != version:
+            return
+        if filename and fn != filename:
+            return
+        if return_raw:
+            rec = file_data
+        else:
+            rec = {'name': file_data['name'], 'ckey': file_data['ckey']}
+            # rec.update({key: meta.get(key, "") for key in ['version', 'fn', 'platform']})
+            rec.update(meta)
+            rec['version'] = rec.pop('Version')
+            rec['fn'] = fn
+            rec['platform'] = 'n/a'
+        return rec
 
     def _parse_python_file(self, file_data, version, filename, return_raw=False):
         raise NotImplementedError()
