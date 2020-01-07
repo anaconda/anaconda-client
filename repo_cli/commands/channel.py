@@ -164,8 +164,9 @@ class SubCommand(SubCommandBase):
             description=__doc__)
         subparser.add_argument('--family',
                                default='conda',
+
                                help='artifact family (i.e.: conda, pypy, cran). ONLY USED IN COMBINATION '
-                                    'WITH --list-files, ignored otherwise.', action='store_true')
+                                    'WITH --list-files, ignored otherwise.')
         subparser.add_argument('--full-details', help='Prints full file details. ONLY USED IN COMBINATION '
                                     'WITH --list-files or --show ignored otherwise.', action='store_true')
 

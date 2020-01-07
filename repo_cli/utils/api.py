@@ -419,6 +419,11 @@ class RepoApi:
 
     def get_channel_artifacts_files(self, channel, family, package=None, version=None, filename=None,
                                     return_raw=False):
+        file_family_parsers = {
+            'conda': self._parse_conda_file,
+            'cran': self._parse_cran_file,
+            'python': self._parse_python_file,
+        }
         artifact_files = []
         if package:
             packages = [package]
@@ -427,7 +432,7 @@ class RepoApi:
             # resp = requests.get(url, headers=self.xauth_headers)
             # data = self._manage_reponse(resp, "getting articfacts")
             data = self.get_channel_artifacts(channel)
-            packages = [pkg['name'] for pkg in data]
+            packages = [pkg['name'] for pkg in data if pkg['file_count'] > 0 and pkg['family'] == family]
 
         for package in packages:
             url = join(self._get_channel_url(channel), 'artifacts', family, package, 'files')
@@ -435,21 +440,34 @@ class RepoApi:
             resp = requests.get(url, headers=self.xauth_headers)
             files = self._manage_reponse(resp, "getting articfacts")
 
-            for file_ in files:
-                index_ = file_['metadata']['index.json']
-                # TODO: We need to improve version checking... for now it's exact match
-                if version and index_['version'] != version:
-                    continue
-                if filename and index_['fn'] != filename:
-                    continue
-                if return_raw:
-                    artifact_files.append(file_)
-                else:
-                    rec = {'name': file_['name'], 'ckey': file_['ckey']}
-                    rec.update({key: index_[key] for key in ['version', 'fn', 'platform']})
+            for file_data in files['items']:
+                rec = file_family_parsers[family](file_data, version, filename,)
+                if rec:
                     artifact_files.append(rec)
 
         return artifact_files
+
+    def _parse_conda_file(self, file_data, version, filename, return_raw = False):
+        meta = file_data['metadata']['index.json']
+
+        # TODO: We need to improve version checking... for now it's exact match
+        if version and meta['version'] != version:
+            return
+        if filename and meta['fn'] != filename:
+            return
+        if return_raw:
+            rec = file_data
+        else:
+            rec = {'name': file_data['name'], 'ckey': file_data['ckey']}
+            rec.update({key: meta.get(key, "") for key in ['version', 'fn', 'platform']})
+
+        return rec
+
+    def _parse_cran_file(self, file_data, version, filename, return_raw = False):
+        raise NotImplementedError()
+
+    def _parse_python_file(self, file_data, version, filename, return_raw=False):
+        raise NotImplementedError()
 
     def get_artifacts(self, query, limit=50, offset=0, sort="-download_count"):
         url = "%s?q=%s&limit=%s&offset=%s&sort=%s" %(self._urls['artifacts'], query, limit, offset, sort)
