@@ -20,7 +20,7 @@ logger = logging.getLogger('binstar.detect')
 
 def file_handler(filename, fileobj, *args, **kwargs):
     return ({}, {'description': ''},
-            {'filename': path.basename(filename), 'attrs':{}})
+            {'basename': path.basename(filename), 'attrs':{}})
 
 detectors = {
     'conda': inspect_conda_package,
