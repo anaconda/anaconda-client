@@ -150,7 +150,8 @@ class SubCommand(SubCommandBase):
         cols_ = ['name', 'privacy', 'description', 'artifact_count', 'download_count']
         cols = [keymap.get(key, key) for key in cols_]
         resp.append('\t'.join(cols))
-        for ch in data:
+
+        for ch in data['items']:
             resp.append('\t'.join([str(ch.get(key, '')) for key in cols_]))
 
         resp.append('')
