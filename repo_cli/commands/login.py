@@ -19,38 +19,6 @@ from .base import SubCommandBase
 logger = logging.getLogger('repo_cli')
 
 
-def login_user(username='john', password='password', base_url='http://conda.rocks') -> requests.Response:
-    """Login  and returns the token."""
-    data = {
-        'username': username,
-        'password': password
-    }
-    s = requests.Session()
-    url = join(base_url, 'auth', 'login')
-    token_url = join(base_url, 'account', 'tokens')
-    logger.debug('[LOGIN] Authenticating user {username}...')
-    resp = s.post(url, data=json.dumps(data), headers={
-        'Content-Type': 'application/json'
-    })
-    logger.debug('[LOGIN] Done')
-    jwt_token = resp.json()['token']
-
-    user_token = get_access_token(jwt_token, token_url)
-
-    if not user_token:
-        logger.debug('[LOGIN] Access token not found. Creating one...')
-        # Looks like user doesn't have any valid token. Let's create a new one
-        user_token = create_access_token(jwt_token, token_url)
-        logger.debug('[LOGIN] Done.')
-        if resp.status_code != 200:
-            msg = 'Unable to request user tokens. Server was unable to return any valid token!'
-            logger.error(msg)
-            raise errors.RepoCLIError(msg)
-    
-    # TODO: we are assuming the first token is the one we need... We need to improve this waaaaay more
-    return {"user": user_token, "jwt": jwt_token}
-
-
 def get_login_and_password(args):
     if getattr(args, 'login_username', None):
         username = args.login_username
@@ -161,14 +129,3 @@ class SubCommand(SubCommandBase):
         subparser.add_argument('--password', dest='login_password',
                                help="Specify your password. If this is not given, you will be prompted")
         subparser.set_defaults(main=self.main)
-
-
-def add_parser(subparsers):
-    subparser = subparsers.add_parser('login', help='Authenticate a user', description=__doc__)
-    subparser.add_argument('--hostname', default=platform.node(),
-                           help="Specify the host name of this login, this should be unique (default: %(default)s)")
-    subparser.add_argument('--username', dest='login_username',
-                           help="Specify your username. If this is not given, you will be prompted")
-    subparser.add_argument('--password', dest='login_password',
-                           help="Specify your password. If this is not given, you will be prompted")
-    subparser.set_defaults(main=main)
