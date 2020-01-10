@@ -93,14 +93,9 @@ class SubCommand(SubCommandBase):
             help="Show all of the files in a {}".format(self.name)
         )
 
-        # import pdb; pdb.set_trace()
-
         subparser.add_argument('--source', '-s', help='Path to the source channel to mirror. '
                                                    'I.e.: https://conda.anaconda.org/conda-test')
         subparser.add_argument('--name', '-n', help='Name of the mirror')
-
-        # {"mirror_name": "mirror-from-el", "mirror_mode": "active", "mirror_type": "conda", "cron": "0 0 * * *",
-        #  "source_root": "http://repo-wip.dev.anaconda.com/api/repo/ekoch/", "run_now": true}
         subparser.add_argument(
             '--mode',
             default='active',

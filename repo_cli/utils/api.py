@@ -104,15 +104,13 @@ class RepoApi:
 
         return None
 
-    def login(self, username='john', password='password') -> requests.Response:
+    def login(self, username, password) -> requests.Response:
         """Login  and returns the token."""
         data = {
             'username': username,
             'password': password
         }
         s = requests.Session()
-        # url = join(self.base_url, 'auth', 'login')
-        # token_url = join(self.base_url, 'account', 'tokens')
         logger.debug('[LOGIN] Authenticating user {username}...')
         resp = s.post(self._urls['login'], data=json.dumps(data), headers={'Content-Type': 'application/json'})
         logger.debug('[LOGIN] Done')
@@ -124,7 +122,6 @@ class RepoApi:
 
         self._jwt = jwt_token = resp.json()['token']
 
-        # user_token = self.get_access_token(jwt_token, self._urls['account_tokens'])
         user_token = self.get_access_token()
 
         if not user_token:

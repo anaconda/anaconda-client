@@ -61,13 +61,13 @@ USER_LOGDIR = dirs.user_log_dir
 SITE_CONFIG = expand('$CONDA_ROOT/etc/anaconda-client/config.yaml')
 SYSTEM_CONFIG = SITE_CONFIG
 
-DEFAULT_URL = 'http://repo-demo.dev.anaconda.com/api'
-DEFAULT_SITE = 'repo-demo'
+DEFAULT_URL = 'http://repo-wip.dev.anaconda.com/api'
+DEFAULT_SITE = 'repo-wip'
 
 
 DEFAULT_CONFIG = {
     'sites': {
-        'repo-demo': {'url': 'http://repo-demo.dev.anaconda.com/api'},
+        'repo-wip': {'url': 'http://repo-wip.dev.anaconda.com/api'},
     },
     'auto_register': True,
     'default_site': DEFAULT_SITE,
