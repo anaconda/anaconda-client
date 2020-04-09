@@ -592,7 +592,7 @@ def inspect_pypi_package_zip(filename, fileobj):
         raise errors.NoMetadataError("Could not find EGG-INFO/PKG-INFO file "
                                      "in pypi sdist")
 
-    attrs = dict(Parser().parsestr(data.encode("UTF-8", "replace")).items())
+    attrs = dict(Parser().parsestr(data.encode("UTF-8", "replace").decode()).items())
 
     package_data = {'name': pop_key(attrs, 'Name'),
                     'summary': pop_key(attrs, 'Summary', None),
