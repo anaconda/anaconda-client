@@ -49,7 +49,7 @@ def compute_hash(fp, buf_size=8192, size=None, hash_algorithm=md5):
             s = fp.read(buf_size)
     hex_digest = hash_obj.hexdigest()
 
-    b64encode = getattr(base64, 'encodebytes', base64.encodestring)
+    b64encode = getattr(base64, 'encodebytes', getattr(base64, 'encodestring', None))
     base64_digest = b64encode(hash_obj.digest())
     if base64_digest[-1] == '\n':
         base64_digest = base64_digest[0:-1]
