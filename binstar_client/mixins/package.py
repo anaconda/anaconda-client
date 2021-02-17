@@ -11,9 +11,9 @@ class PackageMixin(object):
 
     def copy(self, owner, package, version, basename=None,
              to_owner=None, from_label='main', to_label='main', replace=False, update=False):
-        url = '%s/copy/package/%s/%s/%s' % (self.domain, owner, package, version)
-        if basename:
-            url += '/%s' % basename
+
+        copy_path = "/".join((owner, package, version, basename or ''))
+        url = '{}/copy/package/{}'.format(self.domain, copy_path)
 
         payload = dict(to_owner=to_owner, from_channel=from_label, to_channel=to_label)
         data, headers = jencode(payload)
@@ -27,7 +27,7 @@ class PackageMixin(object):
 
         try:
             self._check_response(res)
-        except Conflict as err:
+        except Conflict:
             raise Conflict('File conflict while copying! Try to use --replace or --update options for force copying')
 
         return res.json()
