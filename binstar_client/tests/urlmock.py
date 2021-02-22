@@ -15,19 +15,22 @@ except NameError:
 
 from collections import namedtuple
 
-rule = namedtuple('rule', ('url', 'path', 'method', 'status', 'content', 'side_effect', 'res', 'headers', 'expected_headers'))
+rule = namedtuple(
+    'rule', ('url', 'path', 'method', 'status', 'content', 'side_effect', 'res', 'headers', 'expected_headers'))
+
 
 def filter_request(m, prepared_request):
-    if m.url and  m.url != prepared_request.url:
+    if m.url and m.url != prepared_request.url:
         return False
 
-    if m.path and  m.path != prepared_request.path_url:
+    if m.path and m.path != prepared_request.path_url:
         return False
 
     if m.method and m.method != prepared_request.method:
         return False
 
     return True
+
 
 class Responses(object):
     def __init__(self):
@@ -50,6 +53,7 @@ class Responses(object):
 
     def assertNotCalled(self, url=''):
         assert not self.called, "The url %s was called" % url
+
 
 class Registry(object):
     def __init__(self):
@@ -117,6 +121,7 @@ class Registry(object):
         for item in self._map:
             res = item.res
             res.assertCalled('[%s] %s%s' % (item.method or 'any', item.url or 'http://<any>', item.path))
+
 
 def urlpatch(func):
     @wraps(func)

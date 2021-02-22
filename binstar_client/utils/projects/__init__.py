@@ -39,16 +39,14 @@ def _real_upload_project(project, args, username):
     status = project_ops.upload(project, site=args.site, username=username,
                                 token=args.token, log_level=args.log_level)
 
-    for log in status.logs:
-        print(log)
     if not status:
         for error in status.errors:
             print(error, file=sys.stderr)
         print(status.status_description, file=sys.stderr)
         raise errors.BinstarError(status.status_description)
-    else:
-        print(status.status_description)
-        return [project.name, status.url]
+
+    print(status.status_description)
+    return [project.name, status.url]
 
 
 def upload_project(project_path, args, username):
