@@ -244,6 +244,9 @@ def upload_package(filename, package_type, aserver_api, username, args):
                 raise
             else:
                 logger.info('Distribution already exists. Skipping upload.\n')
+        except Exception as e:
+            logger.info('Uncaught exception: %s' % (str(e),))
+            raise
 
         if upload_info:
             logger.info("Upload complete\n")
