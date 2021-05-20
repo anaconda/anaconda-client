@@ -2,6 +2,10 @@
 
 ## Next version
 
+### Fixed
+
+* Usage of deprecated base64 functions
+
 ## Version 1.7.2 (2018/08/29)
 
 ### Fixed
