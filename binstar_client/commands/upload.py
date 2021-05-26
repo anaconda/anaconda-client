@@ -204,6 +204,12 @@ def upload_package(filename, package_type, aserver_api, username, args):
     if args.build_id:
         file_attrs['attrs']['binstar_build'] = args.build_id
 
+    if args.summary:
+        release_attrs['summary'] = args.summary
+
+    if args.description:
+        release_attrs['description'] = args.description
+
     package_name = get_package_name(args, package_attrs, filename, package_type)
     version = get_version(args, release_attrs, package_type)
 
@@ -225,32 +231,29 @@ def upload_package(filename, package_type, aserver_api, username, args):
     add_release(aserver_api, args, username, package_name, version, release_attrs)
     binstar_package_type = file_attrs.pop('binstar_package_type', package_type)
 
-    with open(filename, 'rb') as fd:
-        logger.info('Uploading file "%s/%s/%s/%s"', username, package_name, version, file_attrs['basename'])
+    logger.info('Uploading file "%s/%s/%s/%s"', username, package_name, version, file_attrs['basename'])
 
-        if remove_existing_file(aserver_api, args, username, package_name, version, file_attrs):
-            return None
+    if remove_existing_file(aserver_api, args, username, package_name, version, file_attrs):
+        return
 
-        try:
+    try:
+        with open(filename, 'rb') as fd:
             upload_info = aserver_api.upload(username, package_name, version, file_attrs['basename'], fd,
                                              binstar_package_type, args.description,
                                              dependencies=file_attrs.get('dependencies'), attrs=file_attrs['attrs'],
                                              channels=args.labels, callback=upload_print_callback(args))
-        except errors.Conflict:
-            upload_info = {}
-            if args.mode != 'skip':
-                logger.info('Distribution already exists. Please use the -i/--interactive or --force or --skip options '
-                            'or `anaconda remove %s/%s/%s/%s', username, package_name, version, file_attrs['basename'])
-                raise
-            else:
-                logger.info('Distribution already exists. Skipping upload.\n')
+    except errors.Conflict:
+        upload_info = {}
+        if args.mode != 'skip':
+            logger.info('Distribution already exists. Please use the -i/--interactive or --force or --skip options '
+                        'or `anaconda remove %s/%s/%s/%s', username, package_name, version, file_attrs['basename'])
+            raise
+        logger.info('Distribution already exists. Skipping upload.\n')
 
-        if upload_info:
-            logger.info("Upload complete\n")
-        else:
-            pass
+    if upload_info:
+        logger.info("Upload complete\n")
 
-        return [package_name, upload_info]
+    return [package_name, upload_info]
 
 
 def get_convert_files(files):
