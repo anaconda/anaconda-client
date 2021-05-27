@@ -2,6 +2,11 @@
 
 ## Next version
 
+### Fixed
+
+* Fixed `--summary` and `--description` arguments for _upload_ command
+
+
 ## Version 1.7.2 (2018/08/29)
 
 ### Fixed
