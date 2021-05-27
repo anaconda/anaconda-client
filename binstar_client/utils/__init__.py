@@ -25,6 +25,37 @@ from six.moves import input
 logger = logging.getLogger('binstar')
 
 
+# Compatibility layer for :func:`base64.encodestring` / :func:`base64.encodebytes` function
+#
+# :func:`~base64.encodestring` was replaced by :func:`~base64.encodebytes` in Python 3.1, as well as deprecated.
+# In addition, since Python 3.1 result type is changed to :class:`bytes` instead of :class:`str`. Wrapper functions
+# ensure :class:`str` output.
+
+if sys.version_info[:3] < (3, 1, 0):
+    def b64encode(content):
+        """
+        Convert bytes-like `content` into base64-encoded string with new lines after every 76 characters.
+
+        :param content: Source object to convert.
+        :type content: Union[bytes, bytearray]
+        :return: Base64-encoded string.
+        :rtype: str
+        """
+        return base64.encodestring(content)
+
+else:
+    def b64encode(content):
+        """
+        Convert bytes-like `content` into base64-encoded string with new lines after every 76 characters.
+
+        :param content: Source object to convert.
+        :type content: Union[bytes, bytearray]
+        :return: Base64-encoded string.
+        :rtype: str
+        """
+        return base64.encodebytes(content).decode('ascii')
+
+
 def jencode(*E, **F):
     payload = dict(*E, **F)
     return json.dumps(payload), {'Content-Type': 'application/json'}
@@ -49,10 +80,8 @@ def compute_hash(fp, buf_size=8192, size=None, hash_algorithm=md5):
             s = fp.read(buf_size)
     hex_digest = hash_obj.hexdigest()
 
-    b64encode = getattr(base64, 'encodebytes', getattr(base64, 'encodestring', None))
-    base64_digest = b64encode(hash_obj.digest())
-    if base64_digest[-1] == '\n':
-        base64_digest = base64_digest[0:-1]
+    base64_digest = b64encode(hash_obj.digest()).rstrip('\n')
+
     # data_size based on bytes read.
     data_size = fp.tell() - spos
     fp.seek(spos)
