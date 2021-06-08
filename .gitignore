@@ -44,3 +44,6 @@ doc/_build/
 __conda_*__.txt
 .cache/
 .pytest_cache/
+
+# Additional files
+/.artifacts/
