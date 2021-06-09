@@ -1,0 +1,10 @@
+anaconda-project
+pillow
+
+flake8
+
+freezegun
+mock
+pytest
+pytest-cov
+pytest-html

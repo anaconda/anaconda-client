@@ -1,0 +1,118 @@
+name: Check project
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+    types:
+      - opened
+      - reopened
+      - synchronize
+  workflow_dispatch:
+
+jobs:
+  lint_code:
+    name: Lint
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v2
+
+      - name: Setup Conda
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          activate-environment: test
+          auto-update-conda: true
+          python-version: 3.8
+
+      - name: Install requirements
+        run: |
+          conda install -n test --file requirements.txt --file requirements-dev.txt
+
+      - name: Conda environment information
+        run: |
+          conda info
+          conda config --show
+          conda list -n test --show-channel-urls
+
+      - name: Run lints
+        continue-on-error: true  # Remove this line after fixing style issues
+        run: |
+          mkdir .artifacts
+          mkdir .artifacts/reports
+          conda run -n test flake8 binstar_client > .artifacts/reports/flake8.txt
+
+      - name: Export flake8 report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: report-flake8-python-3.8-ubuntu-latest
+          path: .artifacts/reports/flake8.txt
+          retention-days: 7
+
+  test_project:
+    name: Test - Python ${{ matrix.python }} - ${{ matrix.os }}
+    needs: lint_code
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-latest
+          - ubuntu-latest
+          - windows-latest
+        python:
+          - 3.6
+          - 3.7
+          - 3.8
+          - 3.9
+    steps:
+      # most of these steps might be anchored to corresponding ones in the "lint_code" job
+      # unfortunately, as of June 2021 - GitHub doesn't support anchors for action scripts
+
+      - name: Checkout project
+        uses: actions/checkout@v2
+
+      - name: Setup Conda
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          activate-environment: test
+          auto-update-conda: true
+          python-version: ${{ matrix.python }}
+
+      - name: Install requirements
+        run: |
+          conda install -n test --file requirements.txt --file requirements-dev.txt
+
+      - name: Conda environment information
+        run: |
+          conda info
+          conda config --show
+          conda list -n test --show-channel-urls
+
+      - name: Run tests
+        run: |
+          mkdir .artifacts
+          mkdir .artifacts/reports
+          conda run -n test pytest binstar_client --cov=binstar_client --cov-report html:.artifacts/reports/coverage --html=.artifacts/reports/pytest.html --self-contained-html
+
+      - name: Export pytest report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: report-pytest-python-${{ matrix.python }}-${{ matrix.os }}
+          path: .artifacts/reports/pytest.html
+          retention-days: 7
+
+      - name: Export coverage report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: report-coverage-python-${{ matrix.python }}-${{ matrix.os }}
+          path: .artifacts/reports/coverage
+          retention-days: 7
