@@ -2,6 +2,10 @@
 
 ## Next version
 
+### Changed
+
+* CI provider changed from Circle CI to Gitlab Actions
+
 ### Fixed
 
 * Fixed `--summary` and `--description` arguments for _upload_ command
