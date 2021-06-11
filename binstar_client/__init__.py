@@ -10,6 +10,8 @@ import platform
 from six import raise_from
 from six.moves.urllib.parse import quote
 
+from .__about__ import __version__
+
 # For backwards compatibility
 from .errors import *
 from .requests_ext import stream_multipart, NullAuth
@@ -24,11 +26,6 @@ from .mixins.package import PackageMixin
 from . import errors
 
 logger = logging.getLogger('binstar')
-
-from ._version import get_versions
-
-__version__ = get_versions()['version']
-del get_versions
 
 
 class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
@@ -577,8 +574,3 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         res = self.session.get(url)
         self._check_response(res)
         return res.json()
-
-
-from ._version import get_versions
-__version__ = get_versions()['version']
-del get_versions
