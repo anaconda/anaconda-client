@@ -32,12 +32,16 @@ class _TmpDir(object):
 
 
 def _real_upload_project(project, args, username):
-    from anaconda_project import project_ops
+    try:
+        from anaconda_project import project_ops
+    except ImportError:
+        raise errors.BinstarError('anaconda-project package is not installed')
 
     print("Uploading project: {}".format(project.name))
 
-    status = project_ops.upload(project, site=args.site, username=username,
-                                token=args.token, log_level=args.log_level)
+    status = project_ops.upload(
+        project, site=args.site, username=username, token=args.token, log_level=args.log_level,
+    )
 
     if not status:
         for error in status.errors:
@@ -51,19 +55,20 @@ def _real_upload_project(project, args, username):
 
 def upload_project(project_path, args, username):
     try:
+        from anaconda_project import project
         from anaconda_project import project_ops
     except ImportError:
-        raise errors.BinstarError("To upload projects such as {}, install the anaconda-project package.".format(project_path))
-
-    from anaconda_project import project
+        raise errors.BinstarError(
+            'To upload projects such as {}, install the anaconda-project package.'.format(project_path),
+        )
 
     if os.path.exists(project_path) and not os.path.isdir(project_path):
         # make the single file into a temporary project directory
         with (_TmpDir(prefix="anaconda_upload_")) as dirname:
             shutil.copy(project_path, dirname)
             basename_no_extension = os.path.splitext(os.path.basename(project_path))[0]
-            project = project_ops.create(dirname, name=basename_no_extension)
-            return _real_upload_project(project, args, username)
+            new_project = project_ops.create(dirname, name=basename_no_extension)
+            return _real_upload_project(new_project, args, username)
     else:
-        project = project.Project(directory_path=project_path)
-        return _real_upload_project(project, args, username)
+        new_project = project.Project(directory_path=project_path)
+        return _real_upload_project(new_project, args, username)

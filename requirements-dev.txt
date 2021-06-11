@@ -1,4 +1,4 @@
-anaconda-project
+anaconda-project >=0.9.1
 pillow
 
 flake8
