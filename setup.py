@@ -1,15 +1,18 @@
 import os
 from setuptools import setup, find_packages
-import versioneer
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
-requirements_file = open(os.path.join(base_dir, 'requirements.txt'))
-requirements = requirements_file.read().splitlines()
+
+with open(os.path.join(base_dir, 'requirements.txt')) as source:
+    requirements = source.read().splitlines()
+
+__about__ = {}
+with open(os.path.join(base_dir, 'binstar_client', '__about__.py')) as source:
+    exec(source.read(), __about__)
 
 setup(
     name='anaconda-client',
-    version=versioneer.get_version(),
-    cmdclass=versioneer.get_cmdclass(),
+    version=__about__['__version__'],
     author='Sean Ross-Ross',
     author_email='srossross@gmail.com',
     url='http://github.com/Anaconda-Platform/anaconda-client',
