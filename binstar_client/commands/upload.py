@@ -35,7 +35,6 @@ from binstar_client.utils.detect import detect_package_type, get_attrs
 logger = logging.getLogger('binstar.upload')
 
 
-
 def verbose_package_type(pkg_type, lowercase=True):
     verbose_type = PACKAGE_TYPES.get(pkg_type, 'unknown')
     if lowercase:
