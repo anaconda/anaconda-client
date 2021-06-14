@@ -17,7 +17,7 @@ logger = logging.getLogger('binstar.update')
 
 
 def get_attributes(package, package_type, args):
-    if '.json' in os.path.splitext(package):
+    if package.endswith('.json'):
         with open(package, 'r') as f:
             attrs = json.load(f)
             return attrs, attrs
@@ -58,8 +58,8 @@ def main(args):
     logger.info("Package `{}` has been updated!".format(args.spec))
 
 
-def path_type(path):
-    if os.path.exists(path):
+def file_type(path):
+    if os.path.isfile(path):
         return path
 
     raise argparse.ArgumentTypeError("{} is not a valid path".format(path))
@@ -76,7 +76,7 @@ def add_parser(subparsers):
                     'It may be a valid package file or `.json` file with described attributes to update')
 
     parser.add_argument('spec', help='Package name written as `user/package/version`', type=parse_specs)
-    parser.add_argument('source', help=package_help, type=path_type)
+    parser.add_argument('source', help=package_help, type=file_type)
     release_group = parser.add_argument_group(title='Update release')
     release_group.add_argument(
         '--release',
