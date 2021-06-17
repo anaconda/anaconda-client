@@ -45,7 +45,7 @@ def has_environment(nb_file):
             data = fb.read()
         nb = nbformat.reader.reads(data)
         return 'environment' in nb['metadata']
-    except (AttributeError, KeyError):
+    except (ValueError, AttributeError, KeyError):
         return False
     except (IOError, nbformat.reader.NotJSONError):
         return False

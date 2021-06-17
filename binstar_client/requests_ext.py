@@ -121,13 +121,13 @@ class MultiPartIO(object):
 
     def seek(self, pos, mode=0):
         assert pos == 0
-        if mode is 0:
+        if mode == 0:
             self.to_read = self.have_read + self.to_read
             self.have_read = []
             [fd.seek(pos, mode) for fd in self.to_read]
             self.cursor = 0
 
-        elif mode is 2:
+        elif mode == 2:
             self.have_read = self.have_read + self.to_read
             self.to_read = []
             [fd.seek(pos, mode) for fd in self.have_read]
