@@ -1,15 +1,35 @@
 # CHANGELOG:
 
-## Next version
+## Version 1.8.0 (2021/06/25)
+
+### Added
+
+* Added `--update` and `--replace` options for _copy_ command
 
 ### Changed
 
-* CI provider changed from Circle CI to Gitlab Actions
+* CI provider changed from Circle CI to GitHub Actions
+* Uncaught exceptions are now displayed
 
 ### Fixed
 
 * Fixed `--summary` and `--description` arguments for _upload_ command
 * Usage of deprecated base64 functions
+* Downloading multiple packages using the _download_ command
+
+### Pull Requests Merged
+
+* [PR_575](https://github.com/Anaconda-Platform/anaconda-client/pull/575) - AC-87: Fixes and version bump to 1.8.0
+* [PR_572](https://github.com/Anaconda-Platform/anaconda-client/pull/572) - AC-87: fix for anaconda-project requirement
+* [PR_571](https://github.com/Anaconda-Platform/anaconda-client/pull/571) - AC-87: Bump version to 1.8.0rc1
+* [PR_570](https://github.com/Anaconda-Platform/anaconda-client/pull/570) - AC-96: CI migration to GitHub Actions
+* [PR_566](https://github.com/Anaconda-Platform/anaconda-client/pull/566) - AC-93: Fix summary and description arguments
+* [PR_565](https://github.com/Anaconda-Platform/anaconda-client/pull/565) - PR: Fix #555 - Upload - Fix of deprecated base64 functions usage
+* [PR_559](https://github.com/Anaconda-Platform/anaconda-client/pull/559) - AC-88: Add --update and --replace options for copy command
+* [PR_551](https://github.com/Anaconda-Platform/anaconda-client/pull/551) - fix: AttributeError: module 'base64' has no attribute 'encodestring'
+* [PR_539](https://github.com/Anaconda-Platform/anaconda-client/pull/539) - Don't hide all uncaught exceptions
+* [PR_534](https://github.com/Anaconda-Platform/anaconda-client/pull/534) - Adding Travis-Ci Support For Arm64
+* [PR_528](https://github.com/Anaconda-Platform/anaconda-client/pull/528) - Corrected links to documentation
 
 ## Version 1.7.2 (2018/08/29)
 
