@@ -178,7 +178,7 @@ def remove_existing_file(aserver_api, args, username, package_name, version, fil
             aserver_api.remove_dist(username, package_name, version, file_attrs['basename'])
 
         if args.mode == 'interactive':
-            if bool_input('Distribution "%s" already exists. Would you like to replace it?', file_attrs['basename']):
+            if bool_input('Distribution "%s" already exists. Would you like to replace it?' % file_attrs['basename']):
                 aserver_api.remove_dist(username, package_name, version, file_attrs['basename'])
             else:
                 logger.info('Not replacing distribution "%s"', file_attrs['basename'])
