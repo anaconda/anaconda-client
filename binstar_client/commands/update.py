@@ -68,14 +68,14 @@ def file_type(path):
 def add_parser(subparsers):
     parser = subparsers.add_parser(
         'update',
-        usage="\n\tanaconda update CONDA_PACKAGE_1.bz2"
-              "\n\tanaconda update metadata.json",
+        usage="\n\tanaconda update user/package[/version] CONDA_PACKAGE_1.bz2"
+              "\n\tanaconda update user/package[/version] metadata.json",
         description=__doc__)
 
     package_help = ('Path to the file that consists of metadata that will be updated in the destination package. '
                     'It may be a valid package file or `.json` file with described attributes to update')
 
-    parser.add_argument('spec', help='Package name written as `user/package/version`', type=parse_specs)
+    parser.add_argument('spec', help='Package name written as `user/package[/version]`', type=parse_specs)
     parser.add_argument('source', help=package_help, type=file_type)
     release_group = parser.add_argument_group(title='Update release')
     release_group.add_argument(
