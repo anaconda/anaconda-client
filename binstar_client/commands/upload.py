@@ -218,7 +218,12 @@ def upload_package(filename, package_type, aserver_api, username, args):
     package = add_package(aserver_api, args, username, package_name, package_attrs, package_type)
     package_types = package.get('package_types', [])
 
-    if package_types and package_type not in package_types:
+    allowed_package_types = set(package_types)
+    for group in [{'conda', 'pypi'}]:
+        if allowed_package_types & group:
+            allowed_package_types.update(group)
+
+    if package_types and (package_type not in allowed_package_types):
         message = 'You already have a {} named \'{}\'. Use a different name for this {}.'.format(
             verbose_package_type(package_types[0] if package_types else ''), package_name,
             verbose_package_type(package_type),

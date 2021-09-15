@@ -65,7 +65,7 @@ class Test(CLITestCase):
     def test_upload_pypi(self, registry):
         registry.register(method='HEAD', path='/', status=200)
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
-        content = {'package_types': 'pypi'}
+        content = {'package_types': ['pypi']}
         registry.register(method='GET', path='/package/eggs/test-package34', content=content)
         registry.register(method='GET', path='/release/eggs/test-package34/0.3.1', content='{}')
         registry.register(method='GET', path='/dist/eggs/test-package34/0.3.1/test_package34-0.3.1.tar.gz', status=404, content='{}')
@@ -187,7 +187,7 @@ class Test(CLITestCase):
         # regression test for #364
         registry.register(method='HEAD', path='/', status=200)
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
-        content = {'package_types': 'conda'}
+        content = {'package_types': ['conda']}
         registry.register(method='GET', path='/package/eggs/foo', content=content)
         registry.register(method='GET', path='/release/eggs/foo/0.1', content='{}')
         registry.register(method='GET', path='/dist/eggs/foo/0.1/osx-64/foo-0.1-0.tar.bz2', status=200, content='{}')
