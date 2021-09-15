@@ -327,7 +327,6 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         self._check_response(res)
         return res.json()
 
-
     def add_package(self, login, package_name,
                     summary=None,
                     license=None,
@@ -366,6 +365,38 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
 
         data, headers = jencode(payload)
         res = self.session.post(url, data=data, headers=headers)
+        self._check_response(res)
+        return res.json()
+
+    def update_package(self, login, package_name, attrs):
+        """
+        Update public_attrs of the package on a users account
+
+        :param login: the login of the package owner
+        :param package_name: the name of the package to be updated
+        :param attrs: A dictionary of attributes to update
+        """
+        url = '{}/package/{}/{}'.format(self.domain, login, package_name)
+
+        payload = dict(public_attrs=dict(attrs))
+        data, headers = jencode(payload)
+        res = self.session.patch(url, data=data, headers=headers)
+        self._check_response(res)
+        return res.json()
+
+    def update_release(self, login, package_name, version, attrs):
+        """
+        Update release public_attrs of the package on a users account
+
+        :param login: the login of the package owner
+        :param package_name: the name of the package to be updated
+        :param version: version of the package to update
+        :param attrs: A dictionary of attributes to update
+        """
+        url = '{}/release/{}/{}/{}'.format(self.domain, login, package_name, version)
+        payload = dict(public_attrs=dict(attrs))
+        data, headers = jencode(payload)
+        res = self.session.patch(url, data=data, headers=headers)
         self._check_response(res)
         return res.json()
 
@@ -489,7 +520,6 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
             # a failure).
             res2 = requests.get(res.headers['location'], stream=True)
             return res2
-
 
     def upload(self, login, package_name, release, basename, fd, distribution_type,
                description='', md5=None, size=None, dependencies=None, attrs=None, channels=('main',), callback=None):
