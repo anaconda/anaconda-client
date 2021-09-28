@@ -23,7 +23,7 @@ $ conda install anaconda-client
 #### With pip:
 
 ```
-pip install anaconda-client
+pip install anaconda-cli
 ```
 
 #### With pip from source:
