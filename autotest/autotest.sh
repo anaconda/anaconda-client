@@ -29,6 +29,10 @@ echo -e "/?\\\\ Upload package:\\n"
 ${TST_CMD} upload ./data/conda_gc_test-1.2.1-3.tar.bz2 || (echo -e "\\n\\n/!\\\\ Upload package test failed.\\n" && exit 1)
 echo
 
+echo -e "/?\\\\ Update package:\\n"
+${TST_CMD} update "${TST_LOGIN}/conda_gc_test" ./data/conda_gc_test_metadata.json || (echo -e "\\n\\n/!\\\\ Update package test failed.\\n" && exit 1)
+echo
+
 echo -e "/?\\\\ Download package:\\n"
 rm -rf pkg_tmp
 mkdir -p pkg_tmp/noarch pkg_tmp/linux-64
