@@ -264,9 +264,15 @@ def get_convert_files(files):
     tmpdir = tempfile.mkdtemp()
 
     for filepath in files:
+
+        if filepath.endswith('.conda'):
+            logger.warning(
+                'Couldn\'t generate platform packages for %s: .conda packages cannot be converted.', filepath)
+            continue
+
         logger.info('Running conda convert on "%s"', filepath)
         process = subprocess.Popen(
-            ['conda-convert', '-p', 'all', filepath, '-o', tmpdir],
+            ['conda', 'convert', '-p', 'all', filepath, '-o', tmpdir],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
         stdout, stderr = process.communicate()
@@ -362,8 +368,7 @@ def main(args):
 def windows_glob(item):
     if os.name == 'nt' and '*' in item:
         return glob(item)
-    else:
-        return [item]
+    return [item]
 
 
 def add_parser(subparsers):

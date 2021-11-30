@@ -6,3 +6,4 @@ requests >=2.9.1
 pytz
 setuptools
 six
+conda-package-handling
