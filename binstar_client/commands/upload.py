@@ -20,8 +20,10 @@ import subprocess
 
 from glob import glob
 from os.path import exists
+from shutil import rmtree
 
 import nbformat
+from conda_package_handling.api import transmute
 
 from six.moves import input
 
@@ -260,35 +262,50 @@ def upload_package(filename, package_type, aserver_api, username, args):
     return [package_name, upload_info]
 
 
+def convert_tar_file(file, tmpdir):
+    logger.info('Running conda convert on "%s"', file)
+
+    process = subprocess.Popen(
+        ['conda', 'convert', '-p', 'all', file, '-o', tmpdir],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    stdout, stderr = process.communicate()
+
+    if stderr:
+        logger.warning('Couldn\'t generate platform packages for %s: %s', file, stderr)
+
+
 def get_convert_files(files):
     tmpdir = tempfile.mkdtemp()
+    input_basenames = [os.path.basename(f) for f in files]
 
     for filepath in files:
+        is_conda_v2 = filepath.endswith('.conda')
 
-        if filepath.endswith('.conda'):
-            logger.warning(
-                'Couldn\'t generate platform packages for %s: .conda packages cannot be converted.', filepath)
-            continue
+        if is_conda_v2:
+            transmute(filepath, '.tar.bz2', tmpdir)
+            filepath = os.path.join(tmpdir, os.path.basename(filepath))
+            filepath = filepath[:-6] + '.tar.bz2'
 
-        logger.info('Running conda convert on "%s"', filepath)
-        process = subprocess.Popen(
-            ['conda', 'convert', '-p', 'all', filepath, '-o', tmpdir],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
-        stdout, stderr = process.communicate()
-
-        if stderr:
-            logger.warning('Couldn\'t generate platform packages for %s: %s', filepath, stderr)
+        convert_tar_file(filepath, tmpdir)
+        if is_conda_v2:
+            os.remove(filepath)
 
     result = []
-    for path, dirs, files in os.walk(tmpdir):
+    for path, _, files in os.walk(tmpdir):
         for filename in files:
-            result.append(os.path.join(path, filename))
+            filepath = os.path.join(path, filename)
+            if filename not in input_basenames:
+                transmute(filepath, '.conda', os.path.dirname(filepath))
+                os.remove(filepath)
+                filepath = filepath.replace('.tar.bz2', '.conda')
+            result.append(filepath)
 
-    return result
+    return result, tmpdir
 
 
 def main(args):
+    tmpdir = None
     config = get_config(site=args.site)
 
     aserver_api = get_server_api(token=args.token, site=args.site, config=config)
@@ -322,7 +339,8 @@ def main(args):
     files = [f for fglob in args.files for f in fglob]
 
     if args.all:
-        files += get_convert_files(files)
+        converted_files, tmpdir = get_convert_files(files)
+        files.extend(converted_files)
 
     for filename in files:
         if not exists(filename):
@@ -363,6 +381,9 @@ def main(args):
 
     for project_name, url in uploaded_projects:
         logger.info("Project {} uploaded to {}.\n".format(project_name, url))
+
+    if tmpdir:
+        rmtree(tmpdir)
 
 
 def windows_glob(item):
