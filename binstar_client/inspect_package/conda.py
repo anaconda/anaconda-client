@@ -1,15 +1,14 @@
 from __future__ import print_function
 
-# Standard library imports
-from os import path
-from pprint import pprint
+import os.path
 import json
 import re
 import sys
-import tarfile
 import tempfile
+from pprint import pprint
+from shutil import rmtree
+from conda_package_handling.api import extract
 
-# Local imports
 from ..utils.notebook.data_uri import data_uri_from
 
 
@@ -39,7 +38,7 @@ def transform_conda_deps(deps):
             else:
                 op = '=='
 
-            depends.append({'name':name, 'specs': [[op, spec]]})
+            depends.append({'name': name, 'specs': [[op, spec]]})
         elif len(name_spec) == 3:
             name, spec, build_str = name_spec
             if spec.endswith('*'):  # Star does nothing in semver
@@ -77,51 +76,29 @@ def get_subdir(index):
         return '%s-%s' % (index.get('platform'), intel_map.get(arch, arch))
 
 
-def inspect_conda_package(filename, fileobj, *args, **kwargs):
+def inspect_conda_info_dir(info_path, basename):
+    def _load(filename, default=None):
+        file_path = os.path.join(info_path, filename)
+        if os.path.exists(file_path):
+            with open(file_path) as f:
+                return json.load(f)
+        return default
 
-    index, about, has_prefix = None, {}, False
+    index = _load('index.json', None)
+    if index is None:
+        raise TypeError("info/index.json required in conda package")
 
-    with tarfile.open(filename, fileobj=fileobj, mode="r|bz2") as tar:
-        for info in tar:
-            if info.name == 'info/index.json':
-                index = tar.extractfile(info)
-                index = json.loads(index.read().decode())
-            elif info.name == 'info/recipe.json':
-                # recipe.index is deprecated and only packages built with older
-                # versions of conda-build contain that file.
-                recipe = tar.extractfile(info)
-                recipe = json.loads(recipe.read().decode())
-                about = recipe.pop('about', {})
-            elif info.name == 'info/about.json':
-                # recipe.json is deprecated and only packages build with older
-                # versions of conda-build contain that file.
-                about = tar.extractfile(info)
-                about = json.loads(about.read().decode())
-            elif info.name == 'info/has_prefix':
-                has_prefix = True
-            if index is not None and about != {}:
-                break
-        else:
-            if index is None:
-                raise TypeError("info/index.json required in conda package")
+    recipe = _load('recipe.json')
+    about = recipe.get('about', {}) if recipe else _load('about.json', {})
+    has_prefix = os.path.exists(os.path.join(info_path, 'has_prefix'))
 
     # Load icon defined in the index.json and file exists inside info folder
-    fileobj.seek(0)
-    icon_b64 = None
-    icon_path = index.get('icon')
-    if icon_path:
-        tar = tarfile.open(filename, fileobj=fileobj, mode="r|bz2")
-        for info in tar:
-            if info.name == 'info/{0}'.format(icon_path):
-                icon_data = tar.extractfile(info).read()
-                f, temp_path = tempfile.mkstemp()
-                with open(temp_path, 'wb') as f:
-                    f.write(icon_data)
-                icon_b64 = data_uri_from(temp_path)
-                break
+    icon_b64 = index.get('icon', None)
+    icon_path = os.path.join(info_path, icon_b64) if icon_b64 else None
+    if icon_path and os.path.exists(icon_path):
+        icon_b64 = data_uri_from(icon_path)
 
     subdir = get_subdir(index)
-
     machine = index['arch']
     operatingsystem = os_map.get(index['platform'], index['platform'])
 
@@ -154,7 +131,7 @@ def inspect_conda_package(filename, fileobj, *args, **kwargs):
         'license_family': about.get('license_family'),
     }
     file_data = {
-        'basename': '%s/%s' % (subdir, path.basename(filename)),
+        'basename': '%s/%s' % (subdir, basename),
         'attrs': {
             'operatingsystem': operatingsystem,
             'machine': machine,
@@ -170,6 +147,18 @@ def inspect_conda_package(filename, fileobj, *args, **kwargs):
     return package_data, release_data, file_data
 
 
+def inspect_conda_package(filename, *args, **kwargs):
+    tmpdir = tempfile.mkdtemp()
+    extract(filename, tmpdir, components='info')
+
+    info_dir = os.path.join(tmpdir, 'info')
+    package_data, release_data, file_data = inspect_conda_info_dir(info_dir, os.path.basename(filename))
+
+    rmtree(tmpdir)
+
+    return package_data, release_data, file_data
+
+
 def main():
     filename = sys.argv[1]
     with open(filename) as fileobj:
@@ -179,6 +168,7 @@ def main():
     pprint(release_data)
     print('--')
     pprint(file_data)
+
 
 if __name__ == '__main__':
     main()

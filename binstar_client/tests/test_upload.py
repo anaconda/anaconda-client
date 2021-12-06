@@ -30,7 +30,6 @@ class Test(CLITestCase):
         main(['--show-traceback', 'upload', data_dir('foo-0.1-0.tar.bz2')], False)
         registry.assertAllCalled()
 
-
     @urlpatch
     def test_upload_bad_package_no_register(self, registry):
         registry.register(method='HEAD', path='/', status=200)
@@ -58,6 +57,28 @@ class Test(CLITestCase):
         registry.register(method='POST', path='/commit/eggs/foo/0.1/osx-64/foo-0.1-0.tar.bz2', status=200, content={})
 
         main(['--show-traceback', 'upload', data_dir('foo-0.1-0.tar.bz2')], False)
+
+        registry.assertAllCalled()
+    
+    @urlpatch
+    def test_upload_conda_v2(self, registry):
+        registry.register(method='HEAD', path='/', status=200)
+        registry.register(method='GET', path='/user', content='{"login": "eggs"}')
+        content = {'package_types': ['conda']}
+        registry.register(method='GET', path='/package/eggs/mock', content=content)
+        registry.register(method='GET', path='/release/eggs/mock/2.0.0', content='{}')
+        registry.register(
+            method='GET', path='/dist/eggs/mock/2.0.0/osx-64/mock-2.0.0-py37_1000.conda', status=404, content='{}')
+
+        content = {"post_url": "http://s3url.com/s3_url", "form_data": {}, "dist_id": "dist_id"}
+        registry.register(
+            method='POST', path='/stage/eggs/mock/2.0.0/osx-64/mock-2.0.0-py37_1000.conda', content=content)
+
+        registry.register(method='POST', path='/s3_url', status=201)
+        registry.register(
+            method='POST', path='/commit/eggs/mock/2.0.0/osx-64/mock-2.0.0-py37_1000.conda', status=200, content={})
+
+        main(['--show-traceback', 'upload', data_dir('mock-2.0.0-py37_1000.conda')], False)
 
         registry.assertAllCalled()
 
@@ -159,7 +180,6 @@ class Test(CLITestCase):
               data_dir('bar')], False)
 
         registry.assertAllCalled()
-
 
     @urlpatch
     def test_upload_project_specifying_token(self, registry):

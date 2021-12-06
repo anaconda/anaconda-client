@@ -48,7 +48,7 @@ else:
 PACKAGE_TYPES = {
     'env': 'Environment',
     'ipynb': 'Notebook',
-    'conda' : 'Conda Package',
+    'conda': 'Conda Package',
     'pypi': 'Python Package',
 }
 
