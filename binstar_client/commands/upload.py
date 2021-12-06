@@ -262,48 +262,6 @@ def upload_package(filename, package_type, aserver_api, username, args):
     return [package_name, upload_info]
 
 
-def convert_tar_file(file, tmpdir):
-    logger.info('Running conda convert on "%s"', file)
-
-    process = subprocess.Popen(
-        ['conda', 'convert', '-p', 'all', file, '-o', tmpdir],
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
-    stdout, stderr = process.communicate()
-
-    if stderr:
-        logger.warning('Couldn\'t generate platform packages for %s: %s', file, stderr)
-
-
-def get_convert_files(files):
-    tmpdir = tempfile.mkdtemp()
-    input_basenames = [os.path.basename(f) for f in files]
-
-    for filepath in files:
-        is_conda_v2 = filepath.endswith('.conda')
-
-        if is_conda_v2:
-            transmute(filepath, '.tar.bz2', tmpdir)
-            filepath = os.path.join(tmpdir, os.path.basename(filepath))
-            filepath = filepath[:-6] + '.tar.bz2'
-
-        convert_tar_file(filepath, tmpdir)
-        if is_conda_v2:
-            os.remove(filepath)
-
-    result = []
-    for path, _, files in os.walk(tmpdir):
-        for filename in files:
-            filepath = os.path.join(path, filename)
-            if filename not in input_basenames:
-                transmute(filepath, '.conda', os.path.dirname(filepath))
-                os.remove(filepath)
-                filepath = filepath.replace('.tar.bz2', '.conda')
-            result.append(filepath)
-
-    return result, tmpdir
-
-
 def main(args):
     tmpdir = None
     config = get_config(site=args.site)
@@ -337,10 +295,6 @@ def main(args):
 
     # Flatten file list because of 'windows_glob' function
     files = [f for fglob in args.files for f in fglob]
-
-    if args.all:
-        converted_files, tmpdir = get_convert_files(files)
-        files.extend(converted_files)
 
     for filename in files:
         if not exists(filename):
@@ -413,8 +367,6 @@ def add_parser(subparsers):
                         help=label_help.format(deprecation='', label='label'))
     parser.add_argument('--no-progress', help="Don't show upload progress", action='store_true')
     parser.add_argument('-u', '--user', help='User account or Organization, defaults to the current user')
-    parser.add_argument('--all', help='Use conda convert to generate packages for all platforms and upload them',
-                        action='store_true')
 
     mgroup = parser.add_argument_group('metadata options')
     mgroup.add_argument('-p', '--package', help='Defaults to the package name in the uploaded file')
