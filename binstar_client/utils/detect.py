@@ -63,6 +63,8 @@ def is_project(filename):
 
 def is_conda(filename):
     logger.debug("Testing if conda package ..")
+    if filename.endswith('.conda'):
+        return True
     
     if filename.endswith('.tar.bz2'):  # Could be a conda package
         try:
@@ -73,12 +75,12 @@ def is_conda(filename):
                 else:
                     raise KeyError
         except KeyError:
-            logger.debug("Not conda  package no 'info/index.json' file in the tarball")
+            logger.debug("Not conda package no 'info/index.json' file in the tarball")
             return False
         else:
             logger.debug("This is a conda package")
             return True
-    logger.debug("Not conda package (file ext is not .tar.bz2)")
+    logger.debug("Not conda package (file ext is not .tar.bz2 or .conda)")
 
 
 def is_pypi(filename):

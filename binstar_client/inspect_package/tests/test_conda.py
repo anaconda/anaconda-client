@@ -98,6 +98,27 @@ expected_file_data_221 = {
         },
     }
 
+expected_file_data_221_conda = {
+    'attrs': {
+        'arch': 'x86_64',
+        'build': 'py27_3',
+        'build_number': 3,
+        'depends': ['foo ==3*', 'python ==2.7.8'],
+        #'license': None,
+        'machine': 'x86_64',
+        'operatingsystem': 'linux',
+        'platform': 'linux',
+        'subdir': 'linux-64',
+        'target-triplet': 'x86_64-any-linux',
+        'has_prefix': False,
+        },
+    'basename': 'linux-64/conda_gc_test-2.2.1-py27_3.conda',
+    'dependencies': {
+        'depends': [{'name': 'foo', 'specs': [['==', '3']]},
+                    {'name': 'python', 'specs': [['==', '2.7.8']]}],
+        },
+    }
+
 # Test package application data
 # -----------------------------------------------------------------------------
 ICON_B64 = data_uri_from(data_dir('43c9b994a4d96f779dad87219d645c9f.png'))
@@ -160,6 +181,15 @@ class Test(unittest.TestCase):
         self.assertEqual(app_expected_package_data, package_data)
         self.assertEqual(app_expected_version_data.pop('icon'), version_data.pop('icon'))
         self.assertEqual(app_expected_version_data, version_data)
+
+    def test_conda_v2_format(self):
+        filename = data_dir('conda_gc_test-2.2.1-py27_3.conda')
+        with open(filename, 'rb') as fd:
+            package_data, version_data, file_data = conda.inspect_conda_package(filename, fd)
+
+        self.assertEqual(expected_package_data, package_data)
+        self.assertEqual(expected_version_data_221, version_data)
+        self.assertEqual(expected_file_data_221_conda, file_data)
 
 
 if __name__ == "__main__":
