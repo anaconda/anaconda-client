@@ -3,7 +3,6 @@ from __future__ import absolute_import, print_function, unicode_literals
 import collections
 import os
 import requests
-import warnings
 import logging
 import platform
 
@@ -351,7 +350,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
 
         attrs = attrs or {}
         attrs['summary'] = summary
-        attrs['package_types'] = [package_type]
+        attrs['package_types'] = [package_type.value]
         attrs['license'] = {
             'name': license,
             'url': license_url,
@@ -542,7 +541,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         if not isinstance(attrs, dict):
             raise TypeError('argument attrs must be a dictionary')
 
-        payload = dict(distribution_type=distribution_type, description=description, attrs=attrs,
+        payload = dict(distribution_type=distribution_type.value, description=description, attrs=attrs,
                        dependencies=dependencies, channels=channels)
 
         data, headers = jencode(payload)
@@ -592,7 +591,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         url = '%s/search' % self.domain
         res = self.session.get(url, params={
             'name': query,
-            'type': package_type,
+            'type': package_type.value,
             'platform': platform,
         })
         self._check_response(res)

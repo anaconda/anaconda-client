@@ -1,8 +1,10 @@
 from time import mktime
 from dateutil.parser import parse
+from contextlib import suppress
 from collections import OrderedDict
 import os
 
+from binstar_client.utils.config import PackageType
 from binstar_client.errors import DestionationPathExists
 
 
@@ -30,8 +32,10 @@ class Downloader(object):
         self.ensure_output()
         files = OrderedDict()
         for f in self.list_files():
-            # Check type
-            pkg_type = f.get('type') or ''
+            pkg_type = f.get('type', '')
+            with suppress(ValueError):
+                pkg_type = PackageType(pkg_type)
+
             if pkg_type in package_types:
                 if self.can_download(f, force):
                     files[f['basename']] = f
@@ -43,7 +47,10 @@ class Downloader(object):
         output = []
         for f in self.list_files():
             # Check type
-            pkg_type = f.get('type') or ''
+            pkg_type = f.get('type', '')
+            with suppress(ValueError):
+                pkg_type = PackageType(pkg_type)
+
             if pkg_type in package_types:
                 if self.can_download(f, force):
                     self.download(f)
