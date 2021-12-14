@@ -29,6 +29,7 @@ def add_parser(subparsers):
     parser.add_argument('name', nargs=1, help='Search string')
     parser.add_argument(
         '-t', '--package-type', choices=['conda', 'pypi'],
+
         help='only search for packages of this type'
     )
     parser.add_argument(
