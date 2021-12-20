@@ -342,10 +342,12 @@ def windows_glob(item):
 
 def add_parser(subparsers):
     description = 'Upload packages to your Anaconda repository'
-    parser = subparsers.add_parser('upload',
-                                   formatter_class=argparse.RawDescriptionHelpFormatter,
-                                   help=description, description=description,
-                                   epilog=__doc__)
+    parser = subparsers.add_parser(
+        'upload',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        help=description, description=description,
+        epilog=__doc__,
+    )
 
     parser.add_argument('files', nargs='+', help='Distributions to upload', default=[], type=windows_glob)
 
@@ -354,39 +356,109 @@ def add_parser(subparsers):
         'Warning: if the file {label}s do not include "main", '
         'the file will not show up in your user {label}')
 
-    parser.add_argument('-c', '--channel', action='append', default=[], dest='labels',
-                        help=label_help.format(deprecation='[DEPRECATED]\n', label='channel'),
-                        metavar='CHANNELS')
-    parser.add_argument('-l', '--label', action='append', dest='labels',
-                        help=label_help.format(deprecation='', label='label'))
-    parser.add_argument('--no-progress', help="Don't show upload progress", action='store_true')
-    parser.add_argument('-u', '--user', help='User account or Organization, defaults to the current user')
+    parser.add_argument(
+        '-c', '--channel',
+        action='append',
+        default=[],
+        dest='labels',
+        help=label_help.format(deprecation='[DEPRECATED]\n', label='channel'),
+        metavar='CHANNELS',
+    )
+    parser.add_argument(
+        '-l', '--label',
+        action='append',
+        dest='labels',
+        help=label_help.format(deprecation='', label='label'),
+    )
+    parser.add_argument(
+        '--no-progress',
+        help="Don't show upload progress",
+        action='store_true',
+    )
+    parser.add_argument(
+        '-u', '--user',
+        help='User account or Organization, defaults to the current user',
+    )
 
     mgroup = parser.add_argument_group('metadata options')
-    mgroup.add_argument('-p', '--package', help='Defaults to the package name in the uploaded file')
-    mgroup.add_argument('-v', '--version', help='Defaults to the package version in the uploaded file')
-    mgroup.add_argument('-s', '--summary', help='Set the summary of the package')
-    mgroup.add_argument('-t', '--package-type', help='Set the package type. Defaults to autodetect')
-    mgroup.add_argument('-d', '--description', help='description of the file(s)')
-    mgroup.add_argument('--thumbnail', help='Notebook\'s thumbnail image')
-    mgroup.add_argument('--private', help="Create the package with private access", action='store_true')
+    mgroup.add_argument(
+        '-p', '--package',
+        help='Defaults to the package name in the uploaded file',
+    )
+    mgroup.add_argument(
+        '-v', '--version',
+        help='Defaults to the package version in the uploaded file',
+    )
+    mgroup.add_argument(
+        '-s', '--summary',
+        help='Set the summary of the package',
+    )
+    mgroup.add_argument(
+        '-t', '--package-type',
+        help='Set the package type. Defaults to autodetect',
+    )
+    mgroup.add_argument(
+        '-d', '--description',
+        help='description of the file(s)',
+    )
+    mgroup.add_argument(
+        '--thumbnail',
+        help="Notebook's thumbnail image",
+    )
+    mgroup.add_argument(
+        '--private',
+        help='Create the package with private access',
+        action='store_true',
+    )
 
     register_group = parser.add_mutually_exclusive_group()
-    register_group.add_argument("--no-register", dest="auto_register", action="store_false",
-                        help='Don\'t create a new package namespace if it does not exist')
-    register_group.add_argument("--register", dest="auto_register", action="store_true",
-                        help='Create a new package namespace if it does not exist')
+    register_group.add_argument(
+        '--no-register',
+        dest='auto_register',
+        action='store_false',
+        help="Don't create a new package namespace if it does not exist",
+    )
+    register_group.add_argument(
+        '--register',
+        dest='auto_register',
+        action='store_true',
+        help='Create a new package namespace if it does not exist',
+    )
+
     parser.set_defaults(auto_register=DEFAULT_CONFIG.get('auto_register', True))
-    parser.add_argument('--build-id', help='Anaconda repository Build ID (internal only)')
+    parser.add_argument(
+        '--build-id',
+        help='Anaconda repository Build ID (internal only)',
+    )
 
     group = parser.add_mutually_exclusive_group()
-    group.add_argument('-i', '--interactive', action='store_const', help='Run an interactive prompt if any packages are missing',
-                        dest='mode', const='interactive')
-    group.add_argument('-f', '--fail', help='Fail if a package or release does not exist (default)',
-                                        action='store_const', dest='mode', const='fail')
-    group.add_argument('--force', help='Force a package upload regardless of errors',
-                                        action='store_const', dest='mode', const='force')
-    group.add_argument('--skip-existing', help='Skip errors on package batch upload if it already exists',
-                                        action='store_const', dest='mode', const='skip')
+    group.add_argument(
+        '-i', '--interactive',
+        action='store_const',
+        help='Run an interactive prompt if any packages are missing',
+        dest='mode',
+        const='interactive',
+    )
+    group.add_argument(
+        '-f', '--fail',
+        help='Fail if a package or release does not exist (default)',
+        action='store_const',
+        dest='mode',
+        const='fail',
+    )
+    group.add_argument(
+        '--force',
+        help='Force a package upload regardless of errors',
+        action='store_const',
+        dest='mode',
+        const='force',
+    )
+    group.add_argument(
+        '--skip-existing',
+        help='Skip errors on package batch upload if it already exists',
+        action='store_const',
+        dest='mode',
+        const='skip',
+    )
 
     parser.set_defaults(main=main)

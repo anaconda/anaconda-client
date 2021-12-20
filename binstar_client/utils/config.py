@@ -76,9 +76,11 @@ PACKAGE_TYPE_LABELS = {
 }
 
 PACKAGE_TYPE_ALIASES = {
-    'standard_python': 'pypi',
     'PyPI': 'pypi',
-    'standard_r': 'r'
+    'standard_python': 'pypi',
+
+    'cran': 'r',
+    'standard_r': 'r',
 }
 
 

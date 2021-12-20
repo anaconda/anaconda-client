@@ -47,8 +47,7 @@ def add_parser(subparsers):
     pkg_types = ', '.join(pkg_type.value for pkg_type in PackageType)
     parser.add_argument(
         '-t', '--package-type',
-        help='Set the package type [{0}]. Defaults to downloading all '
-             'package types available'.format(pkg_types),
+        help='Set the package type [{0}]. Defaults to downloading all package types available'.format(pkg_types),
         action='append',
     )
     parser.set_defaults(main=main)

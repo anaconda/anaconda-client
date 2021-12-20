@@ -326,15 +326,19 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         self._check_response(res)
         return res.json()
 
-    def add_package(self, login, package_name,
-                    summary=None,
-                    license=None,
-                    public=True,
-                    license_url=None,
-                    license_family=None,
-                    attrs=None,
-                    package_type=None):
-        '''
+    def add_package(
+            self,
+            login,
+            package_name,
+            summary=None,
+            license=None,
+            public=True,
+            license_url=None,
+            license_family=None,
+            attrs=None,
+            package_type=None,
+    ):
+        """
         Add a new package to a users account
 
         :param login: the login of the package owner
@@ -345,12 +349,15 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         :param license_url: the url of the package license
         :param public: if true then the package will be hosted publicly
         :param attrs: A dictionary of extra attributes for this package
-        '''
+        """
+        if package_type is not None:
+            package_type = package_type.value
+
         url = '%s/package/%s/%s' % (self.domain, login, package_name)
 
         attrs = attrs or {}
         attrs['summary'] = summary
-        attrs['package_types'] = [package_type.value]
+        attrs['package_types'] = [package_type]
         attrs['license'] = {
             'name': license,
             'url': license_url,
@@ -482,7 +489,6 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         self._check_response(res)
         return res.json()
 
-
     def download(self, login, package_name, release, basename, md5=None):
         '''
         Download a package distribution
@@ -522,7 +528,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
 
     def upload(self, login, package_name, release, basename, fd, distribution_type,
                description='', md5=None, size=None, dependencies=None, attrs=None, channels=('main',), callback=None):
-        '''
+        """
         Upload a new distribution to a package release.
 
         :param login: the login of the package owner
@@ -533,16 +539,20 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         :param distribution_type: pypi or conda or ipynb, etc
         :param description: (optional) a short description about the file
         :param attrs: any extra attributes about the file (eg. build=1, pyversion='2.7', os='osx')
-
-        '''
+        """
         url = '%s/stage/%s/%s/%s/%s' % (self.domain, login, package_name, release, quote(basename))
         if attrs is None:
             attrs = {}
         if not isinstance(attrs, dict):
             raise TypeError('argument attrs must be a dictionary')
 
-        payload = dict(distribution_type=distribution_type.value, description=description, attrs=attrs,
-                       dependencies=dependencies, channels=channels)
+        payload = dict(
+            distribution_type=distribution_type.value,
+            description=description,
+            attrs=attrs,
+            dependencies=dependencies,
+            channels=channels,
+        )
 
         data, headers = jencode(payload)
         res = self.session.post(url, data=data, headers=headers)
@@ -588,10 +598,13 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         return res.json()
 
     def search(self, query, package_type=None, platform=None):
+        if package_type is not None:
+            package_type = package_type.value
+
         url = '%s/search' % self.domain
         res = self.session.get(url, params={
             'name': query,
-            'type': package_type.value,
+            'type': package_type,
             'platform': platform,
         })
         self._check_response(res)
