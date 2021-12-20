@@ -1,7 +1,6 @@
 from __future__ import print_function, absolute_import, unicode_literals
 
 import enum
-from os.path import exists, join, dirname, isfile, isdir, abspath, expanduser
 from string import Template
 
 import collections
@@ -10,7 +9,6 @@ import os
 import stat
 import warnings
 import itertools
-
 
 try:
     from urllib import quote_plus
@@ -34,15 +32,15 @@ def expandvars(path):
 
 
 def expand(path):
-    return abspath(expanduser(expandvars(path)))
+    return os.path.abspath(os.path.expanduser(expandvars(path)))
 
 
 if 'BINSTAR_CONFIG_DIR' in os.environ:
     dirs = EnvAppDirs('binstar', 'ContinuumIO', os.environ['BINSTAR_CONFIG_DIR'])
-    USER_CONFIG = join(dirs.user_data_dir, 'config.yaml')
+    USER_CONFIG = os.path.join(dirs.user_data_dir, 'config.yaml')
 else:
     dirs = AppDirs('binstar', 'ContinuumIO')
-    USER_CONFIG = expand('~/.continuum/anaconda-client/config.yaml')
+    USER_CONFIG = os.path.join(os.path.expanduser('~'), '.continuum', 'anaconda-client', 'config.yaml')
 
 
 class PackageType(enum.Enum):
@@ -85,7 +83,7 @@ PACKAGE_TYPE_ALIASES = {
 
 
 USER_LOGDIR = dirs.user_log_dir
-SITE_CONFIG = expand('$CONDA_ROOT/etc/anaconda-client/config.yaml')
+SITE_CONFIG = os.path.join(os.environ.get('CONDA_ROOT', CONDA_ROOT), 'etc', 'anaconda-client', 'config.yaml')
 SYSTEM_CONFIG = SITE_CONFIG
 
 DEFAULT_URL = 'https://api.anaconda.org'
@@ -183,7 +181,7 @@ def get_binstar(args=None, cls=None):
 
 TOKEN_DIRS = [
     dirs.user_data_dir,
-    join(dirname(USER_CONFIG), 'tokens'),
+    os.path.join(os.path.dirname(USER_CONFIG), 'tokens'),
 ]
 TOKEN_DIR = TOKEN_DIRS[-1]
 
@@ -194,11 +192,11 @@ def store_token(token, args):
     for token_dir in TOKEN_DIRS:
         url = config.get('url', DEFAULT_URL)
 
-        if not isdir(token_dir):
+        if not os.path.isdir(token_dir):
             os.makedirs(token_dir)
-        tokenfile = join(token_dir, '%s.token' % quote_plus(url))
+        tokenfile = os.path.join(token_dir, '%s.token' % quote_plus(url))
 
-        if isfile(tokenfile):
+        if os.path.isfile(tokenfile):
             os.unlink(tokenfile)
         with open(tokenfile, 'w') as fd:
             fd.write(token)
@@ -207,9 +205,9 @@ def store_token(token, args):
 
 def load_token(url):
     for token_dir in TOKEN_DIRS:
-        tokenfile = join(token_dir, '%s.token' % quote_plus(url))
+        tokenfile = os.path.join(token_dir, '%s.token' % quote_plus(url))
 
-        if isfile(tokenfile):
+        if os.path.isfile(tokenfile):
             logger.debug("Found login token: {}".format(tokenfile))
             with open(tokenfile) as fd:
                 token = fd.read().strip()
@@ -227,13 +225,13 @@ def remove_token(args):
     url = config.get('url', DEFAULT_URL)
 
     for token_dir in TOKEN_DIRS:
-        tokenfile = join(token_dir, '%s.token' % quote_plus(url))
-        if isfile(tokenfile):
+        tokenfile = os.path.join(token_dir, '%s.token' % quote_plus(url))
+        if os.path.isfile(tokenfile):
             os.unlink(tokenfile)
 
 
 def load_config(config_file):
-    if exists(config_file):
+    if os.path.exists(config_file):
         with open(config_file) as fd:
             data = yaml_load(fd)
             if data:
@@ -250,7 +248,7 @@ def load_file_configs(search_path):
     def _dir_yaml_loader(fullpath):
         for filename in os.listdir(fullpath):
             if filename.endswith(".yml") or filename.endswith(".yaml"):
-                filepath = join(fullpath, filename)
+                filepath = os.path.join(fullpath, filename)
                 yield filepath, load_config(filepath)
 
     # map a stat result to a file loader or a directory loader
@@ -299,16 +297,14 @@ def get_config(site=None):
 
 
 def save_config(data, config_file):
-    data_dir = dirname(config_file)
-
     try:
-        if not exists(data_dir):
-            os.makedirs(data_dir)
+        os.makedirs(os.path.dirname(config_file), exist_ok=True)
 
-        with open(config_file, 'w') as fd:
-            yaml_dump(data, stream=fd)
-    except EnvironmentError as exc:
-        raise BinstarError('%s: %s' % (exc.filename, exc.strerror,))
+        with open(config_file, 'w') as stream:
+            yaml_dump(data, stream=stream)
+
+    except OSError as exc:
+        raise BinstarError('%s: %s' % (exc.filename, exc.strerror))
 
 
 def set_config(data, user=True):
