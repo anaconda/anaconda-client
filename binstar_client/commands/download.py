@@ -59,8 +59,7 @@ def main(args):
     username, notebook = parse(args.handle)
     username = username or aserver_api.user()['login']
     downloader = Downloader(aserver_api, username, notebook)
-    packages_types = [
-        PackageType(ty) for ty in args.package_type] if args.package_type else list(PackageType.__members__.values())
+    packages_types = list(map(PackageType, args.package_type) if args.package_type else PackageType)
 
     try:
         download_files = downloader.list_download_files(packages_types, output=args.output, force=args.force)
