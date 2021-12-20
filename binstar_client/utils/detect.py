@@ -107,8 +107,10 @@ def is_r(filename):
     if filename.endswith('.tar.gz') or filename.endswith('.tgz'):  # Could be a setuptools sdist or r source package
         with tarfile.open(filename) as tf:
 
-            if (any(name.endswith('/DESCRIPTION') for name in tf.getnames()) and
-                any(name.endswith('/NAMESPACE') for name in tf.getnames())):
+            if (
+                    any(name.endswith('/DESCRIPTION') for name in tf.getnames()) and
+                    any(name.endswith('/NAMESPACE') for name in tf.getnames())
+            ):
                 return True
             else:
                 logger.debug("This not is an R package (no '*/DESCRIPTION' and '*/NAMESPACE' files).")
