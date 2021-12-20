@@ -7,29 +7,25 @@
 ##### See Also
 
   * [Uploading a Conda Package](https://docs.anaconda.com/anaconda-repository/user-guide/tasks/pkgs/use-pkg-managers/#uploading-a-conda-package)
-  * [Uploading a PyPI Package](https://docs.anaconda.com/anaconda-repository/user-guide/tasks/pkgs/use-pkg-managers/#uploading-pypi-packages)
+  * [Uploading a Standard Python Package](https://docs.anaconda.com/anaconda-repository/user-guide/tasks/pkgs/use-pkg-managers/#uploading-pypi-packages)
 
 """
 from __future__ import unicode_literals
 
 import argparse
-import tempfile
 import logging
 import os
-import subprocess
 
 from glob import glob
 from os.path import exists
-from shutil import rmtree
 
 import nbformat
-from conda_package_handling.api import transmute
 
 from six.moves import input
 
 from binstar_client import errors
 from binstar_client.utils import bool_input, DEFAULT_CONFIG, get_config, get_server_api, upload_print_callback
-from binstar_client.utils.config import PACKAGE_TYPES
+from binstar_client.utils.config import PackageType
 from binstar_client.utils.projects import upload_project
 from binstar_client.utils.detect import detect_package_type, get_attrs
 
@@ -38,7 +34,7 @@ logger = logging.getLogger('binstar.upload')
 
 
 def verbose_package_type(pkg_type, lowercase=True):
-    verbose_type = PACKAGE_TYPES.get(pkg_type, 'unknown')
+    verbose_type = pkg_type.label()
     if lowercase:
         verbose_type = verbose_type.lower()
     return verbose_type
@@ -73,23 +69,23 @@ def determine_package_type(filename, args):
     -t/--package-type argument
     """
     if args.package_type:
-        package_type = args.package_type
-    else:
-        logger.info('Detecting file type...')
+        return PackageType(args.package_type)
 
-        package_type = detect_package_type(filename)
+    logger.info('Detecting file type...')
+    package_type = detect_package_type(filename)
 
-        if package_type is None:
-            message = 'Could not detect package type of file %r please specify package type with option --package-type' % filename
-            logger.error(message)
-            raise errors.BinstarError(message)
+    if package_type is None:
+        message = 'Could not detect package type of file %r please ' \
+                  'specify package type with option --package-type' % filename
+        logger.error(message)
+        raise errors.BinstarError(message)
 
-        logger.info('File type is "%s"', package_type)
+    logger.info('File type is "%s"', package_type.label())
 
     return package_type
 
 
-def get_package_name(args, package_attrs, filename, package_type):
+def get_package_name(args, package_attrs, package_type):
     if args.package:
         if 'name' in package_attrs and package_attrs['name'].lower() != args.package.lower():
             msg = 'Package name on the command line " {}" does not match the package name in the file "{}"'.format(
@@ -100,7 +96,8 @@ def get_package_name(args, package_attrs, filename, package_type):
         package_name = args.package
     else:
         if 'name' not in package_attrs:
-            message = "Could not detect package name for package type %s, please use the --package option" % (package_type,)
+            message = "Could not detect package name for package type {}, please use the --package option".format(
+                package_type.label())
             logger.error(message)
             raise errors.BinstarError(message)
         package_name = package_attrs['name']
@@ -113,7 +110,8 @@ def get_version(args, release_attrs, package_type):
         version = args.version
     else:
         if 'version' not in release_attrs:
-            message = "Could not detect package version for package type %s, please use the --version option" % (package_type,)
+            message = "Could not detect package version for package type \"{}\", " \
+                      "please use the --version option".format(package_type.label())
             logger.error(message)
             raise errors.BinstarError(message)
         version = release_attrs['version']
@@ -211,16 +209,16 @@ def upload_package(filename, package_type, aserver_api, username, args):
     if args.description:
         release_attrs['description'] = args.description
 
-    package_name = get_package_name(args, package_attrs, filename, package_type)
+    package_name = get_package_name(args, package_attrs, package_type)
     version = get_version(args, release_attrs, package_type)
 
     logger.info('Creating package "%s"', package_name)
 
     package = add_package(aserver_api, args, username, package_name, package_attrs, package_type)
-    package_types = package.get('package_types', [])
+    package_types = [PackageType(pkg_type) for pkg_type in package.get('package_types', [])]
 
     allowed_package_types = set(package_types)
-    for group in [{'conda', 'pypi'}]:
+    for group in [{PackageType.CONDA, PackageType.STANDARD_PYTHON}]:
         if allowed_package_types & group:
             allowed_package_types.update(group)
 
@@ -263,7 +261,6 @@ def upload_package(filename, package_type, aserver_api, username, args):
 
 
 def main(args):
-    tmpdir = None
     config = get_config(site=args.site)
 
     aserver_api = get_server_api(token=args.token, site=args.site, config=config)
@@ -306,10 +303,10 @@ def main(args):
 
         package_type = determine_package_type(filename, args)
 
-        if package_type == 'project':
+        if package_type is PackageType.PROJECT:
             uploaded_projects.append(upload_project(filename, args, username))
         else:
-            if package_type == 'ipynb' and not args.mode == 'force':
+            if package_type is PackageType.NOTEBOOK and not args.mode == 'force':
                 try:
                     nbformat.read(open(filename), nbformat.NO_CONVERT)
                 except Exception as error:
@@ -327,17 +324,14 @@ def main(args):
             if package_info is not None and len(package_info) == 2:
                 _package, _upload_info = package_info
                 if _upload_info:
-                    uploaded_packages.append(package_info)
+                    uploaded_packages.append((_package, _upload_info, package_type))
 
-    for package, upload_info in uploaded_packages:
+    for package, upload_info, package_type in uploaded_packages:
         package_url = upload_info.get('url', 'https://anaconda.org/%s/%s' % (username, package))
         logger.info("{} located at:\n{}\n".format(verbose_package_type(package_type), package_url))
 
     for project_name, url in uploaded_projects:
         logger.info("Project {} uploaded to {}.\n".format(project_name, url))
-
-    if tmpdir:
-        rmtree(tmpdir)
 
 
 def windows_glob(item):
@@ -372,12 +366,7 @@ def add_parser(subparsers):
     mgroup.add_argument('-p', '--package', help='Defaults to the package name in the uploaded file')
     mgroup.add_argument('-v', '--version', help='Defaults to the package version in the uploaded file')
     mgroup.add_argument('-s', '--summary', help='Set the summary of the package')
-    # To preserve current behavior
-    pkgs = PACKAGE_TYPES.copy()
-    pkgs.pop('conda')
-    pkgs.pop('pypi')
-    pkg_types = ', '.join(list(pkgs.keys()))
-    mgroup.add_argument('-t', '--package-type', help='Set the package type [{0}]. Defaults to autodetect'.format(pkg_types))
+    mgroup.add_argument('-t', '--package-type', help='Set the package type. Defaults to autodetect')
     mgroup.add_argument('-d', '--description', help='description of the file(s)')
     mgroup.add_argument('--thumbnail', help='Notebook\'s thumbnail image')
     mgroup.add_argument('--private', help="Create the package with private access", action='store_true')

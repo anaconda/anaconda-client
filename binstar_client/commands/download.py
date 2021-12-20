@@ -11,7 +11,7 @@ import logging
 
 from binstar_client import errors
 from binstar_client.utils import get_server_api
-from binstar_client.utils.config import PACKAGE_TYPES
+from binstar_client.utils.config import PackageType
 from binstar_client.utils.notebook import Downloader, parse, has_environment
 
 logger = logging.getLogger("binstar.download")
@@ -44,7 +44,7 @@ def add_parser(subparsers):
         help='Download as',
         default='.'
     )
-    pkg_types = ', '.join(list(PACKAGE_TYPES.keys()))
+    pkg_types = ', '.join(pkg_type.value for pkg_type in PackageType)
     parser.add_argument(
         '-t', '--package-type',
         help='Set the package type [{0}]. Defaults to downloading all '
@@ -59,12 +59,7 @@ def main(args):
     username, notebook = parse(args.handle)
     username = username or aserver_api.user()['login']
     downloader = Downloader(aserver_api, username, notebook)
-    packages_types = args.package_type or list(PACKAGE_TYPES.keys())
-
-    # Check valid package type
-    for ty in packages_types:
-        if ty not in list(PACKAGE_TYPES.keys()):
-            raise Exception("Invalid package type '{}'".format(ty))
+    packages_types = list(map(PackageType, args.package_type) if args.package_type else PackageType)
 
     try:
         download_files = downloader.list_download_files(packages_types, output=args.output, force=args.force)

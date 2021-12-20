@@ -10,7 +10,6 @@ import os
 
 from binstar_client import errors
 from binstar_client.utils import get_server_api
-from binstar_client.utils.config import PACKAGE_TYPES
 from binstar_client.utils.detect import detect_package_type, get_attrs
 
 logger = logging.getLogger('binstar.update')
@@ -35,7 +34,7 @@ def main(args):
         package_attrs, release_attrs = get_attributes(args.source, package_type, args)
     except Exception:
         message = 'Trouble reading metadata from {}. Is this a valid source file: {} ?'.format(
-            args.source, PACKAGE_TYPES.get(package_type, 'unknown'))
+            args.source, package_type.label())
         logger.error(message)
         raise errors.BinstarError(message)
 

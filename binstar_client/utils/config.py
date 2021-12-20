@@ -1,5 +1,6 @@
 from __future__ import print_function, absolute_import, unicode_literals
 
+import enum
 from os.path import exists, join, dirname, isfile, isdir, abspath, expanduser
 from string import Template
 
@@ -44,13 +45,44 @@ else:
     USER_CONFIG = expand('~/.continuum/anaconda-client/config.yaml')
 
 
-# Package types used in upload/download
-PACKAGE_TYPES = {
-    'env': 'Environment',
-    'ipynb': 'Notebook',
-    'conda': 'Conda Package',
-    'pypi': 'Python Package',
+class PackageType(enum.Enum):
+    CONDA = 'conda'
+    ENV = 'env'
+    FILE = 'file'
+    NOTEBOOK = 'ipynb'
+    STANDARD_PYTHON = 'pypi'
+    STANDARD_R = 'r'
+    PROJECT = 'project'
+    INSTALLER = 'installer'
+
+    def label(self):
+        return self.get_from_mapping(PACKAGE_TYPE_LABELS, default=self.value)
+
+    def get_from_mapping(self, mapping, default=None):
+        return mapping.get(self, default)
+
+    @classmethod
+    def _missing_(cls, value):
+        try:
+            return cls(PACKAGE_TYPE_ALIASES[value])
+        except KeyError:
+            return super()._missing_(value)
+
+
+PACKAGE_TYPE_LABELS = {
+    PackageType.ENV: 'Environment',
+    PackageType.NOTEBOOK: 'Notebook',
+    PackageType.CONDA: 'Conda',
+    PackageType.STANDARD_PYTHON: 'Standard Python',
+    PackageType.STANDARD_R: 'Standard R',
 }
+
+PACKAGE_TYPE_ALIASES = {
+    'standard_python': 'pypi',
+    'PyPI': 'pypi',
+    'standard_r': 'r'
+}
+
 
 USER_LOGDIR = dirs.user_log_dir
 SITE_CONFIG = expand('$CONDA_ROOT/etc/anaconda-client/config.yaml')
