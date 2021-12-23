@@ -291,7 +291,7 @@ def main(args):
     uploaded_projects = []
 
     # Flatten file list because of 'windows_glob' function
-    files = [f for fglob in args.files for f in fglob]
+    files = list(set(f for fglob in args.files for f in fglob))
 
     for filename in files:
         if not exists(filename):
@@ -334,8 +334,8 @@ def main(args):
         logger.info("Project {} uploaded to {}.\n".format(project_name, url))
 
 
-def windows_glob(item):
-    if os.name == 'nt' and '*' in item:
+def pathname_list(item):
+    if '*' in item:
         return glob(item)
     return [item]
 
@@ -349,7 +349,7 @@ def add_parser(subparsers):
         epilog=__doc__,
     )
 
-    parser.add_argument('files', nargs='+', help='Distributions to upload', default=[], type=windows_glob)
+    parser.add_argument('files', nargs='+', help='Distributions to upload', default=[], type=pathname_list)
 
     label_help = (
         '{deprecation}Add this file to a specific {label}. '
