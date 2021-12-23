@@ -29,7 +29,7 @@ def install_info(package, package_type):
             url = 'https://pypi.anaconda.org/t/$TOKEN/%s/simple' % package['owner']['login']
 
         logger.info('     pip install -i %s %s' % (url, package['name']))
-    if package_type is PackageType.STANDARD_CONDA:
+    if package_type is PackageType.CONDA:
         logger.info('To install this package with %s run:' % package_type.value)
         if package['public']:
             url = 'https://conda.anaconda.org/%s' % package['owner']['login']
