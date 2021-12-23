@@ -3,6 +3,7 @@ Created on Feb 18, 2014
 
 @author: sean
 '''
+
 from __future__ import unicode_literals
 
 import json
@@ -37,17 +38,16 @@ class Test(CLITestCase):
         user.assertCalled()
 
     @urlpatch
-    @mock.patch('os.path.expanduser')
-    def test_netrc_ignored(self, urls, expanduser):
+    def test_netrc_ignored(self, urls):
         # Disable token authentication
         self.load_token.return_value = None
         os.environ.pop('BINSTAR_API_TOKEN', None)
         os.environ.pop('ANACONDA_API_TOKEN', None)
 
-        # requests.get_netrc_auth uses expanduser to find the netrc file, point to our
-        # test file
-        expanduser.return_value = data_dir('netrc')
-        auth = requests.utils.get_netrc_auth('http://localhost', raise_errors=True)
+        # requests.get_netrc_auth uses expanduser to find the netrc file, point to our test file
+        expanduser = mock.Mock(return_value = data_dir('netrc'))
+        with mock.patch('os.path.expanduser', expanduser):
+            auth = requests.utils.get_netrc_auth('http://localhost', raise_errors=True)
         self.assertEqual(auth, ('anonymous', 'pass'))
 
         user = urls.register(path='/user', status=401)
