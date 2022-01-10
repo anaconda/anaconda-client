@@ -1,5 +1,24 @@
 # CHANGELOG:
 
+## Version 1.9.0
+
+### Added
+
+* Added _update_ command
+
+### Fixed
+
+* Fixed _upload_ command for `pypi` and `conda` packages of the same name
+* Fixed string formatting on interactive input 
+
+### Pull Requests Merged
+
+* [PR_588](https://github.com/Anaconda-Platform/anaconda-client/pull/588) - AC-114: Add update command to autotest
+* [PR_585](https://github.com/Anaconda-Platform/anaconda-client/pull/585) - AC-108: automated tests added to the repo
+* [PR_584](https://github.com/Anaconda-Platform/anaconda-client/pull/584) - AC-43: Fix upload of packages with same name but different type
+* [PR_579](https://github.com/Anaconda-Platform/anaconda-client/pull/579) - fix string formatting on interactive input
+* [PR_573](https://github.com/Anaconda-Platform/anaconda-client/pull/573) - AC-92: Add update command
+
 ## Version 1.8.0 (2021/06/25)
 
 ### Added
