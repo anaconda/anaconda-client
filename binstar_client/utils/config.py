@@ -238,7 +238,7 @@ def load_config(config_file):
 
     try:
         with open(config_file) as fd:
-            data = yaml_load(fd)
+            data = yaml_load(fd) or data
     except yaml.YAMLError:
         backup_file = config_file + '.bak'
         shutil.copyfile(config_file, backup_file)
