@@ -12,6 +12,8 @@ from string import Template
 
 import yaml
 
+from binstar_client.errors import BinstarError
+
 try:
     from urllib import quote_plus
 except ImportError:
@@ -235,6 +237,7 @@ def remove_token(args):
 
 def load_config(config_file):
     data = {}
+    warn_msg = None
 
     try:
         with open(config_file) as fd:
@@ -242,13 +245,15 @@ def load_config(config_file):
     except yaml.YAMLError:
         backup_file = config_file + '.bak'
         shutil.copyfile(config_file, backup_file)
-        logger.warning(
-            "Config file `%s` has invalid structure and couldn't be read. File content was backed up to %s",
-            config_file, backup_file)
+        warn_msg = "Config file `{}` has invalid structure and couldn't be read. \n"\
+                   "File content was backed up to `{}`".format(config_file, backup_file)
     except PermissionError:
-        logger.exception('Not enough rights to access config file `%s`! Please review file permissions.', config_file)
+        warn_msg = 'Not enough rights to access config file `{}`! Please review file permissions.'.format(config_file)
     except OSError as error:
         logger.exception(error)
+
+    if warn_msg is not None:
+        warnings.warn(warn_msg)
 
     return data
 
@@ -331,7 +336,7 @@ def save_config(data, config_file):
         os.replace(temp_file, config_file)
 
     except (OSError, yaml.YAMLError):
-        logger.exception("Config file %s wasn't saved! Changes may be lost.", config_file)
+        raise BinstarError("Config file `{}` couldn't be saved! Changes may be lost.".format(config_file))
 
 
 def set_config(data, user=True):

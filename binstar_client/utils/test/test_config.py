@@ -14,6 +14,7 @@ import yaml
 
 # Local imports
 from binstar_client.utils import config
+from binstar_client.errors import BinstarError
 
 
 class Test(unittest.TestCase):
@@ -116,9 +117,9 @@ ssl_verify: False
                 }
             })
 
-    @mock.patch('binstar_client.utils.config.logger')
+    @mock.patch('binstar_client.utils.config.warnings')
     @mock.patch('binstar_client.utils.config.yaml_load', wraps=config.yaml_load)
-    def test_load_config(self, mock_yaml_load, mock_logger):
+    def test_load_config(self, mock_yaml_load, mock_warnings):
         tmpdir = tempfile.mkdtemp()
         tmp_config = os.path.join(tmpdir, 'config.yaml')
 
@@ -127,34 +128,28 @@ ssl_verify: False
 
         with self.subTest('OK'):
             self.assertEqual(self.CONFIG_DATA, config.load_config(tmp_config))
-            mock_logger.warning.assert_not_called()
-            mock_logger.exception.assert_not_called()
+            mock_warnings.warn.assert_not_called()
 
         with self.subTest('yaml.YAMLError'):
             mock_yaml_load.side_effect = yaml.YAMLError
             self.assertEqual({}, config.load_config(tmp_config))
             self.assertTrue(os.path.exists(tmp_config + '.bak'))
-            mock_logger.warning.assert_called()
-            mock_logger.exception.assert_not_called()
             os.remove(tmp_config + '.bak')
+            mock_warnings.warn.assert_called()
 
-        mock_logger.reset_mock()
+        mock_warnings.reset_mock()
         with self.subTest('PermissionError'):
             mock_yaml_load.side_effect = PermissionError
 
             self.assertEqual({}, config.load_config(tmp_config))
-            mock_logger.warning.assert_not_called()
-            mock_logger.exception.assert_called_once()
-            self.assertEqual(2, len(mock_logger.exception.call_args.args))
+            mock_warnings.warn.assert_called()
 
-        mock_logger.reset_mock()
+        mock_warnings.reset_mock()
         with self.subTest('OSError'):
             mock_yaml_load.side_effect = OSError
 
             self.assertEqual({}, config.load_config(tmp_config))
-            mock_logger.warning.assert_not_called()
-            mock_logger.exception.assert_called_once()
-            self.assertEqual(1, len(mock_logger.exception.call_args.args))
+            mock_warnings.warn.assert_not_called()
 
         shutil.rmtree(tmpdir)
 
@@ -174,14 +169,13 @@ ssl_verify: False
         mock_os_replace.reset_mock()
         mock_os_makedirs.reset_mock()
 
-        with self.subTest('OSError'), tempfile.TemporaryDirectory() as test_config_dir, \
-                mock.patch('binstar_client.utils.config.logger') as mock_logger:
+        with self.subTest('OSError'), tempfile.TemporaryDirectory() as test_config_dir:
             mock_os_replace.side_effect = OSError
 
             config_path = os.path.join(test_config_dir, config_filename)
-            config.save_config(self.CONFIG_DATA, config_path)
+            with self.assertRaises(BinstarError):
+                config.save_config(self.CONFIG_DATA, config_path)
 
             self.assertFalse(os.path.exists(config_path))
             mock_os_makedirs.assert_called_once_with(test_config_dir, exist_ok=True)
             mock_os_replace.assert_called_once_with(config_path + '~', config_path)
-            mock_logger.exception.has_called()
