@@ -1,14 +1,18 @@
 from __future__ import print_function, absolute_import, unicode_literals
 
-import enum
-from string import Template
-
 import collections
+import enum
+import itertools
 import logging
 import os
+import shutil
 import stat
 import warnings
-import itertools
+from string import Template
+
+import yaml
+
+from binstar_client.errors import BinstarError
 
 try:
     from urllib import quote_plus
@@ -17,7 +21,6 @@ except ImportError:
 
 from binstar_client.utils.conda import CONDA_PREFIX, CONDA_ROOT
 from binstar_client.utils.appdirs import AppDirs, EnvAppDirs
-from binstar_client.errors import BinstarError
 
 from .yaml import yaml_load, yaml_dump
 
@@ -233,13 +236,26 @@ def remove_token(args):
 
 
 def load_config(config_file):
-    if os.path.exists(config_file):
-        with open(config_file) as fd:
-            data = yaml_load(fd)
-            if data:
-                return data
+    data = {}
+    warn_msg = None
 
-    return {}
+    try:
+        with open(config_file) as fd:
+            data = yaml_load(fd) or data
+    except yaml.YAMLError:
+        backup_file = config_file + '.bak'
+        shutil.copyfile(config_file, backup_file)
+        warn_msg = "Config file `{}` has invalid structure and couldn't be read. \n"\
+                   "File content was backed up to `{}`".format(config_file, backup_file)
+    except PermissionError:
+        warn_msg = 'Not enough rights to access config file `{}`! Please review file permissions.'.format(config_file)
+    except OSError as error:
+        logger.exception(error)
+
+    if warn_msg is not None:
+        warnings.warn(warn_msg)
+
+    return data
 
 
 def load_file_configs(search_path):
@@ -313,11 +329,14 @@ def save_config(data, config_file):
     try:
         os.makedirs(os.path.dirname(config_file), exist_ok=True)
 
-        with open(config_file, 'w') as stream:
+        temp_file = config_file + '~'
+        with open(temp_file, 'w') as stream:
             yaml_dump(data, stream=stream)
 
-    except OSError as exc:
-        raise BinstarError('%s: %s' % (exc.filename, exc.strerror))
+        os.replace(temp_file, config_file)
+
+    except (OSError, yaml.YAMLError):
+        raise BinstarError("Config file `{}` couldn't be saved! Changes may be lost.".format(config_file))
 
 
 def set_config(data, user=True):
