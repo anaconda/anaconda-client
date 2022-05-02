@@ -1,1 +1,1 @@
-echo "Building"
+echo "kong"
