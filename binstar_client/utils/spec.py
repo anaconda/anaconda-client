@@ -1,3 +1,4 @@
+from urllib.parse import parse_qsl
 from six.moves.urllib.parse import urlparse
 
 from binstar_client.errors import UserError
@@ -85,7 +86,8 @@ def parse_specs(spec):
 
     if basename and '?' in basename:
         basename, qsl = basename.rsplit('?', 1)
-        attrs = dict(urlparse.parse_qsl(qsl))
+        # attrs = dict(urlparse.parse_qsl(qsl))
+        attrs = dict(parse_qsl(qsl))
 
     return PackageSpec(user, package, version, basename, attrs, spec)
 
