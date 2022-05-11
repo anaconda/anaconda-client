@@ -52,8 +52,8 @@ class Uploader(object):
                 raise errors.BinstarError(msg)
 
     def remove(self):
-        return self.aserver_api.remove_dist(self, self.username, self.project,
-                                        self.version, basename=self.project)
+        self._package, self._release = None, None
+        return self.aserver_api.remove_package(self.username, self.project)
 
     @property
     def notebook_attrs(self):
