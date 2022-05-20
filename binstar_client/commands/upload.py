@@ -14,21 +14,17 @@ from __future__ import unicode_literals
 
 import argparse
 import logging
-import os
-
 from glob import glob
 from os.path import exists
 
 import nbformat
-
 from six.moves import input
 
 from binstar_client import errors
 from binstar_client.utils import bool_input, DEFAULT_CONFIG, get_config, get_server_api, upload_print_callback
 from binstar_client.utils.config import PackageType
-from binstar_client.utils.projects import upload_project
 from binstar_client.utils.detect import detect_package_type, get_attrs
-
+from binstar_client.utils.projects import upload_project
 
 logger = logging.getLogger('binstar.upload')
 
@@ -124,9 +120,9 @@ def add_package(aserver_api, args, username, package_name, package_attrs, packag
     except errors.NotFound:
         if not args.auto_register:
             message = (
-                'Anaconda repository package %s/%s does not exist. '
-                'Please run "anaconda package --create" to create this package namespace in the cloud.' %
-                (username, package_name)
+                    'Anaconda repository package %s/%s does not exist. '
+                    'Please run "anaconda package --create" to create this package namespace in the cloud.' %
+                    (username, package_name)
             )
             logger.error(message)
             raise errors.UserError(message)
@@ -135,7 +131,8 @@ def add_package(aserver_api, args, username, package_name, package_attrs, packag
                 summary = args.summary
             else:
                 if 'summary' not in package_attrs:
-                    message = "Could not detect package summary for package type %s, please use the --summary option" % (package_type,)
+                    message = "Could not detect package summary for " \
+                              "package type %s, please use the --summary option" % (package_type,)
                     logger.error(message)
                     raise errors.BinstarError(message)
                 summary = package_attrs['summary']

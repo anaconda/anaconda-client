@@ -1,28 +1,26 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import collections
-import os
-import requests
+import hashlib
 import logging
+import os
 import platform
+import xml.etree.ElementTree as ET
 
+import requests
 from six import raise_from
 from six.moves.urllib.parse import quote
 
+from . import errors
 from .__about__ import __version__
-
 # For backwards compatibility
 from .errors import *
+from .mixins.channels import ChannelsMixin
+from .mixins.organizations import OrgMixin
+from .mixins.package import PackageMixin
 from .requests_ext import stream_multipart, NullAuth
-
 from .utils import compute_hash, jencode, pv
 from .utils.http_codes import STATUS_CODES
-
-from .mixins.organizations import OrgMixin
-from .mixins.channels import ChannelsMixin
-from .mixins.package import PackageMixin
-
-from . import errors
 
 logger = logging.getLogger('binstar')
 
@@ -46,7 +44,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         user_agent = 'Anaconda-Client/{} (+https://anaconda.org)'.format(__version__)
         self._session.headers.update({
             'User-Agent': user_agent,
-            'Content-Type':'application/json',
+            'Content-Type': 'application/json',
             'Accept': 'application/json',
         })
 
@@ -107,16 +105,16 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         return self._authenticate((username, password), *args, **kwargs)
 
     def _authenticate(self,
-                     auth,
-                     application,
-                     application_url=None,
-                     for_user=None,
-                     scopes=None,
-                     created_with=None,
-                     max_age=None,
-                     strength='strong',
-                     fail_if_already_exists=False,
-                     hostname=platform.node()):
+                      auth,
+                      application,
+                      application_url=None,
+                      for_user=None,
+                      scopes=None,
+                      created_with=None,
+                      max_age=None,
+                      strength='strong',
+                      fail_if_already_exists=False,
+                      hostname=platform.node()):
         '''
         Use basic authentication to create an authentication token using the interface below.
         With this technique, a username and password need not be stored permanently, and the user can
@@ -321,7 +319,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         '''
         '''
         url = '%s/package_listing' % (self.domain)
-        data = {'modified_after':modified_after or ''}
+        data = {'modified_after': modified_after or ''}
         res = self.session.get(url, data=data)
         self._check_response(res)
         return res.json()
@@ -490,7 +488,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         return res.json()
 
     def download(self, login, package_name, release, basename, md5=None):
-        '''
+        """
         Download a package distribution
 
         :param login: the login of the package owner
@@ -501,11 +499,11 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
                     None will be returned
 
         :returns: a file like object or None
-        '''
+        """
 
         url = '%s/download/%s/%s/%s/%s' % (self.domain, login, package_name, release, basename)
         if md5:
-            headers = {'ETag':md5, }
+            headers = {'ETag': md5, }
         else:
             headers = {}
 
@@ -527,18 +525,25 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
             return res2
 
     def upload(self, login, package_name, release, basename, fd, distribution_type,
-               description='', md5=None, size=None, dependencies=None, attrs=None, channels=('main',), callback=None):
+               description='', md5=None, sha256=None, size=None, dependencies=None, attrs=None,
+               channels=('main',), callback=None):
         """
         Upload a new distribution to a package release.
 
         :param login: the login of the package owner
         :param package_name: the name of the package
-        :param version: the version string of the release
+        :param release: the version string of the release
         :param basename: the basename of the distribution to download
         :param fd: a file like object to upload
-        :param distribution_type: pypi or conda or ipynb, etc
+        :param distribution_type: pypi or conda or ipynb, etc.
         :param description: (optional) a short description about the file
+        :param md5: (optional) base64 encoded md5 hash calculated from package file
+        :param sha256: (optional) base64 encoded sha256 hash calculated from package file
+        :param size: (optional) size of package file in bytes
+        :param dependencies: (optional) list package dependencies
         :param attrs: any extra attributes about the file (eg. build=1, pyversion='2.7', os='osx')
+        :param channels: list of labels package will be available from
+        :param callback: callback function used in :class:`~binstar_client.request_txt.MultiPartIO`
         """
         url = '%s/stage/%s/%s/%s/%s' % (self.domain, login, package_name, release, quote(basename))
         if attrs is None:
@@ -546,12 +551,14 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         if not isinstance(attrs, dict):
             raise TypeError('argument attrs must be a dictionary')
 
+        sha256 = sha256 if sha256 is not None else compute_hash(fd, size=size, hash_algorithm=hashlib.sha256)[1]
         payload = dict(
             distribution_type=distribution_type.value,
             description=description,
             attrs=attrs,
             dependencies=dependencies,
             channels=channels,
+            sha256=sha256
         )
 
         data, headers = jencode(payload)
@@ -571,11 +578,9 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
             fd.seek(spos)
 
         s3data['Content-Length'] = size
-        s3data['Content-MD5'] = b64md5
+        s3data['Content-MD5'] = ''
 
-        data_stream, headers = stream_multipart(s3data, files={'file':(basename, fd)},
-                                                callback=callback)
-
+        data_stream, headers = stream_multipart(s3data, files={'file': (basename, fd)}, callback=callback)
         request_method = self.session if s3url.startswith(self.domain) else requests
         s3res = request_method.post(
             s3url, data=data_stream,
@@ -585,9 +590,11 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
 
         if s3res.status_code != 201:
             logger.info(s3res.text)
-            logger.info('')
-            logger.info('')
-            raise errors.BinstarError('Error uploading package', s3res.status_code)
+            xml_error = ET.fromstring(s3res.text)
+            msg_tail = ''
+            if xml_error.find('Code').text == 'InvalidDigest':
+                msg_tail = ' The Content-MD5 or checksum value is not valid.'
+            raise errors.BinstarError('Error uploading package!%s' % msg_tail, s3res.status_code)
 
         url = '%s/commit/%s/%s/%s/%s' % (self.domain, login, package_name, release, quote(basename))
         payload = dict(dist_id=obj['dist_id'])
