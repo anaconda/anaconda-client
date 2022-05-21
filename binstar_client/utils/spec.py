@@ -86,7 +86,6 @@ def parse_specs(spec):
 
     if basename and '?' in basename:
         basename, qsl = basename.rsplit('?', 1)
-        # attrs = dict(urlparse.parse_qsl(qsl))
         attrs = dict(parse_qsl(qsl))
 
     return PackageSpec(user, package, version, basename, attrs, spec)

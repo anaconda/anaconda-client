@@ -149,6 +149,3 @@ class ColorTextTestRunner(TextTestRunner):
             infos.append("unexpected successes=%d" % unexpectedSuccesses)
         if infos:
             self.stream.write(" (%s)" % (", ".join(infos),))
-
-        
-        

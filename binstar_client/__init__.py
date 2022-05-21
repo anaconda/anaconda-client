@@ -546,6 +546,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
             attrs = {}
         if not isinstance(attrs, dict):
             raise TypeError('argument attrs must be a dictionary')
+
         distribution_type = distribution_type if isinstance(distribution_type, str) else distribution_type.value
         payload = dict(
             distribution_type=distribution_type,

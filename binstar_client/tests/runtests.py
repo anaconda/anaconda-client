@@ -15,7 +15,6 @@ def main():
     parser.add_argument('--html', action='store_true')
     parser.add_argument('source_dir', nargs='?', default='')
     args = parser.parse_args()
-
     import binstar_client
     print(binstar_client)
     loader = unittest.loader.TestLoader()
