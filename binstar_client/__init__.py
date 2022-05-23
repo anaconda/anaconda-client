@@ -16,7 +16,6 @@ from .errors import *
 from .requests_ext import stream_multipart, NullAuth
 
 from .utils import compute_hash, jencode, pv
-from .utils.config import PackageType
 from .utils.http_codes import STATUS_CODES
 
 from .mixins.organizations import OrgMixin
@@ -547,7 +546,8 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         if not isinstance(attrs, dict):
             raise TypeError('argument attrs must be a dictionary')
 
-        distribution_type = distribution_type if isinstance(distribution_type, str) else distribution_type.value
+        if not isinstance(distribution_type, str):
+            distribution_type = distribution_type.value
         payload = dict(
             distribution_type=distribution_type,
             description=description,
