@@ -8,7 +8,7 @@ from io import BytesIO, StringIO
 import six
 import requests
 
-from requests.packages.urllib3.filepost import choose_boundary, iter_fields
+from urllib3.filepost import choose_boundary, iter_fields
 
 logger = logging.getLogger('binstar.requests_ext')
 
