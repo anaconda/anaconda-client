@@ -17,6 +17,9 @@
 
 ### Pull requests merged
 
+* [PR_604](https://github.com/Anaconda-Platform/anaconda-client/pull/604) - AC-131: Fix deprecated methods and modules, remove not worked covarage
+* [PR_603](https://github.com/Anaconda-Platform/anaconda-client/pull/603) - AC-132: additional tests for packages with dash in name
+* [PR_600](https://github.com/Anaconda-Platform/anaconda-client/pull/600) - AC-126: Add better error handling and logging for AC config file
 * [PR_596](https://github.com/Anaconda-Platform/anaconda-client/pull/596) - AC-121: Pattern matching in upload command
 * [PR_595](https://github.com/Anaconda-Platform/anaconda-client/pull/595) - AC-116: better support for standard r packages
 * [PR_594](https://github.com/Anaconda-Platform/anaconda-client/pull/594) - NAV-649: possible fix for permission denied issue
