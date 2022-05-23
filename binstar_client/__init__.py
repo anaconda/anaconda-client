@@ -582,7 +582,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
             fd.seek(spos)
 
         s3data['Content-Length'] = size
-        s3data['Content-MD5'] = ''
+        s3data['Content-MD5'] = b64md5
 
         data_stream, headers = stream_multipart(s3data, files={'file': (basename, fd)}, callback=callback)
         request_method = self.session if s3url.startswith(self.domain) else requests
