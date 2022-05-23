@@ -125,7 +125,7 @@ SEARCH_PATH = (
 
 def recursive_update(config, update_dict):
     for update_key, updated_value in update_dict.items():
-        if isinstance(updated_value, collections.Mapping):
+        if isinstance(updated_value, collections.abc.Mapping):
             updated_value_dict = recursive_update(config.get(update_key, {}), updated_value)
             config[update_key] = updated_value_dict
         else:
