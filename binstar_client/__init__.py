@@ -551,7 +551,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         if not isinstance(attrs, dict):
             raise TypeError('argument attrs must be a dictionary')
 
-        sha256 = sha256 if sha256 is not None else compute_hash(fd, size=size, hash_algorithm=hashlib.sha256)[1]
+        sha256 = sha256 if sha256 is not None else compute_hash(fd, size=size, hash_algorithm=hashlib.sha256)[0]
 
         if not isinstance(distribution_type, str):
             distribution_type = distribution_type.value
