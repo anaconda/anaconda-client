@@ -1,6 +1,6 @@
 # CHANGELOG:
 
-## Version 1.10.0
+## Version 1.10.0 (2022/06/15)
 
 ### Added
 
@@ -26,7 +26,7 @@
 * [PR_593](https://github.com/Anaconda-Platform/anaconda-client/pull/593) - AS-120: Refactor package_type usage
 * [PR_591](https://github.com/Anaconda-Platform/anaconda-client/pull/591) - AC-119: Add conda v2 format support
 
-## Version 1.9.0
+## Version 1.9.0 (2021/10/28)
 
 ### Added
 
