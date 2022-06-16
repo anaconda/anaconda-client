@@ -1,6 +1,32 @@
 # CHANGELOG:
 
-## Version 1.9.0
+## Version 1.10.0 (2022/06/15)
+
+### Added
+
+* Support for .conda packages for upload and download
+
+### Changed
+
+* Labels for "Standard Python" and "Standard R" package types (instead of "pypi" and "r")
+
+### Fixed
+
+* R packages should now download correctly
+* Issues related to the invalid configuration paths should now be mitigated
+
+### Pull requests merged
+
+* [PR_604](https://github.com/Anaconda-Platform/anaconda-client/pull/604) - AC-131: Fix deprecated methods and modules, remove not worked covarage
+* [PR_603](https://github.com/Anaconda-Platform/anaconda-client/pull/603) - AC-132: additional tests for packages with dash in name
+* [PR_600](https://github.com/Anaconda-Platform/anaconda-client/pull/600) - AC-126: Add better error handling and logging for AC config file
+* [PR_596](https://github.com/Anaconda-Platform/anaconda-client/pull/596) - AC-121: Pattern matching in upload command
+* [PR_595](https://github.com/Anaconda-Platform/anaconda-client/pull/595) - AC-116: better support for standard r packages
+* [PR_594](https://github.com/Anaconda-Platform/anaconda-client/pull/594) - NAV-649: possible fix for permission denied issue
+* [PR_593](https://github.com/Anaconda-Platform/anaconda-client/pull/593) - AS-120: Refactor package_type usage
+* [PR_591](https://github.com/Anaconda-Platform/anaconda-client/pull/591) - AC-119: Add conda v2 format support
+
+## Version 1.9.0 (2021/10/28)
 
 ### Added
 

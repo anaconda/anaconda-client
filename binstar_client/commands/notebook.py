@@ -117,7 +117,7 @@ def upload(args):
 
 
 def download(args):
-    aserver_api = get_server_api(args.token, args.site, args.log_level)
+    aserver_api = get_server_api(token=args.token, site=args.site)
 
     username, notebook = parse(args.handle)
     username = username or aserver_api.user()['login']

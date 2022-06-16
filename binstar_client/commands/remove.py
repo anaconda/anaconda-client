@@ -52,13 +52,28 @@ def main(args):
 
 def add_parser(subparsers):
 
-    parser = subparsers.add_parser('remove',
-                                      help='Remove an object from your Anaconda repository. Must refer to the formal package name as it appears in the URL of the package. Also use anaconda show <USERNAME> to see list of package names. Example: anaconda remove continuumio/empty-example-notebook',
-                                      description=__doc__, formatter_class=RawTextHelpFormatter)
+    parser = subparsers.add_parser(
+        'remove',
+        help=(
+            'Remove an object from your Anaconda repository. '
+            'Must refer to the formal package name as it appears in the URL of the package. '
+            'Also use anaconda show <USERNAME> to see list of package names. '
+            'Example: anaconda remove continuumio/empty-example-notebook'
+        ),
+        description=__doc__,
+        formatter_class=RawTextHelpFormatter,
+    )
 
-    parser.add_argument('specs', help='Package written as <user>[/<package>[/<version>[/<filename>]]]', type=parse_specs, nargs='+')
-    parser.add_argument('-f', '--force', help='Do not prompt removal', action='store_true')
-
-
+    parser.add_argument(
+        'specs',
+        help='Package written as <user>[/<package>[/<version>[/<filename>]]]',
+        type=parse_specs,
+        nargs='+',
+    )
+    parser.add_argument(
+        '-f', '--force',
+        help='Do not prompt removal',
+        action='store_true',
+    )
 
     parser.set_defaults(main=main)

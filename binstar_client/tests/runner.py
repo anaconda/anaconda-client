@@ -118,9 +118,9 @@ class ColorTextTestRunner(TextTestRunner):
 
 
         return result
-    
-    def write_end(self, result, coverage):
-        
+
+    def write_end(self, result):
+
         expectedFails = unexpectedSuccesses = skipped = 0
         try:
             results = map(len, (result.expectedFailures,
@@ -149,15 +149,3 @@ class ColorTextTestRunner(TextTestRunner):
             infos.append("unexpected successes=%d" % unexpectedSuccesses)
         if infos:
             self.stream.write(" (%s)" % (", ".join(infos),))
-            
-        perc = coverage.pc_covered
-        color = green
-        if perc < 80:
-            color = blue
-        if perc < 50:
-            color = red
-        
-        cv = color("%i%%" % (int(coverage.pc_covered)))
-        self.stream.write(", Coverage: %s \n" % (cv))
-        
-        

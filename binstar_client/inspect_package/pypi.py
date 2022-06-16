@@ -11,6 +11,7 @@ import zipfile
 import pkg_resources
 
 from binstar_client import errors
+from binstar_client.utils.config import PackageType
 from binstar_client.inspect_package.uitls import extract_first, pop_key
 
 
@@ -296,7 +297,7 @@ def format_requires_metadata(run_requires):
 
 def format_sdist_header_metadata(data, filename):
     """
-    Format the metadata of pypi packages stored in email header format.
+    Format the metadata of Standard Python packages stored in email header format.
 
     Currently only used as backup on the wheel (compressed) file format.
     """
@@ -506,8 +507,8 @@ def inspect_pypi_package_sdist(filename, fileobj):
         data = extract_first(tf, '*/PKG-INFO')
         distribute = True
         if data is None:
-            raise errors.NoMetadataError("Could not find *.egg-info/PKG-INFO "
-                                         "file in pypi sdist")
+            raise errors.NoMetadataError(
+                "Could not find *.egg-info/PKG-INFO file in {} sdist".format(PackageType.STANDARD_PYTHON.label()))
     config_items = python_version_check(data)
     attrs = dict(config_items)
     name = pop_key(attrs, 'Name', None)
@@ -551,8 +552,8 @@ def inspect_pypi_package_egg(filename, fileobj):
 
     data = extract_first(tf, 'EGG-INFO/PKG-INFO')
     if data is None:
-        raise errors.NoMetadataError("Could not find EGG-INFO/PKG-INFO file "
-                                     "in pypi sdist")
+        raise errors.NoMetadataError(
+            "Could not find EGG-INFO/PKG-INFO file in {} sdist".format(PackageType.STANDARD_PYTHON.label()))
     attrs = dict(python_version_check(data))
 
     package_data = {'name': pop_key(attrs, 'Name'),
@@ -589,8 +590,8 @@ def inspect_pypi_package_zip(filename, fileobj):
 
     data = extract_first(tf, '*/PKG-INFO')
     if data is None:
-        raise errors.NoMetadataError("Could not find EGG-INFO/PKG-INFO file "
-                                     "in pypi sdist")
+        raise errors.NoMetadataError(
+            "Could not find EGG-INFO/PKG-INFO file in {} sdist".format(PackageType.STANDARD_PYTHON.label()))
 
     attrs = dict(Parser().parsestr(data.encode("UTF-8", "replace")).items())
 
@@ -662,8 +663,8 @@ def inspect_pypi_package(filename, fileobj, *args, **kwargs):
         return inspect_pypi_package_rpm(filename, fileobj)
 
     _, etx = path.splitext(filename)
-    raise errors.NoMetadataError("Can not inspect pypi package with file "
-                                 "extension %s" % etx)
+    raise errors.NoMetadataError(
+        "Can not inspect {} package with file with extension {}".format(PackageType.STANDARD_PYTHON, etx))
 
 
 # Test Package: https://pypi.python.org/packages/source/F/Flask-Bower/Flask-Bower-1.1.1.tar.gz

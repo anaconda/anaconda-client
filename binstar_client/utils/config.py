@@ -1,15 +1,18 @@
 from __future__ import print_function, absolute_import, unicode_literals
 
-from os.path import exists, join, dirname, isfile, isdir, abspath, expanduser
-from string import Template
-
 import collections
+import enum
+import itertools
 import logging
 import os
+import shutil
 import stat
 import warnings
-import itertools
+from string import Template
 
+import yaml
+
+from binstar_client.errors import BinstarError
 
 try:
     from urllib import quote_plus
@@ -18,7 +21,6 @@ except ImportError:
 
 from binstar_client.utils.conda import CONDA_PREFIX, CONDA_ROOT
 from binstar_client.utils.appdirs import AppDirs, EnvAppDirs
-from binstar_client.errors import BinstarError
 
 from .yaml import yaml_load, yaml_dump
 
@@ -33,27 +35,60 @@ def expandvars(path):
 
 
 def expand(path):
-    return abspath(expanduser(expandvars(path)))
+    return os.path.abspath(os.path.expanduser(expandvars(path)))
 
 
 if 'BINSTAR_CONFIG_DIR' in os.environ:
     dirs = EnvAppDirs('binstar', 'ContinuumIO', os.environ['BINSTAR_CONFIG_DIR'])
-    USER_CONFIG = join(dirs.user_data_dir, 'config.yaml')
+    USER_CONFIG = os.path.join(dirs.user_data_dir, 'config.yaml')
 else:
     dirs = AppDirs('binstar', 'ContinuumIO')
-    USER_CONFIG = expand('~/.continuum/anaconda-client/config.yaml')
+    USER_CONFIG = os.path.join(os.path.expanduser('~'), '.continuum', 'anaconda-client', 'config.yaml')
 
 
-# Package types used in upload/download
-PACKAGE_TYPES = {
-    'env': 'Environment',
-    'ipynb': 'Notebook',
-    'conda' : 'Conda Package',
-    'pypi': 'Python Package',
+class PackageType(enum.Enum):
+    CONDA = 'conda'
+    ENV = 'env'
+    FILE = 'file'
+    NOTEBOOK = 'ipynb'
+    STANDARD_PYTHON = 'pypi'
+    STANDARD_R = 'r'
+    PROJECT = 'project'
+    INSTALLER = 'installer'
+
+    def label(self):
+        return self.get_from_mapping(PACKAGE_TYPE_LABELS, default=self.value)
+
+    def get_from_mapping(self, mapping, default=None):
+        return mapping.get(self, default)
+
+    @classmethod
+    def _missing_(cls, value):
+        try:
+            return cls(PACKAGE_TYPE_ALIASES[value])
+        except KeyError:
+            return super()._missing_(value)
+
+
+PACKAGE_TYPE_LABELS = {
+    PackageType.ENV: 'Environment',
+    PackageType.NOTEBOOK: 'Notebook',
+    PackageType.CONDA: 'Conda',
+    PackageType.STANDARD_PYTHON: 'Standard Python',
+    PackageType.STANDARD_R: 'Standard R',
 }
 
+PACKAGE_TYPE_ALIASES = {
+    'PyPI': 'pypi',
+    'standard_python': 'pypi',
+
+    'cran': 'r',
+    'standard_r': 'r',
+}
+
+
 USER_LOGDIR = dirs.user_log_dir
-SITE_CONFIG = expand('$CONDA_ROOT/etc/anaconda-client/config.yaml')
+SITE_CONFIG = os.path.join(os.environ.get('CONDA_ROOT', CONDA_ROOT), 'etc', 'anaconda-client', 'config.yaml')
 SYSTEM_CONFIG = SITE_CONFIG
 
 DEFAULT_URL = 'https://api.anaconda.org'
@@ -90,7 +125,7 @@ SEARCH_PATH = (
 
 def recursive_update(config, update_dict):
     for update_key, updated_value in update_dict.items():
-        if isinstance(updated_value, collections.Mapping):
+        if isinstance(updated_value, collections.abc.Mapping):
             updated_value_dict = recursive_update(config.get(update_key, {}), updated_value)
             config[update_key] = updated_value_dict
         else:
@@ -151,7 +186,7 @@ def get_binstar(args=None, cls=None):
 
 TOKEN_DIRS = [
     dirs.user_data_dir,
-    join(dirname(USER_CONFIG), 'tokens'),
+    os.path.join(os.path.dirname(USER_CONFIG), 'tokens'),
 ]
 TOKEN_DIR = TOKEN_DIRS[-1]
 
@@ -162,11 +197,11 @@ def store_token(token, args):
     for token_dir in TOKEN_DIRS:
         url = config.get('url', DEFAULT_URL)
 
-        if not isdir(token_dir):
+        if not os.path.isdir(token_dir):
             os.makedirs(token_dir)
-        tokenfile = join(token_dir, '%s.token' % quote_plus(url))
+        tokenfile = os.path.join(token_dir, '%s.token' % quote_plus(url))
 
-        if isfile(tokenfile):
+        if os.path.isfile(tokenfile):
             os.unlink(tokenfile)
         with open(tokenfile, 'w') as fd:
             fd.write(token)
@@ -175,9 +210,9 @@ def store_token(token, args):
 
 def load_token(url):
     for token_dir in TOKEN_DIRS:
-        tokenfile = join(token_dir, '%s.token' % quote_plus(url))
+        tokenfile = os.path.join(token_dir, '%s.token' % quote_plus(url))
 
-        if isfile(tokenfile):
+        if os.path.isfile(tokenfile):
             logger.debug("Found login token: {}".format(tokenfile))
             with open(tokenfile) as fd:
                 token = fd.read().strip()
@@ -195,19 +230,32 @@ def remove_token(args):
     url = config.get('url', DEFAULT_URL)
 
     for token_dir in TOKEN_DIRS:
-        tokenfile = join(token_dir, '%s.token' % quote_plus(url))
-        if isfile(tokenfile):
+        tokenfile = os.path.join(token_dir, '%s.token' % quote_plus(url))
+        if os.path.isfile(tokenfile):
             os.unlink(tokenfile)
 
 
 def load_config(config_file):
-    if exists(config_file):
-        with open(config_file) as fd:
-            data = yaml_load(fd)
-            if data:
-                return data
+    data = {}
+    warn_msg = None
 
-    return {}
+    try:
+        with open(config_file) as fd:
+            data = yaml_load(fd) or data
+    except yaml.YAMLError:
+        backup_file = config_file + '.bak'
+        shutil.copyfile(config_file, backup_file)
+        warn_msg = "Config file `{}` has invalid structure and couldn't be read. \n"\
+                   "File content was backed up to `{}`".format(config_file, backup_file)
+    except PermissionError:
+        warn_msg = 'Not enough rights to access config file `{}`! Please review file permissions.'.format(config_file)
+    except OSError as error:
+        logger.exception(error)
+
+    if warn_msg is not None:
+        warnings.warn(warn_msg)
+
+    return data
 
 
 def load_file_configs(search_path):
@@ -218,7 +266,7 @@ def load_file_configs(search_path):
     def _dir_yaml_loader(fullpath):
         for filename in os.listdir(fullpath):
             if filename.endswith(".yml") or filename.endswith(".yaml"):
-                filepath = join(fullpath, filename)
+                filepath = os.path.join(fullpath, filename)
                 yield filepath, load_config(filepath)
 
     # map a stat result to a file loader or a directory loader
@@ -234,12 +282,23 @@ def load_file_configs(search_path):
         except OSError:
             return None
 
-    expanded_paths = [expand(path) for path in search_path]
-    stat_paths = (_get_st_mode(path) for path in expanded_paths)
-    load_paths = (_loader[st_mode](path)
-                  for path, st_mode in zip(expanded_paths, stat_paths)
-                  if st_mode is not None)
-    raw_data = collections.OrderedDict(kv for kv in itertools.chain.from_iterable(load_paths))
+    expanded_paths = [
+        expand(path)
+        for path in search_path
+    ]
+    stat_paths = (
+        _get_st_mode(path)
+        for path in expanded_paths
+    )
+    load_paths = (
+        _loader[st_mode](path)
+        for path, st_mode in zip(expanded_paths, stat_paths)
+        if st_mode is not None
+    )
+    raw_data = collections.OrderedDict(
+        kv
+        for kv in itertools.chain.from_iterable(load_paths)
+    )
 
     return raw_data
 
@@ -267,16 +326,17 @@ def get_config(site=None):
 
 
 def save_config(data, config_file):
-    data_dir = dirname(config_file)
-
     try:
-        if not exists(data_dir):
-            os.makedirs(data_dir)
+        os.makedirs(os.path.dirname(config_file), exist_ok=True)
 
-        with open(config_file, 'w') as fd:
-            yaml_dump(data, stream=fd)
-    except EnvironmentError as exc:
-        raise BinstarError('%s: %s' % (exc.filename, exc.strerror,))
+        temp_file = config_file + '~'
+        with open(temp_file, 'w') as stream:
+            yaml_dump(data, stream=stream)
+
+        os.replace(temp_file, config_file)
+
+    except (OSError, yaml.YAMLError):
+        raise BinstarError("Config file `{}` couldn't be saved! Changes may be lost.".format(config_file))
 
 
 def set_config(data, user=True):

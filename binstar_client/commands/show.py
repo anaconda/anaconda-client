@@ -14,23 +14,23 @@ import logging
 from argparse import RawTextHelpFormatter
 
 from binstar_client.utils import get_server_api, parse_specs
-from binstar_client.utils.pprint import pprint_user, pprint_packages, \
-    pprint_orgs
+from binstar_client.utils.config import PackageType
+from binstar_client.utils.pprint import format_package_type, pprint_user, pprint_packages, pprint_orgs
 
 logger = logging.getLogger('binstar.show')
 
 
 def install_info(package, package_type):
-    if package_type == 'pypi':
-        logger.info('To install this package with %s run:' % package_type)
+    if package_type is PackageType.STANDARD_PYTHON:
+        logger.info('To install this package with %s run:' % package_type.value)
         if package['public']:
             url = 'https://pypi.anaconda.org/%s/simple' % package['owner']['login']
         else:
             url = 'https://pypi.anaconda.org/t/$TOKEN/%s/simple' % package['owner']['login']
 
         logger.info('     pip install -i %s %s' % (url, package['name']))
-    if package_type == 'conda':
-        logger.info('To install this package with %s run:' % package_type)
+    if package_type is PackageType.CONDA:
+        logger.info('To install this package with %s run:' % package_type.value)
         if package['public']:
             url = 'https://conda.anaconda.org/%s' % package['owner']['login']
         else:
@@ -66,23 +66,24 @@ def main(args):
     elif args.spec._package:
         package = aserver_api.package(spec.user, spec.package)
         package['access'] = 'public' if package['public'] else 'private'
+
+        package_types = ', '.join(format_package_type(item) for item in (package.get('package_types', None) or ()))
+
         logger.info('Name:    %(name)s' % package)
         logger.info('Summary: %(summary)s' % package)
         logger.info('Access:  %(access)s' % package)
-        logger.info('Package Types:  %s' % ', '.join(package.get('package_types')))
+        logger.info('Package Types:  %s' % package_types)
         logger.info('Versions:' % package)
         for release in package['releases']:
             logger.info('   + %(version)s' % release)
 
         logger.info('')
         for package_type in package.get('package_types'):
-            install_info(package, package_type)
+            install_info(package, PackageType(package_type))
 
         if not package['public']:
             logger.info('To generate a $TOKEN run:')
             logger.info('    TOKEN=$(anaconda auth --create --name <TOKEN-NAME>)')
-
-
 
     elif args.spec._user:
         user_info = aserver_api.user(spec.user)

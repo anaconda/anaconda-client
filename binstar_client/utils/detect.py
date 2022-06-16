@@ -8,6 +8,7 @@ import tarfile
 
 from os import path
 
+from binstar_client.utils.config import PackageType
 from binstar_client.inspect_package.conda import inspect_conda_package
 from binstar_client.inspect_package import conda_installer
 from binstar_client.inspect_package.pypi import inspect_pypi_package
@@ -20,16 +21,17 @@ logger = logging.getLogger('binstar.detect')
 
 def file_handler(filename, fileobj, *args, **kwargs):
     return ({}, {'description': ''},
-            {'basename': path.basename(filename), 'attrs':{}})
+            {'basename': path.basename(filename), 'attrs': {}})
 
-detectors = {
-    'conda': inspect_conda_package,
-    'pypi': inspect_pypi_package,
-    'r': inspect_r_package,
-    'ipynb': inspect_ipynb_package,
-    'env': inspect_env_package,
-    conda_installer.PACKAGE_TYPE: conda_installer.inspect_package,
-    'file': file_handler,
+
+inspectors = {
+    PackageType.CONDA: inspect_conda_package,
+    PackageType.STANDARD_PYTHON: inspect_pypi_package,
+    PackageType.STANDARD_R: inspect_r_package,
+    PackageType.NOTEBOOK: inspect_ipynb_package,
+    PackageType.ENV: inspect_env_package,
+    PackageType.INSTALLER: conda_installer.inspect_package,
+    PackageType.FILE: file_handler,
 }
 
 
@@ -63,6 +65,8 @@ def is_project(filename):
 
 def is_conda(filename):
     logger.debug("Testing if conda package ..")
+    if filename.endswith('.conda'):
+        return True
     
     if filename.endswith('.tar.bz2'):  # Could be a conda package
         try:
@@ -73,28 +77,29 @@ def is_conda(filename):
                 else:
                     raise KeyError
         except KeyError:
-            logger.debug("Not conda  package no 'info/index.json' file in the tarball")
+            logger.debug("Not conda package no 'info/index.json' file in the tarball")
             return False
         else:
             logger.debug("This is a conda package")
             return True
-    logger.debug("Not conda package (file ext is not .tar.bz2)")
+    logger.debug("Not conda package (file ext is not .tar.bz2 or .conda)")
 
 
 def is_pypi(filename):
-    logger.debug("Testing if pypi package ..")
+    package_type_label = PackageType.STANDARD_PYTHON.label()
+    logger.debug("Testing if {} package ..".format(package_type_label))
     if filename.endswith('.whl'):
-        logger.debug("This is a pypi wheel package")
+        logger.debug("This is a {} wheel package".format(package_type_label))
         return True
     if filename.endswith('.tar.gz') or filename.endswith('.tgz'):  # Could be a setuptools sdist or r source package
         with tarfile.open(filename) as tf:
             if any(name.endswith('/PKG-INFO') for name in tf.getnames()):
                 return True
             else:
-                logger.debug("This not is a pypi package (no '/PKG-INFO' in tarball)")
+                logger.debug("This is not a {} package (no '/PKG-INFO' in tarball)".format(package_type_label))
                 return False
 
-    logger.debug("This not is a pypi package (expected .tgz, .tar.gz or .whl)")
+    logger.debug("This is not a {} package (expected .tgz, .tar.gz or .whl)".format(package_type_label))
 
 
 def is_r(filename):
@@ -102,8 +107,10 @@ def is_r(filename):
     if filename.endswith('.tar.gz') or filename.endswith('.tgz'):  # Could be a setuptools sdist or r source package
         with tarfile.open(filename) as tf:
 
-            if (any(name.endswith('/DESCRIPTION') for name in tf.getnames()) and
-                any(name.endswith('/NAMESPACE') for name in tf.getnames())):
+            if (
+                    any(name.endswith('/DESCRIPTION') for name in tf.getnames()) and
+                    any(name.endswith('/NAMESPACE') for name in tf.getnames())
+            ):
                 return True
             else:
                 logger.debug("This not is an R package (no '*/DESCRIPTION' and '*/NAMESPACE' files).")
@@ -116,23 +123,22 @@ def detect_package_type(filename):
         filename = filename.decode('utf-8', errors='ignore')
 
     if is_conda(filename):
-        return 'conda'
+        return PackageType.CONDA
     elif is_pypi(filename):
-        return 'pypi'
+        return PackageType.STANDARD_PYTHON
     elif is_r(filename):
-        return 'r'
+        return PackageType.STANDARD_R
     elif is_ipynb(filename):
-        return 'ipynb'
+        return PackageType.NOTEBOOK
     elif is_environment(filename):
-        return 'env'
+        return PackageType.ENV
     elif conda_installer.is_installer(filename):
-        return conda_installer.PACKAGE_TYPE
+        return PackageType.INSTALLER
     elif is_project(filename):
-        return 'project'
-    else:
-        return None
+        return PackageType.PROJECT
 
 
 def get_attrs(package_type, filename, *args, **kwargs):
     with open(filename, 'rb') as fileobj:
-        return detectors[package_type](filename, fileobj, *args, **kwargs)
+        inspector = package_type.get_from_mapping(inspectors)
+        return inspector(filename, fileobj, *args, **kwargs)

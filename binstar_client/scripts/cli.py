@@ -6,7 +6,7 @@ from __future__ import print_function, unicode_literals
 import logging
 import sys
 
-import requests
+import urllib3
 
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from os import makedirs
@@ -14,7 +14,6 @@ from os.path import join, exists, isfile
 from logging.handlers import RotatingFileHandler
 
 from clyent import add_subparser_modules
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from six import PY2
 
 from binstar_client import __version__ as version
@@ -90,7 +89,7 @@ def _setup_logging(logger, log_level=logging.INFO, show_traceback=False, disable
     sys.excepthook = _custom_excepthook(logger, show_traceback=show_traceback)
 
     if disable_ssl_warnings:
-        requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 def add_default_arguments(parser, version=None):
