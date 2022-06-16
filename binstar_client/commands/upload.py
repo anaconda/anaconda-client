@@ -332,7 +332,7 @@ def main(args):
 
 
 def pathname_list(item):
-    if '*' in item:
+    if (os.name == 'nt') and any(character in {'*', '?'} for character in item):
         return glob(item)
     return [item]
 

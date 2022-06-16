@@ -1,5 +1,50 @@
 # CHANGELOG:
 
+## Version 1.10.0 (2022/06/15)
+
+### Added
+
+* Support for .conda packages for upload and download
+
+### Changed
+
+* Labels for "Standard Python" and "Standard R" package types (instead of "pypi" and "r")
+
+### Fixed
+
+* R packages should now download correctly
+* Issues related to the invalid configuration paths should now be mitigated
+
+### Pull requests merged
+
+* [PR_604](https://github.com/Anaconda-Platform/anaconda-client/pull/604) - AC-131: Fix deprecated methods and modules, remove not worked covarage
+* [PR_603](https://github.com/Anaconda-Platform/anaconda-client/pull/603) - AC-132: additional tests for packages with dash in name
+* [PR_600](https://github.com/Anaconda-Platform/anaconda-client/pull/600) - AC-126: Add better error handling and logging for AC config file
+* [PR_596](https://github.com/Anaconda-Platform/anaconda-client/pull/596) - AC-121: Pattern matching in upload command
+* [PR_595](https://github.com/Anaconda-Platform/anaconda-client/pull/595) - AC-116: better support for standard r packages
+* [PR_594](https://github.com/Anaconda-Platform/anaconda-client/pull/594) - NAV-649: possible fix for permission denied issue
+* [PR_593](https://github.com/Anaconda-Platform/anaconda-client/pull/593) - AS-120: Refactor package_type usage
+* [PR_591](https://github.com/Anaconda-Platform/anaconda-client/pull/591) - AC-119: Add conda v2 format support
+
+## Version 1.9.0 (2021/10/28)
+
+### Added
+
+* Added _update_ command
+
+### Fixed
+
+* Fixed _upload_ command for `pypi` and `conda` packages of the same name
+* Fixed string formatting on interactive input 
+
+### Pull Requests Merged
+
+* [PR_588](https://github.com/Anaconda-Platform/anaconda-client/pull/588) - AC-114: Add update command to autotest
+* [PR_585](https://github.com/Anaconda-Platform/anaconda-client/pull/585) - AC-108: automated tests added to the repo
+* [PR_584](https://github.com/Anaconda-Platform/anaconda-client/pull/584) - AC-43: Fix upload of packages with same name but different type
+* [PR_579](https://github.com/Anaconda-Platform/anaconda-client/pull/579) - fix string formatting on interactive input
+* [PR_573](https://github.com/Anaconda-Platform/anaconda-client/pull/573) - AC-92: Add update command
+
 ## Version 1.8.0 (2021/06/25)
 
 ### Added
