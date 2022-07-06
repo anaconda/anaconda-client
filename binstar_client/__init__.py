@@ -8,6 +8,7 @@ import platform
 import xml.etree.ElementTree as ET
 
 import requests
+from pkg_resources import parse_version as pv
 from six import raise_from
 from six.moves.urllib.parse import quote
 
@@ -19,7 +20,7 @@ from .mixins.channels import ChannelsMixin
 from .mixins.organizations import OrgMixin
 from .mixins.package import PackageMixin
 from .requests_ext import NullAuth
-from .utils import compute_hash, jencode, pv, ProgressBarWrapper
+from .utils import compute_hash, jencode
 from .utils.http_codes import STATUS_CODES
 
 logger = logging.getLogger('binstar')
