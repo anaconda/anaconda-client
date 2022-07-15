@@ -1,4 +1,3 @@
-from tempfile import SpooledTemporaryFile
 import requests
 import binstar_client
 from binstar_client.utils import compute_hash, jencode
