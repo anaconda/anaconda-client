@@ -8,4 +8,4 @@ pytz
 setuptools
 six
 urllib3>=1.26.4
-tqdm
+tqdm>=4.56.0
