@@ -8,8 +8,11 @@ import platform
 import xml.etree.ElementTree as ET
 
 import requests
+from pkg_resources import parse_version as pv
 from six import raise_from
 from six.moves.urllib.parse import quote
+from tqdm import tqdm
+from tqdm.utils import CallbackIOWrapper
 
 from . import errors
 from .__about__ import __version__
@@ -18,8 +21,8 @@ from .errors import *
 from .mixins.channels import ChannelsMixin
 from .mixins.organizations import OrgMixin
 from .mixins.package import PackageMixin
-from .requests_ext import stream_multipart, NullAuth
-from .utils import compute_hash, jencode, pv
+from .requests_ext import NullAuth
+from .utils import compute_hash, jencode
 from .utils.http_codes import STATUS_CODES
 
 logger = logging.getLogger('binstar')
@@ -526,7 +529,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
 
     def upload(self, login, package_name, release, basename, fd, distribution_type,
                description='', md5=None, sha256=None, size=None, dependencies=None, attrs=None,
-               channels=('main',), callback=None):
+               channels=('main',)):
         """
         Upload a new distribution to a package release.
 
@@ -543,7 +546,6 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         :param dependencies: (optional) list package dependencies
         :param attrs: any extra attributes about the file (eg. build=1, pyversion='2.7', os='osx')
         :param channels: list of labels package will be available from
-        :param callback: callback function used in :class:`~binstar_client.request_txt.MultiPartIO`
         """
         url = '%s/stage/%s/%s/%s/%s' % (self.domain, login, package_name, release, quote(basename))
         if attrs is None:
@@ -584,13 +586,14 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         s3data['Content-Length'] = size
         s3data['Content-MD5'] = b64md5
 
-        data_stream, headers = stream_multipart(s3data, files={'file': (basename, fd)}, callback=callback)
         request_method = self.session if s3url.startswith(self.domain) else requests
-        s3res = request_method.post(
-            s3url, data=data_stream,
-            verify=self.session.verify, timeout=10 * 60 * 60,
-            headers=headers
-        )
+
+        file_size = os.fstat(fd.fileno()).st_size
+        with tqdm(total=file_size, unit="B", unit_scale=True, unit_divisor=1024) as t:
+            wrapped_file = CallbackIOWrapper(t.update, fd, "read")
+            s3res = request_method.post(
+                s3url, data=s3data, files={'file': (basename, wrapped_file)},
+                verify=self.session.verify, timeout=10 * 60 * 60)
 
         if s3res.status_code != 201:
             logger.info(s3res.text)

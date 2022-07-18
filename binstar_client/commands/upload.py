@@ -14,6 +14,7 @@ from __future__ import unicode_literals
 
 import argparse
 import logging
+import os
 from glob import glob
 from os.path import exists
 
@@ -21,7 +22,7 @@ import nbformat
 from six.moves import input
 
 from binstar_client import errors
-from binstar_client.utils import bool_input, DEFAULT_CONFIG, get_config, get_server_api, upload_print_callback
+from binstar_client.utils import bool_input, DEFAULT_CONFIG, get_config, get_server_api
 from binstar_client.utils.config import PackageType
 from binstar_client.utils.detect import detect_package_type, get_attrs
 from binstar_client.utils.projects import upload_project
@@ -242,7 +243,7 @@ def upload_package(filename, package_type, aserver_api, username, args):
             upload_info = aserver_api.upload(username, package_name, version, file_attrs['basename'], fd,
                                              binstar_package_type, args.description,
                                              dependencies=file_attrs.get('dependencies'), attrs=file_attrs['attrs'],
-                                             channels=args.labels, callback=upload_print_callback(args))
+                                             channels=args.labels)
     except errors.Conflict:
         upload_info = {}
         if args.mode != 'skip':
