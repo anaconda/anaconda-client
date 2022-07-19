@@ -586,12 +586,10 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         s3data['Content-Length'] = size
         s3data['Content-MD5'] = b64md5
 
-        request_method = self.session if s3url.startswith(self.domain) else requests
-
         file_size = os.fstat(fd.fileno()).st_size
         with tqdm(total=file_size, unit="B", unit_scale=True, unit_divisor=1024) as t:
             wrapped_file = CallbackIOWrapper(t.update, fd, "read")
-            s3res = request_method.post(
+            s3res = requests.post(
                 s3url, data=s3data, files={'file': (basename, wrapped_file)},
                 verify=self.session.verify, timeout=10 * 60 * 60)
 
