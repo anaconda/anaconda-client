@@ -91,10 +91,10 @@ jobs:
           - ubuntu-latest
           - windows-latest
         python:
-          - 3.6
-          - 3.7
-          - 3.8
-          - 3.9
+          - "3.7"
+          - "3.8"
+          - "3.9"
+          - "3.10"
     steps:
       # most of these steps might be anchored to corresponding ones in the "lint_code" job
       # unfortunately, as of June 2021 - GitHub doesn't support anchors for action scripts
