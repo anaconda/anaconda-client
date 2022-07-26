@@ -2,62 +2,86 @@ name: Check project
 
 on:
   push:
-    branches:
-      - master
+    branches: ['dev', 'master', 'release/*']
   pull_request:
-    branches:
-      - master
-    types:
-      - opened
-      - reopened
-      - synchronize
+    branches: ['dev', 'master', 'release/*']
+    types: [opened, reopened, synchronize]
+  release:
   workflow_dispatch:
 
+defaults:
+  run:
+    shell: bash -l {0}
+
 jobs:
-  lint_code:
-    name: Lint
-    runs-on: ubuntu-latest
+  lint:
+    name: Lint (Python ${{ matrix.python-version }} on ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
+      matrix:
+        python-version: [ "3.10" ]
+        os: [ ubuntu-latest ]
+
     steps:
       - name: Checkout project
         uses: actions/checkout@v2
 
-      - name: Setup Conda
+      - name: Setup Miniconda
         uses: conda-incubator/setup-miniconda@v2
         with:
-          activate-environment: test
           auto-update-conda: true
-          python-version: 3.8
+          python-version: ${{ matrix.python-version }}
 
-      - name: Install requirements
+      - name: Install dependencies
         run: |
-          conda install -n test --file requirements.txt --file requirements-dev.txt
+          conda update -n base -c conda-canary -q --no-pin conda
+          conda install --no-pin --file requirements.txt --file requirements-dev.txt pip
+          pip install -r requirements-pip.txt
+          python setup.py develop
 
       - name: Conda environment information
+        id: conda_environment_information
         run: |
           conda info
           conda config --show
-          conda list -n test --show-channel-urls
+          conda list --show-channel-urls
+          echo ::set-output name=exit_status::success
 
-      - name: Run lints
-        continue-on-error: true  # Remove this line after fixing style issues
+      - name: Check with pycodestyle
+        if: ${{ always() && steps.conda_environment_information.outputs.exit_status == 'success' }}
         run: |
-          mkdir .artifacts
-          mkdir .artifacts/reports
-          conda run -n test flake8 binstar_client > .artifacts/reports/flake8.txt
+          mkdir -p .artifacts/reports
+          make lint-pycodestyle > .artifacts/reports/pycodestyle.txt 2>&1
 
-      - name: Export flake8 report
-        if: ${{ always() }}
+      - name: Check with bandit
+        if: ${{ always() && steps.conda_environment_information.outputs.exit_status == 'success' }}
+        run: |
+          mkdir -p .artifacts/reports
+          make lint-bandit > .artifacts/reports/bandit.txt 2>&1
+
+      - name: Check with mypy
+        if: ${{ always() && steps.conda_environment_information.outputs.exit_status == 'success' }}
+        run: |
+          mkdir -p .artifacts/reports
+          make lint-mypy > .artifacts/reports/mypy.txt 2>&1
+
+      - name: Check with pylint
+        if: ${{ always() && steps.conda_environment_information.outputs.exit_status == 'success' }}
+        run: |
+          mkdir -p .artifacts/reports
+          make lint-pylint > .artifacts/reports/pylint.txt 2>&1
+
+      - name: Export reports
+        if: ${{ always() && steps.conda_environment_information.outputs.exit_status == 'success' }}
         uses: actions/upload-artifact@v2
         with:
-          name: report-flake8-python-3.8-ubuntu-latest
-          path: .artifacts/reports/flake8.txt
+          name: report-lint-${{ matrix.python-version }}-${{ matrix.os }}
+          path: .artifacts/reports
           retention-days: 7
-
   test_project:
     name: Test - Python ${{ matrix.python }} - ${{ matrix.os }}
-    needs: lint_code
+    needs: lint
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
