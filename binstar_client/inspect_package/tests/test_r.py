@@ -1,3 +1,4 @@
+# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 from __future__ import print_function, unicode_literals
 
 import unittest
@@ -41,15 +42,16 @@ expected_file_data = {
 
 class Test(unittest.TestCase):
     maxDiff = None
+
     def test_r(self):
         filename = data_dir('rfordummies_0.1.2.tar.gz')
-        with open(filename, 'rb') as fd:
-            package_data, version_data, file_data = r.inspect_r_package(filename, fd)
+        with open(filename, 'rb') as file:
+            package_data, version_data, file_data = r.inspect_r_package(filename, file)
 
         self.assertEqual(expected_package_data, package_data)
         self.assertEqual(expected_version_data, version_data)
         self.assertEqual(expected_file_data, file_data)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

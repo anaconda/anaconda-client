@@ -27,9 +27,7 @@ STATUS_CODES = {
     303: ('See Other', 'Object moved -- see Method and URL list'),
     304: ('Not Modified',
           'Document has not changed since given time'),
-    305: ('Use Proxy',
-          'You must use proxy specified in Location to access this '
-          'resource.'),
+    305: ('Use Proxy', 'You must use proxy specified in Location to access this resource.'),
     307: ('Temporary Redirect',
           'Object moved temporarily -- see URI list'),
 
@@ -45,8 +43,7 @@ STATUS_CODES = {
     405: ('Method Not Allowed',
           'Specified method is invalid for this resource.'),
     406: ('Not Acceptable', 'URI not available in preferred format.'),
-    407: ('Proxy Authentication Required', 'You must authenticate with '
-          'this proxy before proceeding.'),
+    407: ('Proxy Authentication Required', 'You must authenticate with this proxy before proceeding.'),
     408: ('Request Timeout', 'Request timed out; try again later.'),
     409: ('Conflict', 'Request conflict.'),
     410: ('Gone',
@@ -71,4 +68,4 @@ STATUS_CODES = {
     504: ('Gateway Timeout',
           'The gateway server did not receive a timely response'),
     505: ('HTTP Version Not Supported', 'Cannot fulfill request.'),
-    }
+}

@@ -1,6 +1,7 @@
-"""
+# pylint: disable=missing-class-docstring,missing-function-docstring
+'''
 Authenticate a user
-"""
+'''
 from __future__ import unicode_literals
 
 import getpass
@@ -9,40 +10,39 @@ import platform
 import socket
 import sys
 
-from six.moves.urllib.parse import urlparse
 from six.moves import input
+from six.moves.urllib.parse import urlparse
 
 from binstar_client import errors
 from binstar_client.utils import get_config, get_server_api, store_token, bool_input
-
 
 logger = logging.getLogger('binstar.login')
 
 
 def try_replace_token(authenticate, **kwargs):
-    """
+    '''
     Authenticates using the given *authenticate*, retrying if the token needs
     to be replaced.
-    """
+    '''
 
     try:
         return authenticate(**kwargs)
     except errors.BinstarError as err:
         if kwargs.get('fail_if_already_exists') and len(err.args) > 1 and err.args[1] == 400:
-            logger.warning('It appears you are already logged in from host %s' % socket.gethostname())
+            logger.warning('It appears you are already logged in from host %s', socket.gethostname())
             logger.warning('Logging in again will remove the previous token. (This could cause troubles with virtual '
                            'machines with the same hostname)')
             logger.warning('Otherwise you can login again and specify a different hostname with "--hostname"')
 
-            if bool_input("Would you like to continue"):
+            if bool_input('Would you like to continue'):
                 kwargs['fail_if_already_exists'] = False
                 return authenticate(**kwargs)
 
         raise
 
 
-def interactive_get_token(args, fail_if_already_exists=True):
-    bs = get_server_api(args.token, args.site)
+def interactive_get_token(args, fail_if_already_exists=True):  # pylint: disable=too-many-locals
+    api_client = get_server_api(args.token, args.site)
     config = get_config(site=args.site)
 
     token = None
@@ -59,12 +59,12 @@ def interactive_get_token(args, fail_if_already_exists=True):
 
     auth_name += '%s@%s' % (getpass.getuser(), hostname)
 
-    bs.check_server()
-    auth_type = bs.authentication_type()
+    api_client.check_server()
+    auth_type = api_client.authentication_type()
 
     if auth_type == 'kerberos':
         token = try_replace_token(
-            bs.krb_authenticate,
+            api_client.krb_authenticate,
             application=auth_name,
             application_url=url,
             created_with=' '.join(sys.argv),
@@ -92,7 +92,7 @@ def interactive_get_token(args, fail_if_already_exists=True):
                     password = getpass.getpass(stream=sys.stderr)
 
                 token = try_replace_token(
-                    bs.authenticate,
+                    api_client.authenticate,
                     username=username,
                     password=password,
                     application=auth_name,
@@ -115,8 +115,8 @@ def interactive_get_token(args, fail_if_already_exists=True):
             else:
                 netloc = parsed_url.netloc
             hostparts = (parsed_url.scheme, netloc)
-            msg = ('Sorry. Please try again ' + \
-                   '(go to %s://%s/account/forgot_password ' % hostparts + \
+            msg = ('Sorry. Please try again ' +
+                   '(go to %s://%s/account/forgot_password ' % hostparts +
                    'to reset your password)')
             raise errors.BinstarError(msg)
 
@@ -136,9 +136,9 @@ def main(args):
 def add_parser(subparsers):
     subparser = subparsers.add_parser('login', help='Authenticate a user', description=__doc__)
     subparser.add_argument('--hostname', default=platform.node(),
-                           help="Specify the host name of this login, this should be unique (default: %(default)s)")
+                           help='Specify the host name of this login, this should be unique (default: %(default)s)')
     subparser.add_argument('--username', dest='login_username',
-                           help="Specify your username. If this is not given, you will be prompted")
+                           help='Specify your username. If this is not given, you will be prompted')
     subparser.add_argument('--password', dest='login_password',
-                           help="Specify your password. If this is not given, you will be prompted")
+                           help='Specify your password. If this is not given, you will be prompted')
     subparser.set_defaults(main=main)

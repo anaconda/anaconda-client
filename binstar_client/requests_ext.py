@@ -1,7 +1,9 @@
+# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 from __future__ import unicode_literals
 
 import logging
 from io import BytesIO, StringIO
+from itertools import chain
 
 import requests
 import six
@@ -10,7 +12,7 @@ from urllib3.filepost import choose_boundary, iter_fields
 logger = logging.getLogger('binstar.requests_ext')
 
 
-class NullAuth(requests.auth.AuthBase):
+class NullAuth(requests.auth.AuthBase):  # pylint: disable=too-few-public-methods
     """force requests to ignore the ``.netrc``
 
     Some sites do not support regular authentication, but we still
@@ -54,7 +56,8 @@ def encode_multipart_formdata_stream(fields, boundary=None):
             item = StringIO(item)
         body.append(item)
 
-    body_write_encode = lambda item: body.append(BytesIO(item.encode('utf-8')))
+    def body_write_encode(item):
+        body.append(BytesIO(item.encode('utf-8')))
 
     if boundary is None:
         boundary = choose_boundary()
@@ -67,7 +70,7 @@ def encode_multipart_formdata_stream(fields, boundary=None):
                 filename, data, content_type = value
             else:
                 filename, data = value
-                from mimetypes import guess_type
+                from mimetypes import guess_type  # pylint: disable=import-outside-toplevel
                 content_type, _ = guess_type(filename)
                 if content_type is None:
                     content_type = 'application/octet-stream'
@@ -98,14 +101,15 @@ def encode_multipart_formdata_stream(fields, boundary=None):
     return body, content_type
 
 
-class MultiPartIO(object):
+class MultiPartIO:
     def __init__(self, body, callback=None):
         self.to_read = body
         self.have_read = []
         self._total = 0
         self.callback = callback
+        self.cursor = None
 
-    def read(self, n=-1):
+    def read(self, n=-1):  # pylint: disable=invalid-name
         if self.callback:
             self.callback(self.tell(), self._total)
 
@@ -121,8 +125,8 @@ class MultiPartIO(object):
             if data:
                 return data
 
-            fd = self.to_read.pop(0)
-            self.have_read.append(fd)
+            file_obj = self.to_read.pop(0)
+            self.have_read.append(file_obj)
 
         return b''
 
@@ -137,18 +141,17 @@ class MultiPartIO(object):
         if mode == 0:
             self.to_read = self.have_read + self.to_read
             self.have_read = []
-            [fd.seek(pos, mode) for fd in self.to_read]
+            [fd.seek(pos, mode) for fd in self.to_read]  # pylint: disable=expression-not-assigned
             self.cursor = 0
 
         elif mode == 2:
             self.have_read = self.have_read + self.to_read
             self.to_read = []
-            [fd.seek(pos, mode) for fd in self.have_read]
+            [fd.seek(pos, mode) for fd in self.have_read]  # pylint: disable=expression-not-assigned
             self._total = self.tell()
 
 
 def stream_multipart(data, files=None, callback=None):
-    from itertools import chain
     if files:
         fields = chain(iter_fields(data), iter_fields(files))
     else:

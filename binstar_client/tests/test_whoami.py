@@ -1,3 +1,4 @@
+# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 '''
 Created on Feb 18, 2014
 
@@ -7,9 +8,10 @@ Created on Feb 18, 2014
 from __future__ import unicode_literals
 
 import json
-import mock
 import os
 import unittest
+
+import mock
 import requests.utils
 
 from binstar_client.scripts.cli import main
@@ -25,15 +27,15 @@ class Test(CLITestCase):
         main(['--show-traceback', 'whoami'], False)
         self.assertIn('Anonymous User', self.stream.getvalue())
 
-        user.assertCalled() 
+        user.assertCalled()
 
     @urlpatch
     def test_whoami(self, urls):
-        content = json.dumps({'login': 'eggs', 'created_at':'1/2/2000'})
+        content = json.dumps({'login': 'eggs', 'created_at': '1/2/2000'})
         user = urls.register(method='GET', path='/user', content=content)
 
         main(['--show-traceback', 'whoami'], False)
-        self.assertIn('eggs', self.stream.getvalue()) 
+        self.assertIn('eggs', self.stream.getvalue())
 
         user.assertCalled()
 
@@ -45,7 +47,7 @@ class Test(CLITestCase):
         os.environ.pop('ANACONDA_API_TOKEN', None)
 
         # requests.get_netrc_auth uses expanduser to find the netrc file, point to our test file
-        expanduser = mock.Mock(return_value = data_dir('netrc'))
+        expanduser = mock.Mock(return_value=data_dir('netrc'))
         with mock.patch('os.path.expanduser', expanduser):
             auth = requests.utils.get_netrc_auth('http://localhost', raise_errors=True)
         self.assertEqual(auth, ('anonymous', 'pass'))

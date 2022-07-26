@@ -1,10 +1,12 @@
+# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 from __future__ import unicode_literals
+
+import unittest
+
+from binstar_client.errors import BinstarError
 from binstar_client.scripts.cli import main
 from binstar_client.tests.fixture import CLITestCase
 from binstar_client.tests.urlmock import urlpatch
-from binstar_client.errors import BinstarError
-import unittest
-from mock import patch
 
 
 class Test(CLITestCase):
@@ -33,7 +35,6 @@ class Test(CLITestCase):
         self.assertIn('Removed token tokenname', self.stream.getvalue())
 
         remove_token.assertCalled()
-
 
     @urlpatch
     def test_remove_token_forbidden(self, urls):

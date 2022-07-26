@@ -1,7 +1,9 @@
+# pylint: disable=unspecified-encoding,no-self-use
+# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 import unittest
-from ..env import EnvInspector, inspect_env_package
 
 from binstar_client.utils.test.utils import data_dir
+from ..env import EnvInspector, inspect_env_package
 
 
 class EnvInspectorTestCase(unittest.TestCase):
@@ -17,7 +19,7 @@ class EnvInspectorTestCase(unittest.TestCase):
 class InspectEnvironmentPackageTest(unittest.TestCase):
     def test_inspect_env_package(self):
         with open(data_dir('environment.yml')) as fileobj:
-            package_data, release_data, file_data = inspect_env_package(
+            package_data, release_data, file_data = inspect_env_package(  # pylint: disable=unused-variable
                 'environment.yml', fileobj)
 
         self.assertEqual({

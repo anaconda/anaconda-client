@@ -1,3 +1,4 @@
+# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 from __future__ import unicode_literals
 
 import json
@@ -8,10 +9,8 @@ from binstar_client.tests.fixture import CLITestCase
 from binstar_client.tests.urlmock import urlpatch
 from binstar_client.utils.test.utils import data_dir
 
-
-with open(data_dir('metadata.json'), 'r') as f:
+with open(data_dir('metadata.json'), 'r') as f:  # pylint: disable=unspecified-encoding
     json_test_data = json.load(f)
-
 
 package_test_data = {
     'public_attrs': {

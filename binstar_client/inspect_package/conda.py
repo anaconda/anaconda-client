@@ -1,3 +1,4 @@
+# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 from __future__ import print_function
 
 import os.path
@@ -26,7 +27,7 @@ def transform_conda_deps(deps):
         name_spec = dep.split(' ', 1)
         if len(name_spec) == 1:
             name, = name_spec
-            depends.append({'name':name, 'specs': []})
+            depends.append({'name': name, 'specs': []})
         elif len(name_spec) == 2:
             name, spec = name_spec
             if spec.endswith('*'):  # Star does nothing in semver
@@ -34,11 +35,11 @@ def transform_conda_deps(deps):
 
             match = specs_re.match(spec)
             if match:
-                op, spec = match.groups()
+                operator, spec = match.groups()
             else:
-                op = '=='
+                operator = '=='
 
-            depends.append({'name': name, 'specs': [[op, spec]]})
+            depends.append({'name': name, 'specs': [[operator, spec]]})
         elif len(name_spec) == 3:
             name, spec, build_str = name_spec
             if spec.endswith('*'):  # Star does nothing in semver
@@ -46,11 +47,11 @@ def transform_conda_deps(deps):
 
             match = specs_re.match(spec)
             if match:
-                op, spec = match.groups()
+                operator, spec = match.groups()
             else:
-                op = '=='
+                operator = '=='
 
-            depends.append({'name':name, 'specs': [['==', '%s+%s' % (spec, build_str)]]})
+            depends.append({'name': name, 'specs': [['==', '%s+%s' % (spec, build_str)]]})
 
     return {'depends': depends}
 
@@ -76,17 +77,17 @@ def get_subdir(index):
         return '%s-%s' % (index.get('platform'), intel_map.get(arch, arch))
 
 
-def inspect_conda_info_dir(info_path, basename):
+def inspect_conda_info_dir(info_path, basename):  # pylint: disable=too-many-locals
     def _load(filename, default=None):
         file_path = os.path.join(info_path, filename)
         if os.path.exists(file_path):
-            with open(file_path) as f:
-                return json.load(f)
+            with open(file_path, encoding='utf-8') as file:
+                return json.load(file)
         return default
 
     index = _load('index.json', None)
     if index is None:
-        raise TypeError("info/index.json required in conda package")
+        raise TypeError('info/index.json required in conda package')
 
     recipe = _load('recipe.json')
     about = recipe.get('about', {}) if recipe else _load('about.json', {})
@@ -147,7 +148,7 @@ def inspect_conda_info_dir(info_path, basename):
     return package_data, release_data, file_data
 
 
-def inspect_conda_package(filename, *args, **kwargs):
+def inspect_conda_package(filename, *args, **kwargs):  # pylint: disable=unused-argument
     tmpdir = tempfile.mkdtemp()
     extract(filename, tmpdir, components='info')
 
@@ -161,7 +162,7 @@ def inspect_conda_package(filename, *args, **kwargs):
 
 def main():
     filename = sys.argv[1]
-    with open(filename) as fileobj:
+    with open(filename) as fileobj:  # pylint: disable=unspecified-encoding
         package_data, release_data, file_data = inspect_conda_package(filename, fileobj)
     pprint(package_data)
     print('--')

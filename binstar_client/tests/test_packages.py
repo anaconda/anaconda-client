@@ -1,3 +1,4 @@
+# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring,no-self-use
 import unittest
 
 from binstar_client.tests.urlmock import urlpatch
@@ -10,7 +11,7 @@ class Test(unittest.TestCase):
         api = Binstar()
         urls.register(method='GET', path='/packages/u1?package_type=conda&package_type=pypi', content='[]')
 
-        packages = api.user_packages('u1', package_type=['conda', 'pypi'])
+        api.user_packages('u1', package_type=['conda', 'pypi'])
 
         urls.assertAllCalled()
 
@@ -19,7 +20,7 @@ class Test(unittest.TestCase):
         api = Binstar()
         urls.register(method='GET', path='/packages/u1?platform=osx-64&package_type=conda&type=app', content='[]')
 
-        packages = api.user_packages('u1', platform='osx-64', type_='app', package_type='conda')
+        api.user_packages('u1', platform='osx-64', type_='app', package_type='conda')
 
         urls.assertAllCalled()
 

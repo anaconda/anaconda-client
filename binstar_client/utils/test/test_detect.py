@@ -1,6 +1,8 @@
+# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring,no-self-use
 import unittest
-from binstar_client.utils.test.utils import example_path
+
 from binstar_client.utils.detect import is_project
+from binstar_client.utils.test.utils import example_path
 
 
 class IsProjectTestCase(unittest.TestCase):

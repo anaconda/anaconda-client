@@ -1,7 +1,8 @@
+# pylint: disable=missing-module-docstring,missing-function-docstring,import-outside-toplevel
 import os
-import mock
-
 import unittest
+
+import mock
 
 
 def test_conda_root():
@@ -13,7 +14,7 @@ def test_conda_root():
 @mock.patch('binstar_client.utils.conda._import_conda_root')
 def test_conda_root_outside_root_environment(mock_import_conda_root):
     def _import_conda_root():
-        raise ImportError("did not import it")
+        raise ImportError('did not import it')
 
     mock_import_conda_root.side_effect = _import_conda_root
     from binstar_client.utils.conda import get_conda_root

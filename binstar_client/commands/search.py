@@ -1,3 +1,4 @@
+# pylint: disable=missing-function-docstring
 """
 Search your Anaconda repository for packages.
 """
@@ -20,8 +21,8 @@ def search(args):
 
     packages = aserver_api.search(args.name, package_type=package_type, platform=args.platform)
     pprint_packages(packages, access=False)
-    logger.info("Found %i packages" % len(packages))
-    logger.info("\nRun 'anaconda show <USER/PACKAGE>' to get installation details")
+    logger.info('Found %i packages', len(packages))
+    logger.info('\nRun \'anaconda show <USER/PACKAGE>\' to get installation details')
 
 
 def add_parser(subparsers):

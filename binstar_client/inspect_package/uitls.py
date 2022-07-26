@@ -1,3 +1,4 @@
+# pylint: disable=missing-module-docstring,missing-function-docstring
 from __future__ import print_function, unicode_literals
 
 from fnmatch import fnmatch
@@ -8,47 +9,46 @@ from tarfile import TarFile
 def extract_first(fileobj, pat):
     if isinstance(fileobj, ZipFile):
         return zipfile_match_and_extract(fileobj, pat)
-    elif isinstance(fileobj, TarFile):
+
+    if isinstance(fileobj, TarFile):
         return tarfile_match_and_extract(fileobj, pat)
-    else:
-        raise Exception("Don't know how to extract %s file type" % type(fileobj))
+
+    raise Exception("Don't know how to extract %s file type" % type(fileobj))
 
 
-def zipfile_match_and_extract(zf, pat):
-    m = lambda fn: fnmatch(fn, pat)
-    item_name = next((i.filename for i in zf.infolist() if m(i.filename)), None)
+def zipfile_match_and_extract(zip_file, pat):
+    item_name = next((i.filename for i in zip_file.infolist() if fnmatch(i.filename, pat)), None)
     if item_name is None:
         return None
-    return zf.read(item_name).decode(errors='ignore')
+    return zip_file.read(item_name).decode(errors='ignore')
 
 
-def tarfile_match_and_extract(tf, pat):
-    m = lambda fn: fnmatch(fn, pat)
-    item_name = next((name for name in tf.getnames() if m(name)), None)
+def tarfile_match_and_extract(tar_file, pat):
+    item_name = next((name for name in tar_file.getnames() if fnmatch(name, pat)), None)
     if not item_name:
         return None
 
-    fd = tf.extractfile(item_name)
-    return fd.read().decode(errors='ignore')
+    file_obj = tar_file.extractfile(item_name)
+    return file_obj.read().decode(errors='ignore')
 
 
 def safe(version):
     return version.replace('\n', '-').replace('\\', '-').replace('#', '-')
 
 
-def get_key(data, k, *d):
-    value = data.get(k, *d)
+def get_key(data, key, *d):
+    value = data.get(key, *d)
     if value == 'UNKNOWN':
         if not d:
-            raise KeyError(k)
+            raise KeyError(key)
         value = d[0]
     return value
 
 
-def pop_key(data, k, *d):
-    value = data.pop(k, *d)
+def pop_key(data, key, *d):
+    value = data.pop(key, *d)
     if value == 'UNKNOWN':
         if not d:
-            raise KeyError(k)
+            raise KeyError(key)
         value = d[0]
     return value

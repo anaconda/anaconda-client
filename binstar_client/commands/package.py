@@ -1,3 +1,4 @@
+# pylint: disable=missing-function-docstring
 """
 Anaconda repository package utilities
 """
@@ -21,7 +22,6 @@ def main(args):
     if args.add_collaborator:
         collaborator = args.add_collaborator
         aserver_api.package_add_collaborator(owner, package, collaborator)
-        args.add_collaborator
 
     elif args.list_collaborators:
         logger.info(':Collaborators:')
@@ -30,15 +30,16 @@ def main(args):
     elif args.create:
         public = args.access != 'private'
         aserver_api.add_package(args.spec.user, args.spec.package, args.summary,
-                       public=public,
-                       license=args.license, license_url=args.license_url)
+                                public=public,
+                                license=args.license, license_url=args.license_url)
         logger.info('Package created!')
+
 
 def add_parser(subparsers):
 
     parser = subparsers.add_parser('package',
-                                      help='Package utils',
-                                      description=__doc__)
+                                   help='Package utils',
+                                   description=__doc__)
 
     parser.add_argument('spec', help='Package to operate on', type=parse_specs,
                         metavar='USER/PACKAGE')

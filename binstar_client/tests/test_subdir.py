@@ -1,3 +1,4 @@
+# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 import unittest
 
 from binstar_client.inspect_package.conda import get_subdir

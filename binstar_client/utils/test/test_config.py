@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+
+# pylint: disable=missing-class-docstring,missing-function-docstring
 """Test anaconda-client configuration set/get."""
 
 import os
@@ -12,13 +14,13 @@ from os.path import join
 import mock
 import yaml
 
+from binstar_client.errors import BinstarError
 # Local imports
 from binstar_client.utils import config
-from binstar_client.errors import BinstarError
 
 
 class Test(unittest.TestCase):
-    CONFIG_DATA = {'ssl_verify': False}
+    CONFIG_DATA = {'ssl_verify': False}  # pylint: disable=invalid-name
 
     def create_config_dirs(self):
         tmpdir = tempfile.mkdtemp()
@@ -31,8 +33,8 @@ class Test(unittest.TestCase):
 
     def test_defaults(self):
         user_dir, system_dir = self.create_config_dirs()
-        with open(join(user_dir, 'config.yaml'), 'wb') as fd:
-            fd.write(b'')
+        with open(join(user_dir, 'config.yaml'), 'wb') as file:
+            file.write(b'')
 
         with mock.patch('binstar_client.utils.config.SEARCH_PATH',
                         [system_dir, user_dir]):
@@ -46,8 +48,8 @@ class Test(unittest.TestCase):
         https://github.com/Anaconda-Platform/anaconda-client/issues/464
         """
         user_dir, system_dir = self.create_config_dirs()
-        with open(join(user_dir, 'config.yaml'), 'wb') as fd:
-            fd.write(b'')
+        with open(join(user_dir, 'config.yaml'), 'wb') as file:
+            file.write(b'')
 
         url_data = {'url': 'https://blob.org'}
         config_data = config.DEFAULT_CONFIG.copy()
@@ -61,16 +63,16 @@ class Test(unittest.TestCase):
 
     def test_merge(self):
         user_dir, system_dir = self.create_config_dirs()
-        with open(join(system_dir, 'config.yaml'), 'wb') as fd:
-            fd.write(b'''
+        with open(join(system_dir, 'config.yaml'), 'wb') as file:
+            file.write(b'''
 ssl_verify: false
 sites:
     develop:
         url: http://develop.anaconda.org
             ''')
 
-        with open(join(user_dir, 'config.yaml'), 'wb') as fd:
-            fd.write(b'''
+        with open(join(user_dir, 'config.yaml'), 'wb') as file:
+            file.write(b'''
 ssl_verify: true
 sites:
     develop:
@@ -92,9 +94,10 @@ sites:
             })
 
     def test_support_tags(self):
-        user_dir, system_dir = self.create_config_dirs()
-        with open(join(user_dir, 'config.yaml'), 'wb') as fd:
-            fd.write(b'''
+        user_dir, system_dir = self.create_config_dirs()  # pylint: disable=unused-variable
+
+        with open(join(user_dir, 'config.yaml'), 'wb') as file:
+            file.write(b'''
 !!python/unicode 'sites':
    !!python/unicode 'alpha': {!!python/unicode 'url': !!python/unicode 'foobar'}
    !!python/unicode 'binstar': {!!python/unicode 'url': !!python/unicode 'barfoo'}
@@ -123,8 +126,8 @@ ssl_verify: False
         tmpdir = tempfile.mkdtemp()
         tmp_config = os.path.join(tmpdir, 'config.yaml')
 
-        with open(tmp_config, 'w') as f:
-            config.yaml_dump(self.CONFIG_DATA, f)
+        with open(tmp_config, 'w', encoding='utf-8') as file:
+            config.yaml_dump(self.CONFIG_DATA, file)
 
         with self.subTest('OK'):
             self.assertEqual(self.CONFIG_DATA, config.load_config(tmp_config))

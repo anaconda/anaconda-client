@@ -1,3 +1,4 @@
+# pylint: disable=missing-function-docstring
 """
 Print the information of the current user
 """
@@ -12,7 +13,7 @@ from binstar_client.utils.pprint import pprint_user
 logger = logging.getLogger('binstar.whoami')
 
 
-def main(args):
+def main(args):  # pylint: disable=inconsistent-return-statements
     aserver_api = get_server_api(args.token, args.site)
 
     try:

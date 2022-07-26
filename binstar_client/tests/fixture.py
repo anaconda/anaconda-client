@@ -8,17 +8,16 @@ import io
 import unittest
 import mock
 
-from binstar_client import tests
 
+class AnyIO(io.StringIO):  # pylint: disable=missing-class-docstring
 
-class AnyIO(io.StringIO):
     def write(self, msg):
         if hasattr('msg', 'decode'):
             msg = msg.decode()
         return io.StringIO.write(self, msg)
 
 
-class CLITestCase(unittest.TestCase):
+class CLITestCase(unittest.TestCase):   # pylint: disable=too-many-instance-attributes,missing-class-docstring
     def setUp(self):
         self.get_config_patch = mock.patch('binstar_client.utils.get_config')
         self.get_config = self.get_config_patch.start()

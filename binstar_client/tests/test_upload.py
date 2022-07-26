@@ -1,8 +1,9 @@
+# pylint: disable=no-self-use,missing-function-docstring,missing-class-docstring,missing-module-docstring
 from __future__ import unicode_literals
 
+import datetime
 import json
 import unittest
-import datetime
 from unittest.mock import patch
 
 from binstar_client import errors
@@ -18,12 +19,12 @@ class Test(CLITestCase):
         registry.register(method='HEAD', path='/', status=200)
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
         registry.register(method='GET', path='/package/eggs/foo', content='{}', status=404)
-        content = {"package_types": ['conda']}
+        content = {'package_types': ['conda']}
         registry.register(method='POST', path='/package/eggs/foo', content=content, status=200)
         registry.register(method='GET', path='/release/eggs/foo/0.1', content='{}')
         registry.register(method='GET', path='/dist/eggs/foo/0.1/osx-64/foo-0.1-0.tar.bz2', status=404, content='{}')
 
-        content = {"post_url": "http://s3url.com/s3_url", "form_data": {}, "dist_id": "dist_id"}
+        content = {'post_url': 'http://s3url.com/s3_url', 'form_data': {}, 'dist_id': 'dist_id'}
         staging_response = registry.register(
             method='POST', path='/stage/eggs/foo/0.1/osx-64/foo-0.1-0.tar.bz2', content=content)
 
@@ -53,7 +54,7 @@ class Test(CLITestCase):
         registry.register(method='GET', path='/release/eggs/foo/0.1', content='{}')
         registry.register(method='GET', path='/dist/eggs/foo/0.1/osx-64/foo-0.1-0.tar.bz2', status=404, content='{}')
 
-        content = {"post_url": "http://s3url.com/s3_url", "form_data": {}, "dist_id": "dist_id"}
+        content = {'post_url': 'http://s3url.com/s3_url', 'form_data': {}, 'dist_id': 'dist_id'}
         staging_response = registry.register(method='POST', path='/stage/eggs/foo/0.1/osx-64/foo-0.1-0.tar.bz2',
                                              content=content)
 
@@ -75,7 +76,7 @@ class Test(CLITestCase):
         registry.register(
             method='GET', path='/dist/eggs/mock/2.0.0/osx-64/mock-2.0.0-py37_1000.conda', status=404, content='{}')
 
-        content = {"post_url": "http://s3url.com/s3_url", "form_data": {}, "dist_id": "dist_id"}
+        content = {'post_url': 'http://s3url.com/s3_url', 'form_data': {}, 'dist_id': 'dist_id'}
         staging_response = registry.register(
             method='POST', path='/stage/eggs/mock/2.0.0/osx-64/mock-2.0.0-py37_1000.conda', content=content)
 
@@ -98,7 +99,7 @@ class Test(CLITestCase):
         registry.register(method='GET', path='/dist/eggs/test-package34/0.3.1/test_package34-0.3.1.tar.gz', status=404,
                           content='{}')
 
-        content = {"post_url": "http://s3url.com/s3_url", "form_data": {}, "dist_id": "dist_id"}
+        content = {'post_url': 'http://s3url.com/s3_url', 'form_data': {}, 'dist_id': 'dist_id'}
         staging_response = registry.register(
             method='POST', path='/stage/eggs/test-package34/0.3.1/test_package34-0.3.1.tar.gz',
             content=content)
@@ -122,7 +123,7 @@ class Test(CLITestCase):
         registry.register(method='GET', path='/dist/eggs/test-package34/0.3.1/test_package34-0.3.1.tar.gz', status=404,
                           content='{}')
 
-        content = {"post_url": "http://s3url.com/s3_url", "form_data": {}, "dist_id": "dist_id"}
+        content = {'post_url': 'http://s3url.com/s3_url', 'form_data': {}, 'dist_id': 'dist_id'}
         staging_response = registry.register(
             method='POST', path='/stage/eggs/test-package34/0.3.1/test_package34-0.3.1.tar.gz', content=content)
 
@@ -191,7 +192,7 @@ class Test(CLITestCase):
         registry.register(
             method='GET', path='/dist/eggs/foo/{}/foo.ipynb'.format(mock_version), status=404, content='{}')
 
-        content = {"post_url": "http://s3url.com/s3_url", "form_data": {}, "dist_id": "dist_id"}
+        content = {'post_url': 'http://s3url.com/s3_url', 'form_data': {}, 'dist_id': 'dist_id'}
         staging_response = registry.register(method='POST', path='/stage/eggs/foo/{}/foo.ipynb'.format(mock_version),
                                              content=content)
 
@@ -228,7 +229,7 @@ class Test(CLITestCase):
     def test_upload_project_specifying_token(self, registry):
         registry.register(method='HEAD', path='/', status=200)
         registry.register(method='GET', path='/user/eggs', content='{"login": "eggs"}',
-                          expected_headers={'Authorization':'token abcdefg'})
+                          expected_headers={'Authorization': 'token abcdefg'})
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
         registry.register(method='GET', path='/apps/eggs/projects/dog', content='{}')
         stage_content = '{"post_url":"http://s3url.com/s3_url", "form_data":{"foo":"bar"}, "dist_id":"dist42"}'
@@ -270,7 +271,7 @@ class Test(CLITestCase):
         registry.register(method='GET', path='/release/eggs/foo/0.1', content='{}')
         registry.register(method='GET', path='/dist/eggs/foo/0.1/osx-64/foo-0.1-0.tar.bz2', status=404, content='{}')
 
-        content = {"post_url": "http://s3url.com/s3_url", "form_data": {}, "dist_id": "dist_id"}
+        content = {'post_url': 'http://s3url.com/s3_url', 'form_data': {}, 'dist_id': 'dist_id'}
         staging_response = registry.register(
             method='POST', path='/stage/eggs/foo/0.1/osx-64/foo-0.1-0.tar.bz2', content=content)
 

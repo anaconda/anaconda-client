@@ -1,10 +1,9 @@
+# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 import unittest
-try:
-    from unittest import mock
-except ImportError:
-    import mock
+from unittest import mock
+
 from binstar_client import errors
-from binstar_client.utils.notebook import Uploader
+from binstar_client.utils.notebook.uploader import Uploader
 
 
 class UploaderTestCase(unittest.TestCase):

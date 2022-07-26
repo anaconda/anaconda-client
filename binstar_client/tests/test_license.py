@@ -1,3 +1,5 @@
+# pylint: disable=no-self-use
+# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 import unittest
 
 from binstar_client.tests.urlmock import urlpatch
@@ -9,7 +11,7 @@ class Test(unittest.TestCase):
     def test_licenses_array_param(self, urls):
         api = Binstar()
         urls.register(method='GET', path='/license', content='[]')
-        licenses = api.user_licenses()
+        api.user_licenses()
         urls.assertAllCalled()
 
 

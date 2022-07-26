@@ -1,3 +1,4 @@
+# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 import unittest
 
 from binstar_client.utils.notebook.data_uri import DataURIConverter
@@ -8,7 +9,7 @@ class DataURIConverterTestCase(unittest.TestCase):
     def test_local_image(self):
         location = data_dir('bokeh-logo.png')
         output = DataURIConverter(location)()
-        self.assertEqual(output[0:5], "iVBOR")
+        self.assertEqual(output[0:5], 'iVBOR')
 
     def test_file_not_found(self):
         location = data_dir('no-exists.png')

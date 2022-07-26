@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+
+# pylint: disable=broad-except,protected-access,missing-function-docstring
 """
 Move packages between labels.
 """
@@ -28,7 +30,7 @@ def main(args):
 
     if from_label not in channels:
         raise errors.UserError(
-            "{} {} does not exist\n\tplease choose from: {}".format(
+            '{} {} does not exist\n\tplease choose from: {}'.format(
                 label_text.title(),
                 from_label,
                 ', '.join(channels)

@@ -1,3 +1,4 @@
+# pylint: disable=missing-function-docstring
 """
 [Deprecation warning]
 `anaconda notebook` is going to be deprecated
@@ -9,9 +10,11 @@ import argparse
 import logging
 from binstar_client import errors
 from binstar_client.utils import get_server_api
-from binstar_client.utils.notebook import Uploader, Downloader, parse, notebook_url, has_environment
+from binstar_client.utils.notebook import parse, notebook_url, has_environment
+from binstar_client.utils.notebook.uploader import Uploader
+from binstar_client.utils.notebook.downloader import Downloader
 
-logger = logging.getLogger("binstar.notebook")
+logger = logging.getLogger('binstar.notebook')
 
 
 def add_parser(subparsers):
@@ -28,12 +31,12 @@ def add_parser(subparsers):
 
 
 def add_upload_parser(subparsers):
-    description = "Upload a notebook to your Anaconda repository"
-    epilog = """
+    description = 'Upload a notebook to your Anaconda repository'
+    epilog = '''
     [Deprecation warning]
     `anaconda notebook` is going to be deprecated
     use `anaconda upload` instead
-    """
+    '''
     parser = subparsers.add_parser('upload',
                                    formatter_class=argparse.RawDescriptionHelpFormatter,
                                    help=description,
@@ -53,7 +56,7 @@ def add_upload_parser(subparsers):
 
     parser.add_argument(
         '--force',
-        help="Force a notebook upload regardless of errors",
+        help='Force a notebook upload regardless of errors',
         action='store_true'
     )
 
@@ -67,12 +70,12 @@ def add_upload_parser(subparsers):
 
 
 def add_download_parser(subparsers):
-    description = "Download notebooks from your Anaconda repository"
-    epilog = """
+    description = 'Download notebooks from your Anaconda repository'
+    epilog = '''
     [Deprecation warning]
     `anaconda notebook` is going to be deprecated
     use `anaconda download` instead
-    """
+    '''
     parser = subparsers.add_parser('download',
                                    formatter_class=argparse.RawDescriptionHelpFormatter,
                                    help=description,
@@ -81,7 +84,7 @@ def add_download_parser(subparsers):
 
     parser.add_argument(
         'handle',
-        help="user/notebook",
+        help='user/notebook',
         action='store'
     )
 
@@ -108,12 +111,12 @@ def upload(args):
 
     try:
         upload_info = uploader.upload(force=args.force)
-        logger.warning("`anaconda notebook` is going to be deprecated")
-        logger.warning("use `anaconda upload` instead.")
-        logger.info("{} has been uploaded.".format(args.notebook))
-        logger.info("You can visit your notebook at {}".format(notebook_url(upload_info)))
-    except (errors.BinstarError, IOError) as e:
-        logger.error(str(e))
+        logger.warning('`anaconda notebook` is going to be deprecated')
+        logger.warning('use `anaconda upload` instead.')
+        logger.info('%s has been uploaded.', args.notebook)
+        logger.info('You can visit your notebook at %s', notebook_url(upload_info))
+    except (errors.BinstarError, IOError) as error:
+        logger.error(error)
 
 
 def download(args):
@@ -124,13 +127,13 @@ def download(args):
     downloader = Downloader(aserver_api, username, notebook)
     try:
         download_info = downloader(output=args.output, force=args.force)
-        logger.warning("`anaconda notebook` is going to be deprecated")
-        logger.warning("use `anaconda download` instead.")
-        logger.info("{} has been downloaded as {}.".format(args.handle, download_info[0]))
+        logger.warning('`anaconda notebook` is going to be deprecated')
+        logger.warning('use `anaconda download` instead.')
+        logger.info('%s has been downloaded as %s.', args.handle, download_info[0])
         if has_environment(download_info[0]):
-            logger.info("{} has an environment embedded.".format(download_info[0]))
-            logger.info("Run:")
-            logger.info("    conda env create {}".format(download_info[0]))
-            logger.info("To install the environment in your system")
+            logger.info('%s has an environment embedded.', download_info[0])
+            logger.info('Run:')
+            logger.info('    conda env create %s', download_info[0])
+            logger.info('To install the environment in your system')
     except (errors.DestionationPathExists, errors.NotFound, OSError) as err:
         logger.info(err.msg)

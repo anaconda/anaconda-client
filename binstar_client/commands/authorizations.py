@@ -1,3 +1,4 @@
+# pylint: disable=missing-function-docstring
 """
 Manage Authentication tokens
 
@@ -13,21 +14,17 @@ import getpass
 import logging
 import socket
 import sys
-
 from argparse import FileType
 from datetime import datetime
 
 import pytz
-
 from dateutil.parser import parse as parse_date
 from six.moves import input
 
 from binstar_client import errors
 from binstar_client.utils import get_server_api
 
-
 logger = logging.getLogger('binstar.auth')
-
 
 SCOPE_EXAMPLES = """
 
@@ -49,7 +46,7 @@ def utcnow():
     return now.replace(tzinfo=pytz.utc)
 
 
-def format_timedelta(date, expired=True):
+def format_timedelta(date, expired=True):  # pylint: disable=too-many-return-statements
     if not date:
         return 'Never'
 
@@ -57,11 +54,9 @@ def format_timedelta(date, expired=True):
 
     if date < now:
         if expired:
-            return  'expired'
-        else:
-            tmp = date
-            date = now
-            now = tmp
+            return 'expired'
+
+        now, date = date, now
 
     delta = date - now
 
@@ -70,28 +65,26 @@ def format_timedelta(date, expired=True):
         if days > 3:
             days = int(days)
             return '%i days' % days
-        else:
-            return '%.1f days' % days
-    elif delta.seconds > 60 * 60:
-        return  '%.1f hours' % (delta.seconds / (60. * 60))
-    elif delta.seconds > 60:
+        return '%.1f days' % days
+    if delta.seconds > 60 * 60:
+        return '%.1f hours' % (delta.seconds / (60. * 60))
+    if delta.seconds > 60:
         return '%i minutes' % (delta.seconds // 60)
-    else:
-        return '%i seconds' % delta.seconds
+    return '%i seconds' % delta.seconds
 
 
 def show_auths(authentications):
     header = {'id': 'ID',
               'application': 'Application',
-              'remote_addr':'Remote Addr',
-              'hostname':'Host',
-              'expires':'Expires In',
-              'scopes':'Scopes'}
+              'remote_addr': 'Remote Addr',
+              'hostname': 'Host',
+              'expires': 'Expires In',
+              'scopes': 'Scopes'}
 
     template = '%(id)-25s | %(application)-35s | %(remote_addr)-20s | %(hostname)-25s | %(expires)-15s | %(scopes)-25s'
     logger.info('')
-    logger.info(template % header)
-    logger.info('%s-+-%s-+-%s-+-%s-+-%s-+-%s' % ('-' * 25, '-' * 35, '-' * 20, '-' * 25, '-' * 15, '-' * 25))
+    logger.info(template, header)
+    logger.info('%s-+-%s-+-%s-+-%s-+-%s-+-%s', '-' * 25, '-' * 35, '-' * 20, '-' * 25, '-' * 15, '-' * 25)
 
     for auth in authentications:
         if auth['expires']:
@@ -106,7 +99,7 @@ def show_auths(authentications):
             for scope in scope_items:
                 if first_time:
                     auth['scopes'] = scope
-                    logger.info(template % auth)
+                    logger.info(template, auth)
                     first_time = False
                 else:
                     auth['id'] = ''
@@ -115,31 +108,31 @@ def show_auths(authentications):
                     auth['hostname'] = ''
                     auth['expires'] = ''
                     auth['scopes'] = scope
-                    logger.info(template % auth)
+                    logger.info(template, auth)
         else:
             auth['scopes'] = 'NO_SCOPE'
-            logger.info(template % auth)
+            logger.info(template, auth)
 
 
-def main(args):
+def main(args):  # pylint: disable=too-many-branches
     aserver_api = get_server_api(args.token, args.site)
     if args.info:
         data = aserver_api.authentication()
-        logger.info('Name: %s' % data['application'])
-        logger.info('Id: %s' % data['id'])
-    if args.list:
+        logger.info('Name: %s', data['application'])
+        logger.info('Id: %s', data['id'])
+    if args.list:  # pylint: disable=no-else-return
         show_auths(aserver_api.authentications())
         return
     elif args.remove:
         for auth_name in args.remove:
             aserver_api.remove_authentication(auth_name, args.organization)
-            logger.info("Removed token %s" % auth_name)
+            logger.info('Removed token %s', auth_name)
         return
     elif args.list_scopes:
         scopes = aserver_api.list_scopes()
         for key in sorted(scopes):
             logger.info(key)
-            logger.info('  ' + scopes[key])
+            logger.info('  %s', scopes[key])
             logger.info('')
         logger.info(SCOPE_EXAMPLES)
 
@@ -149,7 +142,7 @@ def main(args):
         try:
             current_user = aserver_api.user()
             username = current_user['login']
-        except:
+        except BaseException:  # pylint: disable=broad-except
             if auth_type == 'kerberos':
                 logger.error("Kerberos authentication needed, please use 'anaconda login' to authenticate")
                 return
@@ -161,21 +154,20 @@ def main(args):
 
         scopes = [scope for scopes in args.scopes for scope in scopes.split()]
         if not scopes:
-            logger.warning("You have not specified the scope of this token with the '--scopes' argument.")
-            logger.warning("This token will grant full access to %s's account" % (args.organization or username))
-            logger.warning("Use the --list-scopes option to see a listing of your options")
+            logger.warning('You have not specified the scope of this token with the \'--scopes\' argument.')
+            logger.warning('This token will grant full access to %s\'s account', args.organization or username)
+            logger.warning('Use the --list-scopes option to see a listing of your options')
 
         for _ in range(3):
             try:
                 if auth_type == 'kerberos':
-                    token = aserver_api._authenticate(
+                    token = aserver_api._authenticate(  # pylint: disable=protected-access
                         None,
                         args.name,
                         application_url=args.url,
                         scopes=scopes,
                         for_user=args.organization,
                         max_age=args.max_age,
-                        created_with=' '.join(sys.argv),
                         strength=args.strength,
                         fail_if_already_exists=True
                     )
@@ -201,35 +193,45 @@ def main(args):
 
 
 def add_parser(subparsers):
-
     description = 'Manage Authorization Tokens'
     parser = subparsers.add_parser('auth',
-                                    help=description,
-                                    description=description,
-                                    epilog=__doc__,
-                                    formatter_class=argparse.RawDescriptionHelpFormatter)
+                                   help=description,
+                                   description=description,
+                                   epilog=__doc__,
+                                   formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    parser.add_argument('-n', '--name', default='binstar_token:%s' % (socket.gethostname()),
-                        help='A unique name so you can identify this token later. View your tokens at anaconda.org/settings/access')
+    parser.add_argument(
+        '-n', '--name',
+        default='binstar_token:%s' % (socket.gethostname()),
+        help='A unique name so you can identify this token later. View your tokens at anaconda.org/settings/access'
+    )
 
-    parser.add_argument('-o', '--org', '--organization', help='Set the token owner (must be an organization)', dest='organization')
+    parser.add_argument('-o', '--org', '--organization',
+                        help='Set the token owner (must be an organization)', dest='organization')
 
-    g = parser.add_argument_group('token creation arguments', 'These arguments are only valid with the `--create` action')
+    token_group = parser.add_argument_group('token creation arguments',
+                                            'These arguments are only valid with the `--create` action')
 
-    g.add_argument('--strength', choices=['strong', 'weak'], default='strong', dest='strength')
-    g.add_argument('--strong', action='store_const', const='strong', dest='strength' , help='Create a longer token (default)')
-    g.add_argument('-w', '--weak', action='store_const', const='weak', dest='strength', help='Create a shorter token')
+    token_group.add_argument('--strength', choices=['strong', 'weak'], default='strong', dest='strength')
+    token_group.add_argument('--strong', action='store_const', const='strong',
+                             dest='strength', help='Create a longer token (default)')
+    token_group.add_argument('-w', '--weak', action='store_const', const='weak',
+                             dest='strength', help='Create a shorter token')
 
-    g.add_argument('--url', default='http://anaconda.org', help='The url of the application that will use this token')
-    g.add_argument('--max-age', type=int, help='The maximum age in seconds that this token will be valid for')
-    g.add_argument('-s', '--scopes', action='append', help=('Scopes for token. '
-                                                                 'For example if you want to limit this token to conda downloads only you would use '
-                                                                 '--scopes "repo conda:download"'), default=[])
+    token_group.add_argument('--url', default='http://anaconda.org',
+                             help='The url of the application that will use this token')
+    token_group.add_argument('--max-age', type=int, help='The maximum age in seconds that this token will be valid for')
+    token_group.add_argument(
+        '-s', '--scopes', action='append',
+        help=('Scopes for token. ' +
+              'For example if you want to limit this token to conda downloads only you would use ' +
+              '--scopes "repo conda:download"'),
+        default=[]
+    )
 
-    g.add_argument('--out', default=sys.stdout,
-                        type=FileType('w'))
+    token_group.add_argument('--out', default=sys.stdout, type=FileType('w'))
 
-    group = parser.add_argument_group("actions")
+    group = parser.add_argument_group('actions')
     group = group.add_mutually_exclusive_group(required=True)
     group.add_argument('-x', '--list-scopes', action='store_true', help='list all authentication scopes')
     group.add_argument('-l', '--list', action='store_true', help='list all user authentication tokens')

@@ -1,4 +1,4 @@
-
+# pylint: disable=missing-module-docstring,missing-function-docstring
 import logging
 
 from pprint import pformat
@@ -20,7 +20,7 @@ def main(args):
         aserver_api.add_group(spec.org, spec.group_name, args.perms)
         logger.info('Created the group %s', spec)
     elif action == 'show':
-        if spec._group_name:
+        if spec._group_name:  # pylint: disable=protected-access
             result = aserver_api.group(spec.org, spec.group_name)
         else:
             result = aserver_api.groups(spec.org)

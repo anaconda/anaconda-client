@@ -1,13 +1,9 @@
+# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 import unittest
+from unittest import mock
 
-try:
-    from unittest import mock
-except ImportError:
-    import mock
-
-from binstar_client.utils.notebook import Downloader
+from binstar_client.utils.notebook.downloader import Downloader
 from binstar_client.utils.test.utils import data_dir
-
 
 files = {'files': [
     {'basename': 'notebook', 'version': '1'},
@@ -45,6 +41,7 @@ class DownloaderTestCase(unittest.TestCase):
 
         downloader = Downloader(aserver_api, 'username', 'notebook')
         self.assertEqual(downloader.list_files()[0]['version'], '1.0.0')
+
 
 if __name__ == '__main__':
     unittest.main()

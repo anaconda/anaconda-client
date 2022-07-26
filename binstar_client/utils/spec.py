@@ -1,11 +1,20 @@
+# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 from urllib.parse import parse_qsl
-from six.moves.urllib.parse import urlparse
 
 from binstar_client.errors import UserError
 
 
-class PackageSpec(object):
-    def __init__(self, user, package=None, version=None, basename=None, attrs=None, spec_str=None):
+class PackageSpec:
+    def __init__(   # pylint: disable=too-many-arguments
+            self,
+            user,
+            package=None,
+            version=None,
+            basename=None,
+            attrs=None,
+            spec_str=None
+    ):
+
         self._user = user
         self._package = package
         self._version = version
@@ -50,13 +59,17 @@ class PackageSpec(object):
     @property
     def version(self):
         if self._version is None:
-            raise UserError('version not given in spec (got %r expected <username>/<package>/<version> )' % (self.spec_str,))
+            raise UserError('version not given in spec (got %r expected <username>/<package>/<version> )' %
+                            (self.spec_str,))
         return self._version
 
     @property
     def basename(self):
         if self._basename is None:
-            raise UserError('basename not given in spec (got %r expected <username>/<package>/<version>/<filename> )' % (self.spec_str,))
+            raise UserError(
+                'basename not given in spec (got %r expected <username>/<package>/<version>/<filename> )' % (
+                    self.spec_str,)
+            )
         return self._basename
 
 
@@ -91,7 +104,7 @@ def parse_specs(spec):
     return PackageSpec(user, package, version, basename, attrs, spec)
 
 
-class GroupSpec(object):
+class GroupSpec:
     def __init__(self, org, group_name=None, member=None, spec_str=None):
         self._org = org
         self._group_name = group_name
@@ -126,7 +139,8 @@ class GroupSpec(object):
     @property
     def member(self):
         if self._member is None:
-            raise UserError('Member name not given (got %r expected <organization>/<group_name>/<member>)' % (self.spec_str,))
+            raise UserError('Member name not given (got %r expected <organization>/<group_name>/<member>)' %
+                            (self.spec_str,))
         return self._member
 
 

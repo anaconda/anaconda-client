@@ -1,3 +1,5 @@
+# pylint: disable=no-self-use,unused-argument
+# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 import unittest
 from binstar_client.tests.fixture import CLITestCase
 from binstar_client.tests.urlmock import urlpatch
@@ -44,7 +46,7 @@ class Test(CLITestCase):
 
     @urlpatch
     def test_create_missing_group(self, urls):
-        with self.assertRaisesRegexp(errors.UserError, 'Group name not given'):
+        with self.assertRaisesRegex(errors.UserError, 'Group name not given'):
             main(['--show-traceback', 'groups', 'add', 'org'], False)
 
     @urlpatch
@@ -61,7 +63,7 @@ class Test(CLITestCase):
 
     @urlpatch
     def test_add_member_missing_member(self, urls):
-        with self.assertRaisesRegexp(errors.UserError, 'Member name not given'):
+        with self.assertRaisesRegex(errors.UserError, 'Member name not given'):
             main(['--show-traceback', 'groups', 'add_member', 'org/grp'], False)
 
     @urlpatch
@@ -112,5 +114,6 @@ class Test(CLITestCase):
 
         urls.assertAllCalled()
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     unittest.main()

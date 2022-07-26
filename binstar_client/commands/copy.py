@@ -1,3 +1,4 @@
+# pylint: disable=missing-function-docstring
 """
 Copy packages from one account to another
 """
@@ -22,24 +23,24 @@ def main(args):
     to_label = args.to_label
     if from_label not in channels:
         raise errors.UserError(
-            "{} {} does not exist\n\tplease choose from: {}".format(
+            '{} {} does not exist\n\tplease choose from: {}'.format(
                 label_text.title(),
                 from_label,
                 ', '.join(channels)
             ))
 
     files = aserver_api.copy(
-        spec.user, spec.package, spec.version, spec._basename,
+        spec.user, spec.package, spec.version, spec._basename,  # pylint: disable=protected-access
         to_owner=args.to_owner, from_label=from_label, to_label=to_label, replace=args.replace, update=args.update
     )
 
     for binstar_file in files:
-        print("Copied file: %(basename)s" % binstar_file)
-    update_msg = '\nNOTE: copy command with --update option doesn`t copy already existing files.' \
+        print('Copied file: %(basename)s' % binstar_file)
+    update_msg = '\nNOTE: copy command with --update option doesn`t copy already existing files.' + \
                  ' Try to use --replace to overwrite existing data'
-    no_copied_files = "Did not copy any files. Please check your inputs with\n\n\tanaconda show {}".format(spec)
+    no_copied_files = 'Did not copy any files. Please check your inputs with\n\n\tanaconda show {}'.format(spec)
 
-    logger.info("Copied {} files!{}".format(len(files), update_msg if args.update else ''))
+    logger.info('Copied %s files! %s', len(files), update_msg if args.update else '')
 
     if not (files or args.update):
         logger.warning(no_copied_files)
