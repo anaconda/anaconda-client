@@ -1,10 +1,10 @@
-anaconda-project >=0.9.1
-pillow
-
-flake8
-
+anaconda-project>=0.9.1
+pillow>=8.2
+mypy>=0.910
+pycodestyle>=2.8.0
+pylint>=2.12.2
 freezegun
-mock
-pytest
-pytest-cov
-pytest-html
+pytest>=7.1.0
+pytest-cov>=3.0.0
+pytest-html>=3.1.1
+typing-extensions>=3.10.0.2
