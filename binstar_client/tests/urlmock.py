@@ -34,10 +34,10 @@ class Responses:
             return self._resps[0][1]
 
     def assertCalled(self, url=''):
-        assert self.called, 'The url %s was not called' % url
+        assert self.called, 'The url %s was not called' % url  # nosec
 
     def assertNotCalled(self, url=''):
-        assert not self.called, 'The url %s was called' % url
+        assert not self.called, 'The url %s was called' % url  # nosec
 
 
 class Registry:

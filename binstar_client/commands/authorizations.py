@@ -181,7 +181,6 @@ def main(args):  # pylint: disable=too-many-branches
                         scopes=scopes,
                         for_user=args.organization,
                         max_age=args.max_age,
-                        created_with=' '.join(sys.argv),
                         strength=args.strength,
                         fail_if_already_exists=True
                     )

@@ -67,7 +67,6 @@ def interactive_get_token(args, fail_if_already_exists=True):  # pylint: disable
             api_client.krb_authenticate,
             application=auth_name,
             application_url=url,
-            created_with=' '.join(sys.argv),
             fail_if_already_exists=fail_if_already_exists,
             hostname=hostname,
         )
@@ -97,7 +96,6 @@ def interactive_get_token(args, fail_if_already_exists=True):  # pylint: disable
                     password=password,
                     application=auth_name,
                     application_url=url,
-                    created_with=' '.join(sys.argv),
                     fail_if_already_exists=fail_if_already_exists,
                     hostname=hostname,
                 )

@@ -9,9 +9,9 @@ import tempfile
 import unittest
 # Standard library imports
 from os.path import join
-
 # Third party imports
-import mock
+from unittest import mock
+
 import yaml
 
 from binstar_client.errors import BinstarError

@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 
 # Third party imports
-from mock import patch
+from unittest.mock import patch
 
 # Local imports
 from binstar_client.scripts.cli import main

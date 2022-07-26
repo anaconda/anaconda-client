@@ -1,12 +1,12 @@
-'''
+"""
 Created on Feb 22, 2014
 
 @author: sean
-'''
-import logging
+"""
 import io
+import logging
 import unittest
-import mock
+from unittest import mock
 
 
 class AnyIO(io.StringIO):  # pylint: disable=missing-class-docstring
@@ -17,7 +17,7 @@ class AnyIO(io.StringIO):  # pylint: disable=missing-class-docstring
         return io.StringIO.write(self, msg)
 
 
-class CLITestCase(unittest.TestCase):   # pylint: disable=too-many-instance-attributes,missing-class-docstring
+class CLITestCase(unittest.TestCase):  # pylint: disable=too-many-instance-attributes,missing-class-docstring
     def setUp(self):
         self.get_config_patch = mock.patch('binstar_client.utils.get_config')
         self.get_config = self.get_config_patch.start()

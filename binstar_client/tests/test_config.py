@@ -6,7 +6,7 @@ import shutil
 import tempfile
 from os.path import join, exists
 
-import mock
+from unittest import mock
 
 from binstar_client.scripts.cli import main
 from binstar_client.tests.fixture import CLITestCase

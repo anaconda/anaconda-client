@@ -6,7 +6,7 @@ import hashlib
 import logging
 import os
 import platform as _platform
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 
 import requests
 from pkg_resources import parse_version as pv
@@ -137,7 +137,6 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
                    'hostname': hostname,
                    'user': for_user,
                    'max-age': max_age,
-                   'created_with': None,
                    'strength': strength,
                    'fail-if-exists': fail_if_already_exists}
 
@@ -213,10 +212,9 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
             try:
                 data = res.json()
             except Exception:  # pylint: disable=broad-except
-                pass
-            else:
-                msg = data.get('error', msg)
+                data = {}
 
+            msg = data.get('error', msg)
             ErrCls = errors.BinstarError
             if res.status_code == 401:
                 ErrCls = errors.Unauthorized

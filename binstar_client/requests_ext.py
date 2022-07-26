@@ -137,7 +137,7 @@ class MultiPartIO:
         return cursor
 
     def seek(self, pos, mode=0):
-        assert pos == 0
+        assert pos == 0  # nosec
         if mode == 0:
             self.to_read = self.have_read + self.to_read
             self.have_read = []

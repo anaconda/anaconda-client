@@ -9,7 +9,7 @@ from ..env import EnvInspector, inspect_env_package
 class EnvInspectorTestCase(unittest.TestCase):
     def test_package_name(self):
         with open(data_dir('environment.yml')) as fileobj:
-            assert EnvInspector('environment.yml', fileobj).name == 'stats'
+            assert EnvInspector('environment.yml', fileobj).name == 'stats'  # nosec
 
     def test_version(self):
         with open(data_dir('environment.yml')) as fileobj:

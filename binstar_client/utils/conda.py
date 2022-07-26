@@ -1,6 +1,6 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 import json
-import subprocess
+import subprocess  # nosec
 import sys
 from os.path import basename, dirname, join, exists
 
@@ -35,7 +35,7 @@ def _conda_root_from_conda_info():
         return None
 
     try:
-        output = subprocess.check_output([command, 'info', '--json']).decode('utf-8')
+        output = subprocess.check_output([command, 'info', '--json']).decode('utf-8')  # nosec
         conda_info = json.loads(output)
         return conda_info['root_prefix']
     except (ValueError, KeyError, subprocess.CalledProcessError):

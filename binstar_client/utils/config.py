@@ -256,7 +256,8 @@ def load_config(config_file):
 
 def load_file_configs(search_path):
     def _file_yaml_loader(fullpath):
-        assert fullpath.endswith('.yml') or fullpath.endswith('.yaml') or fullpath.endswith('anacondarc'), fullpath
+        assert (fullpath.endswith('.yml')   # nosec
+                or fullpath.endswith('.yaml') or fullpath.endswith('anacondarc')), fullpath
         yield fullpath, load_config(fullpath)
 
     def _dir_yaml_loader(fullpath):

@@ -48,8 +48,8 @@ def main(args):
             version=spec._version,
             filename=spec._basename,
         )
-    except Exception:
-        pass
+    except Exception as error:
+        logger.exception(error)
 
     # Remove files from from_label
     try:
@@ -60,8 +60,8 @@ def main(args):
             version=spec._version,
             filename=spec._basename,
         )
-    except Exception:
-        pass
+    except Exception as error:
+        logger.exception(error)
 
     # for binstar_file in files:
     #     print("Copied file: %(basename)s" % binstar_file)

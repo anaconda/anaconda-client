@@ -10,8 +10,8 @@ from __future__ import unicode_literals
 import json
 import os
 import unittest
+from unittest import mock
 
-import mock
 import requests.utils
 
 from binstar_client.scripts.cli import main
