@@ -1,9 +1,10 @@
 # pylint: disable=missing-function-docstring
-'''
+
+"""
 Usage:
     anaconda download notebook
     anaconda download user/notebook
-'''
+"""
 
 from __future__ import unicode_literals
 

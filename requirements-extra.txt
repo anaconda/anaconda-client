@@ -1,0 +1,4 @@
+# Additional requirements for complete experience
+
+anaconda-project>=0.9.1
+pillow>=8.2

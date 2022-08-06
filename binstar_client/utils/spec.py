@@ -1,4 +1,5 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
+
 from urllib.parse import parse_qsl
 
 from binstar_client.errors import UserError
@@ -145,7 +146,7 @@ class GroupSpec:
 
 
 def group_spec(spec):
-    '''<organization>/<group_name>/<member>'''
+    """<organization>/<group_name>/<member>"""
     org = spec
     group = member = None
     if '/' in org:

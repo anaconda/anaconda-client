@@ -1,4 +1,5 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
+
 import inspect
 import os
 import tarfile
@@ -7,7 +8,7 @@ from binstar_client.errors import BinstarError
 
 
 class CondaProject:
-    # TODO: This class will be moved into Anaconda-Project
+    # NOTE: This class will be moved into Anaconda-Project
     def __init__(self, project_path, *args, **kwargs):  # pylint: disable=unused-argument
 
         self.project_path = project_path
@@ -20,7 +21,11 @@ class CondaProject:
             'description': kwargs.get('description', None),
             'version': kwargs.get('version', None)
         }
-        self.metadata = dict((k, v) for k, v in self.metadata.items() if v)
+        self.metadata = {
+            key: value
+            for key, value in self.metadata.items()
+            if value
+        }
 
     def tar_it(self, file=SpooledTemporaryFile()):  # pylint: disable=consider-using-with
         with tarfile.open(mode='w', fileobj=file) as tar:

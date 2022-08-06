@@ -1,7 +1,9 @@
 # pylint: disable=redefined-outer-name,unspecified-encoding,missing-class-docstring,missing-function-docstring
+
 """
 Anaconda repository command line manager
 """
+
 from __future__ import print_function, unicode_literals
 
 import logging
@@ -24,10 +26,9 @@ logger = logging.getLogger('binstar')
 
 
 def file_or_token(value):
-    '''
-    If value is a file path and the file exists its contents are stripped and returned,
-    otherwise value is returned.
-    '''
+    """
+    If value is a file path and the file exists its contents are stripped and returned, otherwise value is returned.
+    """
     if isfile(value):
         with open(value) as file:
             return file.read().strip()
@@ -129,8 +130,9 @@ def binstar_main(sub_command_module, args=None, exit=True,  # pylint: disable=re
     try:
         try:
             if not hasattr(args, 'main'):
-                parser.error('A sub command must be given. '
-                             'To show all available sub commands, run:\n\n\t anaconda -h\n')
+                parser.error(
+                    'A sub command must be given. To show all available sub commands, run:\n\n\t anaconda -h\n',
+                )
             return args.main(args)
         except errors.Unauthorized:
             if not sys.stdin.isatty() or args.token:
@@ -138,8 +140,7 @@ def binstar_main(sub_command_module, args=None, exit=True,  # pylint: disable=re
                 # Just exit
                 raise
 
-            logger.info('The action you are performing requires authentication, '
-                        'please sign in:')
+            logger.info('The action you are performing requires authentication, please sign in:')
             interactive_login(args)
             return args.main(args)
     except errors.ShowHelp as error:

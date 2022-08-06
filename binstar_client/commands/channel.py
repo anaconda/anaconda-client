@@ -1,4 +1,5 @@
 # pylint: disable=protected-access,missing-function-docstring
+
 """
 Manage your Anaconda repository channels.
 """

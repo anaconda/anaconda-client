@@ -1,7 +1,9 @@
 # pylint: disable=missing-class-docstring,missing-function-docstring
+
 """
 Package type detection and meta-data extraction
 """
+
 from __future__ import print_function, unicode_literals
 
 import logging

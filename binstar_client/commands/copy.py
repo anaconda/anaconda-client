@@ -1,8 +1,11 @@
 # pylint: disable=missing-function-docstring
+
 """
 Copy packages from one account to another
 """
+
 from __future__ import unicode_literals, print_function
+
 import logging
 
 from binstar_client.utils import get_server_api, parse_specs

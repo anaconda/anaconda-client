@@ -1,4 +1,5 @@
 # pylint: disable=missing-module-docstring,missing-function-docstring
+
 import logging
 from os import path
 
@@ -10,7 +11,7 @@ PACKAGE_TYPE = 'installer'
 
 
 def is_installer(filename):
-    # TODO: allow
+    # NOTE: allow
     if not filename.endswith('.sh'):
         return False
 
@@ -19,7 +20,7 @@ def is_installer(filename):
         cio_copyright = file.readline()
         # Copyright (c) 2012-2014 Continuum Analytics, Inc.
 
-        # TODO: it would be great if the installers had a unique identifier in the header
+        # NOTE: it would be great if the installers had a unique identifier in the header
 
         # Made by CAS installer
         if 'CAS-INSTALLER' in cio_copyright:

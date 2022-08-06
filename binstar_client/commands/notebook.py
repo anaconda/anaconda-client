@@ -1,4 +1,5 @@
 # pylint: disable=missing-function-docstring
+
 """
 [Deprecation warning]
 `anaconda notebook` is going to be deprecated

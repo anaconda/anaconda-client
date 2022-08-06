@@ -1,8 +1,9 @@
-'''
+"""
 Created on Aug 9, 2013
 
 @author: sean
-'''
+"""
+
 # Table mapping response codes to messages; entries have the
 # form {code: (shortmessage, longmessage)}.
 # See RFC 2616.

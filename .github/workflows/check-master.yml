@@ -1,4 +1,4 @@
-name: Check project
+name: Lint and Test
 
 on:
   push:
@@ -14,14 +14,15 @@ defaults:
     shell: bash -l {0}
 
 jobs:
+
   lint:
     name: Lint (Python ${{ matrix.python-version }} on ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        python-version: [ "3.10" ]
         os: [ ubuntu-latest ]
+        python-version: [ '3.10' ]
 
     steps:
       - name: Checkout project
@@ -35,9 +36,9 @@ jobs:
 
       - name: Install dependencies
         run: |
-          conda update -n base -c conda-canary -q --no-pin conda
-          conda install --no-pin --file requirements.txt --file requirements-dev.txt pip
-          pip install -r requirements-pip.txt
+          conda update -n base -c conda-canary -q conda
+          conda install python=${{ matrix.python-version }} pip --file requirements.txt --file requirements-extra.txt
+          pip install -r requirements-dev.txt
           python setup.py develop
 
       - name: Conda environment information
@@ -79,22 +80,17 @@ jobs:
           name: report-lint-${{ matrix.python-version }}-${{ matrix.os }}
           path: .artifacts/reports
           retention-days: 7
-  test_project:
-    name: Test - Python ${{ matrix.python }} - ${{ matrix.os }}
+
+  test:
+    name: Test (Python ${{ matrix.python-version }} on ${{ matrix.os }})
     needs: lint
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - macos-latest
-          - ubuntu-latest
-          - windows-latest
-        python:
-          - "3.7"
-          - "3.8"
-          - "3.9"
-          - "3.10"
+        os: [ macos-latest, ubuntu-latest, windows-latest ]
+        python-version: [ '3.7', '3.8', '3.9', '3.10' ]
+
     steps:
       # most of these steps might be anchored to corresponding ones in the "lint_code" job
       # unfortunately, as of June 2021 - GitHub doesn't support anchors for action scripts
@@ -102,41 +98,35 @@ jobs:
       - name: Checkout project
         uses: actions/checkout@v2
 
-      - name: Setup Conda
+      - name: Setup Miniconda
         uses: conda-incubator/setup-miniconda@v2
         with:
-          activate-environment: test
           auto-update-conda: true
-          python-version: ${{ matrix.python }}
+          python-version: ${{ matrix.python-version }}
 
-      - name: Install requirements
+      - name: Install dependencies
         run: |
-          conda install -n test --file requirements.txt --file requirements-dev.txt
+          conda update -n base -c conda-canary -q conda
+          conda install python=${{ matrix.python-version }} pip --file requirements.txt --file requirements-extra.txt
+          pip install -r requirements-dev.txt
+          python setup.py develop
 
       - name: Conda environment information
         run: |
           conda info
           conda config --show
-          conda list -n test --show-channel-urls
+          conda list --show-channel-urls
 
       - name: Run tests
         run: |
-          mkdir .artifacts
-          mkdir .artifacts/reports
-          conda run -n test pytest binstar_client --cov=binstar_client --cov-report html:.artifacts/reports/coverage --html=.artifacts/reports/pytest.html --self-contained-html
+          mkdir -p .artifacts/reports
+          python scripts/refresh_coveragerc.py
+          pytest tests/ -x --cov=binstar_client --cov-report html:.artifacts/reports/coverage --html=.artifacts/reports/pytest.html --self-contained-html
 
-      - name: Export pytest report
+      - name: Export reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
         with:
-          name: report-pytest-python-${{ matrix.python }}-${{ matrix.os }}
-          path: .artifacts/reports/pytest.html
-          retention-days: 7
-
-      - name: Export coverage report
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v2
-        with:
-          name: report-coverage-python-${{ matrix.python }}-${{ matrix.os }}
-          path: .artifacts/reports/coverage
+          name: report-test-${{ matrix.python-version }}-${{ matrix.os }}
+          path: .artifacts/reports
           retention-days: 7

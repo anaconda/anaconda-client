@@ -1,4 +1,5 @@
 # pylint: disable=missing-function-docstring
+
 """
 anaconda-client configuration
 
@@ -61,6 +62,7 @@ If no, then an upload will fail if the package name does not already exist on th
     anaconda config --set auto_register yes|no
 
 """
+
 from __future__ import print_function
 
 import logging

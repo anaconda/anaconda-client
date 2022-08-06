@@ -1,7 +1,9 @@
 # pylint: disable=missing-function-docstring
+
 """
 Print the information of the current user
 """
+
 from __future__ import unicode_literals
 
 import logging

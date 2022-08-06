@@ -1,4 +1,5 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
+
 import requests
 
 import binstar_client
@@ -69,13 +70,13 @@ class ProjectUploader(binstar_client.Binstar):
         return self.session.get(url, data=data, headers=headers)
 
     def upload(self):  # pylint: disable=arguments-differ
-        '''
+        """
         * Check if project already exists
             * if it doesn't, then create it
         * stage a new revision
         * upload
         * commit revision
-        '''
+        """
         if not self.exists():
             self.create()
 

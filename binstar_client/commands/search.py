@@ -1,4 +1,5 @@
 # pylint: disable=missing-function-docstring
+
 """
 Search your Anaconda repository for packages.
 """
