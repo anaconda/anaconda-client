@@ -1,6 +1,6 @@
 # CHANGELOG:
 
-## Version 1.11.0
+## Version 1.11.0 - 2022-09-08
 
 ### Added
 
