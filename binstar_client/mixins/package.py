@@ -1,9 +1,11 @@
 # pylint: disable=missing-class-docstring,missing-function-docstring
-'''
-Created on May 23, 2014
+
+"""
+Created on May 23, 2014.
 
 @author: sean
-'''
+"""
+
 from binstar_client.utils import jencode
 from binstar_client.errors import Conflict
 

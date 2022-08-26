@@ -1,7 +1,9 @@
 # pylint: disable=missing-function-docstring
+
 """
 Update public attributes of the package or the attributes of the package release
 """
+
 import argparse
 import json
 import logging

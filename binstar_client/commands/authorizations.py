@@ -1,4 +1,5 @@
 # pylint: disable=missing-function-docstring
+
 """
 Manage Authentication tokens
 
@@ -7,6 +8,7 @@ See also:
   * [Using Anaconda Cloud Tokens](http://docs.anaconda.org/using.html#Tokens)
 
 """
+
 from __future__ import print_function
 
 import argparse

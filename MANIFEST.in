@@ -1,2 +1,2 @@
-include versioneer.py
-include binstar_client/_version.py
+include requirements.txt
+include requirements-extra.txt

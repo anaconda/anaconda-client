@@ -1,9 +1,11 @@
 # pylint: disable=missing-class-docstring,missing-function-docstring
+
 """
 Created on Aug 8, 2013
 
 @author: sean
 """
+
 from __future__ import unicode_literals
 
 import logging
@@ -67,9 +69,9 @@ def pprint_package(package, access=True, full_name=True, revision=False):
 
     if package.get('conda_platforms'):
         package['conda_platforms'] = ', '.join(
-            str(x)
-            for x in package['conda_platforms']
-            if x is not None
+            str(item)
+            for item in package['conda_platforms']
+            if item is not None
         )
 
     if not full_name:
@@ -77,16 +79,16 @@ def pprint_package(package, access=True, full_name=True, revision=False):
 
     if package.get('package_types'):
         package['package_types'] = ', '.join(
-            format_package_type(x)
-            for x in package['package_types']
-            if x is not None
+            format_package_type(item)
+            for item in package['package_types']
+            if item is not None
         )
 
     if package.get('builds'):
         package['builds'] = ', '.join(
-            str(x)
-            for x in package['builds']
-            if x is not None
+            str(item)
+            for item in package['builds']
+            if item is not None
         )
     else:
         package['builds'] = ''

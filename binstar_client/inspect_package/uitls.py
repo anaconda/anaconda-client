@@ -1,4 +1,5 @@
 # pylint: disable=missing-module-docstring,missing-function-docstring
+
 from __future__ import print_function, unicode_literals
 
 from fnmatch import fnmatch
@@ -17,7 +18,7 @@ def extract_first(fileobj, pat):
 
 
 def zipfile_match_and_extract(zip_file, pat):
-    item_name = next((i.filename for i in zip_file.infolist() if fnmatch(i.filename, pat)), None)
+    item_name = next((info.filename for info in zip_file.infolist() if fnmatch(info.filename, pat)), None)
     if item_name is None:
         return None
     return zip_file.read(item_name).decode(errors='ignore')

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # pylint: disable=broad-except,protected-access,missing-function-docstring
+
 """
 Move packages between labels.
 """
@@ -85,7 +86,7 @@ def add_parser(subparsers):
              'If filename is not given, move all files in the version',
         type=parse_specs,
     )
-    # TODO: To be implemented later on
+    # NOTE: To be implemented later on
     # parser.add_argument(
     #     '--to-owner',
     #     help='User account to move package to (default: your account)',

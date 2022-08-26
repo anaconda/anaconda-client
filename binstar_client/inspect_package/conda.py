@@ -1,4 +1,5 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
+
 from __future__ import print_function
 
 import os.path
@@ -105,7 +106,7 @@ def inspect_conda_info_dir(info_path, basename):  # pylint: disable=too-many-loc
 
     package_data = {
         'name': index.pop('name'),
-        # TODO: this info should be removed and moved to release
+        # NOTE: this info should be removed and moved to release
         'summary': about.get('summary', ''),
         'description': about.get('description', ''),
         'license': about.get('license'),

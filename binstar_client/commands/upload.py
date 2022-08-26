@@ -1,4 +1,5 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring,line-too-long,
+
 """
 
     anaconda upload CONDA_PACKAGE_1.bz2
@@ -13,6 +14,7 @@
   https://docs.anaconda.com/anaconda-repository/user-guide/tasks/pkgs/use-pkg-managers/#uploading-pypi-packages)
 
 """
+
 from __future__ import unicode_literals
 
 import argparse
@@ -254,8 +256,15 @@ def upload_package(filename, package_type,  # pylint: disable=inconsistent-retur
     except errors.Conflict:
         upload_info = {}
         if args.mode != 'skip':
-            logger.info('Distribution already exists. Please use the -i/--interactive or --force or --skip options '
-                        'or `anaconda remove %s/%s/%s/%s', username, package_name, version, file_attrs['basename'])
+            # pylint: disable=implicit-str-concat
+            logger.info(
+                'Distribution already exists. Please use the -i/--interactive or --force or --skip options or '
+                '`anaconda remove %s/%s/%s/%s',
+                username,
+                package_name,
+                version,
+                file_attrs['basename'],
+            )
             raise
         logger.info('Distribution already exists. Skipping upload.\n')
 
@@ -296,7 +305,7 @@ def main(args):  # pylint: disable=too-many-branches,too-many-locals
     uploaded_projects = []
 
     # Flatten file list because of 'windows_glob' function
-    files = list(set(f for fglob in args.files for f in fglob))
+    files = sorted(set(fitem for fglob in args.files for fitem in fglob))
 
     for filename in files:
         if not exists(filename):
@@ -312,9 +321,8 @@ def main(args):  # pylint: disable=too-many-branches,too-many-locals
         else:
             if package_type is PackageType.NOTEBOOK and not args.mode == 'force':
                 try:
-                    nbformat.read(
-                        open(filename),  # pylint: disable=unspecified-encoding,consider-using-with
-                        nbformat.NO_CONVERT)
+                    with open(filename, 'rt', encoding='utf-8') as stream:
+                        nbformat.read(stream, nbformat.NO_CONVERT)
                 except Exception as error:  # pylint: disable=broad-except
                     logger.error("Invalid notebook file '%s': %s", filename, error)
                     logger.info('Use --force to upload the file anyways')

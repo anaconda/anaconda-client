@@ -1,7 +1,9 @@
 # pylint: disable=missing-function-docstring
+
 """
 Anaconda repository package utilities
 """
+
 from __future__ import print_function
 
 import logging

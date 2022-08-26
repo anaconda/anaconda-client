@@ -1,4 +1,5 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
+
 from __future__ import print_function, absolute_import, unicode_literals
 
 import collections
@@ -132,7 +133,7 @@ def get_server_api(token=None, site=None, cls=None, config=None, **kwargs):
     Get the anaconda server api class
     """
     if not cls:
-        from binstar_client import Binstar  # pylint: disable=import-outside-toplevel
+        from binstar_client import Binstar  # pylint: disable=import-outside-toplevel,cyclic-import
 
         cls = Binstar
 

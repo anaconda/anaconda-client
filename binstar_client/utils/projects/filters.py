@@ -1,4 +1,5 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
+
 import fnmatch
 import logging
 
@@ -17,7 +18,7 @@ class FilterBase:
     def __init__(self, *args, **kwargs):
         raise NotImplementedError
 
-    def can_filter(self):  # pylint: disable=no-self-use
+    def can_filter(self):
         return True
 
     def run(self, pfile):
@@ -25,9 +26,7 @@ class FilterBase:
 
 
 class VCSFilter(FilterBase):  # pylint: disable=abstract-method
-    '''
-    Version Control System Filtering
-    '''
+    """Version Control System Filtering."""
 
     def __init__(self, pfiles, *args, **kwargs):  # pylint: disable=super-init-not-called
         self.pfiles = pfiles
@@ -45,9 +44,8 @@ class VCSFilter(FilterBase):  # pylint: disable=abstract-method
 
 
 class FilesFilter(FilterBase):  # pylint: disable=abstract-method
-    '''
-    Ignore specific files
-    '''
+    """Ignore specific files."""
+
     ignored = ['.anaconda/project-local.yml', '.anaconda/project-local.yaml']
 
     def __init__(self, pfiles, *args, **kwargs):  # pylint: disable=super-init-not-called

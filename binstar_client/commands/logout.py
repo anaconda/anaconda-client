@@ -1,7 +1,9 @@
 # pylint: disable=missing-function-docstring
+
 """
 Log out from binstar
 """
+
 import logging
 
 from binstar_client import errors
@@ -13,7 +15,7 @@ logger = logging.getLogger('binstar.logout')
 def main(args):
     aserver_api = get_server_api(args.token, args.site)
     if aserver_api.token:
-        # TODO: named 'application' because I was using the github model
+        # NOTE: named 'application' because I was using the github model
         # Change it to name once we release the latest version of binstar server
         try:
             aserver_api.remove_authentication()

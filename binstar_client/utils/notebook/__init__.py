@@ -1,4 +1,5 @@
 # pylint: disable=missing-module-docstring,missing-function-docstring
+
 import nbformat
 from six.moves.urllib.parse import urlparse
 

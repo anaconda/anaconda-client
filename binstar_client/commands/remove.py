@@ -1,4 +1,5 @@
 # pylint: disable=missing-function-docstring
+
 """
 Remove an object from your Anaconda repository.
 
@@ -7,6 +8,7 @@ example::
     anaconda remove sean/meta/1.2.0/meta.tar.gz
 
 """
+
 import logging
 from argparse import RawTextHelpFormatter
 

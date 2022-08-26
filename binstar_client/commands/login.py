@@ -1,7 +1,7 @@
 # pylint: disable=missing-class-docstring,missing-function-docstring
-'''
-Authenticate a user
-'''
+
+"""Authenticate a user."""
+
 from __future__ import unicode_literals
 
 import getpass
@@ -20,18 +20,18 @@ logger = logging.getLogger('binstar.login')
 
 
 def try_replace_token(authenticate, **kwargs):
-    '''
-    Authenticates using the given *authenticate*, retrying if the token needs
-    to be replaced.
-    '''
+    """Authenticates using the given *authenticate*, retrying if the token needs to be replaced."""
 
     try:
         return authenticate(**kwargs)
     except errors.BinstarError as err:
-        if kwargs.get('fail_if_already_exists') and len(err.args) > 1 and err.args[1] == 400:
+        if kwargs.get('fail_if_already_exists') and (len(err.args) > 1) and (err.args[1] == 400):
+            # pylint: disable=implicit-str-concat
             logger.warning('It appears you are already logged in from host %s', socket.gethostname())
-            logger.warning('Logging in again will remove the previous token. (This could cause troubles with virtual '
-                           'machines with the same hostname)')
+            logger.warning(
+                'Logging in again will remove the previous token. (This could cause troubles with virtual machines '
+                'with the same hostname)'
+            )
             logger.warning('Otherwise you can login again and specify a different hostname with "--hostname"')
 
             if bool_input('Would you like to continue'):
@@ -73,8 +73,8 @@ def interactive_get_token(args, fail_if_already_exists=True):  # pylint: disable
 
         if token is None:
             raise errors.BinstarError(
-                'Unable to authenticate via Kerberos. Try refreshing your '
-                'authentication using `kinit`')
+                'Unable to authenticate via Kerberos. Try refreshing your authentication using `kinit`'
+            )
     else:
         if getattr(args, 'login_username', None):
             username = args.login_username

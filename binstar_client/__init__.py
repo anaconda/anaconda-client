@@ -1,4 +1,7 @@
+# -*- coding: utf-8 -*-
+
 # pylint: disable=missing-module-docstring,missing-function-docstring,too-many-locals,too-many-arguments
+
 from __future__ import absolute_import, print_function, unicode_literals
 
 import collections
@@ -99,9 +102,9 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
             from requests_kerberos import HTTPKerberosAuth  # pylint: disable=import-outside-toplevel
             return self._authenticate(HTTPKerberosAuth(), *args, **kwargs)
         except ImportError as error:
+            # pylint: disable=implicit-str-concat
             raise BinstarError(
-                'Kerberos authentication requires the requests-kerberos '
-                'package to be installed:\n'
+                'Kerberos authentication requires the requests-kerberos package to be installed:\n'
                 '    conda install requests-kerberos\n'
                 'or: \n'
                 '    pip install requests-kerberos'
@@ -120,7 +123,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
                       strength='strong',
                       fail_if_already_exists=False,
                       hostname=_platform.node()):
-        '''
+        """
         Use basic authentication to create an authentication token using the interface below.
         With this technique, a username and password need not be stored permanently, and the user can
         revoke access at any time.
@@ -130,7 +133,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
         :param application: The application that is requesting access
         :param application_url: The application's home page
         :param scopes: Scopes let you specify exactly what type of access you need. Scopes limit access for the tokens.
-        '''
+        """
 
         url = '%s/authentications' % (self.domain)
         payload = {'scopes': scopes, 'note': application, 'note_url': application_url,
@@ -155,18 +158,14 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
         return res.json()
 
     def authentication(self):
-        '''
-        Retrieve information on the current authentication token
-        '''
+        """Retrieve information on the current authentication token."""
         url = '%s/authentication' % (self.domain)
         res = self.session.get(url)
         self._check_response(res)
         return res.json()
 
     def authentications(self):
-        '''
-        Get a list of the current authentication tokens
-        '''
+        """Get a list of the current authentication tokens."""
 
         url = '%s/authentications' % (self.domain)
         res = self.session.get(url)
@@ -192,8 +191,13 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
         allowed = [200] if allowed is None else allowed
         api_version = res.headers.get('x-binstar-api-version', '0.2.1')
         if pv(api_version) > pv(__version__):
-            logger.warning('The api server is running the binstar-api version %s. you are using %s\nPlease update your '
-                           'client with pip install -U binstar or conda update binstar', api_version, __version__)
+            # pylint: disable=implicit-str-concat
+            logger.warning(
+                'The api server is running the binstar-api version %s. you are using %s\n'
+                'Please update your client with pip install -U binstar or conda update binstar',
+                api_version,
+                __version__,
+            )
 
         if not self._token_warning_sent and 'Conda-Token-Warning' in res.headers:
             logger.warning('Token warning: %s', res.headers['Conda-Token-Warning'])
@@ -228,12 +232,12 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
             raise ErrCls(msg, res.status_code)
 
     def user(self, login=None):
-        '''
+        """
         Get user information.
 
         :param login: (optional) the login name of the user or None. If login is None
                       this method will return the information of the authenticated user.
-        '''
+        """
         if login:
             url = '%s/user/%s' % (self.domain, login)
         else:
@@ -251,7 +255,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
             package_type=None,
             type_=None,
             access=None):
-        '''
+        """
         Returns a list of packages for a given user and optionally filter
         by `platform`, `package_type` and `type_`.
 
@@ -266,7 +270,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
            (i.e. 'app')
         :param access: only find packages that have this access level
            (e.g. 'private', 'authenticated', 'public')
-        '''
+        """
         if login:
             url = '{0}/packages/{1}'.format(self.domain, login)
         else:
@@ -289,12 +293,12 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
         return res.json()
 
     def package(self, login, package_name):
-        '''
+        """
         Get information about a specific package
 
         :param login: the login of the package owner
         :param package_name: the name of the package
-        '''
+        """
         url = '%s/package/%s/%s' % (self.domain, login, package_name)
         res = self.session.get(url)
         self._check_response(res)
@@ -412,40 +416,40 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
         self._check_response(res, [201])
 
     def release(self, login, package_name, version):
-        '''
+        """
         Get information about a specific release
 
         :param login: the login of the package owner
         :param package_name: the name of the package
         :param version: the name of the package
-        '''
+        """
         url = '%s/release/%s/%s/%s' % (self.domain, login, package_name, version)
         res = self.session.get(url)
         self._check_response(res)
         return res.json()
 
     def remove_release(self, username, package_name, version):
-        '''
-        remove a release and all files under it
+        """
+        Remove a release and all files under it.
 
         :param username: the login of the package owner
         :param package_name: the name of the package
         :param version: the name of the package
-        '''
+        """
         url = '%s/release/%s/%s/%s' % (self.domain, username, package_name, version)
         res = self.session.delete(url)
         self._check_response(res, [201])
 
     def add_release(self, login, package_name, version, requirements, announce, release_attrs):
-        '''
+        """
         Add a new release to a package.
 
         :param login: the login of the package owner
         :param package_name: the name of the package
         :param version: the version string of the release
-        :param requirements: A dict of requirements TODO: describe
+        :param requirements: A dict of requirements NOTE: describe
         :param announce: An announcement that will be posted to all package watchers
-        '''
+        """
 
         url = '%s/release/%s/%s/%s' % (self.domain, login, package_name, version)
 

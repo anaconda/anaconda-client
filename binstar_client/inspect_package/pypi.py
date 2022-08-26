@@ -1,5 +1,6 @@
 # pylint: disable=consider-using-with,unused-argument,import-outside-toplevel,unspecified-encoding
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
+
 from __future__ import print_function, unicode_literals
 
 import json
@@ -46,14 +47,11 @@ def norm_package_name(name):
 
 
 def norm_package_version(version):
-    '''Normalize a version by removing extra spaces and parentheses.'''
+    """Normalize a version by removing extra spaces and parentheses."""
     if version:
-        version = ','.join(v.strip() for v in version.split(',')).strip()
-
+        version = ''.join(version.split())
         if version.startswith('(') and version.endswith(')'):
             version = version[1:-1]
-
-        version = ''.join(v for v in version if v.strip())
     else:
         version = ''
 
@@ -61,7 +59,7 @@ def norm_package_version(version):
 
 
 def split_spec(spec, sep):
-    '''Split a spec by separator and return stripped start and end parts.'''
+    """Split a spec by separator and return stripped start and end parts."""
     parts = spec.rsplit(sep, 1)
     spec_start = parts[0].strip()
     spec_end = ''
@@ -71,7 +69,7 @@ def split_spec(spec, sep):
 
 
 def parse_specification(spec):
-    '''
+    """
     Parse a requirement from a python distribution metadata and return a
     tuple with name, extras, constraints, marker and url components.
 
@@ -83,11 +81,11 @@ def parse_specification(spec):
     spec = 'requests[security, tests] >=3.3.0 ; foo >= 2.7 or bar == 1'
 
     ('requests', ['security', 'pyfoo'], '>=3.3.0', 'foo >= 2.7 or bar == 1', '')
-    '''
+    """
     name, extras, const = spec, [], ''
 
     # Remove excess whitespace
-    spec = ' '.join(p for p in spec.split(' ') if p).strip()
+    spec = ' '.join(part for part in spec.split(' ') if part).strip()
 
     # Extract marker (Assumes that there can only be one ';' inside the spec)
     spec, marker = split_spec(spec, ';')
@@ -103,11 +101,11 @@ def parse_specification(spec):
 
         # Clean extras
         extras = r.group('extras')
-        extras = [e.strip() for e in extras.split(',') if e] if extras else []
+        extras = [extra.strip() for extra in extras.split(',') if extra] if extras else []
 
         # Clean constraints
         const = r.group('constraints')
-        const = ''.join(c for c in const.split(' ') if c).strip()
+        const = ''.join(part for part in const.split(' ') if part).strip()
         if const.startswith('(') and const.endswith(')'):
             # Remove parens
             const = const[1:-1]
@@ -116,7 +114,7 @@ def parse_specification(spec):
 
 
 def get_header_description(filedata):
-    '''Get description from metadata file and remove any empty lines at end.'''
+    """Get description from metadata file and remove any empty lines at end."""
     python_version = sys.version_info.major
     if python_version == 3:
         filedata = Parser().parsestr(filedata)
@@ -181,7 +179,13 @@ def parse_requires_txt(requires_txt):
         except ValueError:
             error = True
 
-    extras = [{'name': k, 'depends': sorted(v, key=sort_key)} for (k, v) in extras.items()]
+    extras = [
+        {
+            'name': key,
+            'depends': sorted(value, key=sort_key),
+        }
+        for key, value in extras.items()
+    ]
 
     return {
         'has_dep_errors': error,
@@ -299,11 +303,11 @@ def format_requires_metadata(run_requires):
 
 
 def format_sdist_header_metadata(data, filename):  # pylint: disable=too-many-branches,too-many-locals
-    '''
+    """
     Format the metadata of Standard Python packages stored in email header format.
 
     Currently only used as backup on the wheel (compressed) file format.
-    '''
+    """
     description = get_header_description(data)
     config_items = python_version_check(data)
     attrs = dict(config_items)
@@ -344,20 +348,20 @@ def format_sdist_header_metadata(data, filename):  # pylint: disable=too-many-br
             specs = const.split(',')
             new_specs = []
             for spec in specs:
-                pos = [i for i, c in enumerate(spec) if c in '0123456789']
+                pos = [index for index, character in enumerate(spec) if character in '0123456789']
                 if pos:
                     pos = pos[0]
                     comp, spec_ = spec[:pos].strip(), spec[pos:].strip()
                     new_specs.append((comp, spec_))
 
-            # TODO: All this is to preserve the format used originally
+            # NOTE: All this is to preserve the format used originally
             # but is this really needed?
             if marker:
                 if marker.startswith('extra'):
                     marker = marker.replace('extra', '')
                     marker = marker.replace('==', '').strip()
                     ext = marker.rsplit(' ')[-1]
-                    if ''' in ext or ''' in ext:
+                    if ' in ext or ' in ext:
                         ext = ext[1:-1]
 
                     if ext not in exts:
@@ -426,7 +430,13 @@ def format_wheel_json_metadata(data, filename, zip_file):
     attrs = {
         'packagetype': 'bdist_wheel',
         'python_version': 'source',
-        'pypi': [{'key': k, 'value': v} for (k, v) in data.items()]
+        'pypi': [
+            {
+                'key': key,
+                'value': value,
+            }
+            for key, value in data.items()
+        ],
     }
 
     if data.get('run_requires', {}):
@@ -490,9 +500,12 @@ def inspect_pypi_package_whl(filename, fileobj):
 
 
 def disutils_dependencies(config_items):
-    # TODO: This is not handling environment markers or extras!
-    requirements = [v for k, v in config_items if k in ['Requires-Dist',
-                                                        'Requires']]
+    # NOTE: This is not handling environment markers or extras!
+    requirements = [
+        value
+        for key, value in config_items
+        if key in ['Requires-Dist', 'Requires']
+    ]
     depends = format_requirements(requirements)
 
     return {

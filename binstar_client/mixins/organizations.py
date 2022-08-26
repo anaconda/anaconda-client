@@ -1,4 +1,5 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
+
 from binstar_client.utils import jencode
 
 
