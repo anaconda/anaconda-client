@@ -1,6 +1,9 @@
+# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
+
 from binstar_client.utils import jencode
 
-class OrgMixin(object):
+
+class OrgMixin:
 
     def user_orgs(self, username=None):
 
@@ -48,19 +51,16 @@ class OrgMixin(object):
         url = '%s/group/%s/%s/members/%s' % (self.domain, org, name, member)
         res = self.session.put(url)
         self._check_response(res, [204])
-        return
 
     def remove_group_member(self, org, name, member):
         url = '%s/group/%s/%s/members/%s' % (self.domain, org, name, member)
         res = self.session.delete(url)
         self._check_response(res, [204])
-        return
 
     def remove_group_package(self, org, name, package):
         url = '%s/group/%s/%s/packages/%s' % (self.domain, org, name, package)
         res = self.session.delete(url)
         self._check_response(res, [204])
-        return
 
     def group_packages(self, org, name):
         url = '%s/group/%s/%s/packages' % (self.domain, org, name)
@@ -72,7 +72,6 @@ class OrgMixin(object):
         url = '%s/group/%s/%s/packages/%s' % (self.domain, org, name, package)
         res = self.session.put(url)
         self._check_response(res, [204])
-        return
 
     def add_group(self, org, name, perms='read'):
         url = '%s/group/%s/%s' % (self.domain, org, name)
@@ -82,6 +81,3 @@ class OrgMixin(object):
 
         res = self.session.post(url, data=data, headers=headers)
         self._check_response(res, [204])
-
-        return
-

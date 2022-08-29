@@ -1,4 +1,7 @@
+# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
+
 import requests
+
 import binstar_client
 from binstar_client.utils import compute_hash, jencode
 
@@ -9,22 +12,22 @@ class ProjectUploader(binstar_client.Binstar):
         verify = kwargs.get('verify', True)
         self.username = kwargs.get('username', None)
         self.project = kwargs.get('project', None)
-        super(ProjectUploader, self).__init__(token, domain, verify)
+        super().__init__(token, domain, verify)
 
     def exists(self):
-        url = "{}/apps/{}/projects/{}".format(
+        url = '{}/apps/{}/projects/{}'.format(
             self.domain, self.username, self.project.name)
         res = self.session.get(url)
         return res.status_code == 200
 
     def create(self):
-        url = "{}/apps/{}/projects".format(self.domain, self.username)
+        url = '{}/apps/{}/projects'.format(self.domain, self.username)
         data, headers = jencode(self.project.to_project_creation())
         res = self.session.post(url, data=data, headers=headers)
         return res
 
     def stage(self):
-        url = "{}/apps/{}/projects/{}/stage".format(
+        url = '{}/apps/{}/projects/{}/stage'.format(
             self.domain, self.username, self.project.name)
         data, headers = jencode(self.project.to_stage())
         res = self.session.post(url, data=data, headers=headers)
@@ -32,7 +35,7 @@ class ProjectUploader(binstar_client.Binstar):
         return res
 
     def commit(self, revision_id):
-        url = "{}/apps/{}/projects/{}/commit/{}".format(
+        url = '{}/apps/{}/projects/{}/commit/{}'.format(
             self.domain, self.username,
             self.project.name, revision_id
         )
@@ -62,18 +65,18 @@ class ProjectUploader(binstar_client.Binstar):
         return s3res
 
     def projects(self):
-        url = "{}/apps/{}/projects".format(self.domain, self.username)
+        url = '{}/apps/{}/projects'.format(self.domain, self.username)
         data, headers = jencode(self.project.to_project_creation())
         return self.session.get(url, data=data, headers=headers)
 
-    def upload(self):
-        '''
+    def upload(self):  # pylint: disable=arguments-differ
+        """
         * Check if project already exists
             * if it doesn't, then create it
         * stage a new revision
         * upload
         * commit revision
-        '''
+        """
         if not self.exists():
             self.create()
 

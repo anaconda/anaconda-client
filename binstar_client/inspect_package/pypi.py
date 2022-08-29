@@ -1,22 +1,29 @@
+# pylint: disable=consider-using-with,unused-argument,import-outside-toplevel,unspecified-encoding
+# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
+
 from __future__ import print_function, unicode_literals
 
-from email.parser import Parser
-from os import path
 import json
 import re
 import sys
 import tarfile
 import zipfile
+from email.parser import Parser
+from os import path
 
 import pkg_resources
 
 from binstar_client import errors
-from binstar_client.utils.config import PackageType
 from binstar_client.inspect_package.uitls import extract_first, pop_key
+from binstar_client.utils.config import PackageType
 
 
-sort_ver = lambda i: i[1]
-sort_key = lambda i: i['name']
+def sort_ver(item):
+    return item[1]
+
+
+def sort_key(item):
+    return item['name']
 
 
 # Helper methods for parsing requirements for latest metadata style
@@ -42,12 +49,9 @@ def norm_package_name(name):
 def norm_package_version(version):
     """Normalize a version by removing extra spaces and parentheses."""
     if version:
-        version = ','.join(v.strip() for v in version.split(',')).strip()
-
+        version = ''.join(version.split())
         if version.startswith('(') and version.endswith(')'):
             version = version[1:-1]
-
-        version = ''.join(v for v in version if v.strip())
     else:
         version = ''
 
@@ -81,7 +85,7 @@ def parse_specification(spec):
     name, extras, const = spec, [], ''
 
     # Remove excess whitespace
-    spec = ' '.join(p for p in spec.split(' ') if p).strip()
+    spec = ' '.join(part for part in spec.split(' ') if part).strip()
 
     # Extract marker (Assumes that there can only be one ';' inside the spec)
     spec, marker = split_spec(spec, ';')
@@ -97,11 +101,11 @@ def parse_specification(spec):
 
         # Clean extras
         extras = r.group('extras')
-        extras = [e.strip() for e in extras.split(',') if e] if extras else []
+        extras = [extra.strip() for extra in extras.split(',') if extra] if extras else []
 
         # Clean constraints
         const = r.group('constraints')
-        const = ''.join(c for c in const.split(' ') if c).strip()
+        const = ''.join(part for part in const.split(' ') if part).strip()
         if const.startswith('(') and const.endswith(')'):
             # Remove parens
             const = const[1:-1]
@@ -115,7 +119,7 @@ def get_header_description(filedata):
     if python_version == 3:
         filedata = Parser().parsestr(filedata)
     else:
-        filedata = Parser().parsestr(filedata.encode("UTF-8", "replace"))
+        filedata = Parser().parsestr(filedata.encode('UTF-8', 'replace'))
 
     payload = filedata.get_payload()
     lines = payload.split('\n')
@@ -135,7 +139,7 @@ def python_version_check(filedata):
     if python_version == 3:
         filedata = Parser().parsestr(filedata).items()
     else:
-        filedata = Parser().parsestr(filedata.encode("UTF-8", "replace")).items()
+        filedata = Parser().parsestr(filedata.encode('UTF-8', 'replace')).items()
 
     return filedata
 
@@ -149,8 +153,8 @@ def parse_requirement(line, deps, extras, extra):
         deps.append({'name': req.key, 'specs': req.specs or []})
 
     deps.sort(key=sort_key)
-    for extra in extras.values():
-        extra.sort(key=sort_key)
+    for extra_item in extras.values():
+        extra_item.sort(key=sort_key)
 
 
 def parse_requires_txt(requires_txt):
@@ -175,7 +179,13 @@ def parse_requires_txt(requires_txt):
         except ValueError:
             error = True
 
-    extras = [{'name': k, 'depends': sorted(v, key=sort_key)} for (k, v) in extras.items()]
+    extras = [
+        {
+            'name': key,
+            'depends': sorted(value, key=sort_key),
+        }
+        for key, value in extras.items()
+    ]
 
     return {
         'has_dep_errors': error,
@@ -261,15 +271,12 @@ def format_requires_metadata(run_requires):
     deps = []
     extras = []
 
-    extras_re = re.compile('extra == [\'\"](.*)[\'\"]')
+    extras_re = re.compile('extra == [\'\'](.*)[\'\']')
     has_dep_errors = False
 
     if not isinstance(run_requires, dict):
-        if isinstance(run_requires, basestring):
-            run_requires = {'': [run_requires]}
-        else:
-            has_dep_errors = True
-            run_requires = {}
+        has_dep_errors = True
+        run_requires = {}
 
     for key, requirements in run_requires.items():
         is_extra = extras_re.match(key)
@@ -295,7 +302,7 @@ def format_requires_metadata(run_requires):
     return attrs
 
 
-def format_sdist_header_metadata(data, filename):
+def format_sdist_header_metadata(data, filename):  # pylint: disable=too-many-branches,too-many-locals
     """
     Format the metadata of Standard Python packages stored in email header format.
 
@@ -336,25 +343,25 @@ def format_sdist_header_metadata(data, filename):
     environments = {}
     for key, val in config_items:
         if key in ['Requires-Dist', 'Requires']:
-            name, extras, const, marker, url = parse_specification(val)
+            name, extras, const, marker, url = parse_specification(val)  # pylint: disable=unused-variable
             name = norm_package_name(name)
             specs = const.split(',')
             new_specs = []
             for spec in specs:
-                pos = [i for i, c in enumerate(spec) if c in '0123456789']
+                pos = [index for index, character in enumerate(spec) if character in '0123456789']
                 if pos:
                     pos = pos[0]
                     comp, spec_ = spec[:pos].strip(), spec[pos:].strip()
                     new_specs.append((comp, spec_))
 
-            # TODO: All this is to preserve the format used originally
+            # NOTE: All this is to preserve the format used originally
             # but is this really needed?
             if marker:
                 if marker.startswith('extra'):
                     marker = marker.replace('extra', '')
                     marker = marker.replace('==', '').strip()
                     ext = marker.rsplit(' ')[-1]
-                    if '"' in ext or "'" in ext:
+                    if ' in ext or ' in ext:
                         ext = ext[1:-1]
 
                     if ext not in exts:
@@ -392,7 +399,7 @@ def format_sdist_header_metadata(data, filename):
     return package_data, release_data, file_data
 
 
-def format_wheel_json_metadata(data, filename, zipfile):
+def format_wheel_json_metadata(data, filename, zip_file):
     package_data = {
         'name': pop_key(data, 'name'),
         'summary': pop_key(data, 'summary', None),
@@ -402,10 +409,11 @@ def format_wheel_json_metadata(data, filename, zipfile):
 
     # Metadata version 2.0
     if not description_doc:
-        description_doc = data.get('extensions', {}).get('python.details', {}).get('document_names', {}).get('description')
+        description_doc = data.get('extensions', {}).get(
+            'python.details', {}).get('document_names', {}).get('description')
 
     if description_doc:
-        description = extract_first(zipfile, '*.dist-info/%s' % description_doc).strip()
+        description = extract_first(zip_file, '*.dist-info/%s' % description_doc).strip()
     else:
         description = None
 
@@ -422,7 +430,13 @@ def format_wheel_json_metadata(data, filename, zipfile):
     attrs = {
         'packagetype': 'bdist_wheel',
         'python_version': 'source',
-        'pypi': [{'key': k, 'value': v} for (k, v) in data.items()]
+        'pypi': [
+            {
+                'key': key,
+                'value': value,
+            }
+            for key, value in data.items()
+        ],
     }
 
     if data.get('run_requires', {}):
@@ -440,18 +454,19 @@ def format_wheel_json_metadata(data, filename, zipfile):
 
 
 def inspect_pypi_package_whl(filename, fileobj):
-    tf = zipfile.ZipFile(fileobj)
+    tar_file = zipfile.ZipFile(fileobj)
 
-    json_data = extract_first(tf, '*.dist-info/metadata.json')
+    json_data = extract_first(tar_file, '*.dist-info/metadata.json')
     if json_data is None:
-        json_data = extract_first(tf, '*.dist-info/pydist.json')
+        json_data = extract_first(tar_file, '*.dist-info/pydist.json')
 
     # Metadata 2.1 removed metatada.json. Using good old distutils as fallback
     data = None
-    data = extract_first(tf, '*.dist-info/METADATA')
+    data = extract_first(tar_file, '*.dist-info/METADATA')
 
     if json_data:
-        package_data, release_data, file_data = format_wheel_json_metadata(json.loads(json_data),                                                                              filename, tf)
+        package_data, release_data, file_data = format_wheel_json_metadata(json.loads(
+            json_data), filename, tar_file)
     elif data:
         # Metadata 2.1 removed metatada.json
         package_data, release_data, file_data = format_sdist_header_metadata(data, filename)
@@ -467,7 +482,7 @@ def inspect_pypi_package_whl(filename, fileobj):
     elif len(file_components) == 6:
         _, _, build_no, python_version, abi, platform = file_components
     else:
-        raise TypeError("Bad wheel package name")
+        raise TypeError('Bad wheel package name')
 
     if platform == 'any':
         platform = None
@@ -485,9 +500,12 @@ def inspect_pypi_package_whl(filename, fileobj):
 
 
 def disutils_dependencies(config_items):
-    # TODO: This is not handling environment markers or extras!
-    requirements = [v for k, v in config_items if k in ['Requires-Dist',
-                                                        'Requires']]
+    # NOTE: This is not handling environment markers or extras!
+    requirements = [
+        value
+        for key, value in config_items
+        if key in ['Requires-Dist', 'Requires']
+    ]
     depends = format_requirements(requirements)
 
     return {
@@ -498,17 +516,17 @@ def disutils_dependencies(config_items):
 
 
 def inspect_pypi_package_sdist(filename, fileobj):
-    tf = tarfile.open(filename, fileobj=fileobj)
+    tar_file = tarfile.open(filename, fileobj=fileobj)
 
-    data = extract_first(tf, '*.egg-info/PKG-INFO')
+    data = extract_first(tar_file, '*.egg-info/PKG-INFO')
 
     distribute = False
     if data is None:
-        data = extract_first(tf, '*/PKG-INFO')
+        data = extract_first(tar_file, '*/PKG-INFO')
         distribute = True
         if data is None:
             raise errors.NoMetadataError(
-                "Could not find *.egg-info/PKG-INFO file in {} sdist".format(PackageType.STANDARD_PYTHON.label()))
+                'Could not find *.egg-info/PKG-INFO file in {} sdist'.format(PackageType.STANDARD_PYTHON.label()))
     config_items = python_version_check(data)
     attrs = dict(config_items)
     name = pop_key(attrs, 'Name', None)
@@ -540,7 +558,7 @@ def inspect_pypi_package_sdist(filename, fileobj):
     if distribute:  # Distribute does not create dep files
         file_data.update(dependencies=disutils_dependencies(config_items))
 
-    requires_txt = extract_first(tf, '*.egg-info/requires.txt')
+    requires_txt = extract_first(tar_file, '*.egg-info/requires.txt')
     if requires_txt:
         file_data.update(dependencies=parse_requires_txt(requires_txt))
 
@@ -548,12 +566,12 @@ def inspect_pypi_package_sdist(filename, fileobj):
 
 
 def inspect_pypi_package_egg(filename, fileobj):
-    tf = zipfile.ZipFile(fileobj)
+    tar_file = zipfile.ZipFile(fileobj)
 
-    data = extract_first(tf, 'EGG-INFO/PKG-INFO')
+    data = extract_first(tar_file, 'EGG-INFO/PKG-INFO')
     if data is None:
         raise errors.NoMetadataError(
-            "Could not find EGG-INFO/PKG-INFO file in {} sdist".format(PackageType.STANDARD_PYTHON.label()))
+            'Could not find EGG-INFO/PKG-INFO file in {} sdist'.format(PackageType.STANDARD_PYTHON.label()))
     attrs = dict(python_version_check(data))
 
     package_data = {'name': pop_key(attrs, 'Name'),
@@ -576,7 +594,7 @@ def inspect_pypi_package_egg(filename, fileobj):
                            'python_version': python_version},
                  'platform': platform}
 
-    requires_txt = extract_first(tf, 'EGG-INFO/requires.txt')
+    requires_txt = extract_first(tar_file, 'EGG-INFO/requires.txt')
     if requires_txt:
         file_data.update(dependencies=parse_requires_txt(requires_txt))
 
@@ -584,16 +602,14 @@ def inspect_pypi_package_egg(filename, fileobj):
 
 
 def inspect_pypi_package_zip(filename, fileobj):
-    filename, fileobj
+    tar_file = zipfile.ZipFile(fileobj)
 
-    tf = zipfile.ZipFile(fileobj)
-
-    data = extract_first(tf, '*/PKG-INFO')
+    data = extract_first(tar_file, '*/PKG-INFO')
     if data is None:
         raise errors.NoMetadataError(
-            "Could not find EGG-INFO/PKG-INFO file in {} sdist".format(PackageType.STANDARD_PYTHON.label()))
+            'Could not find EGG-INFO/PKG-INFO file in {} sdist'.format(PackageType.STANDARD_PYTHON.label()))
 
-    attrs = dict(Parser().parsestr(data.encode("UTF-8", "replace")).items())
+    attrs = dict(Parser().parsestr(data.encode('UTF-8', 'replace')).items())
 
     package_data = {'name': pop_key(attrs, 'Name'),
                     'summary': pop_key(attrs, 'Summary', None),
@@ -612,8 +628,7 @@ def inspect_pypi_package_zip(filename, fileobj):
     return package_data, release_data, file_data
 
 
-def inspect_pypi_package_exe(filename, fileobj):
-
+def inspect_pypi_package_exe(filename):
     # ipython-0.12.1.win-amd64.exe
     name_version, windist = filename[:-4].rsplit('.', 1)
 
@@ -630,7 +645,7 @@ def inspect_pypi_package_exe(filename, fileobj):
     return package_data, release_data, file_data
 
 
-def inspect_pypi_package_rpm(filename, fileobj):
+def inspect_pypi_package_rpm(filename):
     # ipython-0.12.1.win-amd64.exe
     name_version, rpmarch = filename[:-4].rsplit('.', 1)
 
@@ -648,7 +663,6 @@ def inspect_pypi_package_rpm(filename, fileobj):
 
 
 def inspect_pypi_package(filename, fileobj, *args, **kwargs):
-
     if filename.endswith('.tar.gz') or filename.endswith('.tar.bz2'):
         return inspect_pypi_package_sdist(filename, fileobj)
     if filename.endswith('.whl'):
@@ -658,13 +672,13 @@ def inspect_pypi_package(filename, fileobj, *args, **kwargs):
     if filename.endswith('.zip'):
         return inspect_pypi_package_zip(filename, fileobj)
     if filename.endswith('.exe'):
-        return inspect_pypi_package_exe(filename, fileobj)
+        return inspect_pypi_package_exe(filename)
     if filename.endswith('.rpm'):
-        return inspect_pypi_package_rpm(filename, fileobj)
+        return inspect_pypi_package_rpm(filename)
 
     _, etx = path.splitext(filename)
     raise errors.NoMetadataError(
-        "Can not inspect {} package with file with extension {}".format(PackageType.STANDARD_PYTHON, etx))
+        'Can not inspect {} package with file with extension {}'.format(PackageType.STANDARD_PYTHON, etx))
 
 
 # Test Package: https://pypi.python.org/packages/source/F/Flask-Bower/Flask-Bower-1.1.1.tar.gz
@@ -673,7 +687,6 @@ def inspect_pypi_package(filename, fileobj, *args, **kwargs):
 
 
 def main():
-    import sys
     from pprint import pprint
 
     filename = sys.argv[1]
@@ -686,8 +699,7 @@ def main():
     else:
         fileobj = open(filename)
 
-    package_data, release_data, file_data = inspect_pypi_package(filename,
-                                                                 fileobj)
+    package_data, release_data, file_data = inspect_pypi_package(filename, fileobj)
     pprint(package_data)
     print('--')
     pprint(release_data)

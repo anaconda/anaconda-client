@@ -1,14 +1,17 @@
-from time import mktime
-from dateutil.parser import parse
-from contextlib import suppress
-from collections import OrderedDict
+# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
+
 import os
+from collections import OrderedDict
+from contextlib import suppress
+from time import mktime
 
-from binstar_client.utils.config import PackageType
+from dateutil.parser import parse
+
 from binstar_client.errors import DestionationPathExists
+from binstar_client.utils.config import PackageType
 
 
-class Downloader(object):
+class Downloader:
     """
     Download files from your Anaconda repository.
     """
@@ -17,6 +20,7 @@ class Downloader(object):
         self.aserver_api = aserver_api
         self.username = username
         self.notebook = notebook
+        self.output = None
 
     def __call__(self, package_types, output='.', force=False):
         self.output = output
@@ -31,32 +35,32 @@ class Downloader(object):
         self.output = output
         self.ensure_output()
         files = OrderedDict()
-        for f in self.list_files():
-            pkg_type = f.get('type', '')
+        for file in self.list_files():
+            pkg_type = file.get('type', '')
             with suppress(ValueError):
                 pkg_type = PackageType(pkg_type)
 
             if pkg_type in package_types:
-                if self.can_download(f, force):
-                    files[f['basename']] = f
+                if self.can_download(file, force):
+                    files[file['basename']] = file
                 else:
-                    raise DestionationPathExists(f['basename'])
+                    raise DestionationPathExists(file['basename'])
         return files
 
     def download_files(self, package_types, force=False):
         output = []
-        for f in self.list_files():
+        for file in self.list_files():
             # Check type
-            pkg_type = f.get('type', '')
+            pkg_type = file.get('type', '')
             with suppress(ValueError):
                 pkg_type = PackageType(pkg_type)
 
             if pkg_type in package_types:
-                if self.can_download(f, force):
-                    self.download(f)
-                    output.append(f['basename'])
+                if self.can_download(file, force):
+                    self.download(file)
+                    output.append(file['basename'])
                 else:
-                    raise DestionationPathExists(f['basename'])
+                    raise DestionationPathExists(file['basename'])
         return sorted(output)
 
     def download(self, dist):
@@ -104,20 +108,20 @@ class Downloader(object):
 
         files = self.aserver_api.package(self.username, self.notebook)['files']
 
-        for f in files:
-            if f['basename'] in tmp:
-                tmp[f['basename']].append(f)
+        for file in files:
+            if file['basename'] in tmp:
+                tmp[file['basename']].append(file)
             else:
-                tmp[f['basename']] = [f]
+                tmp[file['basename']] = [file]
 
-        for basename, versions in tmp.items():
+        for basename, versions in tmp.items():  # pylint: disable=unused-variable
             try:
                 output.append(max(versions, key=lambda x: int(x['version'])))
             except ValueError:
                 output.append(
                     max(versions, key=lambda x: mktime(parse(x['upload_time']).timetuple()))
                 )
-            except:
+            except BaseException:  # pylint: disable=broad-except
                 output.append(versions[-1])
 
         return output

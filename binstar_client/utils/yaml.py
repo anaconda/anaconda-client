@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
+
+# pylint: disable=missing-module-docstring
+
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 from yaml import safe_load, safe_dump, SafeLoader
 
 
-SafeLoader.add_constructor('tag:yaml.org,2002:python/unicode', SafeLoader.construct_yaml_str)
+SafeLoader.add_constructor('tag:yaml.org,2002:python/unicode', SafeLoader.construct_yaml_str)  # type: ignore
 
 
 def yaml_load(stream):

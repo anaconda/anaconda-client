@@ -1,15 +1,18 @@
+# -*- coding: utf-8 -*-
+
+# pylint: disable=missing-module-docstring,missing-function-docstring,too-many-locals,too-many-arguments
+
 from __future__ import absolute_import, print_function, unicode_literals
 
 import collections
 import hashlib
 import logging
 import os
-import platform
-import xml.etree.ElementTree as ET
+import platform as _platform
+import defusedxml.ElementTree as ET
 
 import requests
 from pkg_resources import parse_version as pv
-from six import raise_from
 from six.moves.urllib.parse import quote
 from tqdm import tqdm
 from tqdm.utils import CallbackIOWrapper
@@ -28,7 +31,7 @@ from .utils.http_codes import STATUS_CODES
 logger = logging.getLogger('binstar')
 
 
-class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
+class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-many-public-methods
     """
     An object that represents interfaces with the Anaconda repository restful API.
 
@@ -36,7 +39,10 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
                   an anonymous user.
     """
 
-    def __init__(self, token=None, domain='https://api.anaconda.org', verify=True, **kwargs):
+    def __init__(  # pylint: disable=unused-argument
+            self, token=None, domain='https://api.anaconda.org',
+            verify=True, **kwargs
+    ):
         self._session = requests.Session()
         self._session.headers['x-binstar-api-version'] = __version__
         self.session.verify = verify
@@ -73,13 +79,13 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
 
         try:
             response = self.session.head(self.domain)
-        except Exception as e:
-            raise_from(errors.ServerError(msg), e)
+        except Exception as error:  # pylint: disable=broad-except
+            raise errors.ServerError(msg) from error
 
         try:
             self._check_response(response)
-        except errors.NotFound as e:
-            raise raise_from(errors.ServerError(msg), e)
+        except errors.NotFound as error:
+            raise errors.ServerError(msg) from error
 
     def authentication_type(self):
         url = '%s/authentication-type' % self.domain
@@ -93,32 +99,31 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
 
     def krb_authenticate(self, *args, **kwargs):
         try:
-            from requests_kerberos import HTTPKerberosAuth
+            from requests_kerberos import HTTPKerberosAuth  # pylint: disable=import-outside-toplevel
             return self._authenticate(HTTPKerberosAuth(), *args, **kwargs)
-        except ImportError:
+        except ImportError as error:
+            # pylint: disable=implicit-str-concat
             raise BinstarError(
-                'Kerberos authentication requires the requests-kerberos '
-                'package to be installed:\n'
+                'Kerberos authentication requires the requests-kerberos package to be installed:\n'
                 '    conda install requests-kerberos\n'
                 'or: \n'
                 '    pip install requests-kerberos'
-            )
+            ) from error
 
     def authenticate(self, username, password, *args, **kwargs):
         return self._authenticate((username, password), *args, **kwargs)
 
-    def _authenticate(self,
+    def _authenticate(self,  # pylint: disable=too-many-arguments
                       auth,
                       application,
                       application_url=None,
                       for_user=None,
                       scopes=None,
-                      created_with=None,
                       max_age=None,
                       strength='strong',
                       fail_if_already_exists=False,
-                      hostname=platform.node()):
-        '''
+                      hostname=_platform.node()):
+        """
         Use basic authentication to create an authentication token using the interface below.
         With this technique, a username and password need not be stored permanently, and the user can
         revoke access at any time.
@@ -128,14 +133,13 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         :param application: The application that is requesting access
         :param application_url: The application's home page
         :param scopes: Scopes let you specify exactly what type of access you need. Scopes limit access for the tokens.
-        '''
+        """
 
         url = '%s/authentications' % (self.domain)
-        payload = {"scopes": scopes, "note": application, "note_url": application_url,
+        payload = {'scopes': scopes, 'note': application, 'note_url': application_url,
                    'hostname': hostname,
                    'user': for_user,
                    'max-age': max_age,
-                   'created_with': None,
                    'strength': strength,
                    'fail-if-exists': fail_if_already_exists}
 
@@ -154,18 +158,14 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         return res.json()
 
     def authentication(self):
-        '''
-        Retrieve information on the current authentication token
-        '''
+        """Retrieve information on the current authentication token."""
         url = '%s/authentication' % (self.domain)
         res = self.session.get(url)
         self._check_response(res)
         return res.json()
 
     def authentications(self):
-        '''
-        Get a list of the current authentication tokens
-        '''
+        """Get a list of the current authentication tokens."""
 
         url = '%s/authentications' % (self.domain)
         res = self.session.get(url)
@@ -187,14 +187,20 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         res = self.session.delete(url)
         self._check_response(res, [201])
 
-    def _check_response(self, res, allowed=[200]):
+    def _check_response(self, res, allowed=None):
+        allowed = [200] if allowed is None else allowed
         api_version = res.headers.get('x-binstar-api-version', '0.2.1')
         if pv(api_version) > pv(__version__):
-            logger.warning('The api server is running the binstar-api version %s. you are using %s\nPlease update your '
-                           'client with pip install -U binstar or conda update binstar' % (api_version, __version__))
+            # pylint: disable=implicit-str-concat
+            logger.warning(
+                'The api server is running the binstar-api version %s. you are using %s\n'
+                'Please update your client with pip install -U binstar or conda update binstar',
+                api_version,
+                __version__,
+            )
 
         if not self._token_warning_sent and 'Conda-Token-Warning' in res.headers:
-            logger.warning('Token warning: {}'.format(res.headers['Conda-Token-Warning']))
+            logger.warning('Token warning: %s', res.headers['Conda-Token-Warning'])
             self._token_warning_sent = True
 
         if 'X-Anaconda-Lockdown' in res.headers:
@@ -203,17 +209,16 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         if 'X-Anaconda-Read-Only' in res.headers:
             logger.warning('Anaconda repository is currently in READ ONLY mode.')
 
-        if not res.status_code in allowed:
+        if res.status_code not in allowed:
             short, long = STATUS_CODES.get(res.status_code, ('?', 'Undefined error'))
             msg = '%s: %s ([%s] %s -> %s)' % (short, long, res.request.method, res.request.url, res.status_code)
 
             try:
                 data = res.json()
-            except:
-                pass
-            else:
-                msg = data.get('error', msg)
+            except Exception:  # pylint: disable=broad-except
+                data = {}
 
+            msg = data.get('error', msg)
             ErrCls = errors.BinstarError
             if res.status_code == 401:
                 ErrCls = errors.Unauthorized
@@ -227,12 +232,12 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
             raise ErrCls(msg, res.status_code)
 
     def user(self, login=None):
-        '''
+        """
         Get user information.
 
         :param login: (optional) the login name of the user or None. If login is None
                       this method will return the information of the authenticated user.
-        '''
+        """
         if login:
             url = '%s/user/%s' % (self.domain, login)
         else:
@@ -250,7 +255,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
             package_type=None,
             type_=None,
             access=None):
-        '''
+        """
         Returns a list of packages for a given user and optionally filter
         by `platform`, `package_type` and `type_`.
 
@@ -265,7 +270,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
            (i.e. 'app')
         :param access: only find packages that have this access level
            (e.g. 'private', 'authenticated', 'public')
-        '''
+        """
         if login:
             url = '{0}/packages/{1}'.format(self.domain, login)
         else:
@@ -288,12 +293,12 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         return res.json()
 
     def package(self, login, package_name):
-        '''
+        """
         Get information about a specific package
 
         :param login: the login of the package owner
         :param package_name: the name of the package
-        '''
+        """
         url = '%s/package/%s/%s' % (self.domain, login, package_name)
         res = self.session.get(url)
         self._check_response(res)
@@ -303,13 +308,11 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         url = '%s/packages/%s/%s/collaborators/%s' % (self.domain, owner, package_name, collaborator)
         res = self.session.put(url)
         self._check_response(res, [201])
-        return
 
     def package_remove_collaborator(self, owner, package_name, collaborator):
         url = '%s/packages/%s/%s/collaborators/%s' % (self.domain, owner, package_name, collaborator)
         res = self.session.delete(url)
         self._check_response(res, [201])
-        return
 
     def package_collaborators(self, owner, package_name):
 
@@ -319,20 +322,18 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         return res.json()
 
     def all_packages(self, modified_after=None):
-        '''
-        '''
         url = '%s/package_listing' % (self.domain)
         data = {'modified_after': modified_after or ''}
         res = self.session.get(url, data=data)
         self._check_response(res)
         return res.json()
 
-    def add_package(
+    def add_package(  # pylint: disable=too-many-arguments
             self,
             login,
             package_name,
             summary=None,
-            license=None,
+            license=None,  # pylint: disable=redefined-builtin
             public=True,
             license_url=None,
             license_family=None,
@@ -413,44 +414,42 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
 
         res = self.session.delete(url)
         self._check_response(res, [201])
-        return
 
     def release(self, login, package_name, version):
-        '''
+        """
         Get information about a specific release
 
         :param login: the login of the package owner
         :param package_name: the name of the package
         :param version: the name of the package
-        '''
+        """
         url = '%s/release/%s/%s/%s' % (self.domain, login, package_name, version)
         res = self.session.get(url)
         self._check_response(res)
         return res.json()
 
     def remove_release(self, username, package_name, version):
-        '''
-        remove a release and all files under it
+        """
+        Remove a release and all files under it.
 
         :param username: the login of the package owner
         :param package_name: the name of the package
         :param version: the name of the package
-        '''
+        """
         url = '%s/release/%s/%s/%s' % (self.domain, username, package_name, version)
         res = self.session.delete(url)
         self._check_response(res, [201])
-        return
 
     def add_release(self, login, package_name, version, requirements, announce, release_attrs):
-        '''
+        """
         Add a new release to a package.
 
         :param login: the login of the package owner
         :param package_name: the name of the package
         :param version: the version string of the release
-        :param requirements: A dict of requirements TODO: describe
+        :param requirements: A dict of requirements NOTE: describe
         :param announce: An announcement that will be posted to all package watchers
-        '''
+        """
 
         url = '%s/release/%s/%s/%s' % (self.domain, login, package_name, version)
 
@@ -516,10 +515,10 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         if res.status_code == 200:
             # We received the content directly from anaconda.org
             return res
-        elif res.status_code == 304:
+        if res.status_code == 304:
             # The content has not changed
             return None
-        elif res.status_code == 302:
+        if res.status_code == 302:
             # Download from s3:
             # We need to create a new request (without using session) to avoid
             # sending the custom headers set on our session to S3 (which causes
@@ -527,7 +526,9 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
             res2 = requests.get(res.headers['location'], stream=True)
             return res2
 
-    def upload(self, login, package_name, release, basename, fd, distribution_type,
+        return None
+
+    def upload(self, login, package_name, release, basename, file, distribution_type,
                description='', md5=None, sha256=None, size=None, dependencies=None, attrs=None,
                channels=('main',)):
         """
@@ -537,7 +538,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         :param package_name: the name of the package
         :param release: the version string of the release
         :param basename: the basename of the distribution to download
-        :param fd: a file like object to upload
+        :param file: a file like object to upload
         :param distribution_type: pypi or conda or ipynb, etc.
         :param description: (optional) a short description about the file
         :param md5: (optional) base64 encoded md5 hash calculated from package file
@@ -553,7 +554,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         if not isinstance(attrs, dict):
             raise TypeError('argument attrs must be a dictionary')
 
-        sha256 = sha256 if sha256 is not None else compute_hash(fd, size=size, hash_algorithm=hashlib.sha256)[0]
+        sha256 = sha256 if sha256 is not None else compute_hash(file, size=size, hash_algorithm=hashlib.sha256)[0]
 
         if not isinstance(distribution_type, str):
             distribution_type = distribution_type.value
@@ -576,19 +577,19 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         s3data = obj['form_data']
 
         if md5 is None:
-            _hexmd5, b64md5, size = compute_hash(fd, size=size)
+            _hexmd5, b64md5, size = compute_hash(file, size=size)
         elif size is None:
-            spos = fd.tell()
-            fd.seek(0, os.SEEK_END)
-            size = fd.tell() - spos
-            fd.seek(spos)
+            spos = file.tell()
+            file.seek(0, os.SEEK_END)
+            size = file.tell() - spos
+            file.seek(spos)
 
         s3data['Content-Length'] = size
         s3data['Content-MD5'] = b64md5
 
-        file_size = os.fstat(fd.fileno()).st_size
-        with tqdm(total=file_size, unit="B", unit_scale=True, unit_divisor=1024) as t:
-            wrapped_file = CallbackIOWrapper(t.update, fd, "read")
+        file_size = os.fstat(file.fileno()).st_size
+        with tqdm(total=file_size, unit='B', unit_scale=True, unit_divisor=1024) as progress:
+            wrapped_file = CallbackIOWrapper(progress.update, file, 'read')
             s3res = requests.post(
                 s3url, data=s3data, files={'file': (basename, wrapped_file)},
                 verify=self.session.verify, timeout=10 * 60 * 60)

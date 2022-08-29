@@ -1,4 +1,6 @@
-'''
+# pylint: disable=missing-function-docstring
+
+"""
 anaconda-client configuration
 
 Get, Set, Remove or Show the anaconda-client configuration.
@@ -59,14 +61,12 @@ If no, then an upload will fail if the package name does not already exist on th
 
     anaconda config --set auto_register yes|no
 
-'''
+"""
+
 from __future__ import print_function
 
 import logging
-
 from argparse import RawDescriptionHelpFormatter
-
-from six import text_type
 
 from binstar_client.errors import ShowHelp
 from binstar_client.utils.config import (SEARCH_PATH, USER_CONFIG, SYSTEM_CONFIG, CONFIGURATION_KEYS,
@@ -88,8 +88,8 @@ def recursive_set(config_data, key, value, type_):
     if key not in CONFIGURATION_KEYS:
         logger.warning('"%s" is not a known configuration key', key)
 
-    if key in DEPRECATED.keys():
-        message = "{} is deprecated: {}".format(key, DEPRECATED[key])
+    if key in DEPRECATED:
+        message = '{} is deprecated: {}'.format(key, DEPRECATED[key])
         logger.warning(message)
 
     config_data[key] = type_(value)
@@ -123,12 +123,12 @@ def main(args):
         if args.get in config:
             logger.info(config[args.get])
         else:
-            logger.info("The value of '%s' is not set." % args.get)
+            logger.info("The value of '%s' is not set.", args.get)
         return
 
     if args.files:
-        logger.info('User Config: %s' % USER_CONFIG)
-        logger.info('System Config: %s' % SYSTEM_CONFIG)
+        logger.info('User Config: %s', USER_CONFIG)
+        logger.info('System Config: %s', SYSTEM_CONFIG)
         return
 
     config_file = USER_CONFIG if args.user else SYSTEM_CONFIG
@@ -142,7 +142,7 @@ def main(args):
         try:
             recursive_remove(config, key)
         except KeyError:
-            logger.error("Key %s does not exist" % key)
+            logger.error('Key %s does not exist', key)
 
     if not (args.set or args.remove):
         raise ShowHelp()

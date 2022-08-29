@@ -1,5 +1,19 @@
 # CHANGELOG:
 
+## Version 1.11.0
+
+### Added
+
+* Client generates sha256 package checksum during upload process. 
+
+### Pull requests merged
+
+* [PR_613](https://github.com/Anaconda-Platform/anaconda-client/pull/613) - AS-523: Remove requests.Session usage on file upload
+* [PR_612](https://github.com/Anaconda-Platform/anaconda-client/pull/612) - AS-523: Remove redundant logic
+* [PR_608](https://github.com/Anaconda-Platform/anaconda-client/pull/608) - AC-135: Use hexdigets sha256 checksum
+* [PR_605](https://github.com/Anaconda-Platform/anaconda-client/pull/605) - AC-133: Include sha256 value on file upload
+
+
 ## Version 1.10.0 (2022/06/15)
 
 ### Added

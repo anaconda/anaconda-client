@@ -1,3 +1,5 @@
+# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
+
 import os
 import time
 
@@ -5,7 +7,7 @@ import time
 from ..utils.yaml import yaml_load
 
 
-class EnvInspector(object):
+class EnvInspector:
     def __init__(self, filename, fileobj):
         self._name = None
         self._version = None
@@ -25,7 +27,7 @@ class EnvInspector(object):
     def get_package_data(self):
         return {
             'name': self.name,
-            'summary': "Environment file"
+            'summary': 'Environment file'
         }
 
     @property
@@ -36,7 +38,7 @@ class EnvInspector(object):
         return self._version
 
 
-def inspect_env_package(filename, fileobj, *args, **kwargs):
+def inspect_env_package(filename, fileobj, *args, **kwargs):  # pylint: disable=unused-argument
     environment = EnvInspector(filename, fileobj)
 
     package_data = environment.get_package_data()

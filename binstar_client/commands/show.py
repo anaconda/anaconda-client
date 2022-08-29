@@ -1,3 +1,5 @@
+# pylint: disable=missing-function-docstring
+
 """
 Show information about an object
 
@@ -22,21 +24,21 @@ logger = logging.getLogger('binstar.show')
 
 def install_info(package, package_type):
     if package_type is PackageType.STANDARD_PYTHON:
-        logger.info('To install this package with %s run:' % package_type.value)
+        logger.info('To install this package with %s run:', package_type.value)
         if package['public']:
             url = 'https://pypi.anaconda.org/%s/simple' % package['owner']['login']
         else:
             url = 'https://pypi.anaconda.org/t/$TOKEN/%s/simple' % package['owner']['login']
 
-        logger.info('     pip install -i %s %s' % (url, package['name']))
+        logger.info('     pip install -i %s %s', url, package['name'])
     if package_type is PackageType.CONDA:
-        logger.info('To install this package with %s run:' % package_type.value)
+        logger.info('To install this package with %s run:', package_type.value)
         if package['public']:
-            url = 'https://conda.anaconda.org/%s' % package['owner']['login']
+            url = 'https://conda.anaconda.org/%s', package['owner']['login']
         else:
             url = 'https://conda.anaconda.org/t/$TOKEN/%s' % package['owner']['login']
 
-        logger.info('     conda install --channel %s %s' % (url, package['name']))
+        logger.info('     conda install --channel %s %s', url, package['name'])
 
 
 def main(args):
@@ -44,38 +46,38 @@ def main(args):
     aserver_api = get_server_api(args.token, args.site)
 
     spec = args.spec
-    if spec._basename:
+    if spec._basename:  # pylint: disable=protected-access
         dist = aserver_api.distribution(spec.user, spec.package, spec.version, spec.basename)
         logger.info(dist.pop('basename'))
         logger.info(dist.pop('description') or 'no description')
         logger.info('')
         metadata = dist.pop('attrs', {})
         for key_value in dist.items():
-            logger.info('%-25s: %r' % key_value)
+            logger.info('%-25s: %r', key_value)
         logger.info('Metadata:')
         for key_value in metadata.items():
-            logger.info('    + %-25s: %r' % key_value)
+            logger.info('    + %-25s: %r', key_value)
 
-    elif args.spec._version:
-        logger.info('version %s' % spec.version)
+    elif args.spec._version:  # pylint: disable=protected-access
+        logger.info('version %s', spec.version)
         release = aserver_api.release(spec.user, spec.package, spec.version)
         for dist in release['distributions']:
-            logger.info('   + %(basename)s' % dist)
-        logger.info('%s' % release.get('public_attrs', {}).get('description'))
+            logger.info('   + %(basename)s', dist)
+        logger.info(release.get('public_attrs', {}).get('description'))
 
-    elif args.spec._package:
+    elif args.spec._package:  # pylint: disable=protected-access
         package = aserver_api.package(spec.user, spec.package)
         package['access'] = 'public' if package['public'] else 'private'
 
         package_types = ', '.join(format_package_type(item) for item in (package.get('package_types', None) or ()))
 
-        logger.info('Name:    %(name)s' % package)
-        logger.info('Summary: %(summary)s' % package)
-        logger.info('Access:  %(access)s' % package)
-        logger.info('Package Types:  %s' % package_types)
-        logger.info('Versions:' % package)
+        logger.info('Name:    %(name)s', package)
+        logger.info('Summary: %(summary)s', package)
+        logger.info('Access:  %(access)s', package)
+        logger.info('Package Types:  %s', package_types)
+        logger.info('Versions: %s', package)
         for release in package['releases']:
-            logger.info('   + %(version)s' % release)
+            logger.info('   + %(version)s', release)
 
         logger.info('')
         for package_type in package.get('package_types'):
@@ -85,7 +87,7 @@ def main(args):
             logger.info('To generate a $TOKEN run:')
             logger.info('    TOKEN=$(anaconda auth --create --name <TOKEN-NAME>)')
 
-    elif args.spec._user:
+    elif args.spec._user:  # pylint: disable=protected-access
         user_info = aserver_api.user(spec.user)
         pprint_user(user_info)
         pprint_packages(aserver_api.user_packages(spec.user))
@@ -94,6 +96,7 @@ def main(args):
 
     else:
         logger.info(args.spec)
+
 
 def add_parser(subparsers):
     description = 'Show information about an object'

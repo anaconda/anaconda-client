@@ -1,3 +1,5 @@
+# pylint: disable=missing-module-docstring,missing-function-docstring
+
 from __future__ import absolute_import, print_function, unicode_literals
 
 import os
@@ -10,13 +12,14 @@ from ..utils.notebook.data_uri import data_uri_from
 from ..utils.notebook.inflection import parameterize
 
 
-def inspect_ipynb_package(filename, fileobj, *args, **kwargs):
+def inspect_ipynb_package(filename, fileobj, *args, **kwargs):  # pylint: disable=unused-argument
+
     notebook = nbformat.read(fileobj, nbformat.NO_CONVERT)
     summary = notebook.get('metadata', {}).get('summary', 'Jupyter Notebook')
     description = notebook.get('metadata', {}).get('description', 'Jupyter Notebook')
 
     package_data = {
-        'name': re.sub('\-ipynb$', '', parameterize(os.path.basename(filename))),
+        'name': re.sub('\\-ipynb$', '', parameterize(os.path.basename(filename))),
         'summary': summary,
         'description': description,
     }
