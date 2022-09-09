@@ -3,8 +3,9 @@ conda-package-handling>=1.7.3
 nbformat>=4.4.0
 python-dateutil>=2.6.1
 PyYAML>=3.12
-requests>=2.9.1
+requests>=2.20.0
 pytz
-setuptools
-six
+setuptools>=58.0.4
+six>=1.15.0
 urllib3>=1.26.4
+tqdm>=4.56.0

@@ -2,8 +2,6 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import os
 import re
-import time
-
 from datetime import datetime
 
 import nbformat
@@ -14,8 +12,8 @@ from ..utils.notebook.inflection import parameterize
 
 def inspect_ipynb_package(filename, fileobj, *args, **kwargs):
     notebook = nbformat.read(fileobj, nbformat.NO_CONVERT)
-    summary = notebook['metadata'].get('summary', 'Jupyter Notebook')
-    description = notebook['metadata'].get('description', 'Jupyter Notebook')
+    summary = notebook.get('metadata', {}).get('summary', 'Jupyter Notebook')
+    description = notebook.get('metadata', {}).get('description', 'Jupyter Notebook')
 
     package_data = {
         'name': re.sub('\-ipynb$', '', parameterize(os.path.basename(filename))),
