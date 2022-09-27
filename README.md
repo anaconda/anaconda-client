@@ -10,7 +10,7 @@ This is a command line client that provides an interface to [Anaconda.org](https
 
 ### Create an account:
 
-First create an account on [Anaconda Cloud](https://anaconda.org)
+First create an account on [Anaconda.org](https://anaconda.org)
 
 ### Install the client:
 
@@ -40,7 +40,7 @@ Test your login with the whoami command:
 
 `$ anaconda whoami`
 
-For a complete tutorial on building and uploading Conda packages to Anaconda Cloud visit the [documentation page](http://docs.anaconda.org/).
+For a complete tutorial on building and uploading Conda packages to Anaconda.org visit the [documentation page](http://docs.anaconda.org/).
 
 
 ### Links
