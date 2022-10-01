@@ -34,9 +34,12 @@ jobs:
           auto-update-conda: true
           python-version: ${{ matrix.python-version }}
 
-      - name: Install dependencies
+      - name: Install latest conda
         run: |
           conda update -n base -c conda-canary -q conda
+
+      - name: Install dependencies
+        run: |
           conda install python=${{ matrix.python-version }} pip --file requirements.txt --file requirements-extra.txt
           pip install -r requirements-dev.txt
           python setup.py develop
@@ -104,9 +107,12 @@ jobs:
           auto-update-conda: true
           python-version: ${{ matrix.python-version }}
 
-      - name: Install dependencies
+      - name: Install latest conda
         run: |
           conda update -n base -c conda-canary -q conda
+
+      - name: Install dependencies
+        run: |
           conda install python=${{ matrix.python-version }} pip --file requirements.txt --file requirements-extra.txt
           pip install -r requirements-dev.txt
           python setup.py develop
