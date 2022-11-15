@@ -1,4 +1,22 @@
-# CHANGELOG:
+# CHANGELOG
+
+We [keep a changelog.](http://keepachangelog.com/)
+
+## Next release
+
+### Technical (internal)
+
+* Linters toolset updated
+* Code style fixes implemented
+
+### Tickets closed
+
+* [AC-137](https://anaconda.atlassian.net/browse/AC-137) - Refresh linting config
+
+### Pull requests merged
+
+* [PR 617](https://github.com/Anaconda-Platform/anaconda-client/pull/617) - AC-138: additional cleanup of the project
+* [PR 615](https://github.com/Anaconda-Platform/anaconda-client/pull/615) - AC-138: Dev tools refresh
 
 ## Version 1.11.0 - 2022-09-08
 
@@ -8,11 +26,10 @@
 
 ### Pull requests merged
 
-* [PR_613](https://github.com/Anaconda-Platform/anaconda-client/pull/613) - AS-523: Remove requests.Session usage on file upload
-* [PR_612](https://github.com/Anaconda-Platform/anaconda-client/pull/612) - AS-523: Remove redundant logic
-* [PR_608](https://github.com/Anaconda-Platform/anaconda-client/pull/608) - AC-135: Use hexdigets sha256 checksum
-* [PR_605](https://github.com/Anaconda-Platform/anaconda-client/pull/605) - AC-133: Include sha256 value on file upload
-
+* [PR 613](https://github.com/Anaconda-Platform/anaconda-client/pull/613) - AS-523: Remove requests.Session usage on file upload
+* [PR 612](https://github.com/Anaconda-Platform/anaconda-client/pull/612) - AS-523: Remove redundant logic
+* [PR 608](https://github.com/Anaconda-Platform/anaconda-client/pull/608) - AC-135: Use hexdigets sha256 checksum
+* [PR 605](https://github.com/Anaconda-Platform/anaconda-client/pull/605) - AC-133: Include sha256 value on file upload
 
 ## Version 1.10.0 (2022/06/15)
 
@@ -31,14 +48,14 @@
 
 ### Pull requests merged
 
-* [PR_604](https://github.com/Anaconda-Platform/anaconda-client/pull/604) - AC-131: Fix deprecated methods and modules, remove not worked covarage
-* [PR_603](https://github.com/Anaconda-Platform/anaconda-client/pull/603) - AC-132: additional tests for packages with dash in name
-* [PR_600](https://github.com/Anaconda-Platform/anaconda-client/pull/600) - AC-126: Add better error handling and logging for AC config file
-* [PR_596](https://github.com/Anaconda-Platform/anaconda-client/pull/596) - AC-121: Pattern matching in upload command
-* [PR_595](https://github.com/Anaconda-Platform/anaconda-client/pull/595) - AC-116: better support for standard r packages
-* [PR_594](https://github.com/Anaconda-Platform/anaconda-client/pull/594) - NAV-649: possible fix for permission denied issue
-* [PR_593](https://github.com/Anaconda-Platform/anaconda-client/pull/593) - AS-120: Refactor package_type usage
-* [PR_591](https://github.com/Anaconda-Platform/anaconda-client/pull/591) - AC-119: Add conda v2 format support
+* [PR 604](https://github.com/Anaconda-Platform/anaconda-client/pull/604) - AC-131: Fix deprecated methods and modules, remove not worked covarage
+* [PR 603](https://github.com/Anaconda-Platform/anaconda-client/pull/603) - AC-132: additional tests for packages with dash in name
+* [PR 600](https://github.com/Anaconda-Platform/anaconda-client/pull/600) - AC-126: Add better error handling and logging for AC config file
+* [PR 596](https://github.com/Anaconda-Platform/anaconda-client/pull/596) - AC-121: Pattern matching in upload command
+* [PR 595](https://github.com/Anaconda-Platform/anaconda-client/pull/595) - AC-116: better support for standard r packages
+* [PR 594](https://github.com/Anaconda-Platform/anaconda-client/pull/594) - NAV-649: possible fix for permission denied issue
+* [PR 593](https://github.com/Anaconda-Platform/anaconda-client/pull/593) - AS-120: Refactor package_type usage
+* [PR 591](https://github.com/Anaconda-Platform/anaconda-client/pull/591) - AC-119: Add conda v2 format support
 
 ## Version 1.9.0 (2021/10/28)
 
@@ -53,11 +70,11 @@
 
 ### Pull Requests Merged
 
-* [PR_588](https://github.com/Anaconda-Platform/anaconda-client/pull/588) - AC-114: Add update command to autotest
-* [PR_585](https://github.com/Anaconda-Platform/anaconda-client/pull/585) - AC-108: automated tests added to the repo
-* [PR_584](https://github.com/Anaconda-Platform/anaconda-client/pull/584) - AC-43: Fix upload of packages with same name but different type
-* [PR_579](https://github.com/Anaconda-Platform/anaconda-client/pull/579) - fix string formatting on interactive input
-* [PR_573](https://github.com/Anaconda-Platform/anaconda-client/pull/573) - AC-92: Add update command
+* [PR 588](https://github.com/Anaconda-Platform/anaconda-client/pull/588) - AC-114: Add update command to autotest
+* [PR 585](https://github.com/Anaconda-Platform/anaconda-client/pull/585) - AC-108: automated tests added to the repo
+* [PR 584](https://github.com/Anaconda-Platform/anaconda-client/pull/584) - AC-43: Fix upload of packages with same name but different type
+* [PR 579](https://github.com/Anaconda-Platform/anaconda-client/pull/579) - fix string formatting on interactive input
+* [PR 573](https://github.com/Anaconda-Platform/anaconda-client/pull/573) - AC-92: Add update command
 
 ## Version 1.8.0 (2021/06/25)
 
@@ -78,17 +95,17 @@
 
 ### Pull Requests Merged
 
-* [PR_575](https://github.com/Anaconda-Platform/anaconda-client/pull/575) - AC-87: Fixes and version bump to 1.8.0
-* [PR_572](https://github.com/Anaconda-Platform/anaconda-client/pull/572) - AC-87: fix for anaconda-project requirement
-* [PR_571](https://github.com/Anaconda-Platform/anaconda-client/pull/571) - AC-87: Bump version to 1.8.0rc1
-* [PR_570](https://github.com/Anaconda-Platform/anaconda-client/pull/570) - AC-96: CI migration to GitHub Actions
-* [PR_566](https://github.com/Anaconda-Platform/anaconda-client/pull/566) - AC-93: Fix summary and description arguments
-* [PR_565](https://github.com/Anaconda-Platform/anaconda-client/pull/565) - PR: Fix #555 - Upload - Fix of deprecated base64 functions usage
-* [PR_559](https://github.com/Anaconda-Platform/anaconda-client/pull/559) - AC-88: Add --update and --replace options for copy command
-* [PR_551](https://github.com/Anaconda-Platform/anaconda-client/pull/551) - fix: AttributeError: module 'base64' has no attribute 'encodestring'
-* [PR_539](https://github.com/Anaconda-Platform/anaconda-client/pull/539) - Don't hide all uncaught exceptions
-* [PR_534](https://github.com/Anaconda-Platform/anaconda-client/pull/534) - Adding Travis-Ci Support For Arm64
-* [PR_528](https://github.com/Anaconda-Platform/anaconda-client/pull/528) - Corrected links to documentation
+* [PR 575](https://github.com/Anaconda-Platform/anaconda-client/pull/575) - AC-87: Fixes and version bump to 1.8.0
+* [PR 572](https://github.com/Anaconda-Platform/anaconda-client/pull/572) - AC-87: fix for anaconda-project requirement
+* [PR 571](https://github.com/Anaconda-Platform/anaconda-client/pull/571) - AC-87: Bump version to 1.8.0rc1
+* [PR 570](https://github.com/Anaconda-Platform/anaconda-client/pull/570) - AC-96: CI migration to GitHub Actions
+* [PR 566](https://github.com/Anaconda-Platform/anaconda-client/pull/566) - AC-93: Fix summary and description arguments
+* [PR 565](https://github.com/Anaconda-Platform/anaconda-client/pull/565) - PR: Fix #555 - Upload - Fix of deprecated base64 functions usage
+* [PR 559](https://github.com/Anaconda-Platform/anaconda-client/pull/559) - AC-88: Add --update and --replace options for copy command
+* [PR 551](https://github.com/Anaconda-Platform/anaconda-client/pull/551) - fix: AttributeError: module 'base64' has no attribute 'encodestring'
+* [PR 539](https://github.com/Anaconda-Platform/anaconda-client/pull/539) - Don't hide all uncaught exceptions
+* [PR 534](https://github.com/Anaconda-Platform/anaconda-client/pull/534) - Adding Travis-Ci Support For Arm64
+* [PR 528](https://github.com/Anaconda-Platform/anaconda-client/pull/528) - Corrected links to documentation
 
 ## Version 1.7.2 (2018/08/29)
 

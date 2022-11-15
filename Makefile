@@ -8,12 +8,14 @@ Commands:
   lint-mypy           perform static type check of the project
   lint-pycodestyle    check source code for PEP8 compliance
   lint-pylint         perform static code analysis for common issues
-  test                run unit tests
+  test                run all automated tests (see: test-pytest, test-autotest)
+  test-pytest         run all pytest tests
+  test-autotest       run autotest against production server
 
 endef
 export HELP
 
-.PHONY: help init lint lint-bandit lint-mypy lint-pycodestyle lint-pylint test
+.PHONY: help init lint lint-bandit lint-mypy lint-pycodestyle lint-pylint test test-pytest
 
 help:
 	@echo "$${HELP}"
@@ -23,6 +25,8 @@ init:
 	@conda create -y -n anaconda_client python=3.8 --file requirements.txt --file requirements-extra.txt
 	@conda run -n anaconda_client pip install -r requirements-dev.txt
 	@echo "\n\nConda environment has been created. To activate run \"conda activate anaconda_client\"."
+
+check: lint test
 
 lint: lint-pycodestyle lint-pylint lint-mypy lint-bandit
 
@@ -39,6 +43,13 @@ lint-pycodestyle:
 lint-pylint:
 	@pylint binstar_client tests
 
-test:
+test: test-pytest test-autotest
+
+test-pytest: .coveragerc
+	@pytest tests/
+
+test-autotest:
+	@cd autotest && bash -e autotest.sh
+
+.coveragerc:
 	@python scripts/refresh_coveragerc.py
-	@pytest tests/ -x -rw --durations 10 --cov=binstar_client --cov-report term-missing
