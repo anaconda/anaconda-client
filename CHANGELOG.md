@@ -15,6 +15,7 @@ We [keep a changelog.](http://keepachangelog.com/)
 
 ### Pull requests merged
 
+* [PR 625](https://github.com/Anaconda-Platform/anaconda-client/pull/625) - AC-144: base repository scripts refresh
 * [PR 617](https://github.com/Anaconda-Platform/anaconda-client/pull/617) - AC-138: additional cleanup of the project
 * [PR 615](https://github.com/Anaconda-Platform/anaconda-client/pull/615) - AC-138: Dev tools refresh
 
