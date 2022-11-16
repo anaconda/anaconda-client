@@ -2,7 +2,7 @@
 
 We [keep a changelog.](http://keepachangelog.com/)
 
-## Next release
+## 1.11.1
 
 ### Technical (internal)
 
