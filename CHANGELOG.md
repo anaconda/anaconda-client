@@ -4,6 +4,10 @@ We [keep a changelog.](http://keepachangelog.com/)
 
 ## 1.11.1
 
+### Added
+
+* yaml files are now supported by `anaconda update` command
+
 ### Technical (internal)
 
 * Linters toolset updated
