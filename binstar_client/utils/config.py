@@ -154,7 +154,11 @@ def get_server_api(token=None, site=None, cls=None, config=None, **kwargs):
     else:
         token = load_token(url)
 
-    verify = config.get('ssl_verify', config.get('verify_ssl', True))
+    verify = config.get('ssl_verify', None)
+    if verify is None:
+        verify = config.get('verify_ssl', None)
+    if verify is None:
+        verify = True
 
     return cls(token, domain=url, verify=verify, **kwargs)
 
