@@ -33,7 +33,7 @@ class DataURIConverter:
             with open(self.location, 'rb') as file:
                 return self._encode(self.resize_and_convert(file).read())
         elif self.is_url():
-            content = requests.get(self.location).content
+            content = requests.get(self.location).content  # pylint: disable=missing-timeout
             file = io.BytesIO()
             file.write(content)
             file.seek(0)
