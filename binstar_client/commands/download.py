@@ -73,5 +73,5 @@ def main(args):
                 logger.info('Run:')
                 logger.info('    conda env create %s', download_file)
                 logger.info('To install the environment in your system')
-    except (errors.DestionationPathExists, errors.NotFound, errors.BinstarError, OSError) as err:
+    except (errors.DestinationPathExists, errors.NotFound, errors.BinstarError, OSError) as err:
         logger.info(err)

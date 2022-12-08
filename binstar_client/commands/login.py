@@ -25,7 +25,7 @@ def try_replace_token(authenticate, **kwargs):
     try:
         return authenticate(**kwargs)
     except errors.BinstarError as err:
-        if kwargs.get('fail_if_already_exists') and (len(err.args) > 1) and (err.args[1] == 400):
+        if kwargs.get('fail_if_already_exists', False) and (len(err.args) >= 2) and (err.args[1] == 400):
             # pylint: disable=implicit-str-concat
             logger.warning('It appears you are already logged in from host %s', socket.gethostname())
             logger.warning(

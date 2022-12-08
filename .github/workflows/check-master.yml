@@ -37,7 +37,7 @@ jobs:
 
       - name: Install latest conda
         run: |
-          conda update -n base -c conda-canary -q conda
+          conda update -n base -q conda
 
       - name: Install dependencies
         run: |
@@ -110,7 +110,7 @@ jobs:
 
       - name: Install latest conda
         run: |
-          conda update -n base -c conda-canary -q conda
+          conda update -n base -q conda
 
       - name: Install dependencies
         run: |
