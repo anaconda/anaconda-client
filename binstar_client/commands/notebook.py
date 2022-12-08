@@ -136,5 +136,5 @@ def download(args):
             logger.info('Run:')
             logger.info('    conda env create %s', download_info[0])
             logger.info('To install the environment in your system')
-    except (errors.DestionationPathExists, errors.NotFound, OSError) as err:
+    except (errors.DestinationPathExists, errors.NotFound, OSError) as err:
         logger.info(err.msg)
