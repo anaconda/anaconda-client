@@ -27,8 +27,14 @@ jobs:
         uses: conda-incubator/setup-miniconda@v2
         with:
           activate-environment: test
-          auto-update-conda: true
+          auto-update-conda: false
           python-version: 3.8
+
+      - name: Conda environment information
+        run: |
+          conda info
+          conda config --show
+          conda list -n test --show-channel-urls
 
       - name: Install requirements
         run: |
@@ -63,13 +69,13 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - macos-latest
-          - ubuntu-latest
+          # - macos-latest
+          # - ubuntu-latest
           - windows-latest
         python:
-          - 3.6
-          - 3.7
-          - 3.8
+          # - 3.6
+          # - 3.7
+          # - 3.8
           - 3.9
     steps:
       # most of these steps might be anchored to corresponding ones in the "lint_code" job
