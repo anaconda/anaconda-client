@@ -22,6 +22,7 @@ We [keep a changelog.](http://keepachangelog.com/)
 * [PR 625](https://github.com/Anaconda-Platform/anaconda-client/pull/625) - AC-144: base repository scripts refresh
 * [PR 617](https://github.com/Anaconda-Platform/anaconda-client/pull/617) - AC-138: additional cleanup of the project
 * [PR 615](https://github.com/Anaconda-Platform/anaconda-client/pull/615) - AC-138: Dev tools refresh
+* [PR 628](https://github.com/Anaconda-Platform/anaconda-client/pull/628) - AC-145: exception classes fixed
 
 ## Version 1.11.0 - 2022-09-08
 
