@@ -27,7 +27,7 @@ jobs:
         uses: conda-incubator/setup-miniconda@v2
         with:
           activate-environment: test
-          auto-update-conda: false
+          auto-update-conda: true
           python-version: 3.8
 
       - name: Conda environment information
