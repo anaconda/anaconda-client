@@ -8,8 +8,6 @@ import requests
 from functools import wraps
 import json
 
-from unittest import mock
-
 try:
     unicode
 except NameError:
@@ -17,8 +15,21 @@ except NameError:
 
 from collections import namedtuple
 
-Rule = namedtuple(
-    'Rule', ('url', 'path', 'method', 'status', 'content', 'side_effect', 'res', 'headers', 'expected_headers'))
+rule = namedtuple(
+    'rule', ('url', 'path', 'method', 'status', 'content', 'side_effect', 'res', 'headers', 'expected_headers'))
+
+
+def filter_request(m, prepared_request):
+    if m.url and m.url != prepared_request.url:
+        return False
+
+    if m.path and m.path != prepared_request.path_url:
+        return False
+
+    if m.method and m.method != prepared_request.method:
+        return False
+
+    return True
 
 
 class Responses(object):
@@ -58,26 +69,9 @@ class Registry(object):
         requests.Session.send = self.real_send
         return
 
-    @staticmethod
-    def filter_request(rule, prepared_request):
-        if rule.url and rule.url != prepared_request.url:
-            return False
-
-        if rule.path and rule.path != prepared_request.path_url:
-            return False
-
-        if rule.method and rule.method != prepared_request.method:
-            return False
-
-        return True
-
-    def find_rule(self, prepared_request):
-        return next((stored_rule for stored_rule in self._map[::-1]
-                     if self.filter_request(stored_rule, prepared_request)), None)
-
     def mock_send(self, prepared_request, *args, **kwargs):
 
-        rule = self.find_rule(prepared_request)
+        rule = next((m for m in self._map[::-1] if filter_request(m, prepared_request)), None)
 
         if rule is None:
             raise Exception('No matching rule found for url [%s] %s' % (prepared_request.method,
@@ -114,7 +108,7 @@ class Registry(object):
 
     def register(self, url=None, path=None, method='GET', status=200, content=b'', side_effect=None, headers=None, expected_headers=None):
         res = Responses()
-        self._map.append(Rule(url, path, method, status, content, side_effect, res, headers, expected_headers))
+        self._map.append(rule(url, path, method, status, content, side_effect, res, headers, expected_headers))
         return res
 
     def unregister(self, res):

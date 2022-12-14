@@ -1,37 +1,22 @@
 from __future__ import unicode_literals
 
+import codecs
 import logging
+
 from io import BytesIO, StringIO
 
-import requests
 import six
+import requests
+
 from urllib3.filepost import choose_boundary, iter_fields
 
 logger = logging.getLogger('binstar.requests_ext')
 
 
-class NullAuth(requests.auth.AuthBase):
-    """force requests to ignore the ``.netrc``
-
-    Some sites do not support regular authentication, but we still
-    want to store credentials in the ``.netrc`` file and submit them
-    as form elements. Without this, requests would otherwise use the
-    .netrc which leads, on some sites, to a 401 error.
-
-    https://github.com/kennethreitz/requests/issues/2773
-
-    Use with::
-
-        requests.get(url, auth=NullAuth())
-    """
-
-    def __call__(self, r):
-        return r
-
-
 def encode_multipart_formdata_stream(fields, boundary=None):
     """
     Encode a dictionary of ``fields`` using the multipart/form-data MIME format.
+
     :param fields:
         Dictionary of fields or list of (key, value) or (key, value, MIME type)
         field tuples.  The key is treated as the field name, and the value as
@@ -40,7 +25,9 @@ def encode_multipart_formdata_stream(fields, boundary=None):
         form-data section and a suitable MIME type is guessed based on the
         filename. If the value is a tuple of three elements, then the third
         element is treated as an explicit MIME type of the form-data section.
+
         Field names and filenames must be unicode.
+
     :param boundary:
         If not specified, then a random boundary will be generated using
         :func:`mimetools.choose_boundary`.
@@ -78,7 +65,7 @@ def encode_multipart_formdata_stream(fields, boundary=None):
         else:
             data = value
             body_write_encode('Content-Disposition: form-data; name="%s"\r\n'
-                              % (fieldname))
+                               % (fieldname))
             body_write(b'\r\n')
 
         if isinstance(data, six.integer_types):
@@ -105,7 +92,7 @@ class MultiPartIO(object):
         self._total = 0
         self.callback = callback
 
-    def read(self, n=-1):
+    def read(self, n= -1):
         if self.callback:
             self.callback(self.tell(), self._total)
 
@@ -156,5 +143,23 @@ def stream_multipart(data, files=None, callback=None):
 
     body, content_type = encode_multipart_formdata_stream(fields)
     data = MultiPartIO(body, callback=callback)
-    headers = {'Content-Type': content_type}
+    headers = {'Content-Type':content_type}
     return data, headers
+
+
+class NullAuth(requests.auth.AuthBase):
+    """force requests to ignore the ``.netrc``
+
+    Some sites do not support regular authentication, but we still
+    want to store credentials in the ``.netrc`` file and submit them
+    as form elements. Without this, requests would otherwise use the
+    .netrc which leads, on some sites, to a 401 error.
+
+    https://github.com/kennethreitz/requests/issues/2773
+
+    Use with::
+
+        requests.get(url, auth=NullAuth())
+    """
+    def __call__(self, r):
+        return r
