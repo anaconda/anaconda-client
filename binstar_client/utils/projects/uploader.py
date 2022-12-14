@@ -1,5 +1,7 @@
+from tempfile import SpooledTemporaryFile
 import requests
 import binstar_client
+from binstar_client.requests_ext import stream_multipart
 from binstar_client.utils import compute_hash, jencode
 
 
@@ -49,12 +51,15 @@ class ProjectUploader(binstar_client.Binstar):
         s3data['Content-Length'] = size
         s3data['Content-MD5'] = b64md5
 
+        data_stream, headers = stream_multipart(
+            s3data, files={'file': (self.project.basename, self.project.tar)})
+
         s3res = requests.post(
             url,
-            data=s3data,
-            files={'file': (self.project.basename, self.project.tar)},
+            data=data_stream,
             verify=self.session.verify,
-            timeout=10 * 60 * 60)
+            timeout=10 * 60 * 60,
+            headers=headers)
 
         if s3res.status_code != 201:
             raise binstar_client.errors.BinstarError(
