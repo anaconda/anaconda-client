@@ -361,7 +361,7 @@ def format_sdist_header_metadata(data, filename):  # pylint: disable=too-many-br
                     marker = marker.replace('extra', '')
                     marker = marker.replace('==', '').strip()
                     ext = marker.rsplit(' ')[-1]
-                    if ' in ext or ' in ext:
+                    if ext.startswith(('"', '\'')) and ext.endswith(('"', '\'')):
                         ext = ext[1:-1]
 
                     if ext not in exts:

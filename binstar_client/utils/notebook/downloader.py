@@ -121,7 +121,7 @@ class Downloader:
                 output.append(
                     max(versions, key=lambda x: mktime(parse(x['upload_time']).timetuple()))
                 )
-            except BaseException:  # pylint: disable=broad-except
+            except Exception:  # pylint: disable=broad-except
                 output.append(versions[-1])
 
         return output

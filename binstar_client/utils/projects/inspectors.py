@@ -61,7 +61,7 @@ class ConfigurationInspector:
             if self.has_config():
                 with open(self.config_pfile.fullpath) as configfile:  # pylint: disable=unspecified-encoding
                     metadata['configuration'] = yaml_load(configfile)
-        except BaseException:  # pylint: disable=broad-except
+        except Exception:  # pylint: disable=broad-except
             logger.warning('Could not parse configuration file.')
         return metadata
 
