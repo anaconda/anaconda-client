@@ -26,50 +26,50 @@ class PackageSpec:
         else:
             spec_str = str(user)
             if package:
-                spec_str = '%s/%s' % (spec_str, package)
+                spec_str = f'{spec_str}/{package}'
             if version:
-                spec_str = '%s/%s' % (spec_str, version)
+                spec_str = f'{spec_str}/{version}'
             if basename:
-                spec_str = '%s/%s' % (spec_str, basename)
+                spec_str = f'{spec_str}/{basename}'
             self.spec_str = spec_str
 
     def __str__(self):
         return self.spec_str
 
     def __repr__(self):
-        return '<PackageSpec %r>' % (self.spec_str)
+        return f'<PackageSpec {self.spec_str!r}>'
 
     @property
     def user(self):
         if self._user is None:
-            raise UserError('user not given (got %r expected <username> )' % (self.spec_str,))
+            raise UserError(f'user not given (got {self.spec_str!r} expected <username>)')
         return self._user
 
     @property
     def name(self):
         if self._package is None:
-            raise UserError('package not given in spec (got %r expected <username>/<package> )' % (self.spec_str,))
+            raise UserError(f'package not given in spec (got {self.spec_str!r} expected <username>/<package>)')
         return self._package
 
     @property
     def package(self):
         if self._package is None:
-            raise UserError('package not given in spec (got %r expected <username>/<package> )' % (self.spec_str,))
+            raise UserError(f'package not given in spec (got {self.spec_str!r} expected <username>/<package>)')
         return self._package
 
     @property
     def version(self):
         if self._version is None:
-            raise UserError('version not given in spec (got %r expected <username>/<package>/<version> )' %
-                            (self.spec_str,))
+            raise UserError(
+                f'version not given in spec (got {self.spec_str!r} expected <username>/<package>/<version>)'
+            )
         return self._version
 
     @property
     def basename(self):
         if self._basename is None:
             raise UserError(
-                'basename not given in spec (got %r expected <username>/<package>/<version>/<filename> )' % (
-                    self.spec_str,)
+                f'basename not given in spec (got {self.spec_str!r} expected <username>/<package>/<version>/<filename>)'
             )
         return self._basename
 
@@ -114,34 +114,35 @@ class GroupSpec:
         if not spec_str:
             spec_str = str(org)
             if group_name:
-                spec_str = '%s/%s' % (spec_str, group_name)
+                spec_str = f'{spec_str}/{group_name}'
             if member:
-                spec_str = '%s/%s' % (spec_str, member)
+                spec_str = f'{spec_str}/{member}'
         self.spec_str = spec_str
 
     def __str__(self):
         return self.spec_str
 
     def __repr__(self):
-        return '<GroupSpec %r>' % (self.spec_str)
+        return f'<GroupSpec {self.spec_str!r}>'
 
     @property
     def org(self):
         if self._org is None:
-            raise UserError('Organization not given (got %r expected <organization>)' % (self.spec_str,))
+            raise UserError(f'Organization not given (got {self.spec_str!r} expected <organization>)')
         return self._org
 
     @property
     def group_name(self):
         if self._group_name is None:
-            raise UserError('Group name not given (got %r expected <organization>/<group_name>)' % (self.spec_str,))
+            raise UserError(f'Group name not given (got {self.spec_str!r} expected <organization>/<group_name>)')
         return self._group_name
 
     @property
     def member(self):
         if self._member is None:
-            raise UserError('Member name not given (got %r expected <organization>/<group_name>/<member>)' %
-                            (self.spec_str,))
+            raise UserError(
+                f'Member name not given (got {self.spec_str!r} expected <organization>/<group_name>/<member>)'
+            )
         return self._member
 
 
@@ -154,6 +155,6 @@ def group_spec(spec):
     if group and '/' in group:
         group, member = group.split('/', 1)
     if member and '/' in member:
-        raise UserError('Invalid group specification "%s" (unexpected "/" in %s)' % member)
+        raise UserError(f'Invalid group specification "{member}" (unexpected "/")')
 
     return GroupSpec(org, group, member, spec)

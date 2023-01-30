@@ -52,11 +52,11 @@ def main(args):
         logger.info(dist.pop('description') or 'no description')
         logger.info('')
         metadata = dist.pop('attrs', {})
-        for key_value in dist.items():
-            logger.info('%-25s: %r', key_value)
+        for key, value in dist.items():
+            logger.info('%-25s: %r', key, value)
         logger.info('Metadata:')
-        for key_value in metadata.items():
-            logger.info('    + %-25s: %r', key_value)
+        for key, value in metadata.items():
+            logger.info('    + %-25s: %r', key, value)
 
     elif args.spec._version:  # pylint: disable=protected-access
         logger.info('version %s', spec.version)
@@ -75,7 +75,7 @@ def main(args):
         logger.info('Summary: %(summary)s', package)
         logger.info('Access:  %(access)s', package)
         logger.info('Package Types:  %s', package_types)
-        logger.info('Versions: %s', package)
+        logger.info('Versions:')
         for release in package['releases']:
             logger.info('   + %(version)s', release)
 
