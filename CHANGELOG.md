@@ -2,7 +2,7 @@
 
 We [keep a changelog.](http://keepachangelog.com/)
 
-## 1.11.1
+## 1.11.1 - 2023-03-01
 
 ### Added
 
