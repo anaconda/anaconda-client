@@ -168,6 +168,10 @@ def add_release(aserver_api, args, username,  # pylint: disable=too-many-argumen
     try:
         # Check if the release already exists
         aserver_api.release(username, package_name, version)
+
+        # If it exists update public attrs if needed.
+        if args.use_package_metadata:
+            aserver_api.update_release(username, package_name, version, release_attrs)
     except errors.NotFound:
         if args.mode == 'interactive':
             create_release_interactive(aserver_api, username, package_name, version, release_attrs)
@@ -477,6 +481,11 @@ def add_parser(subparsers):
         action='store_const',
         dest='mode',
         const='skip',
+    )
+    group.add_argument(
+        '--use-package-metadata',
+        action='store_true',
+        help='Overwrite existing release metadata with the metadata from the package.',
     )
 
     parser.set_defaults(main=main)
