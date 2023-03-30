@@ -73,7 +73,7 @@ class CondaProject:
 
     @property
     def basename(self):
-        return '{}.tar'.format(self.name)
+        return f'{self.name}.tar'
 
     @property
     def size(self):
@@ -107,7 +107,7 @@ class PFile:
     def __str__(self):
         if self.is_dir():
             return self.relativepath
-        return '[{}] {}'.format(self.size, self.relativepath)
+        return f'[{self.size}] {self.relativepath}'
 
     def __repr__(self):
         return self.__str__()
@@ -126,7 +126,7 @@ class PFile:
 
         if inspect.isclass(validator):
             return validator(self)()
-        raise BinstarError('Invalid validator {}'.format(validator))
+        raise BinstarError(f'Invalid validator {validator}')
 
     def populate(self):
         if self.size is None:

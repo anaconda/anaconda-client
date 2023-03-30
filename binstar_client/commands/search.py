@@ -22,7 +22,7 @@ def search(args):
 
     packages = aserver_api.search(args.name, package_type=package_type, platform=args.platform)
     pprint_packages(packages, access=False)
-    logger.info('Found %i packages', len(packages))
+    logger.info('Found %d packages', len(packages))
     logger.info('\nRun \'anaconda show <USER/PACKAGE>\' to get installation details')
 
 

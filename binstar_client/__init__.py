@@ -152,8 +152,8 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
         return token
 
     def list_scopes(self):
-        url = '%s/scopes' % (self.domain)
-        res = requests.get(url)
+        url = f'{self.domain}/scopes'
+        res = requests.get(url, timeout=60)
         self._check_response(res)
         return res.json()
 
@@ -523,7 +523,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
             # We need to create a new request (without using session) to avoid
             # sending the custom headers set on our session to S3 (which causes
             # a failure).
-            res2 = requests.get(res.headers['location'], stream=True)
+            res2 = requests.get(res.headers['location'], stream=True)  # pylint: disable=missing-timeout
             return res2
 
         return None

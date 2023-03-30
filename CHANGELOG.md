@@ -2,7 +2,11 @@
 
 We [keep a changelog.](http://keepachangelog.com/)
 
-## Next release
+## 1.11.1 - 2023-03-01
+
+### Added
+
+* yaml files are now supported by `anaconda update` command
 
 ### Technical (internal)
 
@@ -12,9 +16,12 @@ We [keep a changelog.](http://keepachangelog.com/)
 ### Tickets closed
 
 * [AC-137](https://anaconda.atlassian.net/browse/AC-137) - Refresh linting config
+* [AC-148](https://anaconda.atlassian.net/browse/AC-148) - [QA] Traceback appears on viewing the metadata of a file
 
 ### Pull requests merged
 
+* [PR 634](https://github.com/Anaconda-Platform/anaconda-client/pull/634) - AC-148: improvements in logging stability
+* [PR 628](https://github.com/Anaconda-Platform/anaconda-client/pull/628) - AC-145: exception classes fixed
 * [PR 625](https://github.com/Anaconda-Platform/anaconda-client/pull/625) - AC-144: base repository scripts refresh
 * [PR 617](https://github.com/Anaconda-Platform/anaconda-client/pull/617) - AC-138: additional cleanup of the project
 * [PR 615](https://github.com/Anaconda-Platform/anaconda-client/pull/615) - AC-138: Dev tools refresh

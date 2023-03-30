@@ -37,17 +37,13 @@ def main(args, name, deprecated=False):  # pylint: disable=too-many-branches
         logger.info(name.title())
         for channel, info in aserver_api.list_channels(owner).items():
             if isinstance(info, int):  # OLD API
-                logger.info((' + %s ', channel))
+                logger.info(' + %s ', channel)
             else:
-                logger.info(' + %s ', str(channel) + ('[locked]' if info['is_locked'] else ''))
+                logger.info(' + %s%s ', channel, '[locked]' if info['is_locked'] else '')
 
     elif args.show:
         info = aserver_api.show_channel(args.show, owner)
-        logger.info(' '.join((
-            name.title(),
-            args.show,
-            ('[locked]' if info['is_locked'] else '')
-        )))
+        logger.info('%s %s %s', name.title(), args.show, '[locked]' if info['is_locked'] else '')
         for file in info['files']:
             logger.info('  + %(full_name)s', file)
     elif args.lock:

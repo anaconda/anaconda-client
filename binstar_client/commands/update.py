@@ -1,13 +1,15 @@
-# pylint: disable=missing-function-docstring
+# -*- coding: utf-8 -*-
 
-"""
-Update public attributes of the package or the attributes of the package release
-"""
+"""Update public attributes of the package or the attributes of the package release."""
+
+import typing
 
 import argparse
 import json
 import logging
 import os
+
+import yaml
 
 from binstar_client import errors
 from binstar_client.utils import get_server_api
@@ -17,17 +19,32 @@ from binstar_client.utils.detect import detect_package_type, get_attrs
 logger = logging.getLogger('binstar.update')
 
 
-def get_attributes(package, package_type, args):
+def get_attributes(
+        package: str,
+        package_type: typing.Any,
+        args: argparse.Namespace,
+) -> typing.Tuple[typing.Mapping[str, typing.Any], typing.Mapping[str, typing.Any]]:
+    """Parse source for attribute details."""
+    loader: typing.Optional[typing.Callable[[typing.TextIO], typing.Mapping[str, typing.Any]]] = None
     if package.endswith('.json'):
-        with open(package, 'r') as file:  # pylint: disable=unspecified-encoding
-            attrs = json.load(file)
-            return attrs, attrs
+        loader = json.load
+    elif package.endswith(('.yml', '.yaml')):
+        loader = yaml.safe_load
 
-    package_attrs, release_attrs, _ = get_attrs(package_type, package, parser_args=args)
+    package_attrs: typing.Mapping[str, typing.Any]
+    release_attrs: typing.Mapping[str, typing.Any]
+    if loader is None:
+        package_attrs, release_attrs, _ = get_attrs(package_type, package, parser_args=args)
+    else:
+        stream: typing.TextIO
+        with open(package, 'rt', encoding='utf-8') as stream:
+            package_attrs = release_attrs = loader(stream)
+
     return package_attrs, release_attrs
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
+    """Process update request."""
     anaconda_api = get_server_api(args.token, args.site)
     anaconda_api.check_server()
 
@@ -59,25 +76,39 @@ def main(args):
     logger.info('Package `%s` has been updated!', args.spec)
 
 
-def file_type(path):
+def file_type(path: str) -> str:
+    """Validate argument value, that should be a valid path to file."""
     if os.path.isfile(path):
         return path
 
-    raise argparse.ArgumentTypeError('{} is not a valid path'.format(path))
+    raise argparse.ArgumentTypeError(f'{path} is not a valid path')
 
 
-def add_parser(subparsers):
+def add_parser(subparsers: typing.Any) -> None:
+    """Add parser to CLI."""
     parser = subparsers.add_parser(
         'update',
-        usage='\n\tanaconda update user/package[/version] CONDA_PACKAGE_1.bz2'
-              '\n\tanaconda update user/package[/version] metadata.json',
-        description=__doc__)
+        usage=(
+            '\n\tanaconda update [--release] user/package[/version] CONDA_PACKAGE_1.bz2'
+            '\n\tanaconda update [--release] user/package[/version] metadata.json'
+        ),
+        description=__doc__,
+    )
 
-    package_help = ('Path to the file that consists of metadata that will be updated in the destination package. ' +
-                    'It may be a valid package file or `.json` file with described attributes to update')
+    parser.add_argument(
+        'spec',
+        help='Package name written as `user/package[/version]`',
+        type=parse_specs,
+    )
+    parser.add_argument(
+        'source',
+        help=(
+            'Path to the file that consists of metadata that will be updated in the destination package. '
+            'It may be a valid package file or `.json` file with described attributes to update'
+        ),
+        type=file_type,
+    )
 
-    parser.add_argument('spec', help='Package name written as `user/package[/version]`', type=parse_specs)
-    parser.add_argument('source', help=package_help, type=file_type)
     release_group = parser.add_argument_group(title='Update release')
     release_group.add_argument(
         '--release',

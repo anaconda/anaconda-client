@@ -7,7 +7,7 @@ from time import mktime
 
 from dateutil.parser import parse
 
-from binstar_client.errors import DestionationPathExists
+from binstar_client.errors import DestinationPathExists
 from binstar_client.utils.config import PackageType
 
 
@@ -44,7 +44,7 @@ class Downloader:
                 if self.can_download(file, force):
                     files[file['basename']] = file
                 else:
-                    raise DestionationPathExists(file['basename'])
+                    raise DestinationPathExists(file['basename'])
         return files
 
     def download_files(self, package_types, force=False):
@@ -60,7 +60,7 @@ class Downloader:
                     self.download(file)
                     output.append(file['basename'])
                 else:
-                    raise DestionationPathExists(file['basename'])
+                    raise DestinationPathExists(file['basename'])
         return sorted(output)
 
     def download(self, dist):
@@ -121,7 +121,7 @@ class Downloader:
                 output.append(
                     max(versions, key=lambda x: mktime(parse(x['upload_time']).timetuple()))
                 )
-            except BaseException:  # pylint: disable=broad-except
+            except Exception:  # pylint: disable=broad-except
                 output.append(versions[-1])
 
         return output

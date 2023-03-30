@@ -2,11 +2,12 @@ name: Lint and Test
 
 on:
   push:
-    branches: ['dev', 'master', 'release/*']
+    branches: ['dev', 'feature/**', 'master', 'release/*']
   pull_request:
-    branches: ['dev', 'master', 'release/*']
+    branches: ['dev', 'feature/**', 'master', 'release/*']
     types: [opened, reopened, synchronize]
   release:
+    types: [edited, published]
   workflow_dispatch:
 
 defaults:
@@ -36,7 +37,7 @@ jobs:
 
       - name: Install latest conda
         run: |
-          conda update -n base -c conda-canary -q conda
+          conda update -n base -q conda
 
       - name: Install dependencies
         run: |
@@ -109,7 +110,7 @@ jobs:
 
       - name: Install latest conda
         run: |
-          conda update -n base -c conda-canary -q conda
+          conda update -n base -q conda
 
       - name: Install dependencies
         run: |
@@ -127,7 +128,7 @@ jobs:
         run: |
           mkdir -p .artifacts/reports
           python scripts/refresh_coveragerc.py
-          pytest tests/ -x --cov=binstar_client --cov-report html:.artifacts/reports/coverage --html=.artifacts/reports/pytest.html --self-contained-html
+          python -X utf8 -m pytest tests/ --cov-report html:.artifacts/reports/coverage --html=.artifacts/reports/pytest.html --self-contained-html
 
       - name: Export reports
         if: ${{ always() }}
