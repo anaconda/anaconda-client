@@ -1,3 +1,5 @@
+# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
+
 import inspect
 import os
 import tarfile
@@ -5,9 +7,10 @@ from tempfile import SpooledTemporaryFile
 from binstar_client.errors import BinstarError
 
 
-class CondaProject(object):
-    # TODO: This class will be moved into Anaconda-Project
-    def __init__(self, project_path, *args, **kwargs):
+class CondaProject:
+    # NOTE: This class will be moved into Anaconda-Project
+    def __init__(self, project_path, *args, **kwargs):  # pylint: disable=unused-argument
+
         self.project_path = project_path
         self._name = None
         self._tar = None
@@ -18,15 +21,19 @@ class CondaProject(object):
             'description': kwargs.get('description', None),
             'version': kwargs.get('version', None)
         }
-        self.metadata = dict((k, v) for k, v in self.metadata.items() if v)
+        self.metadata = {
+            key: value
+            for key, value in self.metadata.items()
+            if value
+        }
 
-    def tar_it(self, fd=SpooledTemporaryFile()):
-        with tarfile.open(mode='w', fileobj=fd) as tar:
+    def tar_it(self, file=SpooledTemporaryFile()):  # pylint: disable=consider-using-with
+        with tarfile.open(mode='w', fileobj=file) as tar:
             for pfile in self.pfiles:
                 tar.add(pfile.fullpath, arcname=pfile.relativepath)
-        fd.seek(0)
-        self._tar = fd
-        return fd
+        file.seek(0)
+        self._tar = file
+        return file
 
     def to_project_creation(self):
         return {
@@ -62,12 +69,11 @@ class CondaProject(object):
     def get_file_count(self):
         if os.path.isfile(self.project_path):
             return 1
-        else:
-            return len(self.pfiles)
+        return len(self.pfiles)
 
     @property
     def basename(self):
-        return "{}.tar".format(self.name)
+        return f'{self.name}.tar'
 
     @property
     def size(self):
@@ -87,11 +93,10 @@ class CondaProject(object):
     def _get_project_name(self):
         if os.path.isdir(self.project_path):
             return os.path.basename(os.path.abspath(self.project_path))
-        else:
-            return os.path.splitext(os.path.basename(self.project_path))[0]
+        return os.path.splitext(os.path.basename(self.project_path))[0]
 
 
-class PFile(object):
+class PFile:
     def __init__(self, **kwargs):
         self.fullpath = kwargs.get('fullpath', None)
         self.basename = kwargs.get('basename', None)
@@ -102,8 +107,7 @@ class PFile(object):
     def __str__(self):
         if self.is_dir():
             return self.relativepath
-        else:
-            return "[{}] {}".format(self.size, self.relativepath)
+        return f'[{self.size}] {self.relativepath}'
 
     def __repr__(self):
         return self.__str__()
@@ -119,9 +123,10 @@ class PFile(object):
             return validator(basename=self.basename,
                              relativepath=self.relativepath,
                              fullpath=self.fullpath)
-        elif inspect.isclass(validator):
+
+        if inspect.isclass(validator):
             return validator(self)()
-        raise BinstarError("Invalid validator {}".format(validator))
+        raise BinstarError(f'Invalid validator {validator}')
 
     def populate(self):
         if self.size is None:

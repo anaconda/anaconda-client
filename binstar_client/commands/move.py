@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+
+# pylint: disable=broad-except,protected-access,missing-function-docstring
+
 """
 Move packages between labels.
 """
@@ -28,7 +31,7 @@ def main(args):
 
     if from_label not in channels:
         raise errors.UserError(
-            "{} {} does not exist\n\tplease choose from: {}".format(
+            '{} {} does not exist\n\tplease choose from: {}'.format(
                 label_text.title(),
                 from_label,
                 ', '.join(channels)
@@ -46,8 +49,8 @@ def main(args):
             version=spec._version,
             filename=spec._basename,
         )
-    except Exception:
-        pass
+    except Exception as error:
+        logger.exception(error)
 
     # Remove files from from_label
     try:
@@ -58,8 +61,8 @@ def main(args):
             version=spec._version,
             filename=spec._basename,
         )
-    except Exception:
-        pass
+    except Exception as error:
+        logger.exception(error)
 
     # for binstar_file in files:
     #     print("Copied file: %(basename)s" % binstar_file)
@@ -83,7 +86,7 @@ def add_parser(subparsers):
              'If filename is not given, move all files in the version',
         type=parse_specs,
     )
-    # TODO: To be implemented later on
+    # NOTE: To be implemented later on
     # parser.add_argument(
     #     '--to-owner',
     #     help='User account to move package to (default: your account)',

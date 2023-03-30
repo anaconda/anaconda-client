@@ -1,18 +1,21 @@
-'''
-Created on May 23, 2014
+# pylint: disable=missing-class-docstring,missing-function-docstring
+
+"""
+Created on May 23, 2014.
 
 @author: sean
-'''
+"""
+
 from binstar_client.utils import jencode
 from binstar_client.errors import Conflict
 
 
-class PackageMixin(object):
+class PackageMixin:  # pylint: disable=too-few-public-methods
 
-    def copy(self, owner, package, version, basename=None,
+    def copy(self, owner, package, version, basename=None,  # pylint: disable=too-many-arguments,too-many-locals
              to_owner=None, from_label='main', to_label='main', replace=False, update=False):
 
-        copy_path = "/".join((owner, package, version, basename or ''))
+        copy_path = '/'.join((owner, package, version, basename or ''))
         url = '{}/copy/package/{}'.format(self.domain, copy_path)
 
         payload = dict(to_owner=to_owner, from_channel=from_label, to_channel=to_label)
@@ -27,8 +30,8 @@ class PackageMixin(object):
 
         try:
             self._check_response(res)
-        except Conflict:
-            raise Conflict('File conflict while copying! Try to use --replace or --update options for force copying')
+        except Conflict as conflict:
+            raise Conflict(
+                'File conflict while copying! Try to use --replace or --update options for force copying') from conflict
 
         return res.json()
-

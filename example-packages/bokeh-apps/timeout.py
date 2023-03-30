@@ -1,5 +1,5 @@
-''' Present a plot updating according to a set of fixed timeout
-intervals.
+"""
+Present a plot updating according to a set of fixed timeout intervals.
 
 Use the ``bokeh serve`` command to run the example by executing:
 
@@ -10,8 +10,7 @@ at your command prompt. Then navigate to the URL
     http://localhost:5006/timeout
 
 in your browser.
-
-'''
+"""
 
 import numpy as np
 

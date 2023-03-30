@@ -1,15 +1,18 @@
+# pylint: disable=missing-module-docstring,missing-function-docstring
+
 import os
 import re
 import time
 from os.path import basename
+
 from binstar_client import errors
-from .inflection import parameterize
 from .data_uri import data_uri_from
+from .inflection import parameterize
 
 VALID_FORMATS = ['ipynb', 'csv', 'yml', 'yaml', 'json', 'md', 'rst', 'txt']
 
 
-class Uploader(object):
+class Uploader:  # pylint: disable=too-many-instance-attributes
     """
     * Find or create a package (project)
     * Find or create release (version)
@@ -36,39 +39,33 @@ class Uploader(object):
         :param force: True/False
         :returns {}
         """
-        self.package and self.release
         try:
             return self.aserver_api.upload(self.username, self.project, self.version,
-                                       basename(self.filepath), open(self.filepath, 'rb'),
-                                       self.filepath.split('.')[-1])
-        except errors.Conflict:
+                                           basename(self.filepath), open(self.filepath, 'rb'),
+                                           self.filepath.split('.')[-1])
+        except errors.Conflict as error:
             if force:
                 self.remove()
                 return self.upload()
-            else:
-                msg = "Conflict: {} already exist in {}/{}".format(self.filepath,
-                                                                   self.project,
-                                                                   self.version)
-                raise errors.BinstarError(msg)
+            msg = 'Conflict: {} already exist in {}/{}'.format(self.filepath, self.project, self.version)
+            raise errors.BinstarError(msg) from error
 
     def remove(self):
         return self.aserver_api.remove_dist(
-            self, self.username, self.project, self.version, basename=self.notebook,
+            self, self.username, self.project, self.version, basename=self.notebook,  # pylint: disable=no-member
         )
 
     @property
     def notebook_attrs(self):
         if self._thumbnail is not None:
             return {'thumbnail': data_uri_from(self._thumbnail)}
-        else:
-            return {}
+        return {}
 
     @property
     def project(self):
         if self._project is None:
-            return re.sub('\-ipynb$', '', parameterize(os.path.basename(self.filepath)))
-        else:
-            return self._project
+            return re.sub('\\-ipynb$', '', parameterize(os.path.basename(self.filepath)))
+        return self._project
 
     @property
     def username(self):
@@ -85,7 +82,7 @@ class Uploader(object):
     @property
     def summary(self):
         if self._summary is None:
-            self._summary = "IPython notebook"
+            self._summary = 'IPython notebook'
         return self._summary
 
     @property
@@ -95,8 +92,8 @@ class Uploader(object):
                 self._package = self.aserver_api.package(self.username, self.project)
             except errors.NotFound:
                 self._package = self.aserver_api.add_package(self.username, self.project,
-                                                         summary=self.summary,
-                                                         attrs=self.notebook_attrs)
+                                                             summary=self.summary,
+                                                             attrs=self.notebook_attrs)
         return self._package
 
     @property
@@ -106,7 +103,7 @@ class Uploader(object):
                 self._release = self.aserver_api.release(self.username, self.project, self.version)
             except errors.NotFound:
                 self._release = self.aserver_api.add_release(self.username, self.project,
-                                                         self.version, None, None, None)
+                                                             self.version, None, None, None)
         return self._release
 
     @property

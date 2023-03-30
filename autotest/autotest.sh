@@ -134,3 +134,5 @@ ${TST_CMD} logout || (echo -e "\\n\\n/!\\\\ Logout test failed.\\n" && exit 1)
 echo
 
 echo -e "/?\\\\ Success!\\n\\nAll tests have passed!\\n"
+
+rm -rf ./linux-32 ./linux-64 ./linux-aarch64 ./linux-ppc64le ./linux-s390x ./noarch ./osx-64 ./osx-arm64 ./win-32 ./win-64

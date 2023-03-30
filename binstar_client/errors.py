@@ -1,12 +1,18 @@
+# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
+
 from clyent.errors import ClyentError
 
 
 class BinstarError(ClyentError):
-    def __init__(self, *args, **kwargs):
-        Exception.__init__(self, *args, **kwargs)
+
+    def __init__(self, *args):
+        super().__init__(*args)
 
         if not hasattr(self, 'message'):
-            self.message = args[0] if args else None
+            try:
+                self.message = str(args[0])
+            except IndexError:
+                self.message = None
 
 
 class Unauthorized(BinstarError):
@@ -18,11 +24,10 @@ class Conflict(BinstarError):
 
 
 class NotFound(BinstarError, IndexError):
-    def __init__(self, *args, **kwargs):
-        BinstarError.__init__(self, *args, **kwargs)
-        IndexError.__init__(self, *args, **kwargs)
-        self.message = args[0]
-        self.msg = args[0]
+
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.msg = self.message
 
 
 class UserError(BinstarError):
@@ -41,15 +46,16 @@ class NoMetadataError(BinstarError):
     pass
 
 
-class DestionationPathExists(BinstarError):
+class DestinationPathExists(BinstarError):
+
     def __init__(self, location):
         self.msg = "destination path '{}' already exists.".format(location)
         self.location = location
-        super(BinstarError, self).__init__(self.msg)
+        super().__init__(self.msg)
 
 
 class PillowNotInstalled(BinstarError):
+
     def __init__(self):
-        self.msg = ("pillow is not installed. Install it with:\n"
-                    "    conda install pillow")
-        super(BinstarError, self).__init__(self.msg)
+        self.msg = 'pillow is not installed. Install it with:\n\tconda install pillow'
+        super().__init__(self.msg)

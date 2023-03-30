@@ -1,3 +1,5 @@
+# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
+
 from __future__ import print_function, absolute_import, unicode_literals
 
 import collections
@@ -9,21 +11,14 @@ import shutil
 import stat
 import warnings
 from string import Template
+from urllib.parse import quote_plus
 
 import yaml
 
 from binstar_client.errors import BinstarError
-
-try:
-    from urllib import quote_plus
-except ImportError:
-    from urllib.parse import quote_plus
-
-from binstar_client.utils.conda import CONDA_PREFIX, CONDA_ROOT
 from binstar_client.utils.appdirs import AppDirs, EnvAppDirs
-
+from binstar_client.utils.conda import CONDA_PREFIX, CONDA_ROOT
 from .yaml import yaml_load, yaml_dump
-
 
 logger = logging.getLogger('binstar')
 
@@ -42,7 +37,7 @@ if 'BINSTAR_CONFIG_DIR' in os.environ:
     dirs = EnvAppDirs('binstar', 'ContinuumIO', os.environ['BINSTAR_CONFIG_DIR'])
     USER_CONFIG = os.path.join(dirs.user_data_dir, 'config.yaml')
 else:
-    dirs = AppDirs('binstar', 'ContinuumIO')
+    dirs = AppDirs('binstar', 'ContinuumIO')  # type: ignore
     USER_CONFIG = os.path.join(os.path.expanduser('~'), '.continuum', 'anaconda-client', 'config.yaml')
 
 
@@ -85,7 +80,6 @@ PACKAGE_TYPE_ALIASES = {
     'cran': 'r',
     'standard_r': 'r',
 }
-
 
 USER_LOGDIR = dirs.user_log_dir
 SITE_CONFIG = os.path.join(os.environ.get('CONDA_ROOT', CONDA_ROOT), 'etc', 'anaconda-client', 'config.yaml')
@@ -139,27 +133,32 @@ def get_server_api(token=None, site=None, cls=None, config=None, **kwargs):
     Get the anaconda server api class
     """
     if not cls:
-        from binstar_client import Binstar
+        from binstar_client import Binstar  # pylint: disable=import-outside-toplevel,cyclic-import
+
         cls = Binstar
 
     config = config if config is not None else get_config(site=site)
 
     url = config.get('url', DEFAULT_URL)
 
-    logger.info("Using Anaconda API: %s", url)
+    logger.info('Using Anaconda API: %s', url)
 
     if token:
-        logger.debug("Using token from command line args")
+        logger.debug('Using token from command line args')
     elif 'BINSTAR_API_TOKEN' in os.environ:
-        logger.debug("Using token from environment variable BINSTAR_API_TOKEN")
+        logger.debug('Using token from environment variable BINSTAR_API_TOKEN')
         token = os.environ['BINSTAR_API_TOKEN']
     elif 'ANACONDA_API_TOKEN' in os.environ:
-        logger.debug("Using token from environment variable ANACONDA_API_TOKEN")
+        logger.debug('Using token from environment variable ANACONDA_API_TOKEN')
         token = os.environ['ANACONDA_API_TOKEN']
     else:
         token = load_token(url)
 
-    verify = config.get('ssl_verify', config.get('verify_ssl', True))
+    verify = config.get('ssl_verify', None)
+    if verify is None:
+        verify = config.get('verify_ssl', None)
+    if verify is None:
+        verify = True
 
     return cls(token, domain=url, verify=verify, **kwargs)
 
@@ -203,8 +202,8 @@ def store_token(token, args):
 
         if os.path.isfile(tokenfile):
             os.unlink(tokenfile)
-        with open(tokenfile, 'w') as fd:
-            fd.write(token)
+        with open(tokenfile, 'w') as file:  # pylint: disable=unspecified-encoding
+            file.write(token)
         os.chmod(tokenfile, stat.S_IWRITE | stat.S_IREAD)
 
 
@@ -213,16 +212,18 @@ def load_token(url):
         tokenfile = os.path.join(token_dir, '%s.token' % quote_plus(url))
 
         if os.path.isfile(tokenfile):
-            logger.debug("Found login token: {}".format(tokenfile))
-            with open(tokenfile) as fd:
-                token = fd.read().strip()
+            logger.debug('Found login token: %s', tokenfile)
+            with open(tokenfile) as file:  # pylint: disable=unspecified-encoding
+                token = file.read().strip()
 
             if token:
                 return token
-            else:
-                logger.debug("Token file is empty: {}".format(tokenfile))
-                logger.debug("Removing file: {}".format(tokenfile))
-                os.unlink(tokenfile)
+
+            logger.debug('Token file is empty: %s', tokenfile)
+            logger.debug('Removing file: %s', tokenfile)
+            os.unlink(tokenfile)
+
+    return None
 
 
 def remove_token(args):
@@ -240,13 +241,13 @@ def load_config(config_file):
     warn_msg = None
 
     try:
-        with open(config_file) as fd:
-            data = yaml_load(fd) or data
+        with open(config_file) as file:  # pylint: disable=unspecified-encoding
+            data = yaml_load(file) or data
     except yaml.YAMLError:
         backup_file = config_file + '.bak'
         shutil.copyfile(config_file, backup_file)
-        warn_msg = "Config file `{}` has invalid structure and couldn't be read. \n"\
-                   "File content was backed up to `{}`".format(config_file, backup_file)
+        warn_msg = 'Config file `{}` has invalid structure and couldn\'t be read. \n' \
+                   'File content was backed up to `{}`'.format(config_file, backup_file)
     except PermissionError:
         warn_msg = 'Not enough rights to access config file `{}`! Please review file permissions.'.format(config_file)
     except OSError as error:
@@ -260,12 +261,13 @@ def load_config(config_file):
 
 def load_file_configs(search_path):
     def _file_yaml_loader(fullpath):
-        assert fullpath.endswith(".yml") or fullpath.endswith(".yaml") or fullpath.endswith("anacondarc"), fullpath
+        assert (fullpath.endswith('.yml')   # nosec
+                or fullpath.endswith('.yaml') or fullpath.endswith('anacondarc')), fullpath
         yield fullpath, load_config(fullpath)
 
     def _dir_yaml_loader(fullpath):
         for filename in os.listdir(fullpath):
-            if filename.endswith(".yml") or filename.endswith(".yaml"):
+            if filename.endswith('.yml') or filename.endswith('.yaml'):
                 filepath = os.path.join(fullpath, filename)
                 yield filepath, load_config(filepath)
 
@@ -307,8 +309,8 @@ def get_config(site=None):
     config = DEFAULT_CONFIG.copy()
 
     file_configs = load_file_configs(SEARCH_PATH)
-    for fn in file_configs:
-        recursive_update(config, file_configs[fn])
+    for file_name in file_configs:
+        recursive_update(config, file_configs[file_name])
 
     site = site or config.get('default_site')
     sites = config.get('sites', {})
@@ -330,13 +332,13 @@ def save_config(data, config_file):
         os.makedirs(os.path.dirname(config_file), exist_ok=True)
 
         temp_file = config_file + '~'
-        with open(temp_file, 'w') as stream:
+        with open(temp_file, 'w') as stream:  # pylint: disable=unspecified-encoding
             yaml_dump(data, stream=stream)
 
         os.replace(temp_file, config_file)
 
-    except (OSError, yaml.YAMLError):
-        raise BinstarError("Config file `{}` couldn't be saved! Changes may be lost.".format(config_file))
+    except (OSError, yaml.YAMLError) as error:
+        raise BinstarError("Config file `{}` couldn't be saved! Changes may be lost.".format(config_file)) from error
 
 
 def set_config(data, user=True):

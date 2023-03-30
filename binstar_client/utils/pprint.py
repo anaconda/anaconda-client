@@ -1,21 +1,26 @@
-'''
+# pylint: disable=missing-class-docstring,missing-function-docstring
+
+"""
 Created on Aug 8, 2013
 
 @author: sean
-'''
+"""
 
 from __future__ import unicode_literals
-from binstar_client.utils import config
-from dateutil.parser import parse as parse_date
+
 import logging
+
+from dateutil.parser import parse as parse_date
+
+from binstar_client.utils import config
 
 logger = logging.getLogger('binstar.pprint')
 
-fmt_access = (
-    '     %(full_name)-32s | %(latest_version)8s | %(access)-12s | %(package_types)-17s | %(conda_platforms)-15s | '
+fmt_access = (  # pylint: disable=invalid-name
+    '     %(full_name)-32s | %(latest_version)8s | %(access)-12s | %(package_types)-17s | %(conda_platforms)-15s | ' +
     '%(builds)-10s'
 )
-fmt_no_access = (
+fmt_no_access = (  # pylint: disable=invalid-name
     '     %(full_name)-32s | %(latest_version)8s | %(package_types)-17s | %(conda_platforms)-15s | %(builds)-10s'
 )
 
@@ -23,7 +28,7 @@ fmt_no_access = (
 def pprint_orgs(orgs):
     logger.info('Organizations:')
     for org in orgs:
-        logger.info('   + %(login)25s' % org)
+        logger.info('   + %(login)25s', org)
 
 
 def pprint_package_header(access=True, revisions=False):
@@ -41,7 +46,7 @@ def pprint_package_header(access=True, revisions=False):
     if revisions:
         fmt = '%(revision)-6s | ' + fmt
 
-    logger.info(fmt % package_header)
+    logger.info(fmt, package_header)
 
 
 def format_package_type(value):
@@ -64,9 +69,9 @@ def pprint_package(package, access=True, full_name=True, revision=False):
 
     if package.get('conda_platforms'):
         package['conda_platforms'] = ', '.join(
-            str(x)
-            for x in package['conda_platforms']
-            if x is not None
+            str(item)
+            for item in package['conda_platforms']
+            if item is not None
         )
 
     if not full_name:
@@ -74,16 +79,16 @@ def pprint_package(package, access=True, full_name=True, revision=False):
 
     if package.get('package_types'):
         package['package_types'] = ', '.join(
-            format_package_type(x)
-            for x in package['package_types']
-            if x is not None
+            format_package_type(item)
+            for item in package['package_types']
+            if item is not None
         )
 
     if package.get('builds'):
         package['builds'] = ', '.join(
-            str(x)
-            for x in package['builds']
-            if x is not None
+            str(item)
+            for item in package['builds']
+            if item is not None
         )
     else:
         package['builds'] = ''
@@ -92,9 +97,9 @@ def pprint_package(package, access=True, full_name=True, revision=False):
     if revision:
         fmt = '%(revision)-6s | ' + fmt
 
-    logger.info(fmt % package)
+    logger.info(fmt, package)
     if package.get('summary'):
-        logger.info(' ' * 34 + '        : %s' % package.get('summary'))
+        logger.info(' ' * 34 + '        : %s', package.get('summary'))  # pylint: disable=logging-not-lazy
 
 
 def pprint_packages(packages, access=True, full_name=True, revisions=False):
@@ -118,7 +123,7 @@ def pprint_packages(packages, access=True, full_name=True, revisions=False):
         'builds': '-' * 10
     }
 
-    logger.info(fmt % package_header)
+    logger.info(fmt, package_header)
 
     for package in sorted(packages, key=lambda pkg: pkg['full_name'] if full_name else pkg['name']):
         pprint_package(package, access, full_name, revision=revisions)
@@ -129,8 +134,8 @@ def pprint_user(user):
     logger.info('Username: %s', user.pop('login'))
     logger.info('Member since: %s', parse_date(user.pop('created_at')).ctime())
 
-    for key_value in user.items():
-        logger.info('  +%s: %s' % key_value)
+    for key, value in user.items():
+        logger.info('  +%s: %s', key, value)
 
 
 def pprint_collections(collections):
@@ -138,4 +143,4 @@ def pprint_collections(collections):
         logger.info('Collections:')
     for collection in collections:
         collection['permission'] = 'public' if collection['public'] else 'private'
-        logger.info('   + %(name)25s: [%(permission)s] %(description)s' % collection)
+        logger.info('   + %(name)25s: [%(permission)s] %(description)s', collection)

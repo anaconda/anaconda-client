@@ -1,7 +1,9 @@
-from os.path import basename, dirname, join, exists
+# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
+
 import json
+import subprocess  # nosec
 import sys
-import subprocess
+from os.path import basename, dirname, join, exists
 
 WINDOWS = sys.platform.startswith('win')
 CONDA_PREFIX = sys.prefix
@@ -13,7 +15,7 @@ CONDA_BAT = join(CONDA_PREFIX, BIN_DIR, 'conda.bat')
 # this function is broken out for monkeypatch by unit tests,
 # so we can test the ImportError handling
 def _import_conda_root():
-    import conda.config
+    import conda.config  # pylint: disable=import-error,import-outside-toplevel
     return conda.config.root_dir
 
 
@@ -27,13 +29,14 @@ def _get_conda_exe():
 
     return command
 
+
 def _conda_root_from_conda_info():
     command = _get_conda_exe()
     if not command:
         return None
 
     try:
-        output = subprocess.check_output([command, 'info', '--json']).decode("utf-8")
+        output = subprocess.check_output([command, 'info', '--json']).decode('utf-8')  # nosec
         conda_info = json.loads(output)
         return conda_info['root_prefix']
     except (ValueError, KeyError, subprocess.CalledProcessError):
@@ -62,5 +65,6 @@ def get_conda_root():
             conda_root = _conda_root_from_conda_info()
 
     return conda_root
+
 
 CONDA_ROOT = get_conda_root()

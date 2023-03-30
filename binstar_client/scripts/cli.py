@@ -1,25 +1,25 @@
+# pylint: disable=redefined-outer-name,unspecified-encoding,missing-class-docstring,missing-function-docstring
+
 """
 Anaconda repository command line manager
 """
+
 from __future__ import print_function, unicode_literals
 
 import logging
 import sys
-
-import urllib3
-
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
+from logging.handlers import RotatingFileHandler
 from os import makedirs
 from os.path import join, exists, isfile
-from logging.handlers import RotatingFileHandler
 
+import urllib3
 from clyent import add_subparser_modules
-from six import PY2
 
 from binstar_client import __version__ as version
 from binstar_client import commands as command_module
-from binstar_client.commands.login import interactive_login
 from binstar_client import errors
+from binstar_client.commands.login import interactive_login
 from binstar_client.utils import USER_LOGDIR
 
 logger = logging.getLogger('binstar')
@@ -27,12 +27,11 @@ logger = logging.getLogger('binstar')
 
 def file_or_token(value):
     """
-    If value is a file path and the file exists its contents are stripped and returned,
-    otherwise value is returned.
+    If value is a file path and the file exists its contents are stripped and returned, otherwise value is returned.
     """
     if isfile(value):
-        with open(value) as fd:
-            return fd.read().strip()
+        with open(value) as file:
+            return file.read().strip()
 
     if any(char in value for char in '/\\.'):
         # This chars will never be in a token value, but may be in a path
@@ -59,11 +58,8 @@ class ConsoleFormatter(logging.Formatter):
     def format(self, record):
         fmt = '%(message)s' if record.levelno == logging.INFO \
             else '[%(levelname)s] %(message)s'
-        if PY2:
-            self._fmt = fmt
-        else:
-            self._style._fmt = fmt
-        return super(ConsoleFormatter, self).format(record)
+        self._style._fmt = fmt  # pylint: disable=protected-access
+        return super().format(record)
 
 
 def _setup_logging(logger, log_level=logging.INFO, show_traceback=False, disable_ssl_warnings=False):
@@ -108,18 +104,19 @@ def add_default_arguments(parser, version=None):
 
     if version:
         parser.add_argument('-V', '--version', action='version',
-                            version="%%(prog)s Command line client (version %s)" % (version,))
+                            version='%%(prog)s Command line client (version %s)' % (version,))
 
 
-def binstar_main(sub_command_module, args=None, exit=True, description=None, version=None, epilog=None):
+def binstar_main(sub_command_module, args=None, exit=True,  # pylint: disable=redefined-builtin,too-many-arguments
+                 description=None, version=None, epilog=None):
     parser = ArgumentParser(description=description, epilog=epilog,
                             formatter_class=RawDescriptionHelpFormatter)
 
     add_default_arguments(parser, version)
     bgroup = parser.add_argument_group('anaconda-client options')
     bgroup.add_argument('-t', '--token', type=file_or_token,
-                        help="Authentication token to use. "
-                             "May be a token or a path to a file containing a token")
+                        help='Authentication token to use. '
+                             'May be a token or a path to a file containing a token')
     bgroup.add_argument('-s', '--site',
                         help='select the anaconda-client site to use', default=None)
 
@@ -133,8 +130,9 @@ def binstar_main(sub_command_module, args=None, exit=True, description=None, ver
     try:
         try:
             if not hasattr(args, 'main'):
-                parser.error("A sub command must be given. "
-                             "To show all available sub commands, run:\n\n\t anaconda -h\n")
+                parser.error(
+                    'A sub command must be given. To show all available sub commands, run:\n\n\t anaconda -h\n',
+                )
             return args.main(args)
         except errors.Unauthorized:
             if not sys.stdin.isatty() or args.token:
@@ -142,20 +140,18 @@ def binstar_main(sub_command_module, args=None, exit=True, description=None, ver
                 # Just exit
                 raise
 
-            logger.info('The action you are performing requires authentication, '
-                        'please sign in:')
+            logger.info('The action you are performing requires authentication, please sign in:')
             interactive_login(args)
             return args.main(args)
-    except errors.ShowHelp:
+    except errors.ShowHelp as error:
         args.sub_parser.print_help()
         if exit:
-            raise SystemExit(1)
-        else:
-            return 1
+            raise SystemExit(1) from error
+        return 1
 
 
-def main(args=None, exit=True):
-    binstar_main(command_module, args, exit,
+def main(args=None, _exit=True):
+    binstar_main(command_module, args, _exit,
                  description=__doc__, version=version)
 
 

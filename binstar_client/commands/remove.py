@@ -1,44 +1,48 @@
-'''
+# pylint: disable=missing-function-docstring
+
+"""
 Remove an object from your Anaconda repository.
 
 example::
 
     anaconda remove sean/meta/1.2.0/meta.tar.gz
 
-'''
-from binstar_client.utils import get_server_api, parse_specs, \
-    bool_input
-from argparse import RawTextHelpFormatter
-from binstar_client import errors
+"""
 
 import logging
+from argparse import RawTextHelpFormatter
+
+from binstar_client import errors
+from binstar_client.utils import get_server_api, parse_specs, \
+    bool_input
 
 logger = logging.getLogger('binstar.remove')
 
-def main(args):
+
+def main(args):  # pylint: disable=too-many-branches
 
     aserver_api = get_server_api(args.token, args.site)
 
     for spec in args.specs:
         try:
-            if spec._basename:
+            if spec._basename:  # pylint: disable=protected-access
                 msg = 'Are you sure you want to remove file %s ?' % (spec,)
                 if args.force or bool_input(msg, False):
                     aserver_api.remove_dist(spec.user, spec.package, spec.version, spec.basename)
                 else:
-                    logger.warning('Not removing file %s' % (spec))
-            elif spec._version:
+                    logger.warning('Not removing file %s', spec)
+            elif spec._version:  # pylint: disable=protected-access
                 msg = 'Are you sure you want to remove the package release %s ? (and all files under it?)' % (spec,)
                 if args.force or bool_input(msg, False):
                     aserver_api.remove_release(spec.user, spec.package, spec.version)
                 else:
-                    logger.warning('Not removing release %s' % (spec))
-            elif spec._package:
+                    logger.warning('Not removing release %s', spec)
+            elif spec._package:  # pylint: disable=protected-access
                 msg = 'Are you sure you want to remove the package %s ? (and all data with it?)' % (spec,)
                 if args.force or bool_input(msg, False):
                     aserver_api.remove_package(spec.user, spec.package)
                 else:
-                    logger.warning('Not removing release %s' % (spec))
+                    logger.warning('Not removing release %s', spec)
             else:
                 logger.error('Invalid package specification: %s', spec)
 
@@ -46,12 +50,10 @@ def main(args):
             if args.force:
                 logger.warning('', exc_info=True)
                 continue
-            else:
-                raise
+            raise
 
 
 def add_parser(subparsers):
-
     parser = subparsers.add_parser(
         'remove',
         help=(
