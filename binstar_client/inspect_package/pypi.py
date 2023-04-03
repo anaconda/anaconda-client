@@ -694,7 +694,7 @@ def main():
     if filename.startswith('https://') or filename.startswith('http://'):
         import io
         import requests
-        data = requests.get(filename, stream=True).raw.read()  # pylint: disable=missing-timeout
+        data = requests.get(filename, stream=True, timeout=10 * 60 * 60).raw.read()  # nosec B113
         fileobj = io.BytesIO(data)
     else:
         fileobj = open(filename)

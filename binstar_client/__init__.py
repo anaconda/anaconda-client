@@ -523,7 +523,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
             # We need to create a new request (without using session) to avoid
             # sending the custom headers set on our session to S3 (which causes
             # a failure).
-            res2 = requests.get(res.headers['location'], stream=True)  # pylint: disable=missing-timeout
+            res2 = requests.get(res.headers['location'], stream=True, timeout=10 * 60 * 60)  # nosec B113
             return res2
 
         return None
@@ -584,12 +584,11 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
             size = file.tell() - spos
             file.seek(spos)
 
-        s3data['Content-Length'] = size
+        s3data['Content-Length'] = str(size)
         s3data['Content-MD5'] = b64md5
 
         file_size = os.fstat(file.fileno()).st_size
         with tqdm(total=file_size, unit='B', unit_scale=True, unit_divisor=1024) as progress:
-            s3data['Content-Length'] = str(s3data['Content-Length']).encode('utf-8').decode('utf-8')
             s3res = multipart_files_upload(
                 s3url, s3data, {'file': (basename, file)}, progress,
                 verify=self.session.verify)

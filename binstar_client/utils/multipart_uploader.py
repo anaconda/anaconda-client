@@ -35,4 +35,4 @@ def multipart_files_upload(
         )
 
     return requests.post(url, data=encoder, headers={'Content-Type': encoder.content_type},
-                         timeout=request_kwargs.pop('timeout', 10 * 60 * 60), **request_kwargs)  # nosec
+                         timeout=request_kwargs.pop('timeout', 10 * 60 * 60), **request_kwargs)  # nosec B113

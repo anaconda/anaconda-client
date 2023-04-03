@@ -50,7 +50,7 @@ class ProjectUploader(binstar_client.Binstar):
             self.project.tar, size=self.project.size)
 
         s3data = obj['form_data']
-        s3data['Content-Length'] = str(size).encode('utf-8').decode('utf-8')
+        s3data['Content-Length'] = str(size)
         s3data['Content-MD5'] = b64md5
 
         with tqdm.tqdm(total=size, unit='B', unit_scale=True, unit_divisor=1024) as progress:
