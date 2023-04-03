@@ -9,13 +9,12 @@ import hashlib
 import logging
 import os
 import platform as _platform
-import defusedxml.ElementTree as ET
 
+import defusedxml.ElementTree as ET
 import requests
 from pkg_resources import parse_version as pv
 from six.moves.urllib.parse import quote
 from tqdm import tqdm
-from tqdm.utils import CallbackIOWrapper
 
 from . import errors
 from .__about__ import __version__
@@ -27,6 +26,7 @@ from .mixins.package import PackageMixin
 from .requests_ext import NullAuth
 from .utils import compute_hash, jencode
 from .utils.http_codes import STATUS_CODES
+from .utils.multipart_uploader import multipart_files_upload
 
 logger = logging.getLogger('binstar')
 
@@ -589,10 +589,10 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
 
         file_size = os.fstat(file.fileno()).st_size
         with tqdm(total=file_size, unit='B', unit_scale=True, unit_divisor=1024) as progress:
-            wrapped_file = CallbackIOWrapper(progress.update, file, 'read')
-            s3res = requests.post(
-                s3url, data=s3data, files={'file': (basename, wrapped_file)},
-                verify=self.session.verify, timeout=10 * 60 * 60)
+            s3data['Content-Length'] = str(s3data['Content-Length']).encode('utf-8').decode('utf-8')
+            s3res = multipart_files_upload(
+                s3url, s3data, {'file': (basename, file)}, progress,
+                verify=self.session.verify)
 
         if s3res.status_code != 201:
             logger.info(s3res.text)
