@@ -14,7 +14,9 @@ def extract_first(fileobj, pat):
     if isinstance(fileobj, TarFile):
         return tarfile_match_and_extract(fileobj, pat)
 
-    raise Exception("Don't know how to extract %s file type" % type(fileobj))
+    raise TypeError(
+        'Don\'t know how to extract %s file type' % type(fileobj),
+    )
 
 
 def zipfile_match_and_extract(zip_file, pat):

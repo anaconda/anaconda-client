@@ -177,17 +177,17 @@ def remove_existing_file(aserver_api, args,  # pylint: disable=too-many-argument
         aserver_api.distribution(username, package_name, version, file_attrs['basename'])
     except errors.NotFound:
         return False
-    else:
-        if args.mode == 'force':
-            logger.warning('Distribution "%s" already exists. Removing.', file_attrs['basename'])
-            aserver_api.remove_dist(username, package_name, version, file_attrs['basename'])
 
-        if args.mode == 'interactive':
-            if bool_input('Distribution "%s" already exists. Would you like to replace it?' % file_attrs['basename']):
-                aserver_api.remove_dist(username, package_name, version, file_attrs['basename'])
-            else:
-                logger.info('Not replacing distribution "%s"', file_attrs['basename'])
-                return True
+    if args.mode == 'force':
+        logger.warning('Distribution "%s" already exists. Removing.', file_attrs['basename'])
+        aserver_api.remove_dist(username, package_name, version, file_attrs['basename'])
+
+    if args.mode == 'interactive':
+        if bool_input('Distribution "%s" already exists. Would you like to replace it?' % file_attrs['basename']):
+            aserver_api.remove_dist(username, package_name, version, file_attrs['basename'])
+        else:
+            logger.info('Not replacing distribution "%s"', file_attrs['basename'])
+            return True
 
 
 def upload_package(filename, package_type,  # pylint: disable=inconsistent-return-statements,too-many-locals
