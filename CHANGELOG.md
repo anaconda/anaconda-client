@@ -2,7 +2,19 @@
 
 We [keep a changelog.](http://keepachangelog.com/)
 
-## Next version
+## 1.11.2
+
+### Added
+
+* Option to force the package metadata update when uploading package.
+
+### Changed
+
+* Make it possible to use a conda-safe package name (underscores) for python wheels.
+
+### Fixed
+
+* Fix upload of large package files.
 
 ### Tickets closed
 
