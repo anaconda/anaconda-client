@@ -89,12 +89,16 @@ def determine_package_type(filename, args):
 
 def get_package_name(args, package_attrs, package_type):
     if args.package:
-        if 'name' in package_attrs and package_attrs['name'].lower() != args.package.lower():
-            msg = 'Package name on the command line " {}" does not match the package name in the file "{}"'.format(
-                args.package.lower(), package_attrs['name'].lower()
-            )
-            logger.error(msg)
-            raise errors.BinstarError(msg)
+        if 'name' in package_attrs:
+            good_names = [package_attrs['name'].lower()]
+            if package_type == PackageType.STANDARD_PYTHON:
+                good_names.append(good_names[0].replace('-', '_'))
+            if args.package.lower() not in good_names:
+                msg = 'Package name on the command line " {}" does not match the package name in the file "{}"'.format(
+                    args.package.lower(), package_attrs['name'].lower()
+                )
+                logger.error(msg)
+                raise errors.BinstarError(msg)
         package_name = args.package
     else:
         if 'name' not in package_attrs:
