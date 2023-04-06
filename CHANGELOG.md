@@ -2,6 +2,16 @@
 
 We [keep a changelog.](http://keepachangelog.com/)
 
+## Next version
+
+### Tickets closed
+
+* [AC-150](https://anaconda.atlassian.net/browse/AC-150) - Fix upload of large files
+
+### Pull requests merged
+
+* [PR 646](https://github.com/Anaconda-Platform/anaconda-client/pull/646) - AC-150: fix multipart files upload
+
 ## 1.11.1 - 2023-03-01
 
 ### Added
