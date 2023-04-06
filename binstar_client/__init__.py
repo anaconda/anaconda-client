@@ -366,10 +366,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
             'family': license_family,
         }
 
-        payload = dict(public=bool(public),
-                       publish=False,
-                       public_attrs=dict(attrs or {})
-                       )
+        payload = {'public': bool(public), 'publish': False, 'public_attrs': dict(attrs or {})}
 
         data, headers = jencode(payload)
         res = self.session.post(url, data=data, headers=headers)
@@ -386,7 +383,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
         """
         url = '{}/package/{}/{}'.format(self.domain, login, package_name)
 
-        payload = dict(public_attrs=dict(attrs))
+        payload = {'public_attrs': dict(attrs)}
         data, headers = jencode(payload)
         res = self.session.patch(url, data=data, headers=headers)
         self._check_response(res)
@@ -402,7 +399,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
         :param attrs: A dictionary of attributes to update
         """
         url = '{}/release/{}/{}/{}'.format(self.domain, login, package_name, version)
-        payload = dict(public_attrs=dict(attrs))
+        payload = {'public_attrs': dict(attrs)}
         data, headers = jencode(payload)
         res = self.session.patch(url, data=data, headers=headers)
         self._check_response(res)
@@ -523,7 +520,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
             # We need to create a new request (without using session) to avoid
             # sending the custom headers set on our session to S3 (which causes
             # a failure).
-            res2 = requests.get(res.headers['location'], stream=True, timeout=10 * 60 * 60)  # nosec B113
+            res2 = requests.get(res.headers['location'], stream=True, timeout=10 * 60 * 60)
             return res2
 
         return None
@@ -559,14 +556,14 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
         if not isinstance(distribution_type, str):
             distribution_type = distribution_type.value
 
-        payload = dict(
-            distribution_type=distribution_type,
-            description=description,
-            attrs=attrs,
-            dependencies=dependencies,
-            channels=channels,
-            sha256=sha256
-        )
+        payload = {
+            'distribution_type': distribution_type,
+            'description': description,
+            'attrs': attrs,
+            'dependencies': dependencies,
+            'channels': channels,
+            'sha256': sha256,
+        }
 
         data, headers = jencode(payload)
         res = self.session.post(url, data=data, headers=headers)
@@ -602,7 +599,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
             raise errors.BinstarError('Error uploading package!%s' % msg_tail, s3res.status_code)
 
         url = '%s/commit/%s/%s/%s/%s' % (self.domain, login, package_name, release, quote(basename))
-        payload = dict(dist_id=obj['dist_id'])
+        payload = {'dist_id': obj['dist_id']}
         data, headers = jencode(payload)
         res = self.session.post(url, data=data, headers=headers)
         self._check_response(res)

@@ -85,9 +85,8 @@ def is_conda(filename):
         except KeyError:
             logger.debug("Not conda package no 'info/index.json' file in the tarball")
             return False
-        else:
-            logger.debug('This is a conda package')
-            return True
+        logger.debug('This is a conda package')
+        return True
     logger.debug('Not conda package (file ext is not .tar.bz2 or .conda)')
     return False
 

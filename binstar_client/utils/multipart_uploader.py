@@ -34,5 +34,10 @@ def multipart_files_upload(
             encoder, lambda monitor: progress_bar.update(monitor.bytes_read - progress_bar.n)
         )
 
-    return requests.post(url, data=encoder, headers={'Content-Type': encoder.content_type},
-                         timeout=request_kwargs.pop('timeout', 10 * 60 * 60), **request_kwargs)  # nosec B113
+    return requests.post(
+        url,
+        data=encoder,
+        headers={'Content-Type': encoder.content_type},
+        timeout=request_kwargs.pop('timeout', 10 * 60 * 60),
+        **request_kwargs,
+    )

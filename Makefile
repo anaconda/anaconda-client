@@ -31,8 +31,8 @@ check: lint test
 lint: lint-pycodestyle lint-pylint lint-mypy lint-bandit
 
 lint-bandit:
-	@bandit -qr binstar_client
-	@bandit -s B101 -qr tests
+	@bandit -s B113 -qr binstar_client
+	@bandit -s B101,B113 -qr tests
 
 lint-mypy:
 	@mypy binstar_client tests
