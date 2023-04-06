@@ -101,7 +101,7 @@ class Test(CLITestCase):
         registry.register(
             method='GET', path='/dist/eggs/mock/2.0.0/osx-64/mock-2.0.0-py37_1000.conda', status=404, content='{}')
 
-        content = {"post_url": "http://s3url.com/s3_url", "form_data": {}, "dist_id": "dist_id"}
+        content = {'post_url': 'http://s3url.com/s3_url', 'form_data': {}, 'dist_id': 'dist_id'}
         staging_response = registry.register(
             method='POST', path='/stage/eggs/mock/2.0.0/osx-64/mock-2.0.0-py37_1000.conda', content=content)
 
@@ -109,7 +109,7 @@ class Test(CLITestCase):
         registry.register(
             method='POST', path='/commit/eggs/mock/2.0.0/osx-64/mock-2.0.0-py37_1000.conda', status=200, content={})
 
-        main(['--show-traceback', 'upload', '--use-package-metadata', data_dir('mock-2.0.0-py37_1000.conda')], False)
+        main(['--show-traceback', 'upload', '--force-metadata-update', data_dir('mock-2.0.0-py37_1000.conda')], False)
 
         registry.assertAllCalled()
         self.assertIsNotNone(json.loads(staging_response.req.body).get('sha256'))

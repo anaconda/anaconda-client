@@ -6,6 +6,7 @@ We [keep a changelog.](http://keepachangelog.com/)
 
 ### Tickets closed
 
+* [AC-149](https://anaconda.atlassian.net/browse/AC-149) - Add option to use package metadata on upload
 * [AC-150](https://anaconda.atlassian.net/browse/AC-150) - Fix upload of large files
 * [AS-758](https://anaconda.atlassian.net/browse/AS-758) - Anaconda client doesn't allow pypi whl to use conda package names
 
@@ -13,6 +14,7 @@ We [keep a changelog.](http://keepachangelog.com/)
 
 * [PR 647](https://github.com/Anaconda-Platform/anaconda-client/pull/647) - AS-796: linters update
 * [PR 646](https://github.com/Anaconda-Platform/anaconda-client/pull/646) - AC-150: fix multipart files upload
+* [PR 641](https://github.com/Anaconda-Platform/anaconda-client/pull/641) - AC-149: Use package metadata on upload
 * [PR 640](https://github.com/Anaconda-Platform/anaconda-client/pull/640) - AS-758: Allow path to upload whl with conda package name
 
 ## 1.11.1 - 2023-03-01
