@@ -11,6 +11,7 @@ We [keep a changelog.](http://keepachangelog.com/)
 
 ### Pull requests merged
 
+* [PR 647](https://github.com/Anaconda-Platform/anaconda-client/pull/647) - AS-796: linters update
 * [PR 646](https://github.com/Anaconda-Platform/anaconda-client/pull/646) - AC-150: fix multipart files upload
 * [PR 640](https://github.com/Anaconda-Platform/anaconda-client/pull/640) - AS-758: Allow path to upload whl with conda package name
 
