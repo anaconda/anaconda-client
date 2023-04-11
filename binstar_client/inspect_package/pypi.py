@@ -492,8 +492,12 @@ def inspect_pypi_package_whl(filename, fileobj):
 
     file_data.setdefault('attrs', {})
 
-    file_data['attrs'] = dict(build_no=build_no, python_version=python_version,
-                              abi=abi, packagetype='bdist_wheel')
+    file_data['attrs'] = {
+        'build_no': build_no,
+        'python_version': python_version,
+        'abi': abi,
+        'packagetype': 'bdist_wheel',
+    }
 
     file_data.update(platform=platform)
     return package_data, release_data, file_data
@@ -694,7 +698,7 @@ def main():
     if filename.startswith('https://') or filename.startswith('http://'):
         import io
         import requests
-        data = requests.get(filename, stream=True).raw.read()  # pylint: disable=missing-timeout
+        data = requests.get(filename, stream=True, timeout=10 * 60 * 60).raw.read()
         fileobj = io.BytesIO(data)
     else:
         fileobj = open(filename)

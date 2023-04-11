@@ -89,12 +89,16 @@ def determine_package_type(filename, args):
 
 def get_package_name(args, package_attrs, package_type):
     if args.package:
-        if 'name' in package_attrs and package_attrs['name'].lower() != args.package.lower():
-            msg = 'Package name on the command line " {}" does not match the package name in the file "{}"'.format(
-                args.package.lower(), package_attrs['name'].lower()
-            )
-            logger.error(msg)
-            raise errors.BinstarError(msg)
+        if 'name' in package_attrs:
+            good_names = [package_attrs['name'].lower()]
+            if package_type == PackageType.STANDARD_PYTHON:
+                good_names.append(good_names[0].replace('-', '_'))
+            if args.package.lower() not in good_names:
+                msg = 'Package name on the command line " {}" does not match the package name in the file "{}"'.format(
+                    args.package.lower(), package_attrs['name'].lower()
+                )
+                logger.error(msg)
+                raise errors.BinstarError(msg)
         package_name = args.package
     else:
         if 'name' not in package_attrs:
@@ -164,6 +168,10 @@ def add_release(aserver_api, args, username,  # pylint: disable=too-many-argumen
     try:
         # Check if the release already exists
         aserver_api.release(username, package_name, version)
+
+        # If it exists update public attrs if needed.
+        if args.force_metadata_update:
+            aserver_api.update_release(username, package_name, version, release_attrs)
     except errors.NotFound:
         if args.mode == 'interactive':
             create_release_interactive(aserver_api, username, package_name, version, release_attrs)
@@ -177,17 +185,17 @@ def remove_existing_file(aserver_api, args,  # pylint: disable=too-many-argument
         aserver_api.distribution(username, package_name, version, file_attrs['basename'])
     except errors.NotFound:
         return False
-    else:
-        if args.mode == 'force':
-            logger.warning('Distribution "%s" already exists. Removing.', file_attrs['basename'])
-            aserver_api.remove_dist(username, package_name, version, file_attrs['basename'])
 
-        if args.mode == 'interactive':
-            if bool_input('Distribution "%s" already exists. Would you like to replace it?' % file_attrs['basename']):
-                aserver_api.remove_dist(username, package_name, version, file_attrs['basename'])
-            else:
-                logger.info('Not replacing distribution "%s"', file_attrs['basename'])
-                return True
+    if args.mode == 'force':
+        logger.warning('Distribution "%s" already exists. Removing.', file_attrs['basename'])
+        aserver_api.remove_dist(username, package_name, version, file_attrs['basename'])
+
+    if args.mode == 'interactive':
+        if bool_input('Distribution "%s" already exists. Would you like to replace it?' % file_attrs['basename']):
+            aserver_api.remove_dist(username, package_name, version, file_attrs['basename'])
+        else:
+            logger.info('Not replacing distribution "%s"', file_attrs['basename'])
+            return True
 
 
 def upload_package(filename, package_type,  # pylint: disable=inconsistent-return-statements,too-many-locals
@@ -473,6 +481,11 @@ def add_parser(subparsers):
         action='store_const',
         dest='mode',
         const='skip',
+    )
+    group.add_argument(
+        '-m', '--force-metadata-update',
+        action='store_true',
+        help='Overwrite existing release metadata with the metadata from the package.',
     )
 
     parser.set_defaults(main=main)

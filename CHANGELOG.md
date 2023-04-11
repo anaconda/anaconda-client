@@ -2,6 +2,33 @@
 
 We [keep a changelog.](http://keepachangelog.com/)
 
+## 1.11.2 - 2023-04-10
+
+### Added
+
+* Option to force the package metadata update when uploading package.
+
+### Changed
+
+* Make it possible to use a conda-safe package name (underscores) for python wheels.
+
+### Fixed
+
+* Fix upload of large package files.
+
+### Tickets closed
+
+* AC-149 - Add option to use package metadata on upload
+* AC-150 - Fix upload of large files
+* AS-758 - Anaconda client doesn't allow pypi whl to use conda package names
+
+### Pull requests merged
+
+* [PR 647](https://github.com/Anaconda-Platform/anaconda-client/pull/647) - AS-796: linters update
+* [PR 646](https://github.com/Anaconda-Platform/anaconda-client/pull/646) - AC-150: fix multipart files upload
+* [PR 641](https://github.com/Anaconda-Platform/anaconda-client/pull/641) - AC-149: Use package metadata on upload
+* [PR 640](https://github.com/Anaconda-Platform/anaconda-client/pull/640) - AS-758: Allow path to upload whl with conda package name
+
 ## 1.11.1 - 2023-03-01
 
 ### Added
@@ -15,8 +42,8 @@ We [keep a changelog.](http://keepachangelog.com/)
 
 ### Tickets closed
 
-* [AC-137](https://anaconda.atlassian.net/browse/AC-137) - Refresh linting config
-* [AC-148](https://anaconda.atlassian.net/browse/AC-148) - [QA] Traceback appears on viewing the metadata of a file
+* AC-137 - Refresh linting config
+* AC-148 - [QA] Traceback appears on viewing the metadata of a file
 
 ### Pull requests merged
 

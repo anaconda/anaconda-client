@@ -76,7 +76,7 @@ class OrgMixin:
     def add_group(self, org, name, perms='read'):
         url = '%s/group/%s/%s' % (self.domain, org, name)
 
-        payload = dict(perms=perms)
+        payload = {'perms': perms}
         data, headers = jencode(payload)
 
         res = self.session.post(url, data=data, headers=headers)

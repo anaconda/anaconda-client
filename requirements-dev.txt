@@ -2,22 +2,22 @@
 # Should be installed with pip
 
 ansi2html~=1.8.0
-bandit~=1.7.4
-coverage~=6.5.0
+bandit~=1.7.5
+coverage~=7.2.2
 freezegun~=1.2.2
 jinja2~=3.1.2
-mypy~=0.991
-pycodestyle~=2.9.1
-pylint~=2.15.5
-pytest~=7.2.0
+mypy~=1.1.1
+pycodestyle~=2.10.0
+pylint~=2.17.2
+pytest~=7.2.2
 pytest-cov~=4.0.0
 pytest-html~=3.2.0
-setuptools~=65.5.1
-types-python-dateutil~=2.8.19.4
-types-pytz~=2022.6.0.1
-types-pyyaml~=6.0.12.2
-types-requests~=2.28.11.5
-types-setuptools~=65.5.0.3
-types-six~=1.16.21.3
-types-tqdm~=4.64.7.3
-typing-extensions~=4.4.0
+setuptools~=67.6.1
+types-python-dateutil~=2.8.19.12
+types-pytz~=2023.3.0.0
+types-pyyaml~=6.0.12.9
+types-requests~=2.28.11.17
+types-setuptools~=67.6.0.7
+types-six~=1.16.21.8
+types-tqdm~=4.65.0.1
+typing-extensions~=4.5.0

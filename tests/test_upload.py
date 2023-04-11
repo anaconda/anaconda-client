@@ -91,6 +91,30 @@ class Test(CLITestCase):
         self.assertIsNotNone(json.loads(staging_response.req.body).get('sha256'))
 
     @urlpatch
+    def test_upload_use_pkg_metadata(self, registry):
+        registry.register(method='HEAD', path='/', status=200)
+        registry.register(method='GET', path='/user', content='{"login": "eggs"}')
+        content = {'package_types': ['conda']}
+        registry.register(method='GET', path='/package/eggs/mock', content=content)
+        registry.register(method='GET', path='/release/eggs/mock/2.0.0', content='{}')
+        registry.register(method='PATCH', path='/release/eggs/mock/2.0.0', content='{}')
+        registry.register(
+            method='GET', path='/dist/eggs/mock/2.0.0/osx-64/mock-2.0.0-py37_1000.conda', status=404, content='{}')
+
+        content = {'post_url': 'http://s3url.com/s3_url', 'form_data': {}, 'dist_id': 'dist_id'}
+        staging_response = registry.register(
+            method='POST', path='/stage/eggs/mock/2.0.0/osx-64/mock-2.0.0-py37_1000.conda', content=content)
+
+        registry.register(method='POST', path='/s3_url', status=201)
+        registry.register(
+            method='POST', path='/commit/eggs/mock/2.0.0/osx-64/mock-2.0.0-py37_1000.conda', status=200, content={})
+
+        main(['--show-traceback', 'upload', '--force-metadata-update', data_dir('mock-2.0.0-py37_1000.conda')], False)
+
+        registry.assertAllCalled()
+        self.assertIsNotNone(json.loads(staging_response.req.body).get('sha256'))
+
+    @urlpatch
     def test_upload_pypi(self, registry):
         registry.register(method='HEAD', path='/', status=200)
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
@@ -113,6 +137,59 @@ class Test(CLITestCase):
 
         registry.assertAllCalled()
         self.assertIsNotNone(json.loads(staging_response.req.body).get('sha256'))
+
+    @urlpatch
+    def test_upload_pypi_with_conda_package_name_allowed(self, registry):
+        registry.register(method='HEAD', path='/', status=200)
+        registry.register(method='GET', path='/user', content='{"login": "eggs"}')
+        content = {'package_types': ['pypi']}
+        registry.register(method='GET', path='/package/eggs/test_package34', content=content)
+        registry.register(method='GET', path='/release/eggs/test_package34/0.3.1', content='{}')
+        registry.register(method='GET', path='/dist/eggs/test_package34/0.3.1/test_package34-0.3.1.tar.gz', status=404,
+                          content='{}')
+
+        content = {'post_url': 'http://s3url.com/s3_url', 'form_data': {}, 'dist_id': 'dist_id'}
+        staging_response = registry.register(
+            method='POST', path='/stage/eggs/test_package34/0.3.1/test_package34-0.3.1.tar.gz',
+            content=content)
+
+        registry.register(method='POST', path='/s3_url', status=201)
+        registry.register(method='POST', path='/commit/eggs/test_package34/0.3.1/test_package34-0.3.1.tar.gz',
+                          status=200, content={})
+
+        # Pass -o to override the channel/package pypi package should go to
+        main(['--show-traceback', 'upload',
+              '--package', 'test_package34',
+              '--package-type', 'pypi', data_dir('test_package34-0.3.1.tar.gz')], False)
+
+        registry.assertAllCalled()
+        self.assertIsNotNone(json.loads(staging_response.req.body).get('sha256'))
+
+    @urlpatch
+    def test_upload_conda_package_with_name_override_fails(self, registry):
+        registry.register(method='HEAD', path='/', status=200)
+        registry.register(method='GET', path='/user', content='{"login": "eggs"}')
+
+        # Passing -o for `file` package_type doesn't override channel
+        with self.assertRaises(errors.BinstarError):
+            main(['--show-traceback', 'upload',
+                  '--package', 'test_package',
+                  '--package-type', 'file',
+                  data_dir('test_package34-0.3.1.tar.gz')], False)
+
+        registry.assertAllCalled()
+
+    @urlpatch
+    def test_upload_pypi_with_random_name(self, registry):
+        registry.register(method='HEAD', path='/', status=200)
+        registry.register(method='GET', path='/user', content='{"login": "eggs"}')
+
+        with self.assertRaises(errors.BinstarError):
+            main(['--show-traceback', 'upload',
+                  '--package', 'alpha_omega',
+                  data_dir('test_package34-0.3.1.tar.gz')], False)
+
+        registry.assertAllCalled()
 
     @urlpatch
     def test_upload_file(self, registry):

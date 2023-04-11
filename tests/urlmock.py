@@ -77,19 +77,23 @@ class Registry:
         rule = self.find_rule(prepared_request)
 
         if rule is None:
-            raise Exception('No matching rule found for url [%s] %s' % (prepared_request.method,
-                                                                        prepared_request.url,
-                                                                        ))
+            raise Exception(  # pylint: disable=broad-exception-raised
+                'No matching rule found for url [%s] %s' % (prepared_request.method, prepared_request.url),
+            )
 
         if rule.expected_headers:
             for header, value in rule.expected_headers.items():
                 if header not in prepared_request.headers:
-                    raise Exception('{}: header {} expected in {}'.format(
-                        prepared_request.url, header, prepared_request.headers))
+                    raise Exception(  # pylint: disable=broad-exception-raised
+                        '{}: header {} expected in {}'.format(prepared_request.url, header, prepared_request.headers),
+                    )
 
                 if prepared_request.headers[header] != value:
-                    raise Exception('{}: header {} has unexpected value {} was expecting {}'.format(
-                        prepared_request.url, header, prepared_request.headers[header], value))
+                    raise Exception(  # pylint: disable=broad-exception-raised
+                        '{}: header {} has unexpected value {} was expecting {}'.format(
+                            prepared_request.url, header, prepared_request.headers[header], value,
+                        ),
+                    )
 
         content = rule.content
         if isinstance(content, dict):

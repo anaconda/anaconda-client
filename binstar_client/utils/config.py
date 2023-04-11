@@ -24,7 +24,7 @@ logger = logging.getLogger('binstar')
 
 
 def expandvars(path):
-    environ = dict(CONDA_ROOT=CONDA_ROOT, CONDA_PREFIX=CONDA_PREFIX)
+    environ = {'CONDA_ROOT': CONDA_ROOT, 'CONDA_PREFIX': CONDA_PREFIX}
     environ.update(os.environ)
     return Template(path).safe_substitute(**environ)
 

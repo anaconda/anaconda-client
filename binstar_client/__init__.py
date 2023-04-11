@@ -9,13 +9,12 @@ import hashlib
 import logging
 import os
 import platform as _platform
-import defusedxml.ElementTree as ET
 
+import defusedxml.ElementTree as ET
 import requests
 from pkg_resources import parse_version as pv
 from six.moves.urllib.parse import quote
 from tqdm import tqdm
-from tqdm.utils import CallbackIOWrapper
 
 from . import errors
 from .__about__ import __version__
@@ -27,6 +26,7 @@ from .mixins.package import PackageMixin
 from .requests_ext import NullAuth
 from .utils import compute_hash, jencode
 from .utils.http_codes import STATUS_CODES
+from .utils.multipart_uploader import multipart_files_upload
 
 logger = logging.getLogger('binstar')
 
@@ -366,10 +366,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
             'family': license_family,
         }
 
-        payload = dict(public=bool(public),
-                       publish=False,
-                       public_attrs=dict(attrs or {})
-                       )
+        payload = {'public': bool(public), 'publish': False, 'public_attrs': dict(attrs or {})}
 
         data, headers = jencode(payload)
         res = self.session.post(url, data=data, headers=headers)
@@ -386,7 +383,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
         """
         url = '{}/package/{}/{}'.format(self.domain, login, package_name)
 
-        payload = dict(public_attrs=dict(attrs))
+        payload = {'public_attrs': dict(attrs)}
         data, headers = jencode(payload)
         res = self.session.patch(url, data=data, headers=headers)
         self._check_response(res)
@@ -402,7 +399,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
         :param attrs: A dictionary of attributes to update
         """
         url = '{}/release/{}/{}/{}'.format(self.domain, login, package_name, version)
-        payload = dict(public_attrs=dict(attrs))
+        payload = {'public_attrs': dict(attrs)}
         data, headers = jencode(payload)
         res = self.session.patch(url, data=data, headers=headers)
         self._check_response(res)
@@ -523,7 +520,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
             # We need to create a new request (without using session) to avoid
             # sending the custom headers set on our session to S3 (which causes
             # a failure).
-            res2 = requests.get(res.headers['location'], stream=True)  # pylint: disable=missing-timeout
+            res2 = requests.get(res.headers['location'], stream=True, timeout=10 * 60 * 60)
             return res2
 
         return None
@@ -559,14 +556,14 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
         if not isinstance(distribution_type, str):
             distribution_type = distribution_type.value
 
-        payload = dict(
-            distribution_type=distribution_type,
-            description=description,
-            attrs=attrs,
-            dependencies=dependencies,
-            channels=channels,
-            sha256=sha256
-        )
+        payload = {
+            'distribution_type': distribution_type,
+            'description': description,
+            'attrs': attrs,
+            'dependencies': dependencies,
+            'channels': channels,
+            'sha256': sha256,
+        }
 
         data, headers = jencode(payload)
         res = self.session.post(url, data=data, headers=headers)
@@ -584,15 +581,14 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
             size = file.tell() - spos
             file.seek(spos)
 
-        s3data['Content-Length'] = size
+        s3data['Content-Length'] = str(size)
         s3data['Content-MD5'] = b64md5
 
         file_size = os.fstat(file.fileno()).st_size
         with tqdm(total=file_size, unit='B', unit_scale=True, unit_divisor=1024) as progress:
-            wrapped_file = CallbackIOWrapper(progress.update, file, 'read')
-            s3res = requests.post(
-                s3url, data=s3data, files={'file': (basename, wrapped_file)},
-                verify=self.session.verify, timeout=10 * 60 * 60)
+            s3res = multipart_files_upload(
+                s3url, s3data, {'file': (basename, file)}, progress,
+                verify=self.session.verify)
 
         if s3res.status_code != 201:
             logger.info(s3res.text)
@@ -603,7 +599,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
             raise errors.BinstarError('Error uploading package!%s' % msg_tail, s3res.status_code)
 
         url = '%s/commit/%s/%s/%s/%s' % (self.domain, login, package_name, release, quote(basename))
-        payload = dict(dist_id=obj['dist_id'])
+        payload = {'dist_id': obj['dist_id']}
         data, headers = jencode(payload)
         res = self.session.post(url, data=data, headers=headers)
         self._check_response(res)

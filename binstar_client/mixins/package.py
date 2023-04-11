@@ -18,7 +18,7 @@ class PackageMixin:  # pylint: disable=too-few-public-methods
         copy_path = '/'.join((owner, package, version, basename or ''))
         url = '{}/copy/package/{}'.format(self.domain, copy_path)
 
-        payload = dict(to_owner=to_owner, from_channel=from_label, to_channel=to_label)
+        payload = {'to_owner': to_owner, 'from_channel': from_label, 'to_channel': to_label}
         data, headers = jencode(payload)
 
         if replace:
