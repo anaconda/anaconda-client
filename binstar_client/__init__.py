@@ -220,7 +220,9 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
 
             msg = data.get('error', msg)
             ErrCls = errors.BinstarError
-            if res.status_code == 401:
+            if res.status_code == 400:
+                ErrCls = errors.BadRequest
+            elif res.status_code == 401:
                 ErrCls = errors.Unauthorized
             elif res.status_code == 404:
                 ErrCls = errors.NotFound
@@ -406,7 +408,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
         return res.json()
 
     def remove_package(self, username, package_name):
-
+        logger.info('removal2')
         url = '%s/package/%s/%s' % (self.domain, username, package_name)
 
         res = self.session.delete(url)
@@ -567,7 +569,14 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
 
         data, headers = jencode(payload)
         res = self.session.post(url, data=data, headers=headers)
-        self._check_response(res)
+
+        try:
+            self._check_response(res)
+        except Exception as e:
+            # remove empty package if got an error
+            self.remove_package(login, package_name)
+            raise e
+        
         obj = res.json()
 
         s3url = obj['post_url']

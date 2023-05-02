@@ -59,3 +59,6 @@ class PillowNotInstalled(BinstarError):
     def __init__(self):
         self.msg = 'pillow is not installed. Install it with:\n\tconda install pillow'
         super().__init__(self.msg)
+
+class BadRequest(BinstarError):
+    pass
