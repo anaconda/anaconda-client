@@ -572,11 +572,11 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
 
         try:
             self._check_response(res)
-        except Exception as e:
+        except Exception as exception:
             # remove empty package if got an error
             self.remove_package(login, package_name)
-            raise e
-        
+            raise exception
+
         obj = res.json()
 
         s3url = obj['post_url']
