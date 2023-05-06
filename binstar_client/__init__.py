@@ -408,7 +408,6 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
         return res.json()
 
     def remove_package(self, username, package_name):
-        logger.info('removal2')
         url = '%s/package/%s/%s' % (self.domain, username, package_name)
 
         res = self.session.delete(url)
@@ -574,7 +573,8 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
             self._check_response(res)
         except Exception as exception:
             # remove empty package if got an error
-            self.remove_package(login, package_name)
+            if not self.package(login, package_name)["files"]:
+                self.remove_package(login, package_name)
             raise exception
 
         obj = res.json()
