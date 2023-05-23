@@ -5,7 +5,8 @@ Manage Authentication tokens
 
 See also:
 
-  * [Using Anaconda.org Tokens](https://docs.anaconda.org/free/anacondaorg/user-guide/tasks/work-with-accounts/#cloud-accounts-tokens)
+* [Using Anaconda.org Tokens](
+  https://docs.anaconda.org/free/anacondaorg/user-guide/tasks/work-with-accounts/#cloud-accounts-tokens)
 
 """
 
