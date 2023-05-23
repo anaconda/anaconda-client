@@ -26,7 +26,7 @@ with open(os.path.join(root, 'binstar_client', '__about__.py'), 'rt', encoding='
 setuptools.setup(
     name='anaconda-client',
     version=__about__['__version__'],
-    description='Anaconda Cloud command line client library',
+    description='Anaconda.org command line client library',
     license='BSD License',
     author='Sean Ross-Ross',
     author_email='srossross@gmail.com',
