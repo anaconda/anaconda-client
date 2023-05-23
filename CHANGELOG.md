@@ -2,7 +2,7 @@
 
 We [keep a changelog.](http://keepachangelog.com/)
 
-## Next release
+## 1.11.3
 
 ### Tickets closed
 
@@ -11,6 +11,7 @@ We [keep a changelog.](http://keepachangelog.com/)
 ### Pull requests merged
 
 * [PR 653](https://github.com/Anaconda-Platform/anaconda-client/pull/653) - AC-156: use creationflags to prevent spawning redundant terminal windows
+* [PR 652](https://github.com/Anaconda-Platform/anaconda-client/pull/652) - update references to Anaconda.org
 
 ## 1.11.2 - 2023-04-10
 
