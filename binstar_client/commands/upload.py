@@ -132,7 +132,7 @@ def add_package(aserver_api, args, username,  # pylint: disable=too-many-argumen
         if not args.auto_register:
             message = (
                     'Anaconda repository package %s/%s does not exist. '
-                    'Please run "anaconda package --create" to create this package namespace in the cloud.' %
+                    'Please run "anaconda package --create" to create this package namespace on Anaconda.org.' %
                     (username, package_name)
             )
             logger.error(message)
