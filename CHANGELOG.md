@@ -2,6 +2,16 @@
 
 We [keep a changelog.](http://keepachangelog.com/)
 
+## Next release
+
+### Tickets closed
+
+* AC-156 - Add creationflags to prevent spawning of redundant terminal windows
+
+### Pull requests merged
+
+* [PR 653](https://github.com/Anaconda-Platform/anaconda-client/pull/653) - AC-156: use creationflags to prevent spawning redundant terminal windows
+
 ## 1.11.2 - 2023-04-10
 
 ### Added
