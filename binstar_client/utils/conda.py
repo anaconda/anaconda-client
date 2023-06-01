@@ -36,7 +36,9 @@ def _conda_root_from_conda_info():
         return None
 
     try:
-        output = subprocess.check_output([command, 'info', '--json']).decode('utf-8')  # nosec
+        output = subprocess.check_output([
+            command, 'info', '--json'], creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == 'win32' else None
+        ).decode('utf-8')  # nosec
         conda_info = json.loads(output)
         return conda_info['root_prefix']
     except (ValueError, KeyError, subprocess.CalledProcessError):
