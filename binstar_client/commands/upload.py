@@ -35,34 +35,289 @@ from binstar_client.utils.projects import upload_project
 logger = logging.getLogger('binstar.upload')
 
 
+class Uploader:
+    def __init__(self, aserver_api, username, args):
+        self.packages = {}
+        self.packages_to_delete = {}
+        self.package_types = []
+
+        self.aserver_api = aserver_api
+        self.username = username
+        self.args = args
+
+    def get_package(self, package_name, package_attrs, package_type):
+        if not self.packages.get((package_name, package_type), None):
+            self.packages[(package_name, package_type)] = self.add_package(package_name, package_attrs, package_type)
+        return self.packages[(package_name, package_type)]
+
+    def remove_existing_file(self, package_name,
+                             version, file_attrs):  # pylint: disable=too-many-arguments,inconsistent-return-statements
+        try:
+            self.aserver_api.distribution(self.username, package_name, version, file_attrs['basename'])
+        except errors.NotFound:
+            return False
+
+        if self.args.mode == 'force':
+            logger.warning('Distribution "%s" already exists. Removing.', file_attrs['basename'])
+            self.aserver_api.remove_dist(self.username, package_name, version, file_attrs['basename'])
+
+        if self.args.mode == 'interactive':
+            if bool_input('Distribution "%s" already exists. Would you like to replace it?' % file_attrs['basename']):
+                self.aserver_api.remove_dist(self.username, package_name, version, file_attrs['basename'])
+            else:
+                logger.info('Not replacing distribution "%s"', file_attrs['basename'])
+                return True
+
+    def add_package(self, package_name, package_attrs, package_type):  # pylint: disable=too-many-arguments
+        try:
+            return self.aserver_api.package(self.username, package_name)
+        except errors.NotFound as not_found_error:
+            if not self.args.auto_register:
+                message = (
+                        'Anaconda repository package %s/%s does not exist. '
+                        'Please run "anaconda package --create" to create this package namespace in the cloud.' %
+                        (self.username, package_name)
+                )
+                logger.error(message)
+                raise errors.UserError(message) from not_found_error
+
+            if self.args.summary:
+                summary = self.args.summary
+            else:
+                if 'summary' not in package_attrs:
+                    message = 'Could not detect package summary for ' \
+                            'package type %s, please use the --summary option' % (package_type,)
+                    logger.error(message)
+                    raise errors.BinstarError(message) from not_found_error
+                summary = package_attrs['summary']
+
+            public = not self.args.private
+            logger.info('create')
+            return self.aserver_api.add_package(
+                self.username,
+                package_name,
+                summary,
+                package_attrs.get('license'),
+                public=public,
+                attrs=package_attrs,
+                license_url=package_attrs.get('license_url'),
+                license_family=package_attrs.get('license_family'),
+                package_type=package_type,
+            )
+
+    def add_release(self, package_name, version, release_attrs):  # pylint: disable=too-many-arguments
+        try:
+            # Check if the release already exists
+            self.aserver_api.release(self.username, package_name, version)
+
+            # If it exists update public attrs if needed.
+            if self.args.force_metadata_update:
+                self.aserver_api.update_release(self.username, package_name, version, release_attrs)
+        except errors.NotFound:
+            if self.args.mode == 'interactive':
+                self.create_release_interactive(package_name, version, release_attrs)
+            else:
+                self.create_release(package_name, version, release_attrs)
+
+    def create_release_interactive(self, package_name, version, release_attrs):
+        logger.info('The release "%s/%s/%s" does not exist', self.username, package_name, version)
+
+        if not bool_input('Would you like to create it now?'):
+            logger.info('good-bye')
+            raise SystemExit(-1)
+
+        logger.info('Announcements are emailed to your package followers.')
+        make_announcement = bool_input('Would you like to make an announcement to the package followers?', False)
+
+        if make_announcement:
+            announce = input('Markdown Announcement:\n')
+        else:
+            announce = ''
+
+        self.aserver_api.add_release(self.username, package_name, version, [], announce, release_attrs)
+
+    def create_release(self, package_name, version, release_attrs, announce=None):  # pylint: disable=too-many-arguments
+        self.aserver_api.add_release(self.username, package_name, version, [], announce, release_attrs)
+
+    def get_package_name(self, package_attrs, package_type):
+        if self.args.package:
+            if 'name' in package_attrs:
+                good_names = [package_attrs['name'].lower()]
+                if package_type == PackageType.STANDARD_PYTHON:
+                    good_names.append(good_names[0].replace('-', '_'))
+                if self.args.package.lower() not in good_names:
+                    msg = ('Package name on the command line " {}" ' +
+                           'does not match the package name in the file "{}"'.format(
+                            self.args.package.lower(), package_attrs['name'].lower()
+                            ))
+                    logger.error(msg)
+                    raise errors.BinstarError(msg)
+            package_name = self.args.package
+        else:
+            if 'name' not in package_attrs:
+                message = 'Could not detect package name for package type {}, please use the --package option'.format(
+                    package_type.label())
+                logger.error(message)
+                raise errors.BinstarError(message)
+            package_name = package_attrs['name']
+
+        return package_name
+
+    def get_version(self, release_attrs, package_type):
+        if self.args.version:
+            version = self.args.version
+        else:
+            if 'version' not in release_attrs:
+                message = 'Could not detect package version for package type \"{}\", ' \
+                        'please use the --version option'.format(package_type.label())
+                logger.error(message)
+                raise errors.BinstarError(message)
+            version = release_attrs['version']
+        return version
+
+    def remove_package_if_empty(self, package_name, package_type):
+        if (self.packages_to_delete[(package_name, package_type)] 
+           and not self.aserver_api.package(self.username, package_name).get('files', None)):
+            self.aserver_api.remove_package(self.username, package_name)
+
+    def upload_package(self, filename, package_type):  # pylint: disable=inconsistent-return-statements,too-many-locals
+        logger.info('Extracting %s attributes for upload', verbose_package_type(package_type))
+
+        try:
+            package_attrs, release_attrs, file_attrs = get_attrs(package_type, filename, parser_args=self.args)
+        except Exception as error:
+            message = 'Trouble reading metadata from {}. Is this a valid {} package?'.format(
+                filename, verbose_package_type(package_type)
+            )
+            logger.error(message)
+
+            if self.args.show_traceback:
+                raise
+
+            raise errors.BinstarError(message) from error
+
+        if self.args.build_id:
+            file_attrs['attrs']['binstar_build'] = self.args.build_id
+
+        if self.args.summary:
+            release_attrs['summary'] = self.args.summary
+
+        if self.args.description:
+            release_attrs['description'] = self.args.description
+
+        package_name = self.get_package_name(package_attrs, package_type)
+        version = self.get_version(release_attrs, package_type)
+
+        logger.info('Creating package "%s"', package_name)
+
+        package = self.get_package(package_name, package_attrs, package_type)
+        logger.info(package)
+        self.packages_to_delete[(package_name, package_type)] = True
+        package_types = [PackageType(pkg_type) for pkg_type in package.get('package_types', [])]
+        self.package_types += package_types
+        logger.info(package_types)
+
+        allowed_package_types = set(self.package_types)
+        for group in [{PackageType.CONDA, PackageType.STANDARD_PYTHON}]:
+            if allowed_package_types & group:
+                allowed_package_types.update(group)
+
+        if package_types and (package_type not in allowed_package_types):
+            message = 'You already have a {} named \'{}\'. Use a different name for this {}.'.format(
+                verbose_package_type(package_types[0] if package_types else ''), package_name,
+                verbose_package_type(package_type),
+            )
+            logger.error(message)
+            raise errors.BinstarError(message)
+
+        logger.info('Creating release "%s"', version)
+
+        self.add_release(package_name, version, release_attrs)
+        binstar_package_type = file_attrs.pop('binstar_package_type', package_type)
+
+        if not self.args.keep_local_name:
+            file_attrs['basename'] = '{}-{}-{}.{}'.format(package_name, version, file_attrs['attrs'].get('build'),
+                                                          '.'.join(file_attrs.get('basename').split('.')[-2:]))
+
+        logger.info('Uploading file "%s/%s/%s/%s"', self.username, package_name, version, file_attrs['basename'])
+
+        if self.remove_existing_file(package_name, version, file_attrs):
+            return
+
+        try:
+            with open(filename, 'rb') as file:
+                upload_info = self.aserver_api.upload(self.username, package_name, version, file_attrs['basename'],
+                                                      file, binstar_package_type, self.args.description,
+                                                      dependencies=file_attrs.get('dependencies'),
+                                                      attrs=file_attrs['attrs'], channels=self.args.labels)
+        except errors.Conflict:
+            upload_info = {}
+            if self.args.mode != 'skip':
+                # pylint: disable=implicit-str-concat
+                logger.info(
+                    'Distribution already exists. Please use the -i/--interactive or --force or --skip options or '
+                    '`anaconda remove %s/%s/%s/%s',
+                    self.username,
+                    package_name,
+                    version,
+                    file_attrs['basename'],
+                )
+                raise
+            logger.info('Distribution already exists. Skipping upload.\n')
+        except Exception:
+            self.remove_package_if_empty(package_name, package_type)
+            raise
+
+        if upload_info:
+            logger.info('Upload complete\n')
+            self.packages_to_delete[package_name] = False
+
+        return [package_name, upload_info]
+
+    def upload(self, files):
+        uploaded_packages = []
+        uploaded_projects = []
+
+        for filename in files:
+            if not exists(filename):
+                message = 'File "{}" does not exist'.format(filename)
+                logger.error(message)
+                raise errors.BinstarError(message)
+            logger.info("Processing '%s'", filename)
+
+            package_type = determine_package_type(filename, self.args)
+
+            if package_type is PackageType.PROJECT:
+                uploaded_projects.append(upload_project(filename, self.args, self.username))
+            else:
+                if package_type is PackageType.NOTEBOOK and not self.args.mode == 'force':
+                    try:
+                        with open(filename, 'rt', encoding='utf-8') as stream:
+                            nbformat.read(stream, nbformat.NO_CONVERT)
+                    except Exception as error:  # pylint: disable=broad-except
+                        logger.error("Invalid notebook file '%s': %s", filename, error)
+                        logger.info('Use --force to upload the file anyways')
+                        continue
+
+                package_info = self.upload_package(filename, package_type=package_type)
+
+                if package_info is not None and len(package_info) == 2:
+                    _package, _upload_info = package_info
+                    if _upload_info:
+                        uploaded_packages.append((_package, _upload_info, package_type))
+
+        for package in uploaded_packages:
+            package_name = package[0]
+            package_type = package[2]
+            self.remove_package_if_empty(package_name, package_type)
+
+        return uploaded_packages, uploaded_projects
+
 def verbose_package_type(pkg_type, lowercase=True):
     verbose_type = pkg_type.label()
     if lowercase:
         verbose_type = verbose_type.lower()
     return verbose_type
-
-
-def create_release(aserver_api, username,  # pylint: disable=too-many-arguments
-                   package_name, version, release_attrs, announce=None):
-    aserver_api.add_release(username, package_name, version, [], announce, release_attrs)
-
-
-def create_release_interactive(aserver_api, username, package_name, version, release_attrs):
-    logger.info('The release "%s/%s/%s" does not exist', username, package_name, version)
-
-    if not bool_input('Would you like to create it now?'):
-        logger.info('good-bye')
-        raise SystemExit(-1)
-
-    logger.info('Announcements are emailed to your package followers.')
-    make_announcement = bool_input('Would you like to make an announcement to the package followers?', False)
-
-    if make_announcement:
-        announce = input('Markdown Announcement:\n')
-    else:
-        announce = ''
-
-    aserver_api.add_release(username, package_name, version, [], announce, release_attrs)
 
 
 def determine_package_type(filename, args):
@@ -85,201 +340,6 @@ def determine_package_type(filename, args):
     logger.info('File type is "%s"', package_type.label())
 
     return package_type
-
-
-def get_package_name(args, package_attrs, package_type):
-    if args.package:
-        if 'name' in package_attrs:
-            good_names = [package_attrs['name'].lower()]
-            if package_type == PackageType.STANDARD_PYTHON:
-                good_names.append(good_names[0].replace('-', '_'))
-            if args.package.lower() not in good_names:
-                msg = 'Package name on the command line " {}" does not match the package name in the file "{}"'.format(
-                    args.package.lower(), package_attrs['name'].lower()
-                )
-                logger.error(msg)
-                raise errors.BinstarError(msg)
-        package_name = args.package
-    else:
-        if 'name' not in package_attrs:
-            message = 'Could not detect package name for package type {}, please use the --package option'.format(
-                package_type.label())
-            logger.error(message)
-            raise errors.BinstarError(message)
-        package_name = package_attrs['name']
-
-    return package_name
-
-
-def get_version(args, release_attrs, package_type):
-    if args.version:
-        version = args.version
-    else:
-        if 'version' not in release_attrs:
-            message = 'Could not detect package version for package type \"{}\", ' \
-                      'please use the --version option'.format(package_type.label())
-            logger.error(message)
-            raise errors.BinstarError(message)
-        version = release_attrs['version']
-    return version
-
-
-def add_package(aserver_api, args, username,  # pylint: disable=too-many-arguments
-                package_name, package_attrs, package_type):
-    try:
-        return aserver_api.package(username, package_name)
-    except errors.NotFound as not_found_error:
-        if not args.auto_register:
-            message = (
-                    'Anaconda repository package %s/%s does not exist. '
-                    'Please run "anaconda package --create" to create this package namespace on Anaconda.org.' %
-                    (username, package_name)
-            )
-            logger.error(message)
-            raise errors.UserError(message) from not_found_error
-
-        if args.summary:
-            summary = args.summary
-        else:
-            if 'summary' not in package_attrs:
-                message = 'Could not detect package summary for ' \
-                          'package type %s, please use the --summary option' % (package_type,)
-                logger.error(message)
-                raise errors.BinstarError(message) from not_found_error
-            summary = package_attrs['summary']
-
-        public = not args.private
-
-        return aserver_api.add_package(
-            username,
-            package_name,
-            summary,
-            package_attrs.get('license'),
-            public=public,
-            attrs=package_attrs,
-            license_url=package_attrs.get('license_url'),
-            license_family=package_attrs.get('license_family'),
-            package_type=package_type,
-        )
-
-
-def add_release(aserver_api, args, username,  # pylint: disable=too-many-arguments
-                package_name, version, release_attrs):
-    try:
-        # Check if the release already exists
-        aserver_api.release(username, package_name, version)
-
-        # If it exists update public attrs if needed.
-        if args.force_metadata_update:
-            aserver_api.update_release(username, package_name, version, release_attrs)
-    except errors.NotFound:
-        if args.mode == 'interactive':
-            create_release_interactive(aserver_api, username, package_name, version, release_attrs)
-        else:
-            create_release(aserver_api, username, package_name, version, release_attrs)
-
-
-def remove_existing_file(aserver_api, args,  # pylint: disable=too-many-arguments,inconsistent-return-statements
-                         username, package_name, version, file_attrs):
-    try:
-        aserver_api.distribution(username, package_name, version, file_attrs['basename'])
-    except errors.NotFound:
-        return False
-
-    if args.mode == 'force':
-        logger.warning('Distribution "%s" already exists. Removing.', file_attrs['basename'])
-        aserver_api.remove_dist(username, package_name, version, file_attrs['basename'])
-
-    if args.mode == 'interactive':
-        if bool_input('Distribution "%s" already exists. Would you like to replace it?' % file_attrs['basename']):
-            aserver_api.remove_dist(username, package_name, version, file_attrs['basename'])
-        else:
-            logger.info('Not replacing distribution "%s"', file_attrs['basename'])
-            return True
-
-
-def upload_package(filename, package_type,  # pylint: disable=inconsistent-return-statements,too-many-locals
-                   aserver_api, username, args):
-    logger.info('Extracting %s attributes for upload', verbose_package_type(package_type))
-
-    try:
-        package_attrs, release_attrs, file_attrs = get_attrs(package_type, filename, parser_args=args)
-    except Exception as error:
-        message = 'Trouble reading metadata from {}. Is this a valid {} package?'.format(
-            filename, verbose_package_type(package_type)
-        )
-        logger.error(message)
-
-        if args.show_traceback:
-            raise
-
-        raise errors.BinstarError(message) from error
-
-    if args.build_id:
-        file_attrs['attrs']['binstar_build'] = args.build_id
-
-    if args.summary:
-        release_attrs['summary'] = args.summary
-
-    if args.description:
-        release_attrs['description'] = args.description
-
-    package_name = get_package_name(args, package_attrs, package_type)
-    version = get_version(args, release_attrs, package_type)
-
-    logger.info('Creating package "%s"', package_name)
-
-    package = add_package(aserver_api, args, username, package_name, package_attrs, package_type)
-    package_types = [PackageType(pkg_type) for pkg_type in package.get('package_types', [])]
-
-    allowed_package_types = set(package_types)
-    for group in [{PackageType.CONDA, PackageType.STANDARD_PYTHON}]:
-        if allowed_package_types & group:
-            allowed_package_types.update(group)
-
-    if package_types and (package_type not in allowed_package_types):
-        message = 'You already have a {} named \'{}\'. Use a different name for this {}.'.format(
-            verbose_package_type(package_types[0] if package_types else ''), package_name,
-            verbose_package_type(package_type),
-        )
-        logger.error(message)
-        raise errors.BinstarError(message)
-
-    logger.info('Creating release "%s"', version)
-
-    add_release(aserver_api, args, username, package_name, version, release_attrs)
-    binstar_package_type = file_attrs.pop('binstar_package_type', package_type)
-
-    logger.info('Uploading file "%s/%s/%s/%s"', username, package_name, version, file_attrs['basename'])
-
-    if remove_existing_file(aserver_api, args, username, package_name, version, file_attrs):
-        return
-
-    try:
-        with open(filename, 'rb') as file:
-            upload_info = aserver_api.upload(username, package_name, version, file_attrs['basename'], file,
-                                             binstar_package_type, args.description,
-                                             dependencies=file_attrs.get('dependencies'), attrs=file_attrs['attrs'],
-                                             channels=args.labels)
-    except errors.Conflict:
-        upload_info = {}
-        if args.mode != 'skip':
-            # pylint: disable=implicit-str-concat
-            logger.info(
-                'Distribution already exists. Please use the -i/--interactive or --force or --skip options or '
-                '`anaconda remove %s/%s/%s/%s',
-                username,
-                package_name,
-                version,
-                file_attrs['basename'],
-            )
-            raise
-        logger.info('Distribution already exists. Skipping upload.\n')
-
-    if upload_info:
-        logger.info('Upload complete\n')
-
-    return [package_name, upload_info]
 
 
 def main(args):  # pylint: disable=too-many-branches,too-many-locals
@@ -309,44 +369,10 @@ def main(args):  # pylint: disable=too-many-branches,too-many-locals
             logger.error(message)
             raise errors.BinstarError(message) from error
 
-    uploaded_packages = []
-    uploaded_projects = []
-
     # Flatten file list because of 'windows_glob' function
     files = sorted(set(fitem for fglob in args.files for fitem in fglob))
-
-    for filename in files:
-        if not exists(filename):
-            message = 'File "{}" does not exist'.format(filename)
-            logger.error(message)
-            raise errors.BinstarError(message)
-        logger.info("Processing '%s'", filename)
-
-        package_type = determine_package_type(filename, args)
-
-        if package_type is PackageType.PROJECT:
-            uploaded_projects.append(upload_project(filename, args, username))
-        else:
-            if package_type is PackageType.NOTEBOOK and not args.mode == 'force':
-                try:
-                    with open(filename, 'rt', encoding='utf-8') as stream:
-                        nbformat.read(stream, nbformat.NO_CONVERT)
-                except Exception as error:  # pylint: disable=broad-except
-                    logger.error("Invalid notebook file '%s': %s", filename, error)
-                    logger.info('Use --force to upload the file anyways')
-                    continue
-
-            package_info = upload_package(
-                filename,
-                package_type=package_type,
-                aserver_api=aserver_api,
-                username=username,
-                args=args)
-
-            if package_info is not None and len(package_info) == 2:
-                _package, _upload_info = package_info
-                if _upload_info:
-                    uploaded_packages.append((_package, _upload_info, package_type))
+    uploader = Uploader(aserver_api, username, args)
+    uploaded_packages, uploaded_projects = uploader.upload(files)
 
     for package, upload_info, package_type in uploaded_packages:
         package_url = upload_info.get('url', 'https://anaconda.org/%s/%s' % (username, package))
@@ -400,6 +426,11 @@ def add_parser(subparsers):
     parser.add_argument(
         '-u', '--user',
         help='User account or Organization, defaults to the current user',
+    )
+    parser.add_argument(
+        '--keep-local-name',
+        dest='keep_local_name',
+        help='Do not replace local name when forming basename for server.',
     )
 
     mgroup = parser.add_argument_group('metadata options')
