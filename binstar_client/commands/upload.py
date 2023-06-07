@@ -242,10 +242,11 @@ class Uploader:
         self.add_release_if_none(package_name, version, release_attrs)
         binstar_package_type = file_attrs.pop('binstar_package_type', package_type)
 
-        if not self.args.keep_local_name:
+        if package_type == PackageType.CONDA and not self.args.keep_local_name:
             if not file_attrs['attrs'].get('subdir', None):
-                file_attrs['attrs']['subdir'] = re.match(r'([^\/]*)[\/].*', file_attrs['basename']).group(1)
-            file_attrs['basename'] = '{}/{}-{}-{}.{}'.format(file_attrs['attrs']['subdir'], package_name, version,
+                if re.match(r'([^\/]*)[\/].*', file_attrs['basename']):
+                    file_attrs['attrs']['subdir'] = re.match(r'([^\/]*)[\/].*', file_attrs['basename']).group(1)
+            file_attrs['basename'] = '{}/{}-{}-{}.{}'.format(file_attrs['attrs'].get('subdir'), package_name, version,
                                                              file_attrs['attrs'].get('build'), get_extension(filename))
 
         logger.info('Uploading file "%s/%s/%s/%s"', self.username, package_name, version, file_attrs['basename'])

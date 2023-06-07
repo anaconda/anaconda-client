@@ -42,7 +42,7 @@ def is_environment(filename):
     """Return file extension if environment"""
     logger.debug('Testing if environment file ..')
     if filename.endswith('.yml') or filename.endswith('.yaml'):
-        return path.split(filename)[1]
+        return filename.split('.')[-1]
     logger.debug('No environment file')
     return None
 
@@ -50,7 +50,7 @@ def is_environment(filename):
 def is_ipynb(filename):
     logger.debug('Testing if ipynb file ..')
     if filename.endswith('.ipynb'):
-        return path.split(filename)[1]
+        return filename.split('.')[-1]
     logger.debug('No ipynb file')
     return None
 
@@ -73,7 +73,7 @@ def is_project(filename):
 def is_conda(filename):
     logger.debug('Testing if conda package ..')
     if filename.endswith('.conda'):
-        return path.split(filename)[1]
+        return filename.split('.')[-1]
 
     if filename.endswith('.tar.bz2'):  # Could be a conda package
         try:
@@ -97,7 +97,7 @@ def is_pypi(filename):
     logger.debug('Testing if %s package ..', package_type_label)
     if filename.endswith('.whl'):
         logger.debug('This is a %s wheel package', package_type_label)
-        return path.split(filename)[1]
+        return filename.split('.')[-1]
     if filename.endswith('.tar.gz') or filename.endswith('.tgz'):  # Could be a setuptools sdist or r source package
         with tarfile.open(filename) as tar_file:
             if any(name.endswith('/PKG-INFO') for name in tar_file.getnames()):
