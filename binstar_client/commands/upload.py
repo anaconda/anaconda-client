@@ -22,6 +22,7 @@ import logging
 import os
 from glob import glob
 from os.path import exists
+import re
 
 import nbformat
 from six.moves import input
@@ -29,7 +30,7 @@ from six.moves import input
 from binstar_client import errors
 from binstar_client.utils import bool_input, DEFAULT_CONFIG, get_config, get_server_api
 from binstar_client.utils.config import PackageType
-from binstar_client.utils.detect import detect_package_type, get_attrs
+from binstar_client.utils.detect import detect_package_type, get_attrs, get_extension
 from binstar_client.utils.projects import upload_project
 
 logger = logging.getLogger('binstar.upload')
@@ -38,6 +39,7 @@ logger = logging.getLogger('binstar.upload')
 class Uploader:
     def __init__(self, aserver_api, username, args):
         self.packages = {}
+        self.releases = {}
         self.packages_to_delete = {}
         self.package_types = []
 
@@ -50,8 +52,12 @@ class Uploader:
             self.packages[(package_name, package_type)] = self.add_package(package_name, package_attrs, package_type)
         return self.packages[(package_name, package_type)]
 
-    def remove_existing_file(self, package_name,
-                             version, file_attrs):  # pylint: disable=too-many-arguments,inconsistent-return-statements
+    def add_release_if_none(self, package_name, version, release_attrs):
+        if not self.releases.get((package_name, version), None):
+            self.releases[(package_name, version)] = self.add_release(package_name, version, release_attrs)
+
+    def remove_existing_file(self, package_name,  # pylint: disable=too-many-arguments,inconsistent-return-statements
+                             version, file_attrs):
         try:
             self.aserver_api.distribution(self.username, package_name, version, file_attrs['basename'])
         except errors.NotFound:
@@ -92,7 +98,6 @@ class Uploader:
                 summary = package_attrs['summary']
 
             public = not self.args.private
-            logger.info('create')
             return self.aserver_api.add_package(
                 self.username,
                 package_name,
@@ -108,16 +113,16 @@ class Uploader:
     def add_release(self, package_name, version, release_attrs):  # pylint: disable=too-many-arguments
         try:
             # Check if the release already exists
-            self.aserver_api.release(self.username, package_name, version)
+            release = self.aserver_api.release(self.username, package_name, version)
 
             # If it exists update public attrs if needed.
             if self.args.force_metadata_update:
                 self.aserver_api.update_release(self.username, package_name, version, release_attrs)
+            return release
         except errors.NotFound:
             if self.args.mode == 'interactive':
-                self.create_release_interactive(package_name, version, release_attrs)
-            else:
-                self.create_release(package_name, version, release_attrs)
+                return self.create_release_interactive(package_name, version, release_attrs)
+            return self.create_release(package_name, version, release_attrs)
 
     def create_release_interactive(self, package_name, version, release_attrs):
         logger.info('The release "%s/%s/%s" does not exist', self.username, package_name, version)
@@ -134,10 +139,10 @@ class Uploader:
         else:
             announce = ''
 
-        self.aserver_api.add_release(self.username, package_name, version, [], announce, release_attrs)
+        return self.aserver_api.add_release(self.username, package_name, version, [], announce, release_attrs)
 
     def create_release(self, package_name, version, release_attrs, announce=None):  # pylint: disable=too-many-arguments
-        self.aserver_api.add_release(self.username, package_name, version, [], announce, release_attrs)
+        return self.aserver_api.add_release(self.username, package_name, version, [], announce, release_attrs)
 
     def get_package_name(self, package_attrs, package_type):
         if self.args.package:
@@ -146,10 +151,8 @@ class Uploader:
                 if package_type == PackageType.STANDARD_PYTHON:
                     good_names.append(good_names[0].replace('-', '_'))
                 if self.args.package.lower() not in good_names:
-                    msg = ('Package name on the command line " {}" ' +
-                           'does not match the package name in the file "{}"'.format(
-                            self.args.package.lower(), package_attrs['name'].lower()
-                            ))
+                    msg = ('Package name on the command line " {}" does not match the package name in the file "{}"'
+                           .format(self.args.package.lower(), package_attrs['name'].lower()))
                     logger.error(msg)
                     raise errors.BinstarError(msg)
             package_name = self.args.package
@@ -176,11 +179,11 @@ class Uploader:
         return version
 
     def remove_package_if_empty(self, package_name, package_type):
-        if (self.packages_to_delete[(package_name, package_type)] 
-           and not self.aserver_api.package(self.username, package_name).get('files', None)):
-            self.aserver_api.remove_package(self.username, package_name)
+        if self.packages_to_delete[(package_name, package_type)]:
+            if not self.aserver_api.package(self.username, package_name).get('files', None):
+                self.aserver_api.remove_package(self.username, package_name)
 
-    def upload_package(self, filename, package_type):  # pylint: disable=inconsistent-return-statements,too-many-locals
+    def exctract_attributes(self, package_type, filename):
         logger.info('Extracting %s attributes for upload', verbose_package_type(package_type))
 
         try:
@@ -205,17 +208,21 @@ class Uploader:
         if self.args.description:
             release_attrs['description'] = self.args.description
 
+        return (package_attrs, release_attrs, file_attrs)
+
+    def upload_package(self, filename, package_type):  # pylint: disable=inconsistent-return-statements,too-many-locals
+
+        package_attrs, release_attrs, file_attrs = self.exctract_attributes(package_type, filename)
+
         package_name = self.get_package_name(package_attrs, package_type)
         version = self.get_version(release_attrs, package_type)
 
         logger.info('Creating package "%s"', package_name)
 
         package = self.get_package(package_name, package_attrs, package_type)
-        logger.info(package)
         self.packages_to_delete[(package_name, package_type)] = True
         package_types = [PackageType(pkg_type) for pkg_type in package.get('package_types', [])]
         self.package_types += package_types
-        logger.info(package_types)
 
         allowed_package_types = set(self.package_types)
         for group in [{PackageType.CONDA, PackageType.STANDARD_PYTHON}]:
@@ -232,12 +239,14 @@ class Uploader:
 
         logger.info('Creating release "%s"', version)
 
-        self.add_release(package_name, version, release_attrs)
+        self.add_release_if_none(package_name, version, release_attrs)
         binstar_package_type = file_attrs.pop('binstar_package_type', package_type)
 
         if not self.args.keep_local_name:
-            file_attrs['basename'] = '{}-{}-{}.{}'.format(package_name, version, file_attrs['attrs'].get('build'),
-                                                          '.'.join(file_attrs.get('basename').split('.')[-2:]))
+            if not file_attrs['attrs'].get('subdir', None):
+                file_attrs['attrs']['subdir'] = re.match(r'([^\/]*)[\/].*', file_attrs['basename']).group(1)
+            file_attrs['basename'] = '{}/{}-{}-{}.{}'.format(file_attrs['attrs']['subdir'], package_name, version,
+                                                             file_attrs['attrs'].get('build'), get_extension(filename))
 
         logger.info('Uploading file "%s/%s/%s/%s"', self.username, package_name, version, file_attrs['basename'])
 
@@ -270,7 +279,7 @@ class Uploader:
 
         if upload_info:
             logger.info('Upload complete\n')
-            self.packages_to_delete[package_name] = False
+            self.packages_to_delete[(package_name, package_type)] = False
 
         return [package_name, upload_info]
 
@@ -312,6 +321,7 @@ class Uploader:
             self.remove_package_if_empty(package_name, package_type)
 
         return uploaded_packages, uploaded_projects
+
 
 def verbose_package_type(pkg_type, lowercase=True):
     verbose_type = pkg_type.label()
@@ -431,6 +441,7 @@ def add_parser(subparsers):
         '--keep-local-name',
         dest='keep_local_name',
         help='Do not replace local name when forming basename for server.',
+        action='store_true'
     )
 
     mgroup = parser.add_argument_group('metadata options')

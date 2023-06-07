@@ -569,6 +569,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
         res = self.session.post(url, data=data, headers=headers)
         self._check_response(res)
         obj = res.json()
+        basename = obj['basename']
 
         s3url = obj['post_url']
         s3data = obj['form_data']

@@ -39,19 +39,20 @@ inspectors = {
 
 
 def is_environment(filename):
+    """Return file extension if environment"""
     logger.debug('Testing if environment file ..')
     if filename.endswith('.yml') or filename.endswith('.yaml'):
-        return True
+        return path.split(filename)[1]
     logger.debug('No environment file')
-    return False
+    return None
 
 
 def is_ipynb(filename):
     logger.debug('Testing if ipynb file ..')
     if filename.endswith('.ipynb'):
-        return True
+        return path.split(filename)[1]
     logger.debug('No ipynb file')
-    return False
+    return None
 
 
 def is_project(filename):
@@ -72,7 +73,7 @@ def is_project(filename):
 def is_conda(filename):
     logger.debug('Testing if conda package ..')
     if filename.endswith('.conda'):
-        return True
+        return path.split(filename)[1]
 
     if filename.endswith('.tar.bz2'):  # Could be a conda package
         try:
@@ -84,11 +85,11 @@ def is_conda(filename):
                     raise KeyError
         except KeyError:
             logger.debug("Not conda package no 'info/index.json' file in the tarball")
-            return False
+            return None
         logger.debug('This is a conda package')
-        return True
+        return '.'.join(filename.split('.')[-2:])
     logger.debug('Not conda package (file ext is not .tar.bz2 or .conda)')
-    return False
+    return None
 
 
 def is_pypi(filename):
@@ -96,17 +97,14 @@ def is_pypi(filename):
     logger.debug('Testing if %s package ..', package_type_label)
     if filename.endswith('.whl'):
         logger.debug('This is a %s wheel package', package_type_label)
-        return True
+        return path.split(filename)[1]
     if filename.endswith('.tar.gz') or filename.endswith('.tgz'):  # Could be a setuptools sdist or r source package
         with tarfile.open(filename) as tar_file:
             if any(name.endswith('/PKG-INFO') for name in tar_file.getnames()):
-                return True
-
+                return '.'.join(filename.split('.')[-2:])
             logger.debug("This is not a %s package (no '/PKG-INFO' in tarball)", package_type_label)
-            return False
-
     logger.debug('This is not a %s package (expected .tgz, .tar.gz or .whl)', package_type_label)
-    return False
+    return None
 
 
 def is_r(filename):
@@ -118,11 +116,16 @@ def is_r(filename):
                     any(name.endswith('/DESCRIPTION') for name in tar_file.getnames()) and
                     any(name.endswith('/NAMESPACE') for name in tar_file.getnames())
             ):
-                return True
+                return '.'.join(filename.split('.')[-2:])
             logger.debug("This not is an R package (no '*/DESCRIPTION' and '*/NAMESPACE' files).")
+            return None
     else:
         logger.debug('This not is an R package (expected .tgz, .tar.gz).')
-    return False
+        return None
+
+
+def get_extension(filename):
+    return is_conda(filename) or is_ipynb(filename) or is_pypi(filename) or is_r(filename) or is_environment(filename)
 
 
 def detect_package_type(filename):  # pylint: disable=too-many-return-statements
