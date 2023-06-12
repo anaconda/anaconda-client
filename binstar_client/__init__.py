@@ -352,14 +352,13 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
         :param public: if true then the package will be hosted publicly
         :param attrs: A dictionary of extra attributes for this package
         """
-        if package_type is not None:
-            package_type = package_type.value
+        package_types = [] if package_type is None else [package_type.value]
 
         url = '%s/package/%s/%s' % (self.domain, login, package_name)
 
         attrs = attrs or {}
         attrs['summary'] = summary
-        attrs['package_types'] = [package_type]
+        attrs['package_types'] = package_types
         attrs['license'] = {
             'name': license,
             'url': license_url,
