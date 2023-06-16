@@ -158,7 +158,7 @@ def _load_main_plugin():
 
     # The API was changed in Python 3.10, see https://docs.python.org/3/library/importlib.metadata.html#entry-points
     if sys.version_info.major == 3 and sys.version_info.minor <= 9:
-        plugin_mains = entry_points()[plugin_group_name]
+        plugin_mains = entry_points().get(plugin_group_name, [])
     else:
         plugin_mains = entry_points().select(group=plugin_group_name)
 
