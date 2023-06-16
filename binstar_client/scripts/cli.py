@@ -9,6 +9,7 @@ from __future__ import print_function, unicode_literals
 import logging
 import sys
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
+from importlib.metadata import entry_points
 from logging.handlers import RotatingFileHandler
 from os import makedirs
 from os.path import join, exists, isfile
@@ -152,13 +153,11 @@ def binstar_main(sub_command_module, args=None, exit=True,  # pylint: disable=re
 
 def _load_main_plugin():
     """Allow loading a new CLI main entrypoint via plugin mechanisms. There can only be one."""
-    from importlib.metadata import entry_points
-    from sys import version_info
 
     plugin_group_name = 'anaconda_cli.main'
 
     # The API was changed in Python 3.10, see https://docs.python.org/3/library/importlib.metadata.html#entry-points
-    if version_info.major == 3 and version_info.minor <= 9:
+    if sys.version_info.major == 3 and sys.version_info.minor <= 9:
         plugin_mains = entry_points()[plugin_group_name]
     else:
         plugin_mains = entry_points().select(group=plugin_group_name)
