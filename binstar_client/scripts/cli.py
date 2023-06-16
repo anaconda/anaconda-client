@@ -149,10 +149,31 @@ def binstar_main(sub_command_module, args=None, exit=True,  # pylint: disable=re
             raise SystemExit(1) from error
         return 1
 
+def _load_main_plugin():
+    """Allow loading a new CLI main entrypoint via plugin mechanisms. There can only be one."""
+    from importlib.metadata import entry_points
+    from sys import version_info
 
-def main(args=None, _exit=True):
-    binstar_main(command_module, args, _exit,
-                 description=__doc__, version=version)
+    plugin_group_name = "anaconda_cli.main"
+
+    # The API was changed in Python 3.10, see https://docs.python.org/3/library/importlib.metadata.html#entry-points
+    if version_info.major == 3 and version_info.minor <= 9:
+        plugin_mains = entry_points()[plugin_group_name]
+    else:
+        plugin_mains = entry_points().select(group=plugin_group_name)  # type: ignore
+
+    if plugin_mains:
+        return plugin_mains[0].load()
+    return None
+
+
+def main(args=None, _exit=True, allow_plugin_main=True):
+    plugged_in_main = _load_main_plugin()
+    if allow_plugin_main and plugged_in_main is not None:
+        plugged_in_main()
+    else:
+        binstar_main(command_module, args, _exit,
+                     description=__doc__, version=version)
 
 
 if __name__ == '__main__':
