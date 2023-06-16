@@ -162,6 +162,13 @@ def _load_main_plugin():
     else:
         plugin_mains = entry_points().select(group=plugin_group_name)
 
+    if len(plugin_mains) > 1:
+        raise EnvironmentError(
+            'More than one `anaconda_cli.main` plugin is installed. Please ensure only one '
+            'of the following packages are installed:\n\n' +
+            '\n'.join(f'  * {ep.value}' for ep in plugin_mains)
+        )
+
     if plugin_mains:
         return plugin_mains[0].load()
     return None
