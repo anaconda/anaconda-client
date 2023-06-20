@@ -156,7 +156,7 @@ def inspect_conda_package(filename, *args, **kwargs):  # pylint: disable=unused-
     info_dir = os.path.join(tmpdir, 'info')
     package_data, release_data, file_data = inspect_conda_info_dir(info_dir, os.path.basename(filename))
 
-    rmtree(tmpdir)
+    rmtree(tmpdir, ignore_errors=True)
 
     return package_data, release_data, file_data
 
