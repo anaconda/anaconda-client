@@ -170,6 +170,10 @@ def _load_main_plugin():
         )
 
     if plugin_mains:
+        # The `.load()` function must be a callable, which is defined inside the package implementing the plugin
+        # e.g. in pyproject.toml, where my_plugin_library.cli.main is the callable entrypoint function
+        # [project.entry-points."anaconda_cli.main"]
+        # anaconda = "my_plugin_library.cli:main"
         return plugin_mains[0].load()
     return None
 
