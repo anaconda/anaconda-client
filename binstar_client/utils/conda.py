@@ -4,10 +4,11 @@ import json
 import subprocess  # nosec
 import sys
 import os
-from os.path import basename, dirname, join, exists
+from os.path import basename, dirname
 
 
 ENV_PREFIX = sys.prefix
+
 
 # this function is broken out for monkeypatch by unit tests,
 # so we can test the ImportError handling
@@ -17,7 +18,7 @@ def _import_conda_root():
 
 
 def _conda_root_from_conda_info():
-    command = os.environ.get("CONDA_EXE", "conda")
+    command = os.environ.get('CONDA_EXE', 'conda')
     if not command:
         return None
     try:
