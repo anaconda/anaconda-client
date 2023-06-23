@@ -1,13 +1,12 @@
 {% set data = load_setup_py_data() %}
 package:
   name: anaconda-client
-  version: 1.12.0
+  version: {{ data.get('version') }}
 
 source:
   git_url: ../
 
 build:
-  noarch: python
   entry_points:
     - anaconda = binstar_client.scripts.cli:main
     - binstar = binstar_client.scripts.cli:main
