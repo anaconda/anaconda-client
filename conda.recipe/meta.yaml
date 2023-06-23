@@ -1,12 +1,13 @@
 {% set data = load_setup_py_data() %}
 package:
   name: anaconda-client
-  version: {{ data.get('version') }}
+  version: 1.12.0
 
 source:
   git_url: ../
 
 build:
+  noarch: python
   entry_points:
     - anaconda = binstar_client.scripts.cli:main
     - binstar = binstar_client.scripts.cli:main
@@ -18,14 +19,19 @@ requirements:
     - setuptools
   run:
     - python
-    - setuptools
-    - pytz
-    - six
+    - setuptools >=58.0.4
+    - pytz >=2021.3
+    - six >=1.15.0
     - nbformat >=4.4.0
     - clyent >=1.2.0
-    - requests >=2.9.1
-    - PyYAML >=3.12
+    - requests >=2.20.0
+    - requests-toolbelt >=0.9.1
+    - pyyaml >=3.12
     - python-dateutil >=2.6.1
+    - conda-package-handling >=1.7.3
+    - defusedxml >=0.7.1
+    - tqdm >=4.56.0
+    - urllib3 >=1.26.4
 
 about:
   home: {{ data.get('url') }}
