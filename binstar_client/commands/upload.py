@@ -1,8 +1,8 @@
-# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring,line-too-long,
+# -*- coding: utf8 -*-
 
 """
 
-    anaconda upload CONDA_PACKAGE_1.bz2
+    anaconda upload CONDA_PACKAGE_1.tar.bz2
     anaconda upload notebook.ipynb
     anaconda upload environment.yml
 
@@ -15,393 +15,660 @@
 
 """
 
-from __future__ import unicode_literals
+from __future__ import annotations
+
+__all__ = ['add_parser']
 
 import argparse
+import glob
+import itertools
 import logging
 import os
-from glob import glob
-from os.path import exists
-import re
+import typing
 
 import nbformat
-from six.moves import input
 
+import binstar_client
 from binstar_client import errors
 from binstar_client.utils import bool_input, DEFAULT_CONFIG, get_config, get_server_api
 from binstar_client.utils.config import PackageType
-from binstar_client.utils.detect import detect_package_type, get_attrs, get_extension
-from binstar_client.utils.projects import upload_project
+from binstar_client.utils import detect
+from binstar_client.utils import projects
+
+if typing.TYPE_CHECKING:
+    import typing_extensions
+
+
+KeyT = typing.TypeVar('KeyT')
+CacheRecordT = typing.TypeVar('CacheRecordT', bound='CacheRecord')
+
+PackageKey: typing_extensions.TypeAlias = str
+ReleaseKey: typing_extensions.TypeAlias = typing.Tuple[str, str]
+
 
 logger = logging.getLogger('binstar.upload')
 
 
-class Uploader:
-    def __init__(self, aserver_api, username, args):
-        self.packages = {}
-        self.releases = {}
-        self.packages_to_delete = {}
-        self.package_types = []
+def main(arguments: argparse.Namespace) -> None:
+    """Entrypoint of the :code:`upload` command."""
+    uploader: Uploader = Uploader(arguments=arguments)
+    uploader.api.check_server()
+    _ = uploader.username
 
-        self.aserver_api = aserver_api
-        self.username = username
-        self.args = args
+    try:
+        filename: str
+        for filename in sorted(set(itertools.chain.from_iterable(arguments.files))):
+            uploader.upload(filename)
 
-    def get_package(self, package_name, package_attrs, package_type):
-        if not self.packages.get((package_name, package_type), None):
-            self.packages[(package_name, package_type)] = self.add_package(package_name, package_attrs, package_type)
-        return self.packages[(package_name, package_type)]
+        uploader.print_uploads()
+    finally:
+        uploader.cleanup()
 
-    def add_release_if_none(self, package_name, version, release_attrs):
-        if not self.releases.get((package_name, version), None):
-            self.releases[(package_name, version)] = self.add_release(package_name, version, release_attrs)
 
-    def remove_existing_file(self, package_name,  # pylint: disable=too-many-arguments,inconsistent-return-statements
-                             version, file_attrs):
+class UploadedPackage(typing.TypedDict):
+    """General details on a package successfully uploaded to a server."""
+
+    package_type: PackageType
+    username: str
+    name: str
+    version: str
+    basename: str
+    url: str
+
+
+class CacheRecord:  # pylint: disable=too-few-public-methods
+    """Common interface for cached server records."""
+
+    __slots__ = ('empty',)
+
+    def __init__(self, empty: bool = True) -> None:
+        """Initialize new :class:`~CacheRecord` instance."""
+        self.empty: bool = empty
+
+    @staticmethod
+    def cleanup(
+            storage: typing.Dict[KeyT, CacheRecordT],
+            action: typing.Optional[typing.Callable[[KeyT, CacheRecordT], typing.Any]] = None,
+    ) -> int:
+        """
+        Remove all empty records from :code:`storage`.
+
+        Optional :code:`action` function might be called for each instance being removed.
+        """
+        to_remove: typing.List[KeyT] = []
+
+        key: KeyT
+        record: CacheRecordT
+        for key, record in storage.items():
+            if record.empty:
+                to_remove.append(key)
+                if action is not None:
+                    action(key, record)
+
+        for key in to_remove:
+            storage.pop(key)
+
+        return len(to_remove)
+
+
+class PackageCacheRecord(CacheRecord):
+    """Cached details on a package stored on a server."""
+
+    __slots__ = ('name', 'package_types')
+
+    def __init__(self, name: str, empty: bool = True, package_types: typing.Iterable[PackageType] = ()) -> None:
+        """Initialize new :class:`~PackageCacheRecord` instance."""
+        super().__init__(empty=empty)
+        self.name: typing.Final[str] = name
+        self.package_types: typing.List[PackageType] = list(package_types)
+
+    def update(self, package_type: PackageType) -> None:
+        """Update record after a file is uploaded to this package."""
+        self.empty = False
+        if package_type not in self.package_types:
+            self.package_types.append(package_type)
+
+
+class ReleaseCacheRecord(CacheRecord):
+    """Cached details on a release stored on a server."""
+
+    __slots__ = ('name', 'version')
+
+    def __init__(self, name: str, version: str, empty: bool = True) -> None:
+        """Initialize new :class:`~ReleaseCacheRecord` instance."""
+        super().__init__(empty=empty)
+        self.name: typing.Final[str] = name
+        self.version: typing.Final[str] = version
+
+    def update(self) -> None:
+        """Update record after a file is uploaded to this release."""
+        self.empty = False
+
+
+class PackageMeta:
+    """Collected details on a package file being currently uploaded."""
+
+    __slots__ = (
+        'filename', 'meta',
+        '__file_attrs', '__name', '__package_attrs', '__release_attrs', '__version',
+    )
+
+    def __init__(self, filename: str, meta: detect.Meta) -> None:
+        """Initialize new :class:`~PackageMeta` instance."""
+        self.filename: typing.Final[str] = filename
+        self.meta: typing.Final[detect.Meta] = meta
+
+        self.__file_attrs: typing.Optional[detect.FileAttributes] = None
+        self.__name: typing.Optional[str] = None
+        self.__package_attrs: typing.Optional[detect.PackageAttributes] = None
+        self.__release_attrs: typing.Optional[detect.ReleaseAttributes] = None
+        self.__version: typing.Optional[str] = None
+
+    @property
+    def extension(self) -> str:  # noqa: D401
+        """File extension of the package file."""
+        return self.meta.extension
+
+    @property
+    def file_attrs(self) -> detect.FileAttributes:  # noqa: D401
+        """Attributes of a file being uploaded."""
+        if self.__file_attrs is None:
+            self._update_attrs()
+        return typing.cast(detect.FileAttributes, self.__file_attrs)
+
+    @property
+    def name(self) -> str:  # noqa: D401
+        """Name of a package for which file is being uploaded."""
+        if self.__name is None:
+            self._update_name()
+        return typing.cast(str, self.__name)
+
+    @name.setter
+    def name(self, value: str) -> None:
+        """Update value of a :attr:`~PackageMeta.name`."""
+        self._update_name(value)
+
+    @property
+    def package_attrs(self) -> detect.PackageAttributes:  # noqa: D401
+        """Attributes of a package for which file is being uploaded."""
+        if self.__package_attrs is None:
+            self._update_attrs()
+        return typing.cast(detect.PackageAttributes, self.__package_attrs)
+
+    @property
+    def package_key(self) -> PackageKey:  # noqa: D401
+        """Key for accessing related cached package record."""
+        return self.name
+
+    @property
+    def package_type(self) -> PackageType:  # noqa: D401
+        """Type of a package being uploaded."""
+        return self.meta.package_type
+
+    @property
+    def release_attrs(self) -> detect.ReleaseAttributes:  # noqa: D401
+        """Attributes of a release for which file is being uploaded."""
+        if self.__release_attrs is None:
+            self._update_attrs()
+        return typing.cast(detect.ReleaseAttributes, self.__release_attrs)
+
+    @property
+    def release_key(self) -> ReleaseKey:  # noqa: D401
+        """Key for accessing related cached release record."""
+        return self.name, self.version
+
+    @property
+    def version(self) -> str:  # noqa: D401
+        """Version of a package being uploaded."""
+        if self.__version is None:
+            self._update_version()
+        return typing.cast(str, self.__version)
+
+    @version.setter
+    def version(self, value: str) -> None:
+        """Update value of a :attr:`~PackageMeta.version`."""
+        self._update_version(value)
+
+    def rebuild_basename(self) -> str:
+        """
+        Rebuild package basename from its attributes.
+
+        Usually basename contains actual filename being uploaded, which may not include expected metadata in the
+        expected format. This function allows to enforce the standard without requiring user to rename the file.
+
+        :return: New basename.
+        """
+        subdir: typing.Optional[str] = self.file_attrs.setdefault('attrs', {}).get('subdir', None)
+        if not subdir:
+            try:
+                subdir, _ = self.file_attrs.get('basename', '').split('/', 1)
+            except ValueError:
+                subdir = 'noarch'
+            self.file_attrs['attrs']['subdir'] = subdir
+
+        build: str = self.file_attrs['attrs'].setdefault('build', '0')
+
+        self.file_attrs['basename'] = f'{subdir}/{self.name}-{self.version}-{build}{self.extension}'
+        return self.file_attrs['basename']
+
+    def _update_attrs(self, *args: typing.Any, **kwargs: typing.Any) -> None:
+        """Update content of all attribute fields."""
+        logger.info('Extracting %s attributes for upload', self.package_type.label.lower())
         try:
-            self.aserver_api.distribution(self.username, package_name, version, file_attrs['basename'])
-        except errors.NotFound:
-            return False
-
-        if self.args.mode == 'force':
-            logger.warning('Distribution "%s" already exists. Removing.', file_attrs['basename'])
-            self.aserver_api.remove_dist(self.username, package_name, version, file_attrs['basename'])
-
-        if self.args.mode == 'interactive':
-            if bool_input('Distribution "%s" already exists. Would you like to replace it?' % file_attrs['basename']):
-                self.aserver_api.remove_dist(self.username, package_name, version, file_attrs['basename'])
-            else:
-                logger.info('Not replacing distribution "%s"', file_attrs['basename'])
-                return True
-
-    def add_package(self, package_name, package_attrs, package_type):  # pylint: disable=too-many-arguments
-        try:
-            return self.aserver_api.package(self.username, package_name)
-        except errors.NotFound as not_found_error:
-            if not self.args.auto_register:
-                message = (
-                        'Anaconda repository package %s/%s does not exist. '
-                        'Please run "anaconda package --create" to create this package namespace in the cloud.' %
-                        (self.username, package_name)
-                )
-                logger.error(message)
-                raise errors.UserError(message) from not_found_error
-
-            if self.args.summary:
-                summary = self.args.summary
-            else:
-                if 'summary' not in package_attrs:
-                    message = 'Could not detect package summary for ' \
-                            'package type %s, please use the --summary option' % (package_type,)
-                    logger.error(message)
-                    raise errors.BinstarError(message) from not_found_error
-                summary = package_attrs['summary']
-
-            public = not self.args.private
-            return self.aserver_api.add_package(
-                self.username,
-                package_name,
-                summary,
-                package_attrs.get('license'),
-                public=public,
-                attrs=package_attrs,
-                license_url=package_attrs.get('license_url'),
-                license_family=package_attrs.get('license_family'),
-                package_type=package_type,
+            self.__package_attrs, self.__release_attrs, self.__file_attrs = detect.get_attrs(
+                self.package_type, self.filename, *args, **kwargs,
             )
-
-    def add_release(self, package_name, version, release_attrs):  # pylint: disable=too-many-arguments
-        try:
-            # Check if the release already exists
-            release = self.aserver_api.release(self.username, package_name, version)
-
-            # If it exists update public attrs if needed.
-            if self.args.force_metadata_update:
-                self.aserver_api.update_release(self.username, package_name, version, release_attrs)
-            return release
-        except errors.NotFound:
-            if self.args.mode == 'interactive':
-                return self.create_release_interactive(package_name, version, release_attrs)
-            return self.create_release(package_name, version, release_attrs)
-
-    def create_release_interactive(self, package_name, version, release_attrs):
-        logger.info('The release "%s/%s/%s" does not exist', self.username, package_name, version)
-
-        if not bool_input('Would you like to create it now?'):
-            logger.info('good-bye')
-            raise SystemExit(-1)
-
-        logger.info('Announcements are emailed to your package followers.')
-        make_announcement = bool_input('Would you like to make an announcement to the package followers?', False)
-
-        if make_announcement:
-            announce = input('Markdown Announcement:\n')
-        else:
-            announce = ''
-
-        return self.aserver_api.add_release(self.username, package_name, version, [], announce, release_attrs)
-
-    def create_release(self, package_name, version, release_attrs, announce=None):  # pylint: disable=too-many-arguments
-        return self.aserver_api.add_release(self.username, package_name, version, [], announce, release_attrs)
-
-    def get_package_name(self, package_attrs, package_type):
-        if self.args.package:
-            if 'name' in package_attrs:
-                good_names = [package_attrs['name'].lower()]
-                if package_type == PackageType.STANDARD_PYTHON:
-                    good_names.append(good_names[0].replace('-', '_'))
-                if self.args.package.lower() not in good_names:
-                    msg = ('Package name on the command line " {}" does not match the package name in the file "{}"'
-                           .format(self.args.package.lower(), package_attrs['name'].lower()))
-                    logger.error(msg)
-                    raise errors.BinstarError(msg)
-            package_name = self.args.package
-        else:
-            if 'name' not in package_attrs:
-                message = 'Could not detect package name for package type {}, please use the --package option'.format(
-                    package_type.label())
-                logger.error(message)
-                raise errors.BinstarError(message)
-            package_name = package_attrs['name']
-
-        return package_name
-
-    def get_version(self, release_attrs, package_type):
-        if self.args.version:
-            version = self.args.version
-        else:
-            if 'version' not in release_attrs:
-                message = 'Could not detect package version for package type \"{}\", ' \
-                        'please use the --version option'.format(package_type.label())
-                logger.error(message)
-                raise errors.BinstarError(message)
-            version = release_attrs['version']
-        return version
-
-    def remove_package_if_empty(self, package_name, package_type):
-        if self.packages_to_delete[(package_name, package_type)]:
-            if not self.aserver_api.package(self.username, package_name).get('files', None):
-                self.aserver_api.remove_package(self.username, package_name)
-
-    def exctract_attributes(self, package_type, filename):
-        logger.info('Extracting %s attributes for upload', verbose_package_type(package_type))
-
-        try:
-            package_attrs, release_attrs, file_attrs = get_attrs(package_type, filename, parser_args=self.args)
         except Exception as error:
-            message = 'Trouble reading metadata from {}. Is this a valid {} package?'.format(
-                filename, verbose_package_type(package_type)
+            message: str = (
+                f'Trouble reading metadata from "{self.filename}". '
+                f'Is this a valid {self.package_type.label.lower()} package?'
             )
             logger.error(message)
-
-            if self.args.show_traceback:
-                raise
-
             raise errors.BinstarError(message) from error
 
-        if self.args.build_id:
-            file_attrs['attrs']['binstar_build'] = self.args.build_id
+    def _update_name(self, value: typing.Optional[str] = None) -> None:
+        """Update value of a :attr:`~PackageMeta.name`."""
+        name: str = self.package_attrs.get('name', '')
 
-        if self.args.summary:
-            release_attrs['summary'] = self.args.summary
+        if value:
+            if name:
+                good_names: typing.List[str] = [name := name.lower()]
+                if self.package_type is PackageType.STANDARD_PYTHON:
+                    good_names.append(name.replace('-', '_'))
+                if value.lower() not in good_names:
+                    message: str = (
+                        f'Package name on the command line "{value.lower()}" '
+                        f'does not match the package name in the file "{self.package_attrs["name"].lower()}"'
+                    )
+                    logger.error(message)
+                    raise errors.BinstarError(message)
+            name = value
 
-        if self.args.description:
-            release_attrs['description'] = self.args.description
-
-        return (package_attrs, release_attrs, file_attrs)
-
-    def upload_package(self, filename, package_type):  # pylint: disable=inconsistent-return-statements,too-many-locals
-
-        package_attrs, release_attrs, file_attrs = self.exctract_attributes(package_type, filename)
-
-        package_name = self.get_package_name(package_attrs, package_type)
-        version = self.get_version(release_attrs, package_type)
-
-        logger.info('Creating package "%s"', package_name)
-
-        package = self.get_package(package_name, package_attrs, package_type)
-        self.packages_to_delete[(package_name, package_type)] = True
-        package_types = [PackageType(pkg_type) for pkg_type in package.get('package_types', [])]
-        self.package_types += package_types
-
-        allowed_package_types = set(self.package_types)
-        for group in [{PackageType.CONDA, PackageType.STANDARD_PYTHON}]:
-            if allowed_package_types & group:
-                allowed_package_types.update(group)
-
-        if package_types and (package_type not in allowed_package_types):
-            message = 'You already have a {} named \'{}\'. Use a different name for this {}.'.format(
-                verbose_package_type(package_types[0] if package_types else ''), package_name,
-                verbose_package_type(package_type),
+        elif not name:
+            message = (
+                f'Could not detect package name for package type {self.package_type.label.lower()}, '
+                f'please use the --package option'
             )
             logger.error(message)
             raise errors.BinstarError(message)
 
-        logger.info('Creating release "%s"', version)
+        self.__name = name
 
-        self.add_release_if_none(package_name, version, release_attrs)
-        binstar_package_type = file_attrs.pop('binstar_package_type', package_type)
-
-        if package_type == PackageType.CONDA and not self.args.keep_local_name:
-            if not file_attrs['attrs'].get('subdir', None):
-                if re.match(r'([^\/]*)[\/].*', file_attrs['basename']):
-                    file_attrs['attrs']['subdir'] = re.match(r'([^\/]*)[\/].*', file_attrs['basename']).group(1)
-            file_attrs['basename'] = '{}/{}-{}-{}.{}'.format(file_attrs['attrs'].get('subdir'), package_name, version,
-                                                             file_attrs['attrs'].get('build'), get_extension(filename))
-
-        logger.info('Uploading file "%s/%s/%s/%s"', self.username, package_name, version, file_attrs['basename'])
-
-        if self.remove_existing_file(package_name, version, file_attrs):
-            return
-
-        try:
-            with open(filename, 'rb') as file:
-                upload_info = self.aserver_api.upload(self.username, package_name, version, file_attrs['basename'],
-                                                      file, binstar_package_type, self.args.description,
-                                                      dependencies=file_attrs.get('dependencies'),
-                                                      attrs=file_attrs['attrs'], channels=self.args.labels)
-        except errors.Conflict:
-            upload_info = {}
-            if self.args.mode != 'skip':
-                # pylint: disable=implicit-str-concat
-                logger.info(
-                    'Distribution already exists. Please use the -i/--interactive or --force or --skip options or '
-                    '`anaconda remove %s/%s/%s/%s',
-                    self.username,
-                    package_name,
-                    version,
-                    file_attrs['basename'],
+    def _update_version(self, value: typing.Optional[str] = None) -> None:
+        """Update value of a :attr:`~PackageMeta.version`."""
+        if not value:
+            value = self.release_attrs.get('version', None)
+            if not value:
+                message: str = (
+                    f'Could not detect package version for package type "{self.package_type.label.lower()}", '
+                    f'please use the --version option'
                 )
-                raise
-            logger.info('Distribution already exists. Skipping upload.\n')
-        except Exception:
-            self.remove_package_if_empty(package_name, package_type)
-            raise
-
-        if upload_info:
-            logger.info('Upload complete\n')
-            self.packages_to_delete[(package_name, package_type)] = False
-
-        return [package_name, upload_info]
-
-    def upload(self, files):
-        uploaded_packages = []
-        uploaded_projects = []
-
-        for filename in files:
-            if not exists(filename):
-                message = 'File "{}" does not exist'.format(filename)
                 logger.error(message)
                 raise errors.BinstarError(message)
-            logger.info("Processing '%s'", filename)
 
-            package_type = determine_package_type(filename, self.args)
+        self.__version = value
 
-            if package_type is PackageType.PROJECT:
-                uploaded_projects.append(upload_project(filename, self.args, self.username))
+
+class Uploader:  # pylint: disable=too-many-instance-attributes
+    """Manager for package and project uploads."""
+
+    __slots__ = (
+        'arguments', 'uploaded_packages', 'uploaded_projects',
+        '__api', '__config', '__username',
+        '__package_cache', '__release_cache',
+    )
+
+    def __init__(self, arguments: argparse.Namespace) -> None:
+        """Initialize new :class:`~Uploader` instance."""
+        self.arguments: typing.Final[argparse.Namespace] = arguments
+        self.uploaded_packages: typing.Final[typing.List[UploadedPackage]] = []
+        self.uploaded_projects: typing.Final[typing.List[projects.UploadedProject]] = []
+
+        self.__api: typing.Optional[binstar_client.Binstar] = None
+        self.__config: typing.Optional[typing.Mapping[str, typing.Any]] = None
+        self.__username: typing.Optional[str] = None
+
+        self.__package_cache: typing.Final[typing.Dict[PackageKey, PackageCacheRecord]] = {}
+        self.__release_cache: typing.Final[typing.Dict[ReleaseKey, ReleaseCacheRecord]] = {}
+
+    @property
+    def api(self) -> binstar_client.Binstar:  # noqa: D401
+        """Client used to access anaconda.org API."""
+        if self.__api is None:
+            self.__api = get_server_api(token=self.arguments.token, site=self.arguments.site, config=self.config)
+        return self.__api
+
+    @property
+    def config(self) -> typing.Mapping[str, typing.Any]:  # noqa: D401
+        """Configuration of the :code:`anaconda-client`."""
+        if self.__config is None:
+            self.__config = get_config(site=self.arguments.site)
+        return self.__config
+
+    @property
+    def username(self) -> str:  # noqa: D401
+        """Name of the user or organization to upload packages and projects to."""
+        if self.__username is None:
+            details: str = ''
+            username: str = self.arguments.user or ''
+            if (not username) and (username := self.config.get('upload_user', '')):
+                details = ' (from "upload_user" preference)'
+            if username:
+                try:
+                    self.api.user(username)
+                except errors.NotFound as error:
+                    message: str = f'User "{username}" does not exist{details}'
+                    logger.error(message)
+                    raise errors.BinstarError(message) from error
             else:
-                if package_type is PackageType.NOTEBOOK and not self.args.mode == 'force':
-                    try:
-                        with open(filename, 'rt', encoding='utf-8') as stream:
-                            nbformat.read(stream, nbformat.NO_CONVERT)
-                    except Exception as error:  # pylint: disable=broad-except
-                        logger.error("Invalid notebook file '%s': %s", filename, error)
-                        logger.info('Use --force to upload the file anyways')
+                username = self.api.user()['login']
+            logger.info('Using "%s" as upload username%s', username, details)
+            self.__username = username
+        return self.__username
+
+    def cleanup(self) -> None:
+        """
+        Remove empty releases and packages.
+
+        Package or release considered to be empty if it was created to upload files to, but all file uploads failed.
+        """
+        def remove_empty_release(_key: ReleaseKey, record: ReleaseCacheRecord) -> None:
+            logger.info('Removing empty "%s/%s" release after failed upload', record.name, record.version)
+            self.api.remove_release(self.username, record.name, record.version)
+
+        def remove_empty_package(_key: PackageKey, record: PackageCacheRecord) -> None:
+            logger.info('Removing empty "%s" package after failed upload', record.name)
+            self.api.remove_package(self.username, record.name)
+
+        CacheRecord.cleanup(self.__release_cache, remove_empty_release)
+        CacheRecord.cleanup(self.__package_cache, remove_empty_package)
+
+    def get_package(self, meta: PackageMeta, *, force: bool = False) -> PackageCacheRecord:
+        """
+        Retrieve details on a package from the server.
+
+        If not forced - may return cached record.
+        """
+        key: typing.Final[PackageKey] = meta.package_key
+        cache_record: typing.Optional[PackageCacheRecord]
+        if (not force) and (cache_record := self.__package_cache.get(key, None)):
+            return cache_record
+
+        try:
+            instance: typing.Mapping[str, typing.Any] = self.api.package(self.username, meta.name)
+            cache_record = PackageCacheRecord(
+                name=meta.name,
+                empty=False,
+                package_types=list(map(PackageType, instance.get('package_types', ())))
+            )
+        except errors.NotFound as error:
+            if not self.arguments.auto_register:
+                message: str = (
+                    f'Anaconda repository package {self.username}/{meta.name} does not exist. '
+                    f'Please run "anaconda package --create" to create this package namespace in the cloud.'
+                )
+                logger.error(message)
+                raise errors.UserError(message) from error
+
+            summary: typing.Optional[str] = self.arguments.summary
+            if (summary is None) and ((summary := meta.package_attrs.get('summary', None)) is None):
+                message = (
+                    f'Could not detect package summary for package type {meta.package_type.label.lower()}, '
+                    f'please use the --summary option'
+                )
+                logger.error(message)
+                raise errors.BinstarError(message) from error
+
+            self.api.add_package(
+                self.username,
+                meta.name,
+                summary,
+                meta.package_attrs.get('license'),
+                public=not self.arguments.private,
+                attrs=meta.package_attrs,
+                license_url=meta.package_attrs.get('license_url'),
+                license_family=meta.package_attrs.get('license_family'),
+                package_type=meta.package_type,
+            )
+            cache_record = PackageCacheRecord(name=meta.name, empty=True, package_types=[])
+
+        self.__package_cache[key] = cache_record
+        return cache_record
+
+    def get_release(self, meta: PackageMeta, *, force: bool = False) -> ReleaseCacheRecord:
+        """
+        Retrieve details on a release from the server.
+
+        If not forced - may return cached record.
+        """
+        key: typing.Final[ReleaseKey] = meta.release_key
+        cache_record: typing.Optional[ReleaseCacheRecord]
+        if (not force) and (cache_record := self.__release_cache.get(key, None)):
+            return cache_record
+
+        try:
+            self.api.release(self.username, meta.name, meta.version)
+            if self.arguments.force_metadata_update:
+                self.api.update_release(self.username, meta.name, meta.version, meta.release_attrs)
+            cache_record = ReleaseCacheRecord(name=meta.name, version=meta.version, empty=False)
+        except errors.NotFound:
+            announce: typing.Optional[str] = None
+            if self.arguments.mode == 'interactive':
+                logger.info('The release "%s/%s/%s" does not exist', self.username, meta.name, meta.version)
+                if not bool_input('Would you like to create it now?'):
+                    logger.info('good-bye')
+                    raise SystemExit(-1) from None
+
+                logger.info('Announcements are emailed to your package followers.')
+                if bool_input('Would you like to make an announcement to the package followers?', False):
+                    announce = input('Markdown Announcement:\n')
+
+            self.api.add_release(self.username, meta.name, meta.version, [], announce, meta.release_attrs)
+            cache_record = ReleaseCacheRecord(name=meta.name, version=meta.version, empty=True)
+
+        self.__release_cache[key] = cache_record
+        return cache_record
+
+    def print_uploads(self) -> None:
+        """Print details on all successful package and project uploads."""
+        package_info: UploadedPackage
+        for package_info in self.uploaded_packages:
+            logger.info('%s located at:\n  %s\n', package_info['package_type'].label.lower(), package_info['url'])
+
+        project_info: projects.UploadedProject
+        for project_info in self.uploaded_projects:
+            logger.info('Project %s uploaded to:\n  %s\n', project_info['name'], project_info['url'])
+
+    def upload(self, filename: str) -> bool:
+        """Upload a file to the server."""
+        if not os.path.exists(filename):
+            message: str = f'File "{filename}" does not exist'
+            logger.error(message)
+            raise errors.BinstarError(message)
+        logger.info('Processing "%s"', filename)
+
+        package_meta: detect.Meta = self.detect_package_meta(
+            filename,
+            package_type=self.arguments.package_type and PackageType(self.arguments.package_type),
+        )
+
+        if package_meta.package_type is PackageType.PROJECT:
+            return self.upload_project(filename)
+        return self.upload_package(filename, package_meta)
+
+    def upload_package(self, filename: str, package_meta: detect.Meta) -> bool:
+        """Upload a package to the server."""
+        if (
+                package_meta.package_type is PackageType.NOTEBOOK and
+                self.arguments.mode != 'force' and
+                not self.validate_notebook(filename)
+        ):
+            return False
+
+        meta: PackageMeta = PackageMeta(filename=filename, meta=package_meta)
+        meta._update_attrs(parser_args=self.arguments)  # pylint: disable=protected-access
+        meta._update_name(self.arguments.package)  # pylint: disable=protected-access
+        meta._update_version(self.arguments.version)  # pylint: disable=protected-access
+        if self.arguments.build_id is not None:
+            meta.file_attrs.setdefault('attrs', {})['binstar_build'] = self.arguments.build_id
+        if self.arguments.summary is not None:
+            meta.release_attrs['summary'] = self.arguments.summary
+        if self.arguments.description is not None:
+            meta.release_attrs['description'] = self.arguments.description
+
+        logger.info('Creating package "%s"', meta.name)
+        package: PackageCacheRecord = self.get_package(meta)
+        if not self.validate_package_type(package, meta.package_type):
+            return False
+
+        logger.info('Creating release "%s"', meta.version)
+        self.get_release(meta)
+
+        if (meta.package_type is PackageType.CONDA) and (not self.arguments.keep_basename):
+            meta.rebuild_basename()
+
+        logger.info('Uploading file "%s/%s/%s/%s"', self.username, meta.name, meta.version, meta.file_attrs['basename'])
+        return self._upload_file(meta)
+
+    def upload_project(self, filename: str) -> bool:
+        """Upload a project to the server."""
+        uploaded_project: projects.UploadedProject = projects.upload_project(filename, self.arguments, self.username)
+        self.uploaded_projects.append(uploaded_project)
+        return True
+
+    def _upload_file(self, meta: PackageMeta) -> bool:
+        """Perform upload of a file after its metadata and related package and release are prepared."""
+        basename: str = meta.file_attrs['basename']
+        package_type: typing.Union[PackageType, str] = meta.file_attrs.pop('binstar_package_type', meta.package_type)
+
+        step: int
+        for step in range(2):
+            try:
+                stream: typing.BinaryIO
+                with open(meta.filename, 'rb') as stream:
+                    result: typing.Mapping[str, typing.Any] = self.api.upload(
+                        self.username,
+                        meta.name,
+                        meta.version,
+                        basename,
+                        stream,
+                        package_type,
+                        self.arguments.description,
+                        dependencies=meta.file_attrs.get('dependencies'),
+                        attrs=meta.file_attrs['attrs'],
+                        channels=self.arguments.labels,
+                    )
+
+                self.uploaded_packages.append({
+                    'package_type': meta.package_type,
+                    'username': self.username,
+                    'name': meta.name,
+                    'version': meta.version,
+                    'basename': basename,
+                    'url': result.get('url', f'https://anaconda.org/{self.username}/{meta.name}'),
+                })
+                self.__package_cache[meta.package_key].update(meta.package_type)
+                self.__release_cache[meta.release_key].update()
+                logger.info('Upload complete\n')
+                return True
+
+            except errors.Conflict:
+                if step:
+                    raise
+
+                if self.arguments.mode == 'skip':
+                    logger.info('Distribution already exists. Skipping upload.\n')
+                    return False
+
+                if self.arguments.mode == 'force':
+                    logger.warning('Distribution "%s" already exists. Removing.', basename)
+                    self.api.remove_dist(self.username, meta.name, meta.version, basename)
+                    continue
+
+                if self.arguments.mode == 'interactive':
+                    if bool_input(f'Distribution "{basename}" already exists. Would you like to replace it?'):
+                        self.api.remove_dist(self.username, meta.name, meta.version, basename)
                         continue
+                    logger.info('Not replacing distribution "%s"', basename)
+                    return False
 
-                package_info = self.upload_package(filename, package_type=package_type)
+                logger.info(
+                    (
+                        'Distribution already exists. '  # pylint: disable=implicit-str-concat
+                        'Please use the -i/--interactive or --force or --skip options or `anaconda remove %s/%s/%s/%s`'
+                    ),
+                    self.username, meta.name, meta.version, basename,
+                )
+                raise
 
-                if package_info is not None and len(package_info) == 2:
-                    _package, _upload_info = package_info
-                    if _upload_info:
-                        uploaded_packages.append((_package, _upload_info, package_type))
+        return False
 
-        for package in uploaded_packages:
-            package_name = package[0]
-            package_type = package[2]
-            self.remove_package_if_empty(package_name, package_type)
+    @staticmethod
+    def detect_package_meta(filename: str, package_type: typing.Optional[PackageType] = None) -> detect.Meta:
+        """Detect primary details on package being uploaded."""
+        if package_type is None:
+            logger.info('Detecting file type...')
+            result: detect.OptMeta = detect.detect_package_meta(filename)
+            if result is None:
+                message: str = (
+                    f'Could not detect package type of file {filename!r} '
+                    f'please specify package type with option --package-type'
+                )
+                logger.error(message)
+                raise errors.BinstarError(message)
+            logger.info('File type is "%s"', result.package_type.label)
+        else:
+            result = detect.complete_package_meta(filename, package_type)
+            if result is None:
+                result = detect.Meta(package_type=package_type, extension=os.path.splitext(filename)[1])
+        return result
 
-        return uploaded_packages, uploaded_projects
+    @staticmethod
+    def validate_notebook(filename: str) -> bool:
+        """Check if file is a valid notebook."""
+        try:
+            stream: typing.TextIO
+            with open(filename, 'rt', encoding='utf8') as stream:
+                nbformat.read(stream, nbformat.NO_CONVERT)
+        except Exception as error:  # pylint: disable=broad-except
+            logger.error('Invalid notebook file "%s": %s', filename, error)
+            logger.info('Use --force to upload the file anyways')
+            return False
+        return True
 
+    @staticmethod
+    def validate_package_type(package: PackageCacheRecord, package_type: PackageType) -> bool:
+        """Check if file of :code:`package_type` might be uploaded to :code:`package`."""
+        if not package.package_types:
+            return True
 
-def verbose_package_type(pkg_type, lowercase=True):
-    verbose_type = pkg_type.label()
-    if lowercase:
-        verbose_type = verbose_type.lower()
-    return verbose_type
+        if package_type in package.package_types:
+            return True
 
+        group: typing.Set[PackageType]
+        for group in [{PackageType.CONDA, PackageType.STANDARD_PYTHON}]:
+            if (not group.isdisjoint(package.package_types)) and (package_type in group):
+                return True
 
-def determine_package_type(filename, args):
-    """
-    return the file type from the inspected package or from the
-    -t/--package-type argument
-    """
-    if args.package_type:
-        return PackageType(args.package_type)
-
-    logger.info('Detecting file type...')
-    package_type = detect_package_type(filename)
-
-    if package_type is None:
-        message = 'Could not detect package type of file %r please ' \
-                  'specify package type with option --package-type' % filename
+        message: str = (
+            f'You already have a {package.package_types[0].label.lower()} named "{package.name}". '
+            f'Use a different name for this {package_type.label.lower()}.'
+        )
         logger.error(message)
         raise errors.BinstarError(message)
 
-    logger.info('File type is "%s"', package_type.label())
 
-    return package_type
-
-
-def main(args):  # pylint: disable=too-many-branches,too-many-locals
-    config = get_config(site=args.site)
-
-    aserver_api = get_server_api(token=args.token, site=args.site, config=config)
-    aserver_api.check_server()
-
-    validate_username = True
-
-    if args.user:
-        username = args.user
-    elif 'upload_user' in config:
-        username = config['upload_user']
-    else:
-        validate_username = False
-        user = aserver_api.user()
-        username = user['login']
-
-    logger.info('Using "%s" as upload username', username)
-
-    if validate_username:
-        try:
-            aserver_api.user(username)
-        except errors.NotFound as error:
-            message = 'User "{}" does not exist'.format(username)
-            logger.error(message)
-            raise errors.BinstarError(message) from error
-
-    # Flatten file list because of 'windows_glob' function
-    files = sorted(set(fitem for fglob in args.files for fitem in fglob))
-    uploader = Uploader(aserver_api, username, args)
-    uploaded_packages, uploaded_projects = uploader.upload(files)
-
-    for package, upload_info, package_type in uploaded_packages:
-        package_url = upload_info.get('url', 'https://anaconda.org/%s/%s' % (username, package))
-        logger.info('%s located at:\n%s\n', verbose_package_type(package_type), package_url)
-
-    for project_name, url in uploaded_projects:
-        logger.info('Project %s uploaded to %s.\n', project_name, url)
-
-
-def pathname_list(item):
-    if (os.name == 'nt') and any(character in {'*', '?'} for character in item):
-        return glob(item)
+def pathname_list(item: str) -> typing.List[str]:
+    """Expand file patterns to lists of actual file names."""
+    if (os.name == 'nt') and any(character in '*?' for character in item):
+        return glob.glob(item)
     return [item]
 
 
-def add_parser(subparsers):
-    description = 'Upload packages to your Anaconda repository'
-    parser = subparsers.add_parser(
+def add_parser(subparsers: typing.Any) -> None:
+    """Register an :code:`upload` command in the application."""
+    description: str = 'Upload packages to your Anaconda repository'
+    parser: argparse.ArgumentParser = subparsers.add_parser(
         'upload',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         help=description, description=description,
@@ -410,10 +677,11 @@ def add_parser(subparsers):
 
     parser.add_argument('files', nargs='+', help='Distributions to upload', default=[], type=pathname_list)
 
-    label_help = (
-            '{deprecation}Add this file to a specific {label}. ' +
-            'Warning: if the file {label}s do not include "main", ' +
-            'the file will not show up in your user {label}')
+    label_help: str = (
+        '{deprecation}Add this file to a specific {label}. '
+        'Warning: if the file {label}s do not include "main", '
+        'the file will not show up in your user {label}'
+    )
 
     parser.add_argument(
         '-c', '--channel',
@@ -439,9 +707,9 @@ def add_parser(subparsers):
         help='User account or Organization, defaults to the current user',
     )
     parser.add_argument(
-        '--keep-local-name',
-        dest='keep_local_name',
-        help='Do not replace local name when forming basename for server.',
+        '--keep-basename',
+        dest='keep_basename',
+        help='Do not normalize a basename when uploading a conda package.',
         action='store_true'
     )
 

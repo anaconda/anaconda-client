@@ -138,7 +138,8 @@ def inspect_conda_info_dir(info_path, basename):  # pylint: disable=too-many-loc
             'operatingsystem': operatingsystem,
             'machine': machine,
             'target-triplet': '%s-any-%s' % (machine, operatingsystem),
-            'has_prefix': has_prefix
+            'has_prefix': has_prefix,
+            'subdir': subdir,
         }
     }
 

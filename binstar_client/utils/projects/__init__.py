@@ -1,75 +1,107 @@
+# -*- coding: utf8 -*-
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
-from __future__ import print_function
+from __future__ import annotations
+
+__all__ = ['upload_project']
 
 import logging
 import os
 import shutil
-import sys
 import tempfile
+import typing
 
 from binstar_client import errors
+
+if typing.TYPE_CHECKING:
+    import argparse
+    import types
+    import anaconda_project.project
+    import anaconda_project.internal.simple_status
+
 
 logger = logging.getLogger('binstar.projects.upload')
 
 
-class _TmpDir:
-    def __init__(self, prefix):
-        self._dir = tempfile.mkdtemp(prefix=prefix)
+class UploadedProject(typing.TypedDict):
+    """Details on uploaded project."""
 
-    def __exit__(self, _type, value, traceback):
+    username: str
+    name: str
+    url: str
+
+
+class _TmpDir:
+
+    def __init__(self, prefix: str = '') -> None:
+        self._dir: str = tempfile.mkdtemp(prefix=prefix)
+
+    def __enter__(self) -> str:
+        return self._dir
+
+    def __exit__(
+            self,
+            _type: typing.Optional[typing.Type[Exception]] = None,
+            value: typing.Optional[Exception] = None,
+            traceback: typing.Optional[types.TracebackType] = None,
+    ) -> None:
         try:
             shutil.rmtree(path=self._dir)
         except Exception as error:  # pylint: disable=broad-except
-            # prefer original exception to rmtree exception
-            if value is None:
-                print('Exception cleaning up TmpDir %s: %s' % (self._dir, str(error)), file=sys.stderr)
-                raise error
-            print('Failed to clean up TmpDir %s: %s' % (self._dir, str(error)), file=sys.stderr)
-            raise value from error
-
-    def __enter__(self):
-        return self._dir
+            logger.debug('Failed to clean up TmpDir "%s": %s', self._dir, str(error))
 
 
-def _real_upload_project(project, args, username):
+def _real_upload_project(
+        project: anaconda_project.project.Project,
+        args: argparse.Namespace,
+        username: str
+) -> UploadedProject:
     try:
-        from anaconda_project import project_ops  # pylint: disable=import-outside-toplevel
+        # pylint: disable=import-outside-toplevel
+        from anaconda_project import project_ops
     except ImportError as error:
         raise errors.BinstarError('anaconda-project package is not installed') from error
 
-    print('Uploading project: {}'.format(project.name))
-
-    status = project_ops.upload(
-        project, site=args.site, username=username, token=args.token, log_level=args.log_level,
+    logger.info('Uploading project: %s', project.name)
+    status: anaconda_project.internal.simple_status.SimpleStatus = project_ops.upload(
+        project,
+        site=args.site,
+        username=username,
+        token=args.token,
+        log_level=args.log_level,
     )
+    if status:
+        logger.info(status.status_description)
+        return {
+            'username': username,
+            'name': project.name,
+            'url': status.url,
+        }
 
-    if not status:
-        for error in status.errors:  # type: ignore
-            print(error, file=sys.stderr)
-        print(status.status_description, file=sys.stderr)
-        raise errors.BinstarError(status.status_description)
-
-    print(status.status_description)
-    return [project.name, status.url]
+    status_error: typing.Any
+    for status_error in status.errors:
+        logger.error(str(status_error))
+    logger.error(status.status_description)
+    raise errors.BinstarError(status.status_description)
 
 
-def upload_project(project_path, args, username):
+def upload_project(project_path: str, args: argparse.Namespace, username: str) -> UploadedProject:
     try:
-        from anaconda_project import project  # pylint: disable=import-outside-toplevel
-        from anaconda_project import project_ops  # pylint: disable=import-outside-toplevel
+        # pylint: disable=import-outside-toplevel
+        from anaconda_project import project
+        from anaconda_project import project_ops
     except ImportError as error:
-        raise errors.BinstarError(
-            'To upload projects such as {}, install the anaconda-project package.'.format(project_path),
-        ) from error
+        message: str = f'To upload projects such as "{project_path}", install the anaconda-project package.'
+        logger.error(message)
+        raise errors.BinstarError(message) from error
 
-    if os.path.exists(project_path) and not os.path.isdir(project_path):
-        # make the single file into a temporary project directory
-        with (_TmpDir(prefix='anaconda_upload_')) as dirname:
-            shutil.copy(project_path, dirname)
-            basename_no_extension = os.path.splitext(os.path.basename(project_path))[0]
-            new_project = project_ops.create(dirname, name=basename_no_extension)
-            return _real_upload_project(new_project, args, username)
-    else:
+    if os.path.exists(project_path) and os.path.isdir(project_path):
         new_project = project.Project(directory_path=project_path)
+        return _real_upload_project(new_project, args, username)
+
+    # make the single file into a temporary project directory
+    with (_TmpDir(prefix='anaconda_upload_')) as dirname:
+        shutil.copy(project_path, dirname)
+        basename_no_extension = os.path.splitext(os.path.basename(project_path))[0]
+        new_project = project_ops.create(dirname, name=basename_no_extension)
         return _real_upload_project(new_project, args, username)

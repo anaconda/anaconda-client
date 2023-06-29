@@ -2,45 +2,60 @@
 
 """Update public attributes of the package or the attributes of the package release."""
 
-import typing
+from __future__ import annotations
+
+__all__ = ['add_parser']
 
 import argparse
 import json
 import logging
 import os
+import typing
 
 import yaml
 
 from binstar_client import errors
 from binstar_client.utils import get_server_api
 from binstar_client.utils import parse_specs
-from binstar_client.utils.detect import detect_package_type, get_attrs
+from binstar_client.utils import detect
 
 logger = logging.getLogger('binstar.update')
 
 
-def get_attributes(
-        package: str,
-        package_type: typing.Any,
-        args: argparse.Namespace,
-) -> typing.Tuple[typing.Mapping[str, typing.Any], typing.Mapping[str, typing.Any]]:
+Attributes = typing.Mapping[str, typing.Any]
+
+
+def get_attributes(package: str, args: argparse.Namespace) -> typing.Tuple[Attributes, Attributes]:
     """Parse source for attribute details."""
-    loader: typing.Optional[typing.Callable[[typing.TextIO], typing.Mapping[str, typing.Any]]] = None
+    loader: typing.Optional[typing.Callable[[typing.TextIO], detect.PackageAttributes]] = None
     if package.endswith('.json'):
         loader = json.load
     elif package.endswith(('.yml', '.yaml')):
         loader = yaml.safe_load
-
-    package_attrs: typing.Mapping[str, typing.Any]
-    release_attrs: typing.Mapping[str, typing.Any]
-    if loader is None:
-        package_attrs, release_attrs, _ = get_attrs(package_type, package, parser_args=args)
-    else:
+    if loader is not None:
         stream: typing.TextIO
         with open(package, 'rt', encoding='utf-8') as stream:
-            package_attrs = release_attrs = loader(stream)
+            return (loader(stream),) * 2
 
-    return package_attrs, release_attrs
+    package_type: typing.Optional[detect.PackageType]
+    if args.package_type:
+        package_type = detect.PackageType(args.package_type)
+    else:
+        package_type = detect.detect_package_type(package)
+    if package_type is None:
+        message: str = (
+            f'Could not detect package type of file "{package}". '
+            'Please specify package type with option --package-type'
+        )
+        logger.error(message)
+        raise errors.BinstarError(message)
+
+    try:
+        return detect.get_attrs(package_type, package, parser_args=args)[:2]
+    except Exception as error:
+        message = f'Trouble reading metadata from {package}. Is this a valid source file: {package_type.label}?'
+        logger.error(message)
+        raise errors.BinstarError(message) from error
 
 
 def main(args: argparse.Namespace) -> None:
@@ -48,16 +63,7 @@ def main(args: argparse.Namespace) -> None:
     anaconda_api = get_server_api(args.token, args.site)
     anaconda_api.check_server()
 
-    package_type = detect_package_type(args.source)
-    try:
-        package_attrs, release_attrs = get_attributes(args.source, package_type, args)
-    except Exception as error:
-        message = 'Trouble reading metadata from {}. Is this a valid source file: {} ?'.format(
-            args.source, package_type.label())
-        logger.error(message)
-        raise errors.BinstarError(message) from error
-
-    attrs = package_attrs if not args.release else release_attrs
+    attrs: Attributes = get_attributes(args.source, args)[bool(args.release)]
     attrs = attrs.get('public_attrs', attrs)
 
     if args.release:
@@ -89,7 +95,7 @@ def add_parser(subparsers: typing.Any) -> None:
     parser = subparsers.add_parser(
         'update',
         usage=(
-            '\n\tanaconda update [--release] user/package[/version] CONDA_PACKAGE_1.bz2'
+            '\n\tanaconda update [--release] user/package[/version] CONDA_PACKAGE_1.tar.bz2'
             '\n\tanaconda update [--release] user/package[/version] metadata.json'
         ),
         description=__doc__,
@@ -107,6 +113,10 @@ def add_parser(subparsers: typing.Any) -> None:
             'It may be a valid package file or `.json` file with described attributes to update'
         ),
         type=file_type,
+    )
+    parser.add_argument(
+        '-t', '--package-type',
+        help='Set the package type. Defaults to autodetect',
     )
 
     release_group = parser.add_argument_group(title='Update release')
