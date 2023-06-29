@@ -3,13 +3,11 @@
 import json
 import subprocess  # nosec
 import sys
-from os.path import basename, dirname, join, exists
+import os
+from os.path import basename, dirname
 
-WINDOWS = sys.platform.startswith('win')
-CONDA_PREFIX = sys.prefix
-BIN_DIR = 'Scripts' if WINDOWS else 'bin'
-CONDA_EXE = join(CONDA_PREFIX, BIN_DIR, 'conda.exe' if WINDOWS else 'conda')
-CONDA_BAT = join(CONDA_PREFIX, BIN_DIR, 'conda.bat')
+
+ENV_PREFIX = sys.prefix
 
 
 # this function is broken out for monkeypatch by unit tests,
@@ -19,25 +17,13 @@ def _import_conda_root():
     return conda.config.root_dir
 
 
-def _get_conda_exe():
-    command = CONDA_EXE
-    if WINDOWS:
-        command = CONDA_EXE if exists(CONDA_EXE) else CONDA_BAT
-
-    if not exists(command):
-        command = None
-
-    return command
-
-
 def _conda_root_from_conda_info():
-    command = _get_conda_exe()
+    command = os.environ.get('CONDA_EXE', 'conda')
     if not command:
         return None
-
     try:
         output = subprocess.check_output([
-            command, 'info', '--json'], creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == 'win32' else None
+            command, 'info', '--json'], creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == 'win32' else 0,
         ).decode('utf-8')  # nosec
         conda_info = json.loads(output)
         return conda_info['root_prefix']
@@ -57,7 +43,7 @@ def get_conda_root():
         conda_root = _import_conda_root()
     except ImportError:
         # We're not in the root environment.
-        envs_dir = dirname(CONDA_PREFIX)
+        envs_dir = dirname(ENV_PREFIX)
         if basename(envs_dir) == 'envs':
             # We're in a named environment: `conda create -n <name>`
             conda_root = dirname(envs_dir)

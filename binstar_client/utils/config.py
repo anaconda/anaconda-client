@@ -17,14 +17,14 @@ import yaml
 
 from binstar_client.errors import BinstarError
 from binstar_client.utils.appdirs import AppDirs, EnvAppDirs
-from binstar_client.utils.conda import CONDA_PREFIX, CONDA_ROOT
+from binstar_client.utils.conda import ENV_PREFIX, CONDA_ROOT
 from .yaml import yaml_load, yaml_dump
 
 logger = logging.getLogger('binstar')
 
 
 def expandvars(path):
-    environ = {'CONDA_ROOT': CONDA_ROOT, 'CONDA_PREFIX': CONDA_PREFIX}
+    environ = {'CONDA_ROOT': CONDA_ROOT, 'ENV_PREFIX': ENV_PREFIX}
     environ.update(os.environ)
     return Template(path).safe_substitute(**environ)
 
@@ -113,7 +113,7 @@ SEARCH_PATH = (
     '$CONDA_ROOT/etc/anaconda-client/',
     dirs.user_data_dir,
     '~/.continuum/anaconda-client/',
-    '$CONDA_PREFIX/etc/anaconda-client/',
+    '$ENV_PREFIX/etc/anaconda-client/',
 )
 
 
