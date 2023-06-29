@@ -8,9 +8,15 @@ from itertools import chain
 
 import requests
 import six
-from urllib3.filepost import choose_boundary, iter_fields
+from urllib3.filepost import choose_boundary
 
 logger = logging.getLogger('binstar.requests_ext')
+
+
+def iter_fields(fields):
+    if isinstance(fields, dict):
+        return ((key, val) for key, val in fields.items())
+    return ((key, val) for key, val in fields)
 
 
 class NullAuth(requests.auth.AuthBase):  # pylint: disable=too-few-public-methods
