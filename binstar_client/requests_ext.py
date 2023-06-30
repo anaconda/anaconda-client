@@ -8,7 +8,7 @@ from itertools import chain
 
 import requests
 import six
-from urllib3.filepost import choose_boundary, iter_fields
+from urllib3.filepost import choose_boundary, iter_field_objects
 
 logger = logging.getLogger('binstar.requests_ext')
 
@@ -63,7 +63,7 @@ def encode_multipart_formdata_stream(fields, boundary=None):
     if boundary is None:
         boundary = choose_boundary()
 
-    for fieldname, value in iter_fields(fields):
+    for fieldname, value in iter_field_objects(fields):
         body_write_encode('--%s\r\n' % (boundary))
 
         if isinstance(value, tuple):
@@ -154,7 +154,7 @@ class MultiPartIO:
 
 def stream_multipart(data, files=None, callback=None):
     if files:
-        fields = chain(iter_fields(data), iter_fields(files))
+        fields = chain(iter_field_objects(data), iter_field_objects(files))
     else:
         fields = data
 
