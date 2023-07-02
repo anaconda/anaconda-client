@@ -71,11 +71,8 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
         return self._session
 
     def check_server(self):
-        """
-        Checks if the server is reachable and throws
-        and exception if it isn't
-        """
-        msg = 'API server not found. Please check your API url configuration.'
+        """Check if server is reachable or throw an exception if it isn't."""
+        msg = 'API server is unavailable. Please check your API url configuration.'
 
         try:
             response = self.session.head(self.domain)

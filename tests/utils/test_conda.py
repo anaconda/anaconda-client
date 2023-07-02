@@ -1,34 +1,44 @@
-# pylint: disable=missing-module-docstring,missing-function-docstring,import-outside-toplevel
+# -*- coding: utf8 -*-
+
+"""Tests for :mod:`binstar_client.utils.conda`."""
+
+from __future__ import annotations
+
+__all__ = ()
 
 import os
-import unittest
+import typing
 
-from unittest import mock
-
-
-def test_conda_root():
-    from binstar_client.utils.conda import get_conda_root
-
-    assert get_conda_root() is not None  # nosec
+from binstar_client.utils import conda
 
 
-@mock.patch('binstar_client.utils.conda._import_conda_root')
-def test_conda_root_outside_root_environment(mock_import_conda_root):
-    def _import_conda_root():
-        raise ImportError('did not import it')
+def test_find_conda() -> None:
+    """Check :func:`~binstar_client.utils.conda.find_conda`."""
+    conda_info: conda.CondaInfo = typing.cast(conda.CondaInfo, conda.find_conda())
+    assert conda_info
 
-    mock_import_conda_root.side_effect = _import_conda_root
-    from binstar_client.utils.conda import get_conda_root
+    assert conda_info['CONDA_EXE']
+    assert os.path.isfile(conda_info['CONDA_EXE'])
 
-    assert get_conda_root() is not None  # nosec
+    assert conda_info['CONDA_PREFIX']
+    assert os.path.isdir(conda_info['CONDA_PREFIX'])
 
-    assert mock_import_conda_root.called  # nosec
+    assert conda_info['CONDA_ROOT']
+    assert os.path.isdir(conda_info['CONDA_ROOT'])
 
 
-@unittest.skip('Disabling temporarily for conda 4.4')
-def test_conda_root_from_conda_info():
-    from binstar_client.utils.conda import _conda_root_from_conda_info
+def test_conda_vars() -> None:
+    """Check lazy :data:`~binstar_client.utils.conda.CONDA_INFO` and other related lazy module properties."""
+    assert conda.CONDA_INFO
 
-    conda_root = _conda_root_from_conda_info()
-    assert conda_root is not None  # nosec
-    assert os.path.isdir(conda_root)  # nosec
+    assert conda.CONDA_EXE
+    assert conda.CONDA_EXE is typing.cast(conda.CondaInfo, conda.CONDA_INFO)['CONDA_EXE']
+    assert os.path.isfile(conda.CONDA_EXE)
+
+    assert conda.CONDA_PREFIX
+    assert conda.CONDA_PREFIX is typing.cast(conda.CondaInfo, conda.CONDA_INFO)['CONDA_PREFIX']
+    assert os.path.isdir(conda.CONDA_PREFIX)
+
+    assert conda.CONDA_ROOT
+    assert conda.CONDA_ROOT is typing.cast(conda.CondaInfo, conda.CONDA_INFO)['CONDA_ROOT']
+    assert os.path.isdir(conda.CONDA_ROOT)
