@@ -30,7 +30,7 @@ class CLITestCase(unittest.TestCase):  # pylint: disable=too-many-instance-attri
         self.store_token_patch = mock.patch('binstar_client.utils.config.store_token')
         self.store_token = self.store_token_patch.start()
 
-        self.setup_logging_patch = mock.patch('binstar_client.scripts.cli._setup_logging')
+        self.setup_logging_patch = mock.patch('binstar_client.utils.logging_utils.setup_logging')
         self.setup_logging_patch.start()
 
         self.logger = logger = logging.getLogger('binstar')

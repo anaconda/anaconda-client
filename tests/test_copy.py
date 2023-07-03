@@ -20,7 +20,7 @@ class Test(CLITestCase):
         copy = urls.register(
             method='POST', path='/copy/package/u1/p1/1.0/', content='[{"basename": "copied-file_1.0.tgz"}]')
 
-        main(['--show-traceback', 'copy', '--from-label', 'dev', '--to-label', 'release/xyz', 'u1/p1/1.0'], False)
+        main(['--show-traceback', 'copy', '--from-label', 'dev', '--to-label', 'release/xyz', 'u1/p1/1.0'], exit_=False)
 
         urls.assertAllCalled()
         req = json.loads(copy.req.body)
@@ -33,9 +33,9 @@ class Test(CLITestCase):
         copy = urls.register(
             method='PUT', path='/copy/package/u1/p1/1.0/', content='[{"basename": "copied-file_1.0.tgz"}]')
 
-        main(
-            ['--show-traceback', 'copy', '--from-label', 'dev', '--to-label', 'release/xyz', 'u1/p1/1.0', '--replace'],
-            False)
+        main([
+            '--show-traceback', 'copy', '--from-label', 'dev', '--to-label', 'release/xyz', 'u1/p1/1.0', '--replace',
+        ], exit_=False)
 
         urls.assertAllCalled()
         req = json.loads(copy.req.body)
@@ -48,8 +48,9 @@ class Test(CLITestCase):
         copy = urls.register(
             method='PATCH', path='/copy/package/u1/p1/1.0/', content='[{"basename": "copied-file_1.0.tgz"}]')
 
-        main(['--show-traceback', 'copy', '--from-label', 'dev', '--to-label', 'release/xyz', 'u1/p1/1.0', '--update'],
-             False)
+        main([
+            '--show-traceback', 'copy', '--from-label', 'dev', '--to-label', 'release/xyz', 'u1/p1/1.0', '--update',
+        ], exit_=False)
 
         urls.assertAllCalled()
         req = json.loads(copy.req.body)
@@ -63,7 +64,9 @@ class Test(CLITestCase):
             method='POST', path='/copy/package/u1/p1/1.0/', status=409
         )
         with self.assertRaises(Conflict):
-            main(['--show-traceback', 'copy', '--from-label', 'dev', '--to-label', 'release/xyz', 'u1/p1/1.0'], False)
+            main([
+                '--show-traceback', 'copy', '--from-label', 'dev', '--to-label', 'release/xyz', 'u1/p1/1.0',
+            ], exit_=False)
 
         urls.assertAllCalled()
         req = json.loads(copy.req.body)
@@ -76,7 +79,8 @@ class Test(CLITestCase):
         with self.assertRaises(SystemExit):
             main([
                 '--show-traceback', 'copy', '--from-label', 'dev',
-                '--to-label', 'release/xyz', 'u1/p1/1.0', '--update', '--replace'], False)
+                '--to-label', 'release/xyz', 'u1/p1/1.0', '--update', '--replace',
+            ], exit_=False)
 
 
 if __name__ == '__main__':

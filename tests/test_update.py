@@ -35,7 +35,7 @@ class TestUpdate(CLITestCase):
     def test_update_package_from_json(self, urls):
         urls.register(method='HEAD', path='/', status=200)
         update = urls.register(method='PATCH', path='/package/owner/package_name', content=json_test_data, status=200)
-        main(['update', 'owner/package_name', data_dir('metadata.json')], False)
+        main(['update', 'owner/package_name', data_dir('metadata.json')], exit_=False)
 
         urls.assertAllCalled()
         req = json.loads(update.req.body)
@@ -46,7 +46,7 @@ class TestUpdate(CLITestCase):
         urls.register(method='HEAD', path='/', status=200)
         update = urls.register(method='PATCH', path='/package/owner/package_name',
                                content=package_test_data, status=200)
-        main(['update', 'owner/package_name', data_dir('test_package34-0.3.1.tar.gz')], False)
+        main(['update', 'owner/package_name', data_dir('test_package34-0.3.1.tar.gz')], exit_=False)
 
         urls.assertAllCalled()
         req = json.loads(update.req.body)
@@ -57,7 +57,7 @@ class TestUpdate(CLITestCase):
         urls.register(method='HEAD', path='/', status=200)
         update = urls.register(method='PATCH', path='/release/owner/package_name/1.0.0',
                                content=json_test_data, status=200)
-        main(['update', 'owner/package_name/1.0.0', data_dir('metadata.json'), '--release'], False)
+        main(['update', 'owner/package_name/1.0.0', data_dir('metadata.json'), '--release'], exit_=False)
 
         urls.assertAllCalled()
         req = json.loads(update.req.body)
@@ -68,7 +68,7 @@ class TestUpdate(CLITestCase):
         urls.register(method='HEAD', path='/', status=200)
         update = urls.register(method='PATCH', path='/release/owner/package_name/1.0.0',
                                content=release_test_data, status=200)
-        main(['update', 'owner/package_name/1.0.0', data_dir('test_package34-0.3.1.tar.gz'), '--release'], False)
+        main(['update', 'owner/package_name/1.0.0', data_dir('test_package34-0.3.1.tar.gz'), '--release'], exit_=False)
 
         urls.assertAllCalled()
         req = json.loads(update.req.body)
@@ -80,7 +80,7 @@ class TestUpdate(CLITestCase):
         urls.register(method='PATCH', path='/package/owner/package_name', content=package_test_data, status=404)
 
         with self.assertRaises(SystemExit):
-            main(['update', 'owner/package_name', data_dir('not_existing.tar.gz')], False)
+            main(['update', 'owner/package_name', data_dir('not_existing.tar.gz')], exit_=False)
 
     @urlpatch
     def test_update_package_not_found(self, urls):
@@ -88,14 +88,14 @@ class TestUpdate(CLITestCase):
         urls.register(method='PATCH', path='/package/owner/package_name', content=package_test_data, status=404)
 
         with self.assertRaises(errors.NotFound):
-            main(['update', 'owner/package_name', data_dir('test_package34-0.3.1.tar.gz')], False)
+            main(['update', 'owner/package_name', data_dir('test_package34-0.3.1.tar.gz')], exit_=False)
 
     @urlpatch
     def test_update_release_missing_version(self, urls):
         urls.register(method='HEAD', path='/', status=200)
         urls.register(method='PATCH', path='/release/owner/package_name/1.0.0', content=package_test_data, status=200)
         with self.assertRaises(errors.UserError):
-            main(['update', 'owner/package_name', data_dir('test_package34-0.3.1.tar.gz'), '--release'], False)
+            main(['update', 'owner/package_name', data_dir('test_package34-0.3.1.tar.gz'), '--release'], exit_=False)
 
     @urlpatch
     def test_update_release_not_found(self, urls):
@@ -103,4 +103,6 @@ class TestUpdate(CLITestCase):
         urls.register(method='PATCH', path='/release/owner/package_name/1.0.0', content=package_test_data, status=404)
 
         with self.assertRaises(errors.NotFound):
-            main(['update', 'owner/package_name/1.0.0', data_dir('test_package34-0.3.1.tar.gz'), '--release'], False)
+            main([
+                'update', 'owner/package_name/1.0.0', data_dir('test_package34-0.3.1.tar.gz'), '--release',
+            ], exit_=False)

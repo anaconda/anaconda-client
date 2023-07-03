@@ -19,7 +19,7 @@ class Test(CLITestCase):
 
         with mock.patch('binstar_client.commands.config.USER_CONFIG', join(tmpdir, 'config.yaml')), \
                 mock.patch('binstar_client.commands.config.SEARCH_PATH', [tmpdir]):
-            main(['config', '--set', 'url', 'http://localhost:5000'], False)
+            main(['config', '--set', 'url', 'http://localhost:5000'], exit_=False)
 
             self.assertTrue(exists(join(tmpdir, 'config.yaml')))
 
@@ -28,7 +28,7 @@ class Test(CLITestCase):
             expected_config_output = 'url: http://localhost:5000\n'
             self.assertEqual(config_output, expected_config_output)
 
-            main(['config', '--show-sources'], False)
+            main(['config', '--show-sources'], exit_=False)
             expected_show_sources_output = '==> {config} <==\nurl: http://localhost:5000\n\n'.format(
                 config=join(tmpdir, 'config.yaml'))
 

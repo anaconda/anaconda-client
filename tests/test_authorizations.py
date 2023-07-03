@@ -19,7 +19,7 @@ class Test(CLITestCase):
             content='{"token": "a-token"}',
             status=201
         )
-        main(['--show-traceback', 'auth', '--remove', 'tokenname', '-o', 'orgname'], False)
+        main(['--show-traceback', 'auth', '--remove', 'tokenname', '-o', 'orgname'], exit_=False)
         self.assertIn('Removed token tokenname', self.stream.getvalue())
 
         remove_token.assertCalled()
@@ -32,7 +32,7 @@ class Test(CLITestCase):
             content='{"token": "a-token"}',
             status=201
         )
-        main(['--show-traceback', 'auth', '--remove', 'tokenname'], False)
+        main(['--show-traceback', 'auth', '--remove', 'tokenname'], exit_=False)
         self.assertIn('Removed token tokenname', self.stream.getvalue())
 
         remove_token.assertCalled()
@@ -46,7 +46,7 @@ class Test(CLITestCase):
             status=403
         )
         with self.assertRaises(BinstarError):
-            main(['--show-traceback', 'auth', '--remove', 'tokenname', '-o', 'wrong_org'], False)
+            main(['--show-traceback', 'auth', '--remove', 'tokenname', '-o', 'wrong_org'], exit_=False)
 
         remove_token.assertCalled()
 
