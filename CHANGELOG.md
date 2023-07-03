@@ -8,9 +8,12 @@ We [keep a changelog.](http://keepachangelog.com/)
 
 * AC-155 - Package upload improvements
 * AC-163 - Do not use 'none' as a package type
+* AC-164 - Allow main entrypoint plugin
 
 ### Pull requests merged
 
+* [PR 672](https://github.com/Anaconda-Platform/anaconda-client/pull/672) - AC-164: anaconda cli entrypoints support
+* [PR 664](https://github.com/Anaconda-Platform/anaconda-client/pull/664) - feat: Allow main entrypoint plugin
 * [PR 663](https://github.com/Anaconda-Platform/anaconda-client/pull/663) - AC-163: fix default package types
 * [PR 659](https://github.com/Anaconda-Platform/anaconda-client/pull/659) - AC-155: package upload improvements
 

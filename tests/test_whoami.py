@@ -25,7 +25,7 @@ class Test(CLITestCase):
     @urlpatch
     def test_whoami_anon(self, urls):
         user = urls.register(method='GET', path='/user', status=401)
-        main(['--show-traceback', 'whoami'], False)
+        main(['--show-traceback', 'whoami'], exit_=False)
         self.assertIn('Anonymous User', self.stream.getvalue())
 
         user.assertCalled()
@@ -35,7 +35,7 @@ class Test(CLITestCase):
         content = json.dumps({'login': 'eggs', 'created_at': '1/2/2000'})
         user = urls.register(method='GET', path='/user', content=content)
 
-        main(['--show-traceback', 'whoami'], False)
+        main(['--show-traceback', 'whoami'], exit_=False)
         self.assertIn('eggs', self.stream.getvalue())
 
         user.assertCalled()
@@ -55,7 +55,7 @@ class Test(CLITestCase):
 
         user = urls.register(path='/user', status=401)
 
-        main(['--show-traceback', 'whoami'], False)
+        main(['--show-traceback', 'whoami'], exit_=False)
         self.assertNotIn('Authorization', user.req.headers)
 
 
