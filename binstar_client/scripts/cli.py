@@ -9,6 +9,7 @@ from __future__ import print_function, unicode_literals
 import logging
 import sys
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
+from importlib.metadata import entry_points
 from logging.handlers import RotatingFileHandler
 from os import makedirs
 from os.path import join, exists, isfile
@@ -150,9 +151,40 @@ def binstar_main(sub_command_module, args=None, exit=True,  # pylint: disable=re
         return 1
 
 
-def main(args=None, _exit=True):
-    binstar_main(command_module, args, _exit,
-                 description=__doc__, version=version)
+def _load_main_plugin():
+    """Allow loading a new CLI main entrypoint via plugin mechanisms. There can only be one."""
+
+    plugin_group_name = 'anaconda_cli.main'
+
+    # The API was changed in Python 3.10, see https://docs.python.org/3/library/importlib.metadata.html#entry-points
+    if sys.version_info.major == 3 and sys.version_info.minor <= 9:
+        plugin_mains = entry_points().get(plugin_group_name, [])
+    else:
+        plugin_mains = entry_points().select(group=plugin_group_name)
+
+    if len(plugin_mains) > 1:
+        raise EnvironmentError(
+            'More than one `anaconda_cli.main` plugin is installed. Please ensure only one '
+            'of the following packages are installed:\n\n' +
+            '\n'.join(f'  * {ep.value}' for ep in plugin_mains)
+        )
+
+    if plugin_mains:
+        # The `.load()` function returns a callable, which is defined inside the package implementing the plugin
+        # e.g. in pyproject.toml, where my_plugin_library.cli.main is the callable entrypoint function
+        # [project.entry-points."anaconda_cli.main"]
+        # anaconda = "my_plugin_library.cli:main"
+        return plugin_mains[0].load()
+    return None
+
+
+def main(args=None, _exit=True, allow_plugin_main=True):
+    plugged_in_main = _load_main_plugin()
+    if allow_plugin_main and plugged_in_main is not None:
+        plugged_in_main()
+    else:
+        binstar_main(command_module, args, _exit,
+                     description=__doc__, version=version)
 
 
 if __name__ == '__main__':
