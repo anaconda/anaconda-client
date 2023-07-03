@@ -530,7 +530,7 @@ def inspect_pypi_package_sdist(filename, fileobj):
         distribute = True
         if data is None:
             raise errors.NoMetadataError(
-                'Could not find *.egg-info/PKG-INFO file in {} sdist'.format(PackageType.STANDARD_PYTHON.label()))
+                'Could not find *.egg-info/PKG-INFO file in {} sdist'.format(PackageType.STANDARD_PYTHON.label))
     config_items = python_version_check(data)
     attrs = dict(config_items)
     name = pop_key(attrs, 'Name', None)
@@ -575,7 +575,7 @@ def inspect_pypi_package_egg(filename, fileobj):
     data = extract_first(tar_file, 'EGG-INFO/PKG-INFO')
     if data is None:
         raise errors.NoMetadataError(
-            'Could not find EGG-INFO/PKG-INFO file in {} sdist'.format(PackageType.STANDARD_PYTHON.label()))
+            'Could not find EGG-INFO/PKG-INFO file in {} sdist'.format(PackageType.STANDARD_PYTHON.label))
     attrs = dict(python_version_check(data))
 
     package_data = {'name': pop_key(attrs, 'Name'),
@@ -611,7 +611,7 @@ def inspect_pypi_package_zip(filename, fileobj):
     data = extract_first(tar_file, '*/PKG-INFO')
     if data is None:
         raise errors.NoMetadataError(
-            'Could not find EGG-INFO/PKG-INFO file in {} sdist'.format(PackageType.STANDARD_PYTHON.label()))
+            'Could not find EGG-INFO/PKG-INFO file in {} sdist'.format(PackageType.STANDARD_PYTHON.label))
 
     attrs = dict(Parser().parsestr(data.encode('UTF-8', 'replace')).items())
 
