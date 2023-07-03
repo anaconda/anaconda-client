@@ -25,7 +25,7 @@ class Test(CLITestCase):  # pylint: disable=missing-class-docstring
         r2 = registry.register(method='GET', path='/package/eggs/foo', status=404)
         r3 = registry.register(method='POST', path='/package/eggs/foo', status=200, content='{"login": "eggs"}')
 
-        main(['--show-traceback', 'register', data_dir('foo-0.1-0.tar.bz2')], False)
+        main(['--show-traceback', 'register', data_dir('foo-0.1-0.tar.bz2')], exit_=False)
 
         r1.assertCalled()
         r2.assertCalled()
@@ -40,7 +40,7 @@ class Test(CLITestCase):  # pylint: disable=missing-class-docstring
         r2 = registry.register(method='GET', path='/package/eggs/foo', status=404)
         r3 = registry.register(method='POST', path='/package/eggs/foo', status=200, content='{"login": "eggs"}')
 
-        main(['--show-traceback', 'register', '--private', data_dir('foo-0.1-0.tar.bz2')], False)
+        main(['--show-traceback', 'register', '--private', data_dir('foo-0.1-0.tar.bz2')], exit_=False)
 
         r1.assertCalled()
         r2.assertCalled()

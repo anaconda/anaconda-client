@@ -27,7 +27,7 @@ class Test(CLITestCase):
         urls.register(path='/authentication-type', content='{"authentication_type": "password"}')
 
         auth = urls.register(method='POST', path='/authentications', content='{"token": "a-token"}')
-        main(['--show-traceback', 'login'], False)
+        main(['--show-traceback', 'login'], exit_=False)
         self.assertIn('login successful', self.stream.getvalue())
 
         auth.assertCalled()
@@ -50,7 +50,7 @@ class Test(CLITestCase):
         urls.register(path='/authentication-type', status=404)
 
         auth = urls.register(method='POST', path='/authentications', content='{"token": "a-token"}')
-        main(['--show-traceback', 'login'], False)
+        main(['--show-traceback', 'login'], exit_=False)
         self.assertIn('login successful', self.stream.getvalue())
 
         auth.assertCalled()

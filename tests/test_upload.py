@@ -31,7 +31,7 @@ class Test(CLITestCase):
 
         registry.register(method='POST', path='/s3_url', status=201)
         registry.register(method='POST', path='/commit/eggs/foo/0.1/osx-64/foo-0.1-0.tar.bz2', status=200, content={})
-        main(['--show-traceback', 'upload', data_dir('foo-0.1-0.tar.bz2')], False)
+        main(['--show-traceback', 'upload', data_dir('foo-0.1-0.tar.bz2')], exit_=False)
 
         self.assertIsNotNone(json.loads(staging_response.req.body).get('sha256'))
 
@@ -42,7 +42,7 @@ class Test(CLITestCase):
         registry.register(method='GET', path='/package/eggs/foo', status=404)
 
         with self.assertRaises(errors.UserError):
-            main(['--show-traceback', 'upload', '--no-register', data_dir('foo-0.1-0.tar.bz2')], False)
+            main(['--show-traceback', 'upload', '--no-register', data_dir('foo-0.1-0.tar.bz2')], exit_=False)
 
         registry.assertAllCalled()
 
@@ -62,7 +62,7 @@ class Test(CLITestCase):
         registry.register(method='POST', path='/s3_url', status=201)
         registry.register(method='POST', path='/commit/eggs/foo/0.1/osx-64/foo-0.1-0.tar.bz2', status=200, content={})
 
-        main(['--show-traceback', 'upload', data_dir('foo-0.1-0.tar.bz2')], False)
+        main(['--show-traceback', 'upload', data_dir('foo-0.1-0.tar.bz2')], exit_=False)
 
         registry.assertAllCalled()
         self.assertIsNotNone(json.loads(staging_response.req.body).get('sha256'))
@@ -85,7 +85,7 @@ class Test(CLITestCase):
             method='POST', path='/commit/eggs/mock/2.0.0/osx-64/mock-2.0.0-py37_1000.conda', status=200, content={},
         )
 
-        main(['--show-traceback', 'upload', data_dir('mock-2.0.0-py37_1000.conda')], False)
+        main(['--show-traceback', 'upload', data_dir('mock-2.0.0-py37_1000.conda')], exit_=False)
 
         registry.assertAllCalled()
         self.assertIsNotNone(json.loads(staging_response.req.body).get('sha256'))
@@ -109,7 +109,9 @@ class Test(CLITestCase):
             method='POST', path='/commit/eggs/mock/2.0.0/osx-64/mock-2.0.0-py37_1000.conda', status=200, content={},
         )
 
-        main(['--show-traceback', 'upload', '--force-metadata-update', data_dir('mock-2.0.0-py37_1000.conda')], False)
+        main([
+            '--show-traceback', 'upload', '--force-metadata-update', data_dir('mock-2.0.0-py37_1000.conda'),
+        ], exit_=False)
 
         registry.assertAllCalled()
         self.assertIsNotNone(json.loads(staging_response.req.body).get('sha256'))
@@ -132,7 +134,7 @@ class Test(CLITestCase):
             method='POST', path='/commit/eggs/test-package34/0.3.1/test_package34-0.3.1.tar.gz', status=200, content={},
         )
 
-        main(['--show-traceback', 'upload', data_dir('test_package34-0.3.1.tar.gz')], False)
+        main(['--show-traceback', 'upload', data_dir('test_package34-0.3.1.tar.gz')], exit_=False)
 
         registry.assertAllCalled()
         self.assertIsNotNone(json.loads(staging_response.req.body).get('sha256'))
@@ -156,10 +158,10 @@ class Test(CLITestCase):
         )
 
         # Pass -o to override the channel/package pypi package should go to
-        main(['--show-traceback', 'upload',
-              '--package', 'test_package34',
-              '--package-type', 'pypi', data_dir('test_package34-0.3.1.tar.gz')], False)
-
+        main([
+            '--show-traceback', 'upload', '--package', 'test_package34', '--package-type', 'pypi',
+            data_dir('test_package34-0.3.1.tar.gz'),
+        ], exit_=False)
         registry.assertAllCalled()
         self.assertIsNotNone(json.loads(staging_response.req.body).get('sha256'))
 
@@ -173,7 +175,7 @@ class Test(CLITestCase):
             main([
                 '--show-traceback', 'upload', '--package', 'test_package', '--package-type', 'file',
                 data_dir('test_package34-0.3.1.tar.gz'),
-            ], False)
+            ], exit_=False)
 
         registry.assertAllCalled()
 
@@ -185,7 +187,7 @@ class Test(CLITestCase):
         with self.assertRaises(errors.BinstarError):
             main([
                 '--show-traceback', 'upload', '--package', 'alpha_omega', data_dir('test_package34-0.3.1.tar.gz'),
-            ], False)
+            ], exit_=False)
 
         registry.assertAllCalled()
 
@@ -210,7 +212,7 @@ class Test(CLITestCase):
         main([
             '--show-traceback', 'upload', '--package-type', 'file', '--package', 'test-package34', '--version', '0.3.1',
             data_dir('test_package34-0.3.1.tar.gz'),
-        ], False)
+        ], exit_=False)
 
         registry.assertAllCalled()
         self.assertIsNotNone(json.loads(staging_response.req.body).get('sha256'))
@@ -229,7 +231,7 @@ class Test(CLITestCase):
         registry.register(method='POST', path='/s3_url', status=201)
         registry.register(method='POST', path='/apps/eggs/projects/dog/commit/dist42', content='{}')
 
-        main(['--show-traceback', 'upload', '--package-type', 'project', data_dir('bar')], False)
+        main(['--show-traceback', 'upload', '--package-type', 'project', data_dir('bar')], exit_=False)
 
         registry.assertAllCalled()
 
@@ -244,7 +246,7 @@ class Test(CLITestCase):
         registry.register(method='POST', path='/s3_url', status=201)
         registry.register(method='POST', path='/apps/eggs/projects/foo/commit/dist42', content='{}')
 
-        main(['--show-traceback', 'upload', '--package-type', 'project', data_dir('foo.ipynb')], False)
+        main(['--show-traceback', 'upload', '--package-type', 'project', data_dir('foo.ipynb')], exit_=False)
 
         registry.assertAllCalled()
 
@@ -271,7 +273,7 @@ class Test(CLITestCase):
 
         with patch('binstar_client.inspect_package.ipynb.datetime') as mock_datetime:
             mock_datetime.now.return_value = test_datetime
-            main(['--show-traceback', 'upload', data_dir('foo.ipynb')], False)
+            main(['--show-traceback', 'upload', data_dir('foo.ipynb')], exit_=False)
 
         registry.assertAllCalled()
         self.assertIsNotNone(json.loads(staging_response.req.body).get('sha256'))
@@ -286,7 +288,9 @@ class Test(CLITestCase):
         registry.register(method='POST', path='/s3_url', status=201)
         registry.register(method='POST', path='/apps/alice/projects/dog/commit/dist42', content='{}')
 
-        main(['--show-traceback', 'upload', '--package-type', 'project', '--user', 'alice', data_dir('bar')], False)
+        main([
+            '--show-traceback', 'upload', '--package-type', 'project', '--user', 'alice', data_dir('bar'),
+        ], exit_=False)
 
         registry.assertAllCalled()
 
@@ -304,7 +308,9 @@ class Test(CLITestCase):
         registry.register(method='POST', path='/s3_url', status=201)
         registry.register(method='POST', path='/apps/eggs/projects/dog/commit/dist42', content='{}')
 
-        main(['--show-traceback', '--token', 'abcdefg', 'upload', '--package-type', 'project', data_dir('bar')], False)
+        main([
+            '--show-traceback', '--token', 'abcdefg', 'upload', '--package-type', 'project', data_dir('bar'),
+        ], exit_=False)
 
         registry.assertAllCalled()
 
@@ -355,7 +361,7 @@ class Test(CLITestCase):
 
         bool_input.return_value = True
 
-        main(['--show-traceback', 'upload', '-i', data_dir('foo-0.1-0.tar.bz2')], False)
+        main(['--show-traceback', 'upload', '-i', data_dir('foo-0.1-0.tar.bz2')], exit_=False)
 
         registry.assertAllCalled()
         self.assertIsNotNone(json.loads(query_001.req.body).get('sha256'))
@@ -379,7 +385,7 @@ class Test(CLITestCase):
         registry.register(method='POST', path='/s3_url', status=201)
         registry.register(method='POST', path='/commit/eggs/foo/0.1/osx-64/foo-0.1-0.tar.bz2', status=200, content={})
 
-        main(['--show-traceback', 'upload', '--private', data_dir('foo-0.1-0.tar.bz2')], False)
+        main(['--show-traceback', 'upload', '--private', data_dir('foo-0.1-0.tar.bz2')], exit_=False)
 
         registry.assertAllCalled()
         self.assertIsNotNone(json.loads(staging_response.req.body).get('sha256'))
@@ -395,7 +401,7 @@ class Test(CLITestCase):
         )
 
         with self.assertRaises(errors.BinstarError):
-            main(['--show-traceback', 'upload', '--private', data_dir('foo-0.1-0.tar.bz2')], False)
+            main(['--show-traceback', 'upload', '--private', data_dir('foo-0.1-0.tar.bz2')], exit_=False)
 
 
 if __name__ == '__main__':
