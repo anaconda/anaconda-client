@@ -52,7 +52,7 @@ def pprint_package_header(access=True, revisions=False):
 def format_package_type(value):
     value = str(value)
     try:
-        return config.PackageType(value).label()
+        return config.PackageType(value).label
     except ValueError:
         return value
 

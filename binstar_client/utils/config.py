@@ -1,6 +1,8 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
-from __future__ import print_function, absolute_import, unicode_literals
+from __future__ import annotations
+
+import typing
 
 import collections
 import enum
@@ -51,34 +53,31 @@ class PackageType(enum.Enum):
     PROJECT = 'project'
     INSTALLER = 'installer'
 
-    def label(self):
-        return self.get_from_mapping(PACKAGE_TYPE_LABELS, default=self.value)
-
-    def get_from_mapping(self, mapping, default=None):
-        return mapping.get(self, default)
+    @property
+    def label(self) -> str:
+        return PACKAGE_TYPE_LABELS.get(self, self.value)
 
     @classmethod
-    def _missing_(cls, value):
+    def _missing_(cls, value: typing.Any) -> PackageType:
         try:
             return cls(PACKAGE_TYPE_ALIASES[value])
         except KeyError:
             return super()._missing_(value)
 
 
-PACKAGE_TYPE_LABELS = {
-    PackageType.ENV: 'Environment',
-    PackageType.NOTEBOOK: 'Notebook',
-    PackageType.CONDA: 'Conda',
-    PackageType.STANDARD_PYTHON: 'Standard Python',
-    PackageType.STANDARD_R: 'Standard R',
-}
-
-PACKAGE_TYPE_ALIASES = {
+PACKAGE_TYPE_ALIASES: typing.Final[typing.Mapping[str, str]] = {
     'PyPI': 'pypi',
     'standard_python': 'pypi',
 
     'cran': 'r',
     'standard_r': 'r',
+}
+PACKAGE_TYPE_LABELS: typing.Final[typing.Mapping[PackageType, str]] = {
+    PackageType.ENV: 'Environment',
+    PackageType.NOTEBOOK: 'Notebook',
+    PackageType.CONDA: 'Conda',
+    PackageType.STANDARD_PYTHON: 'Standard Python',
+    PackageType.STANDARD_R: 'Standard R',
 }
 
 USER_LOGDIR = dirs.user_log_dir

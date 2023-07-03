@@ -2,6 +2,16 @@
 
 We [keep a changelog.](http://keepachangelog.com/)
 
+## Next release
+
+### Tickets closed
+
+* AC-155 - Package upload improvements
+
+### Pull requests merged
+
+* [PR 659](https://github.com/Anaconda-Platform/anaconda-client/pull/659) - AC-155: package upload improvements
+
 ## 1.11.3 - 2023-06-01
 
 ### Tickets closed
