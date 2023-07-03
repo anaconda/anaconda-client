@@ -43,14 +43,14 @@ echo -e "/?\\\\ Download package:\\n"
 rm -rf pkg_tmp
 mkdir -p pkg_tmp/noarch pkg_tmp/linux-64
 ${TST_CMD} download "${TST_LOGIN}/conda_gc_test" -o pkg_tmp || (echo -e "\\n\\n/!\\\\ Download package test failed.\\n" && exit 1)
-[ "$(find pkg_tmp -name conda_gc_test-1.2.1-3.tar.bz2 | wc -l)" = 1 ] || (echo -e "\\n\\n/!\\\\ Download package test failed.\\n" && exit 1)
+[ $(find pkg_tmp -name conda_gc_test-1.2.1-3.tar.bz2 | wc -l) = 1 ] || (echo -e "\\n\\n/!\\\\ Download package test failed.\\n" && exit 1)
 rm -rf pkg_tmp
 echo
 
 rm -rf pkg_tmp
 mkdir -p pkg_tmp/noarch pkg_tmp/linux-64
 ${TST_CMD} download "${TST_LOGIN}/bcj-cffi" -o pkg_tmp || (echo -e "\\n\\n/!\\\\ Download package test failed.\\n" && exit 1)
-[ "$(find pkg_tmp -name bcj-cffi-0.5.1-py310h295c915_0.tar.bz2 | wc -l)" = 1 ] || (echo -e "\\n\\n/!\\\\ Download package test failed.\\n" && exit 1)
+[ $(find pkg_tmp -name bcj-cffi-0.5.1-py310h295c915_0.tar.bz2 | wc -l) = 1 ] || (echo -e "\\n\\n/!\\\\ Download package test failed.\\n" && exit 1)
 rm -rf pkg_tmp
 echo
 
@@ -69,7 +69,7 @@ echo -e "/?\\\\ Download notebook:\\n"
 rm -rf nbk_tmp
 mkdir -p nbk_tmp
 ${TST_CMD} download "${TST_LOGIN}/hello_binstar" -o nbk_tmp || (echo -e "\\n\\n/!\\\\ Download notebook test failed.\\n" && exit 1)
-[ "$(find nbk_tmp -name hello_binstar.ipynb | wc -l)" = 1 ] || (echo -e "\\n\\n/!\\\\ Download notebook test failed.\\n" && exit 1)
+[ $(find nbk_tmp -name hello_binstar.ipynb | wc -l) = 1 ] || (echo -e "\\n\\n/!\\\\ Download notebook test failed.\\n" && exit 1)
 rm -rf nbk_tmp
 echo
 
@@ -85,7 +85,7 @@ echo -e "/?\\\\ Download environment:\\n"
 rm -rf env_tmp
 mkdir -p env_tmp
 ${TST_CMD} download "${TST_LOGIN}/test_env" -o env_tmp || (echo -e "\\n\\n/!\\\\ Download environment test failed.\\n" && exit 1)
-[ "$(find env_tmp -name test_env.yml | wc -l)" = 1 ] || (echo -e "\\n\\n/!\\\\ Download environment test failed.\\n" && exit 1)
+[ $(find env_tmp -name test_env.yml | wc -l) = 1 ] || (echo -e "\\n\\n/!\\\\ Download environment test failed.\\n" && exit 1)
 rm -rf env_tmp
 echo
 
@@ -111,14 +111,14 @@ echo -e "/?\\\\ Download copied package:\\n"
 rm -rf pkg_tmp
 mkdir -p pkg_tmp/linux-32 pkg_tmp/linux-64 pkg_tmp/linux-aarch64 pkg_tmp/linux-ppc64le pkg_tmp/linux-s390x pkg_tmp/noarch pkg_tmp/osx-64 pkg_tmp/osx-arm64 pkg_tmp/win-32 pkg_tmp/win-64
 ${TST_CMD} download "${TST_LOGIN}/pip" -o pkg_tmp || (echo -e "\\n\\n/!\\\\ Download copied package test failed.\\n" && exit 1)
-[ "$(find pkg_tmp -name 'pip-21.2.4-*.tar.bz2' | wc -l)" ">" 0 ] || (echo -e "\\n\\n/!\\\\ Download copied package test failed.\\n" && exit 1)
+[ $(find pkg_tmp -name 'pip-21.2.4-*.tar.bz2' | wc -l) ">" 0 ] || (echo -e "\\n\\n/!\\\\ Download copied package test failed.\\n" && exit 1)
 rm -rf pkg_tmp
 echo
 
 rm -rf pkg_tmp
 mkdir -p pkg_tmp/linux-32 pkg_tmp/linux-64 pkg_tmp/linux-aarch64 pkg_tmp/linux-ppc64le pkg_tmp/linux-s390x pkg_tmp/noarch pkg_tmp/osx-64 pkg_tmp/osx-arm64 pkg_tmp/win-32 pkg_tmp/win-64
 ${TST_CMD} download "${TST_LOGIN}/git-lfs" -o pkg_tmp || (echo -e "\\n\\n/!\\\\ Download copied package test failed.\\n" && exit 1)
-[ "$(find pkg_tmp -name 'git-lfs-2.13.3-*.tar.bz2' | wc -l)" ">" 0 ] || (echo -e "\\n\\n/!\\\\ Download copied package test failed.\\n" && exit 1)
+[ $(find pkg_tmp -name 'git-lfs-2.13.3-*.tar.bz2' | wc -l) ">" 0 ] || (echo -e "\\n\\n/!\\\\ Download copied package test failed.\\n" && exit 1)
 rm -rf pkg_tmp
 echo
 
