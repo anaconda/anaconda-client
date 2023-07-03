@@ -1,8 +1,7 @@
+# -*- coding: utf8 -*-
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
 from __future__ import annotations
-
-import typing
 
 import collections
 import enum
@@ -11,28 +10,20 @@ import logging
 import os
 import shutil
 import stat
+import typing
 import warnings
-from string import Template
 from urllib.parse import quote_plus
 
 import yaml
 
 from binstar_client.errors import BinstarError
 from binstar_client.utils.appdirs import AppDirs, EnvAppDirs
-from binstar_client.utils.conda import CONDA_PREFIX, CONDA_ROOT
+from binstar_client.utils import conda
+from binstar_client.utils import paths
 from .yaml import yaml_load, yaml_dump
 
+
 logger = logging.getLogger('binstar')
-
-
-def expandvars(path):
-    environ = {'CONDA_ROOT': CONDA_ROOT, 'CONDA_PREFIX': CONDA_PREFIX}
-    environ.update(os.environ)
-    return Template(path).safe_substitute(**environ)
-
-
-def expand(path):
-    return os.path.abspath(os.path.expanduser(expandvars(path)))
 
 
 if 'BINSTAR_CONFIG_DIR' in os.environ:
@@ -80,9 +71,9 @@ PACKAGE_TYPE_LABELS: typing.Final[typing.Mapping[PackageType, str]] = {
     PackageType.STANDARD_R: 'Standard R',
 }
 
-USER_LOGDIR = dirs.user_log_dir
-SITE_CONFIG = os.path.join(os.environ.get('CONDA_ROOT', CONDA_ROOT), 'etc', 'anaconda-client', 'config.yaml')
-SYSTEM_CONFIG = SITE_CONFIG
+USER_LOGDIR: typing.Final[str] = dirs.user_log_dir
+SITE_CONFIG: typing.Final[str] = os.path.join(conda.CONDA_ROOT or '/', 'etc', 'anaconda-client', 'config.yaml')
+SYSTEM_CONFIG: typing.Final[str] = SITE_CONFIG
 
 DEFAULT_URL = 'https://api.anaconda.org'
 DEFAULT_CONFIG = {
@@ -118,7 +109,7 @@ SEARCH_PATH = (
 
 def recursive_update(config, update_dict):
     for update_key, updated_value in update_dict.items():
-        if isinstance(updated_value, collections.abc.Mapping):
+        if isinstance(updated_value, typing.Mapping):
             updated_value_dict = recursive_update(config.get(update_key, {}), updated_value)
             config[update_key] = updated_value_dict
         else:
@@ -128,9 +119,7 @@ def recursive_update(config, update_dict):
 
 
 def get_server_api(token=None, site=None, cls=None, config=None, **kwargs):
-    """
-    Get the anaconda server api class
-    """
+    """Get the anaconda server api class."""
     if not cls:
         from binstar_client import Binstar  # pylint: disable=import-outside-toplevel,cyclic-import
 
@@ -283,10 +272,7 @@ def load_file_configs(search_path):
         except OSError:
             return None
 
-    expanded_paths = [
-        expand(path)
-        for path in search_path
-    ]
+    expanded_paths = list(map(paths.expandvars, search_path))
     stat_paths = (
         _get_st_mode(path)
         for path in expanded_paths

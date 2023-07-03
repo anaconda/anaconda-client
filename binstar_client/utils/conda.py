@@ -1,72 +1,95 @@
-# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
+# -*- coding: utf8 -*-
+
+"""Utilities to detect :code:`conda`."""
+
+from __future__ import annotations
+
+__all__ = ['find_conda', 'CONDA_INFO']
+
+import itertools
 
 import json
+import os
 import subprocess  # nosec
 import sys
-from os.path import basename, dirname, join, exists
-
-WINDOWS = sys.platform.startswith('win')
-CONDA_PREFIX = sys.prefix
-BIN_DIR = 'Scripts' if WINDOWS else 'bin'
-CONDA_EXE = join(CONDA_PREFIX, BIN_DIR, 'conda.exe' if WINDOWS else 'conda')
-CONDA_BAT = join(CONDA_PREFIX, BIN_DIR, 'conda.bat')
+import typing
 
 
-# this function is broken out for monkeypatch by unit tests,
-# so we can test the ImportError handling
-def _import_conda_root():
-    import conda.config  # pylint: disable=import-error,import-outside-toplevel
-    return conda.config.root_dir
+FLAGS: typing.Final[int] = subprocess.CREATE_NO_WINDOW if sys.platform == 'win32' else 0  # type: ignore
 
 
-def _get_conda_exe():
-    command = CONDA_EXE
-    if WINDOWS:
-        command = CONDA_EXE if exists(CONDA_EXE) else CONDA_BAT
+class CondaInfo(typing.TypedDict):
+    """Details on detected conda instance."""
+    # pylint: disable=invalid-name
 
-    if not exists(command):
-        command = None
-
-    return command
+    CONDA_EXE: str
+    CONDA_PREFIX: str
+    CONDA_ROOT: str
 
 
-def _conda_root_from_conda_info():
-    command = _get_conda_exe()
-    if not command:
-        return None
-
-    try:
-        output = subprocess.check_output([
-            command, 'info', '--json'], creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == 'win32' else None
-        ).decode('utf-8')  # nosec
-        conda_info = json.loads(output)
-        return conda_info['root_prefix']
-    except (ValueError, KeyError, subprocess.CalledProcessError):
-        return None
-
-
-def get_conda_root():
-    """Get the PREFIX of the conda installation.
-
-    Returns:
-        str: the ROOT_PREFIX of the conda installation
+class Empty(typing.TypedDict):
     """
-    try:
-        # Fast-path
-        # We're in the root environment
-        conda_root = _import_conda_root()
-    except ImportError:
-        # We're not in the root environment.
-        envs_dir = dirname(CONDA_PREFIX)
-        if basename(envs_dir) == 'envs':
-            # We're in a named environment: `conda create -n <name>`
-            conda_root = dirname(envs_dir)
-        else:
-            # We're in an isolated environment: `conda create -p <path>`
-            # The only way we can find out is by calling conda.
-            conda_root = _conda_root_from_conda_info()
+    Empty dictionary.
 
-    return conda_root
+    Alternative to :class:`~CondaInfo` in case :code:`conda` is not found.
+    """
 
 
-CONDA_ROOT = get_conda_root()
+def find_conda(*prefixes: str, use_env: bool = False) -> typing.Union[CondaInfo, Empty]:
+    """
+    Find :code:`conda` and collect essential details on it.
+
+    :param prefixes: Extra prefixes where to look for conda.
+    :param use_env: Use only existing environment variables if they contain all required details.
+
+                    If at least one variable is missing - usual detection will be used.
+    """
+    commands: typing.List[str] = []
+    command: str
+    prefix: str
+    root: str
+
+    if command := os.environ.get('CONDA_EXE', ''):
+        if use_env and (prefix := os.environ.get('CONDA_PREFIX', '')) and (root := os.environ.get('CONDA_ROOT', '')):
+            return {'CONDA_EXE': command, 'CONDA_PREFIX': prefix, 'CONDA_ROOT': root}
+        commands.append(command)
+
+    prefix = os.path.abspath(sys.prefix)
+    if os.name == 'nt':
+        command = os.path.join('Scripts', 'conda-script.py')
+    else:
+        command = os.path.join('bin', 'conda')
+    for prefix in itertools.chain(prefixes, [os.path.dirname(os.path.dirname(prefix)), prefix]):
+        commands.append(os.path.join(prefix, command))
+
+    commands.append('conda')
+
+    for command in commands:
+        info: typing.Mapping[str, typing.Any]
+        try:
+            info = json.loads(subprocess.check_output([command, 'info', '--json'], creationflags=FLAGS))  # nosec
+            prefix = info.get('active_prefix', '') or info.get('conda_prefix', '')
+            root = info.get('root_prefix', '') or info.get('conda_prefix', '')
+        except (KeyError, OSError, ValueError, subprocess.SubprocessError):
+            continue
+        return {'CONDA_EXE': command, 'CONDA_PREFIX': prefix, 'CONDA_ROOT': root}
+
+    return {}
+
+
+CONDA_INFO: typing.Union[CondaInfo, Empty]
+
+CONDA_EXE: typing.Optional[str]
+CONDA_PREFIX: typing.Optional[str]
+CONDA_ROOT: typing.Optional[str]
+
+
+def __getattr__(name: str) -> typing.Any:
+    """Calculate lazy module properties."""
+    if name == 'CONDA_INFO':
+        return globals().setdefault('CONDA_INFO', find_conda())
+
+    if name in {'CONDA_EXE', 'CONDA_PREFIX', 'CONDA_ROOT'}:
+        return sys.modules[__name__].CONDA_INFO.get(name, None)
+
+    raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
