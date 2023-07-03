@@ -7,9 +7,11 @@ We [keep a changelog.](http://keepachangelog.com/)
 ### Tickets closed
 
 * AC-155 - Package upload improvements
+* AC-163 - Do not use 'none' as a package type
 
 ### Pull requests merged
 
+* [PR 663](https://github.com/Anaconda-Platform/anaconda-client/pull/663) - AC-163: fix default package types
 * [PR 659](https://github.com/Anaconda-Platform/anaconda-client/pull/659) - AC-155: package upload improvements
 
 ## 1.11.3 - 2023-06-01
