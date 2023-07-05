@@ -272,7 +272,7 @@ def load_file_configs(search_path):
         except OSError:
             return None
 
-    expanded_paths = list(map(paths.expandvars, search_path))
+    expanded_paths = list(map(paths.normalize, search_path))
     stat_paths = (
         _get_st_mode(path)
         for path in expanded_paths
