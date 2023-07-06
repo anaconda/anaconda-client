@@ -1,23 +1,20 @@
-# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
+# -*- coding: utf8 -*-
+# pylint: disable=missing-function-docstring
 
-from __future__ import unicode_literals
+"""Tests for authentication commands."""
 
-# Third party imports
-from unittest.mock import patch
+import unittest.mock
 
-# Local imports
-from binstar_client.scripts.cli import main
-from tests.fixture import CLITestCase
+from tests.fixture import CLITestCase, main
 from tests.urlmock import urlpatch
 
 
-# Standard library imports
-
-
 class Test(CLITestCase):
-    @patch('binstar_client.commands.login.store_token')
-    @patch('getpass.getpass')
-    @patch('binstar_client.commands.login.input')
+    """Tests for authentication commands."""
+
+    @unittest.mock.patch('binstar_client.commands.login.store_token')
+    @unittest.mock.patch('getpass.getpass')
+    @unittest.mock.patch('binstar_client.commands.login.input')
     @urlpatch
     def test_login(self, urls, data, getpass, store_token):
         data.return_value = 'test_user'
@@ -27,7 +24,7 @@ class Test(CLITestCase):
         urls.register(path='/authentication-type', content='{"authentication_type": "password"}')
 
         auth = urls.register(method='POST', path='/authentications', content='{"token": "a-token"}')
-        main(['--show-traceback', 'login'], exit_=False)
+        main(['--show-traceback', 'login'])
         self.assertIn('login successful', self.stream.getvalue())
 
         auth.assertCalled()
@@ -38,9 +35,9 @@ class Test(CLITestCase):
         self.assertTrue(store_token.called)
         self.assertEqual(store_token.call_args[0][0], 'a-token')
 
-    @patch('binstar_client.commands.login.store_token')
-    @patch('getpass.getpass')
-    @patch('binstar_client.commands.login.input')
+    @unittest.mock.patch('binstar_client.commands.login.store_token')
+    @unittest.mock.patch('getpass.getpass')
+    @unittest.mock.patch('binstar_client.commands.login.input')
     @urlpatch
     def test_login_compatible(self, urls, data, getpass, store_token):
         data.return_value = 'test_user'
@@ -50,7 +47,7 @@ class Test(CLITestCase):
         urls.register(path='/authentication-type', status=404)
 
         auth = urls.register(method='POST', path='/authentications', content='{"token": "a-token"}')
-        main(['--show-traceback', 'login'], exit_=False)
+        main(['--show-traceback', 'login'])
         self.assertIn('login successful', self.stream.getvalue())
 
         auth.assertCalled()

@@ -59,9 +59,8 @@ def main(arguments: argparse.Namespace) -> None:
         filename: str
         for filename in sorted(set(itertools.chain.from_iterable(arguments.files))):
             uploader.upload(filename)
-
-        uploader.print_uploads()
     finally:
+        uploader.print_uploads()
         uploader.cleanup()
 
 
@@ -373,12 +372,20 @@ class Uploader:  # pylint: disable=too-many-instance-attributes
         Package or release considered to be empty if it was created to upload files to, but all file uploads failed.
         """
         def remove_empty_release(_key: ReleaseKey, record: ReleaseCacheRecord) -> None:
-            logger.info('Removing empty "%s/%s" release after failed upload', record.name, record.version)
-            self.api.remove_release(self.username, record.name, record.version)
+            try:
+                if not self.api.release(self.username, record.name, record.version).get('distributions', []):
+                    logger.info('Removing empty "%s/%s" release after failed upload', record.name, record.version)
+                    self.api.remove_release(self.username, record.name, record.version)
+            except (AttributeError, TypeError, errors.NotFound):
+                pass
 
         def remove_empty_package(_key: PackageKey, record: PackageCacheRecord) -> None:
-            logger.info('Removing empty "%s" package after failed upload', record.name)
-            self.api.remove_package(self.username, record.name)
+            try:
+                if not self.api.package(self.username, record.name).get('files', []):
+                    logger.info('Removing empty "%s" package after failed upload', record.name)
+                    self.api.remove_package(self.username, record.name)
+            except (AttributeError, TypeError, errors.NotFound):
+                pass
 
         CacheRecord.cleanup(self.__release_cache, remove_empty_release)
         CacheRecord.cleanup(self.__package_cache, remove_empty_package)

@@ -1,35 +1,37 @@
-# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
+# -*- coding: utf8 -*-
+# pylint: disable=missing-function-docstring
 
-from __future__ import unicode_literals
+"""Tests for configuration management."""
 
 import shutil
 import tempfile
-from os.path import join, exists
+import os
+import unittest.mock
 
-from unittest import mock
-
-from binstar_client.scripts.cli import main
-from tests.fixture import CLITestCase
+from tests.fixture import CLITestCase, main
 
 
 class Test(CLITestCase):
+    """Tests for configuration management."""
+
     def test_write_env(self):
         tmpdir = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, tmpdir)
 
-        with mock.patch('binstar_client.commands.config.USER_CONFIG', join(tmpdir, 'config.yaml')), \
-                mock.patch('binstar_client.commands.config.SEARCH_PATH', [tmpdir]):
-            main(['config', '--set', 'url', 'http://localhost:5000'], exit_=False)
+        with unittest.mock.patch('binstar_client.commands.config.USER_CONFIG', os.path.join(tmpdir, 'config.yaml')), \
+                unittest.mock.patch('binstar_client.commands.config.SEARCH_PATH', [tmpdir]):
+            main(['config', '--set', 'url', 'http://localhost:5000'])
 
-            self.assertTrue(exists(join(tmpdir, 'config.yaml')))
+            self.assertTrue(os.path.exists(os.path.join(tmpdir, 'config.yaml')))
 
-            with open(join(tmpdir, 'config.yaml'), encoding='utf-8') as conf_file:
+            with open(os.path.join(tmpdir, 'config.yaml'), encoding='utf-8') as conf_file:
                 config_output = conf_file.read()
             expected_config_output = 'url: http://localhost:5000\n'
             self.assertEqual(config_output, expected_config_output)
 
-            main(['config', '--show-sources'], exit_=False)
+            main(['config', '--show-sources'])
             expected_show_sources_output = '==> {config} <==\nurl: http://localhost:5000\n\n'.format(
-                config=join(tmpdir, 'config.yaml'))
+                config=os.path.join(tmpdir, 'config.yaml'),
+            )
 
             self.assertIn(expected_show_sources_output, self.stream.getvalue())

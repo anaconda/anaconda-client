@@ -153,7 +153,7 @@ def main(
         allow_plugin_main: bool = True,
 ) -> None:
     """Entrypoint for CLI interface of `anaconda`."""
-    if allow_plugin_main:
+    if allow_plugin_main and (not os.environ.get('ANACONDA_CLIENT_FORCE_STANDALONE', '')):
         plugged_in_main: typing.Optional[typing.Callable[[], typing.Any]] = _load_main_plugin()
         if plugged_in_main is not None:
             plugged_in_main()

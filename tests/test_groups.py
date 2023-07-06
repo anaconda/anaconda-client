@@ -1,13 +1,16 @@
-# pylint: disable=unused-argument,missing-module-docstring,missing-class-docstring,missing-function-docstring
+# -*- coding: utf8 -*-
+# pylint: disable=missing-function-docstring
 
-import unittest
-from tests.fixture import CLITestCase
-from tests.urlmock import urlpatch
-from binstar_client.scripts.cli import main
+"""Tests for group management commands."""
+
 from binstar_client import errors
+from tests.fixture import CLITestCase, main
+from tests.urlmock import urlpatch
 
 
 class Test(CLITestCase):
+    """Tests for group management commands."""
+
     @urlpatch
     def test_show(self, urls):
         urls.register(
@@ -16,7 +19,7 @@ class Test(CLITestCase):
             content='{"groups": [{"name":"grp", "permission": "read"}]}',
         )
 
-        main(['--show-traceback', 'groups', 'show', 'org'], exit_=False)
+        main(['--show-traceback', 'groups', 'show', 'org'])
 
         urls.assertAllCalled()
 
@@ -28,7 +31,7 @@ class Test(CLITestCase):
             content='{"name": "owners", "permission": "read", "members_count": 1, "repos_count": 1}',
         )
 
-        main(['--show-traceback', 'groups', 'show', 'org/owners'], exit_=False)
+        main(['--show-traceback', 'groups', 'show', 'org/owners'])
 
         urls.assertAllCalled()
 
@@ -40,14 +43,13 @@ class Test(CLITestCase):
             status=204,
         )
 
-        main(['--show-traceback', 'groups', 'add', 'org/new_grp'], exit_=False)
+        main(['--show-traceback', 'groups', 'add', 'org/new_grp'])
 
         urls.assertAllCalled()
 
-    @urlpatch
-    def test_create_missing_group(self, urls):
+    def test_create_missing_group(self):
         with self.assertRaisesRegex(errors.UserError, 'Group name not given'):
-            main(['--show-traceback', 'groups', 'add', 'org'], exit_=False)
+            main(['--show-traceback', 'groups', 'add', 'org'])
 
     @urlpatch
     def test_add_member(self, urls):
@@ -57,14 +59,13 @@ class Test(CLITestCase):
             status=204,
         )
 
-        main(['--show-traceback', 'groups', 'add_member', 'org/grp/new_member'], exit_=False)
+        main(['--show-traceback', 'groups', 'add_member', 'org/grp/new_member'])
 
         urls.assertAllCalled()
 
-    @urlpatch
-    def test_add_member_missing_member(self, urls):
+    def test_add_member_missing_member(self):
         with self.assertRaisesRegex(errors.UserError, 'Member name not given'):
-            main(['--show-traceback', 'groups', 'add_member', 'org/grp'], exit_=False)
+            main(['--show-traceback', 'groups', 'add_member', 'org/grp'])
 
     @urlpatch
     def test_remove_member(self, urls):
@@ -74,7 +75,7 @@ class Test(CLITestCase):
             status=204,
         )
 
-        main(['--show-traceback', 'groups', 'remove_member', 'org/grp/new_member'], exit_=False)
+        main(['--show-traceback', 'groups', 'remove_member', 'org/grp/new_member'])
 
         urls.assertAllCalled()
 
@@ -86,7 +87,7 @@ class Test(CLITestCase):
             content='[{"name": "pkg", "full_name": "org/pkg", "summary": "An org pkg"}]'
         )
 
-        main(['--show-traceback', 'groups', 'packages', 'org/grp'], exit_=False)
+        main(['--show-traceback', 'groups', 'packages', 'org/grp'])
 
         urls.assertAllCalled()
 
@@ -98,7 +99,7 @@ class Test(CLITestCase):
             status=204,
         )
 
-        main(['--show-traceback', 'groups', 'add_package', 'org/grp/pkg'], exit_=False)
+        main(['--show-traceback', 'groups', 'add_package', 'org/grp/pkg'])
 
         urls.assertAllCalled()
 
@@ -110,10 +111,6 @@ class Test(CLITestCase):
             status=204,
         )
 
-        main(['--show-traceback', 'groups', 'remove_package', 'org/grp/pkg'], exit_=False)
+        main(['--show-traceback', 'groups', 'remove_package', 'org/grp/pkg'])
 
         urls.assertAllCalled()
-
-
-if __name__ == '__main__':
-    unittest.main()
