@@ -1,6 +1,7 @@
+# -*- coding: utf8 -*-
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
-from __future__ import print_function, absolute_import, unicode_literals
+from __future__ import annotations
 
 import base64
 import json
@@ -8,47 +9,14 @@ import logging
 import sys
 from hashlib import md5
 
-from six.moves import input
-
 # Re-export config
-from .config import (get_server_api, dirs, load_token, store_token,
-                     remove_token, get_config, set_config, load_config,
-                     get_binstar,
-                     USER_CONFIG, USER_LOGDIR, SITE_CONFIG, DEFAULT_CONFIG)
-# re-export parse_version
+from .config import (
+    get_server_api, dirs, load_token, store_token, remove_token, get_config, set_config, load_config, get_binstar,
+    USER_CONFIG, USER_LOGDIR, SITE_CONFIG, DEFAULT_CONFIG
+)
 from .spec import PackageSpec, package_specs, parse_specs
 
 logger = logging.getLogger('binstar')
-
-# Compatibility layer for :func:`base64.encodestring` / :func:`base64.encodebytes` function
-#
-# :func:`~base64.encodestring` was replaced by :func:`~base64.encodebytes` in Python 3.1, as well as deprecated.
-# In addition, since Python 3.1 result type is changed to :class:`bytes` instead of :class:`str`. Wrapper functions
-# ensure :class:`str` output.
-
-if sys.version_info[:3] < (3, 1, 0):
-    def b64encode(content):
-        """
-        Convert bytes-like `content` into base64-encoded string with new lines after every 76 characters.
-
-        :param content: Source object to convert.
-        :type content: Union[bytes, bytearray]
-        :return: Base64-encoded string.
-        :rtype: str
-        """
-        return base64.encodebytes(content)
-
-else:
-    def b64encode(content):
-        """
-        Convert bytes-like `content` into base64-encoded string with new lines after every 76 characters.
-
-        :param content: Source object to convert.
-        :type content: Union[bytes, bytearray]
-        :return: Base64-encoded string.
-        :rtype: str
-        """
-        return base64.encodebytes(content).decode('ascii')
 
 
 def jencode(*E, **F):
@@ -75,7 +43,7 @@ def compute_hash(file, buf_size=8192, size=None, hash_algorithm=md5):
             chunk = file.read(buf_size)
     hex_digest = hash_obj.hexdigest()
 
-    base64_digest = b64encode(hash_obj.digest()).rstrip('\n')
+    base64_digest = base64.encodebytes(hash_obj.digest()).decode('ascii').rstrip('\n')
 
     # data_size based on bytes read.
     data_size = file.tell() - spos

@@ -1,26 +1,25 @@
-# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
+# -*- coding: utf8 -*-
+# pylint: disable=missing-function-docstring
 
-from __future__ import unicode_literals
+"""Tests for package copy operations."""
 
-# Standard library imports
 import json
-import unittest
 
-# Local imports
 from binstar_client.errors import Conflict
-from binstar_client.scripts.cli import main
 from tests.urlmock import urlpatch
-from tests.fixture import CLITestCase
+from tests.fixture import CLITestCase, main
 
 
 class Test(CLITestCase):
+    """Tests for package copy operations."""
+
     @urlpatch
     def test_copy_label(self, urls):
         urls.register(method='GET', path='/channels/u1', content='["dev"]')
         copy = urls.register(
             method='POST', path='/copy/package/u1/p1/1.0/', content='[{"basename": "copied-file_1.0.tgz"}]')
 
-        main(['--show-traceback', 'copy', '--from-label', 'dev', '--to-label', 'release/xyz', 'u1/p1/1.0'], False)
+        main(['--show-traceback', 'copy', '--from-label', 'dev', '--to-label', 'release/xyz', 'u1/p1/1.0'])
 
         urls.assertAllCalled()
         req = json.loads(copy.req.body)
@@ -33,9 +32,7 @@ class Test(CLITestCase):
         copy = urls.register(
             method='PUT', path='/copy/package/u1/p1/1.0/', content='[{"basename": "copied-file_1.0.tgz"}]')
 
-        main(
-            ['--show-traceback', 'copy', '--from-label', 'dev', '--to-label', 'release/xyz', 'u1/p1/1.0', '--replace'],
-            False)
+        main(['--show-traceback', 'copy', '--from-label', 'dev', '--to-label', 'release/xyz', 'u1/p1/1.0', '--replace'])
 
         urls.assertAllCalled()
         req = json.loads(copy.req.body)
@@ -48,8 +45,7 @@ class Test(CLITestCase):
         copy = urls.register(
             method='PATCH', path='/copy/package/u1/p1/1.0/', content='[{"basename": "copied-file_1.0.tgz"}]')
 
-        main(['--show-traceback', 'copy', '--from-label', 'dev', '--to-label', 'release/xyz', 'u1/p1/1.0', '--update'],
-             False)
+        main(['--show-traceback', 'copy', '--from-label', 'dev', '--to-label', 'release/xyz', 'u1/p1/1.0', '--update'])
 
         urls.assertAllCalled()
         req = json.loads(copy.req.body)
@@ -63,7 +59,7 @@ class Test(CLITestCase):
             method='POST', path='/copy/package/u1/p1/1.0/', status=409
         )
         with self.assertRaises(Conflict):
-            main(['--show-traceback', 'copy', '--from-label', 'dev', '--to-label', 'release/xyz', 'u1/p1/1.0'], False)
+            main(['--show-traceback', 'copy', '--from-label', 'dev', '--to-label', 'release/xyz', 'u1/p1/1.0'])
 
         urls.assertAllCalled()
         req = json.loads(copy.req.body)
@@ -76,8 +72,5 @@ class Test(CLITestCase):
         with self.assertRaises(SystemExit):
             main([
                 '--show-traceback', 'copy', '--from-label', 'dev',
-                '--to-label', 'release/xyz', 'u1/p1/1.0', '--update', '--replace'], False)
-
-
-if __name__ == '__main__':
-    unittest.main()
+                '--to-label', 'release/xyz', 'u1/p1/1.0', '--update', '--replace',
+            ])

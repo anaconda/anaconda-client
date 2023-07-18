@@ -1,16 +1,16 @@
-# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
+# -*- coding: utf8 -*-
+# pylint: disable=missing-function-docstring
 
-from __future__ import unicode_literals
-
-import unittest
+"""Tests for anaconda-client authorizations and token management."""
 
 from binstar_client.errors import BinstarError
-from binstar_client.scripts.cli import main
-from tests.fixture import CLITestCase
+from tests.fixture import CLITestCase, main
 from tests.urlmock import urlpatch
 
 
 class Test(CLITestCase):
+    """Tests for anaconda-client authorizations and token management."""
+
     @urlpatch
     def test_remove_token_from_org(self, urls):
         remove_token = urls.register(
@@ -19,7 +19,7 @@ class Test(CLITestCase):
             content='{"token": "a-token"}',
             status=201
         )
-        main(['--show-traceback', 'auth', '--remove', 'tokenname', '-o', 'orgname'], False)
+        main(['--show-traceback', 'auth', '--remove', 'tokenname', '-o', 'orgname'])
         self.assertIn('Removed token tokenname', self.stream.getvalue())
 
         remove_token.assertCalled()
@@ -32,7 +32,7 @@ class Test(CLITestCase):
             content='{"token": "a-token"}',
             status=201
         )
-        main(['--show-traceback', 'auth', '--remove', 'tokenname'], False)
+        main(['--show-traceback', 'auth', '--remove', 'tokenname'])
         self.assertIn('Removed token tokenname', self.stream.getvalue())
 
         remove_token.assertCalled()
@@ -46,10 +46,6 @@ class Test(CLITestCase):
             status=403
         )
         with self.assertRaises(BinstarError):
-            main(['--show-traceback', 'auth', '--remove', 'tokenname', '-o', 'wrong_org'], False)
+            main(['--show-traceback', 'auth', '--remove', 'tokenname', '-o', 'wrong_org'])
 
         remove_token.assertCalled()
-
-
-if __name__ == '__main__':
-    unittest.main()

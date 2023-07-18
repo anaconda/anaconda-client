@@ -1,6 +1,7 @@
+# -*- coding: utf8 -*-
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
-from __future__ import print_function, absolute_import, unicode_literals
+from __future__ import annotations
 
 import collections
 import enum
@@ -9,28 +10,20 @@ import logging
 import os
 import shutil
 import stat
+import typing
 import warnings
-from string import Template
 from urllib.parse import quote_plus
 
 import yaml
 
 from binstar_client.errors import BinstarError
 from binstar_client.utils.appdirs import AppDirs, EnvAppDirs
-from binstar_client.utils.conda import ENV_PREFIX, CONDA_ROOT
+from binstar_client.utils import conda
+from binstar_client.utils import paths
 from .yaml import yaml_load, yaml_dump
 
+
 logger = logging.getLogger('binstar')
-
-
-def expandvars(path):
-    environ = {'CONDA_ROOT': CONDA_ROOT, 'ENV_PREFIX': ENV_PREFIX}
-    environ.update(os.environ)
-    return Template(path).safe_substitute(**environ)
-
-
-def expand(path):
-    return os.path.abspath(os.path.expanduser(expandvars(path)))
 
 
 if 'BINSTAR_CONFIG_DIR' in os.environ:
@@ -51,21 +44,26 @@ class PackageType(enum.Enum):
     PROJECT = 'project'
     INSTALLER = 'installer'
 
-    def label(self):
-        return self.get_from_mapping(PACKAGE_TYPE_LABELS, default=self.value)
-
-    def get_from_mapping(self, mapping, default=None):
-        return mapping.get(self, default)
+    @property
+    def label(self) -> str:
+        return PACKAGE_TYPE_LABELS.get(self, self.value)
 
     @classmethod
-    def _missing_(cls, value):
+    def _missing_(cls, value: typing.Any) -> PackageType:
         try:
             return cls(PACKAGE_TYPE_ALIASES[value])
         except KeyError:
             return super()._missing_(value)
 
 
-PACKAGE_TYPE_LABELS = {
+PACKAGE_TYPE_ALIASES: typing.Final[typing.Mapping[str, str]] = {
+    'PyPI': 'pypi',
+    'standard_python': 'pypi',
+
+    'cran': 'r',
+    'standard_r': 'r',
+}
+PACKAGE_TYPE_LABELS: typing.Final[typing.Mapping[PackageType, str]] = {
     PackageType.ENV: 'Environment',
     PackageType.NOTEBOOK: 'Notebook',
     PackageType.CONDA: 'Conda',
@@ -73,17 +71,9 @@ PACKAGE_TYPE_LABELS = {
     PackageType.STANDARD_R: 'Standard R',
 }
 
-PACKAGE_TYPE_ALIASES = {
-    'PyPI': 'pypi',
-    'standard_python': 'pypi',
-
-    'cran': 'r',
-    'standard_r': 'r',
-}
-
-USER_LOGDIR = dirs.user_log_dir
-SITE_CONFIG = os.path.join(os.environ.get('CONDA_ROOT', CONDA_ROOT), 'etc', 'anaconda-client', 'config.yaml')
-SYSTEM_CONFIG = SITE_CONFIG
+USER_LOGDIR: typing.Final[str] = dirs.user_log_dir
+SITE_CONFIG: typing.Final[str] = os.path.join(conda.CONDA_ROOT or '/', 'etc', 'anaconda-client', 'config.yaml')
+SYSTEM_CONFIG: typing.Final[str] = SITE_CONFIG
 
 DEFAULT_URL = 'https://api.anaconda.org'
 DEFAULT_CONFIG = {
@@ -113,13 +103,13 @@ SEARCH_PATH = (
     '$CONDA_ROOT/etc/anaconda-client/',
     dirs.user_data_dir,
     '~/.continuum/anaconda-client/',
-    '$ENV_PREFIX/etc/anaconda-client/',
+    '$CONDA_PREFIX/etc/anaconda-client/',
 )
 
 
 def recursive_update(config, update_dict):
     for update_key, updated_value in update_dict.items():
-        if isinstance(updated_value, collections.abc.Mapping):
+        if isinstance(updated_value, typing.Mapping):
             updated_value_dict = recursive_update(config.get(update_key, {}), updated_value)
             config[update_key] = updated_value_dict
         else:
@@ -129,9 +119,7 @@ def recursive_update(config, update_dict):
 
 
 def get_server_api(token=None, site=None, cls=None, config=None, **kwargs):
-    """
-    Get the anaconda server api class
-    """
+    """Get the anaconda server api class."""
     if not cls:
         from binstar_client import Binstar  # pylint: disable=import-outside-toplevel,cyclic-import
 
@@ -284,10 +272,7 @@ def load_file_configs(search_path):
         except OSError:
             return None
 
-    expanded_paths = [
-        expand(path)
-        for path in search_path
-    ]
+    expanded_paths = list(map(paths.normalize, search_path))
     stat_paths = (
         _get_st_mode(path)
         for path in expanded_paths

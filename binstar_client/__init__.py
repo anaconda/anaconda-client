@@ -71,11 +71,8 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
         return self._session
 
     def check_server(self):
-        """
-        Checks if the server is reachable and throws
-        and exception if it isn't
-        """
-        msg = 'API server not found. Please check your API url configuration.'
+        """Check if server is reachable or throw an exception if it isn't."""
+        msg = 'API server is unavailable. Please check your API url configuration.'
 
         try:
             response = self.session.head(self.domain)
@@ -352,14 +349,13 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
         :param public: if true then the package will be hosted publicly
         :param attrs: A dictionary of extra attributes for this package
         """
-        if package_type is not None:
-            package_type = package_type.value
+        package_types = [] if package_type is None else [package_type.value]
 
         url = '%s/package/%s/%s' % (self.domain, login, package_name)
 
         attrs = attrs or {}
         attrs['summary'] = summary
-        attrs['package_types'] = [package_type]
+        attrs['package_types'] = package_types
         attrs['license'] = {
             'name': license,
             'url': license_url,

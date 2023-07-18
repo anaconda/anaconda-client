@@ -1,4 +1,5 @@
 {% set data = load_setup_py_data() %}
+
 package:
   name: anaconda-client
   version: {{ data.get('version') }}
@@ -7,29 +8,56 @@ source:
   git_url: ../
 
 build:
+  number: 0
   entry_points:
     - anaconda = binstar_client.scripts.cli:main
     - binstar = binstar_client.scripts.cli:main
     - conda-server = binstar_client.scripts.cli:main
 
 requirements:
-  build:
+  host:
     - python
     - setuptools
   run:
     - python
-    - setuptools
-    - pytz
-    - six
-    - nbformat >=4.4.0
     - clyent >=1.2.0
-    - requests >=2.9.1
-    - PyYAML >=3.12
+    - conda-package-handling >=1.7.3
+    - defusedxml >=0.7.1
+    - nbformat >=4.4.0
     - python-dateutil >=2.6.1
+    - pytz >=2021.3
+    - pyyaml >=3.12
+    - requests >=2.20.0
+    - requests-toolbelt >=0.9.1
+    - setuptools >=58.0.4
+    - six >=1.15.0
+    - tqdm >=4.56.0
+    - urllib3 >=1.26.4
+
+test:
+  requires:
+    - conda
+  commands:
+    - anaconda -h
+    - anaconda --version
+  imports:
+    - binstar_client
+    - binstar_client.commands
+    - binstar_client.inspect_package
+    - binstar_client.mixins
+    - binstar_client.scripts
+    - binstar_client.utils
+    - binstar_client.utils.notebook
 
 about:
-  home: {{ data.get('url') }}
-  license: {{ data.get('license') }}
+  home: https://anaconda.org
+  license: BSD-3-Clause
   license_family: BSD
   license_file: LICENSE.md
-  summary: {{ data.get('description') }}
+  summary: anaconda.org command line client library
+  description: |
+    Anaconda-client is used to connect to and manage your Anaconda Cloud account, upload packages you have created
+    and generate access tokens to allow access to private packages.
+  doc_url: https://docs.anaconda.org/anacondaorg/
+  doc_source_url: https://github.com/Anaconda-Platform/anaconda-client/blob/master/README.md
+  dev_url: https://github.com/Anaconda-Platform/anaconda-client

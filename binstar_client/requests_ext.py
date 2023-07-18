@@ -1,10 +1,14 @@
+# -*- coding: utf8 -*-
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
-from __future__ import unicode_literals
+from __future__ import annotations
 
-import logging
+__all__ = ['NullAuth', 'encode_multipart_formdata_stream', 'stream_multipart']
+
 from io import BytesIO, StringIO
 from itertools import chain
+import logging
+import typing
 
 import requests
 import six
@@ -13,10 +17,17 @@ from urllib3.filepost import choose_boundary
 logger = logging.getLogger('binstar.requests_ext')
 
 
-def iter_fields(fields):
-    if isinstance(fields, dict):
-        return ((key, val) for key, val in fields.items())
-    return ((key, val) for key, val in fields)
+KeyT = typing.TypeVar('KeyT')
+ValueT = typing.TypeVar('ValueT')
+
+
+def iter_fields(
+        fields: typing.Union[typing.Mapping[KeyT, ValueT], typing.Iterable[typing.Tuple[KeyT, ValueT]]],
+) -> typing.Iterator[typing.Tuple[KeyT, ValueT]]:
+    """Iterate over fields."""
+    if isinstance(fields, typing.Mapping):
+        return iter(fields.items())
+    return iter(fields)
 
 
 class NullAuth(requests.auth.AuthBase):  # pylint: disable=too-few-public-methods

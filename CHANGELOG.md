@@ -2,6 +2,25 @@
 
 We [keep a changelog.](http://keepachangelog.com/)
 
+## 1.12.0 - 2023-07-18
+
+### Tickets closed
+
+* AC-155 - Package upload improvements
+* AC-163 - Do not use 'none' as a package type
+* AC-164 - Allow main entrypoint plugin
+* AC-165 - Remove dependency on deprecated urllib3 function
+* AC-167 - Address reported anaconda-client issues
+
+### Pull requests merged
+
+* [PR 672](https://github.com/Anaconda-Platform/anaconda-client/pull/672) - AC-164: anaconda cli entrypoints support
+* [PR 670](https://github.com/Anaconda-Platform/anaconda-client/pull/670) - AC-167: fixes for some issues
+* [PR 669](https://github.com/Anaconda-Platform/anaconda-client/pull/669) - AC-165: compatibility with urllib3
+* [PR 664](https://github.com/Anaconda-Platform/anaconda-client/pull/664) - feat: Allow main entrypoint plugin
+* [PR 663](https://github.com/Anaconda-Platform/anaconda-client/pull/663) - AC-163: fix default package types
+* [PR 659](https://github.com/Anaconda-Platform/anaconda-client/pull/659) - AC-155: package upload improvements
+
 ## 1.11.3 - 2023-06-01
 
 ### Tickets closed
