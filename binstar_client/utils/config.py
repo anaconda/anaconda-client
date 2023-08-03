@@ -16,6 +16,11 @@ from urllib.parse import quote_plus
 
 import yaml
 
+try:
+    from conda.gateways import anaconda_client as c_client
+except ImportError:
+    c_client = None
+
 from binstar_client.errors import BinstarError
 from binstar_client.utils.appdirs import AppDirs, EnvAppDirs
 from binstar_client.utils import conda
@@ -176,14 +181,28 @@ TOKEN_DIRS = [
     os.path.join(os.path.dirname(USER_CONFIG), 'tokens'),
 ]
 TOKEN_DIR = TOKEN_DIRS[-1]
+if c_client is not None:
+    conda_token_dir = c_client._get_binstar_token_directory()
+    if conda_token_dir != TOKEN_DIRS[0]:
+        warnings.warn(
+            'conda and anaconda-client have conflicting token paths:\n'
+            '  conda: %s\n'
+            '  anaconda-client: %s\n'
+            'to ensure consistent behavior, the conda path will be used.\n' % (conda_token_dir, TOKEN_DIR),
+            RuntimeWarning     
+        )
+        TOKEN_DIRS.insert(0, conda_token_dir)
 
 
 def store_token(token, args):
     config = get_config(site=args and args.site)
+    url = config.get('url', DEFAULT_URL)
+    if c_client is not None:
+        logger.debug('Using conda..set_binstar_token')
+        c_client.set_binstar_token(url, token)
+        return
 
     for token_dir in TOKEN_DIRS:
-        url = config.get('url', DEFAULT_URL)
-
         if not os.path.isdir(token_dir):
             os.makedirs(token_dir)
         tokenfile = os.path.join(token_dir, '%s.token' % quote_plus(url))
@@ -196,6 +215,14 @@ def store_token(token, args):
 
 
 def load_token(url):
+    if c_client is not None:
+        logger.debug('Using conda..read_binstar_tokens')
+        url_c = url.rstrip('/') + '/'
+        for binstar_url, token in c_client.read_binstar_tokens().items():
+            if url_c.startswith(binstar_url.rstrip('/') + '/'):
+                if token:
+                    return token
+
     for token_dir in TOKEN_DIRS:
         tokenfile = os.path.join(token_dir, '%s.token' % quote_plus(url))
 
