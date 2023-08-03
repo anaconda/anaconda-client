@@ -182,14 +182,14 @@ TOKEN_DIRS = [
 ]
 TOKEN_DIR = TOKEN_DIRS[-1]
 if c_client is not None:
-    conda_token_dir = c_client._get_binstar_token_directory()
+    conda_token_dir = c_client._get_binstar_token_directory()  # pylint: disable=W0212
     if conda_token_dir != TOKEN_DIRS[0]:
         warnings.warn(
             'conda and anaconda-client have conflicting token paths:\n'
             '  conda: %s\n'
             '  anaconda-client: %s\n'
             'to ensure consistent behavior, the conda path will be used.\n' % (conda_token_dir, TOKEN_DIR),
-            RuntimeWarning     
+            RuntimeWarning
         )
         TOKEN_DIRS.insert(0, conda_token_dir)
 
