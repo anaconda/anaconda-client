@@ -38,6 +38,7 @@ setuptools.setup(
         'Programming Language :: Python',
     ],
 
+    python_requires = '>=3.8',
     install_requires=install_requires,
     extras_require={
         'full': extras_require,
