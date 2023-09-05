@@ -20,7 +20,7 @@ requirements:
     - setuptools
   run:
     - python
-    - anaconda-anon-usage >= 0.2.0
+    - anaconda-anon-usage >= 0.3.0
     - clyent >=1.2.0
     - conda-package-handling >=1.7.3
     - defusedxml >=0.7.1
