@@ -2,7 +2,7 @@
 
 We [keep a changelog.](http://keepachangelog.com/)
 
-## Next release
+## 1.12.1 - 2023-09-13
 
 ### Tickets closed
 
