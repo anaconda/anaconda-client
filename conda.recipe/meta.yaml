@@ -9,6 +9,7 @@ source:
 
 build:
   number: 0
+  script: {{ PYTHON }} -m pip install --no-build-isolation --no-deps .
   entry_points:
     - anaconda = binstar_client.scripts.cli:main
     - binstar = binstar_client.scripts.cli:main
@@ -16,10 +17,12 @@ build:
 
 requirements:
   host:
+    - pip
     - python
     - setuptools
   run:
     - python
+    - anaconda-anon-usage >=0.4.0
     - clyent >=1.2.0
     - conda-package-handling >=1.7.3
     - defusedxml >=0.7.1
@@ -58,6 +61,6 @@ about:
   description: |
     Anaconda-client is used to connect to and manage your Anaconda Cloud account, upload packages you have created
     and generate access tokens to allow access to private packages.
-  doc_url: https://docs.anaconda.org/anacondaorg/
+  doc_url: https://docs.anaconda.com/free/anacondaorg/
   doc_source_url: https://github.com/Anaconda-Platform/anaconda-client/blob/master/README.md
   dev_url: https://github.com/Anaconda-Platform/anaconda-client
