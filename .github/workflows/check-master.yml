@@ -43,7 +43,7 @@ jobs:
         run: |
           conda install python=${{ matrix.python-version }} pip --file requirements.txt --file requirements-extra.txt
           pip install -r requirements-dev.txt
-          python setup.py develop
+          python setup.py develop --no-deps
 
       - name: Conda environment information
         id: conda_environment_information
@@ -87,7 +87,7 @@ jobs:
 
   test:
     name: Test (Python ${{ matrix.python-version }} on ${{ matrix.os }})
-    needs: lint
+    needs: [lint]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -116,7 +116,7 @@ jobs:
         run: |
           conda install python=${{ matrix.python-version }} pip --file requirements.txt --file requirements-extra.txt
           pip install -r requirements-dev.txt
-          python setup.py develop
+          python setup.py develop --no-deps
 
       - name: Conda environment information
         run: |

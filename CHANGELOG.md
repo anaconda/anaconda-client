@@ -2,6 +2,16 @@
 
 We [keep a changelog.](http://keepachangelog.com/)
 
+## 1.12.1 - 2023-09-13
+
+### Tickets closed
+
+* AC-191 - Add dependency for anaconda-anon-usage to anaconda-client
+
+### Pull requests merged
+
+* [PR 684](https://github.com/Anaconda-Platform/anaconda-client/pull/684) - AC-191: anaconda-anon-usage dependency added
+
 ## 1.12.0 - 2023-07-18
 
 ### Tickets closed
