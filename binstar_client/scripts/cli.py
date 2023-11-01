@@ -8,8 +8,10 @@ __all__ = ('main',)
 
 import argparse
 from importlib import metadata
+import json
 import logging
 import os
+import pkgutil
 import sys
 import types
 import typing
@@ -70,6 +72,7 @@ def json_action(action):
 
     return a_data
 
+
 def json_group(group):
     grp_data = {'description': group.description,
                 'title': group.title,
@@ -80,6 +83,7 @@ def json_group(group):
         grp_data['groups'] = [json_group(g) for g in group._action_groups]
 
     return grp_data
+
 
 class json_help(argparse.Action):
     def __init__(self, nargs=0, help=argparse.SUPPRESS, **kwargs):
@@ -100,6 +104,7 @@ class json_help(argparse.Action):
 
         json.dump(docs, sys.stdout, indent=2)
         raise SystemExit(0)
+
 
 def add_default_arguments(parser, version=None):
 
@@ -129,10 +134,8 @@ def add_default_arguments(parser, version=None):
                             version="%%(prog)s Command line client (version %s)" % (version,))
 
 
-MODULE_EXTENSIONS = ('.py', '.pyc', '.pyo')
-
 def get_sub_command_names(module):
-    return [name for _, name, _ in pkgutil.iter_modules([dirname(module.__file__)]) if not name.startswith('_')]
+    return [name for _, name, _ in pkgutil.iter_modules([os.path.dirname(module.__file__)]) if not name.startswith('_')]
 
 
 def get_sub_commands(module):
