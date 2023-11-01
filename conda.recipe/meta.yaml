@@ -23,7 +23,6 @@ requirements:
   run:
     - python
     - anaconda-anon-usage >=0.4.0
-    - clyent >=1.2.0
     - conda-package-handling >=1.7.3
     - defusedxml >=0.7.1
     - nbformat >=4.4.0
