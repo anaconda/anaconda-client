@@ -26,6 +26,13 @@ from binstar_client.utils import logging_utils
 logger = logging.getLogger('binstar')
 
 
+def _get_entry_points(group: str) -> typing.List[metadata.EntryPoint]:
+    # The API was changed in Python 3.10, see https://docs.python.org/3/library/importlib.metadata.html#entry-points
+    if sys.version_info.major == 3 and sys.version_info.minor < 10:
+        return metadata.entry_points().get(group, [])
+    return metadata.entry_points().select(group=group)  # type: ignore
+
+
 def file_or_token(value: str) -> str:
     """
     Retrieve a token from input.
@@ -155,7 +162,7 @@ def add_subparser_modules(parser, module=None, entry_point_name=None):
             command_module.add_parser(subparsers)
 
     if entry_point_name:  # LOAD sub parsers from setup.py entry_point
-        for entry_point in iter_entry_points(entry_point_name):
+        for entry_point in _get_entry_points(entry_point_name):
             add_parser = entry_point.load()
             add_parser(subparsers)
 
@@ -238,12 +245,7 @@ def _load_main_plugin() -> typing.Optional[typing.Callable[[], typing.Any]]:
     """Allow loading a new CLI main entrypoint via plugin mechanisms. There can only be one."""
     plugin_group_name: typing.Final[str] = 'anaconda_cli.main'
 
-    # The API was changed in Python 3.10, see https://docs.python.org/3/library/importlib.metadata.html#entry-points
-    plugin_mains: typing.List[metadata.EntryPoint]
-    if sys.version_info.major == 3 and sys.version_info.minor < 10:
-        plugin_mains = metadata.entry_points().get(plugin_group_name, [])
-    else:
-        plugin_mains = metadata.entry_points().select(group=plugin_group_name)  # type: ignore
+    plugin_mains: typing.List[metadata.EntryPoint] = _get_entry_points(plugin_group_name)
 
     if len(plugin_mains) > 1:
         raise EnvironmentError(
