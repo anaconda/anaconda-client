@@ -94,10 +94,10 @@ def json_group(group):
 
 class JSONHelp(argparse.Action):
     # pylint: disable-next=redefined-builtin
-    def __init__(self, nargs=0, help=argparse.SUPPRESS, **kwargs):
-        argparse.Action.__init__(self, nargs=nargs, help=help, **kwargs)
+    def __init__(self, option_strings, dest, nargs=0, help=argparse.SUPPRESS, **kwargs):
+        argparse.Action.__init__(self, option_strings, dest, nargs=nargs, help=help, **kwargs)
 
-    def __call__(self, parser, namespace, values, option_string):
+    def __call__(self, parser, namespace, values, option_string=None):
         self.nargs = 0
         docs = {'prog': parser.prog,
                 'usage': parser.format_usage()[7:],
