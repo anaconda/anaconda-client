@@ -69,7 +69,7 @@ def json_action(action):
             choices[choice.dest] = choice.help
         a_data['choices'] = choices
 
-    reg = {v: k for k, v in action.container._registries['action'].items()}
+    reg = {value: key for key, value in action.container._registries['action'].items()}
     a_data['action'] = reg.get(type(action), type(action).__name__)
     if a_data['action'] == 'store' and not a_data.get('metavar'):
         a_data['metavar'] = action.dest.upper()
@@ -83,16 +83,17 @@ def json_action(action):
 def json_group(group):
     grp_data = {'description': group.description,
                 'title': group.title,
-                'actions': [json_action(a) for a in group._group_actions if a.help != argparse.SUPPRESS],
+                'actions': [json_action(action) for action in group._group_actions if action.help != argparse.SUPPRESS],
                 }
 
     if group._action_groups:
-        grp_data['groups'] = [json_group(g) for g in group._action_groups]
+        grp_data['groups'] = [json_group(group) for group in group._action_groups]
 
     return grp_data
 
 
-class json_help(argparse.Action):
+class JSONHelp(argparse.Action):
+    # pylint: disable-next=redefined-builtin
     def __init__(self, nargs=0, help=argparse.SUPPRESS, **kwargs):
         argparse.Action.__init__(self, nargs=nargs, help=help, **kwargs)
 
@@ -140,7 +141,7 @@ def add_subparser_modules(parser, module=None, entry_point_name=None):
 
     for key, sub_parser in subparsers.choices.items():
         sub_parser.set_defaults(sub_command_name=key)
-        sub_parser.add_argument('--json-help', action=json_help)
+        sub_parser.add_argument('--json-help', action=JSONHelp)
 
 
 def binstar_main(
