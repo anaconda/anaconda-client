@@ -62,14 +62,14 @@ def json_action(action):
     if a_data.get('help'):
         a_data['help'] = a_data['help'] % a_data
 
-    if isinstance(action , argparse._SubParsersAction):
+    if isinstance(action, argparse._SubParsersAction):
         a_data.pop('choices', None)
         choices = {}
         for choice in action._get_subactions():
             choices[choice.dest] = choice.help
         a_data['choices'] = choices
 
-    reg = {v:k for k, v in action.container._registries['action'].items()}
+    reg = {v: k for k, v in action.container._registries['action'].items()}
     a_data['action'] = reg.get(type(action), type(action).__name__)
     if a_data['action'] == 'store' and not a_data.get('metavar'):
         a_data['metavar'] = action.dest.upper()
@@ -102,7 +102,7 @@ class json_help(argparse.Action):
                 'usage': parser.format_usage()[7:],
                 'description': parser.description,
                 'epilog': parser.epilog,
-               }
+                }
 
         docs['groups'] = []
         for group in parser._action_groups:
