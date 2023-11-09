@@ -113,34 +113,6 @@ class json_help(argparse.Action):
         raise SystemExit(0)
 
 
-def add_default_arguments(parser, version=None):
-
-    ogroup = parser.add_argument_group('output')
-    ogroup.add_argument('--show-traceback', action='store_const', const='always', default='tty',
-                        help='Show the full traceback for chalmers user errors (default: %(default)s)')
-    ogroup.add_argument('--hide-traceback', action='store_const', const='never', dest='show_traceback',
-                        help='Hide the full traceback for chalmers user errors')
-    ogroup.add_argument('-v', '--verbose',
-                        action='store_const', help='print debug information ot the console',
-                        dest='log_level',
-                        default=logging.INFO, const=logging.DEBUG)
-    ogroup.add_argument('-q', '--quiet',
-                        action='store_const', help='Only show warnings or errors the console',
-                        dest='log_level', const=logging.WARNING)
-    ogroup.add_argument('--color', action='store_const',
-                        default='tty', const='always',
-                        help='always display with colors')
-    ogroup.add_argument('--no-color', action='store_const', dest='color',
-                        const='never',
-                        help='never display with colors')
-
-    parser.add_argument('--json-help', action=json_help)
-
-    if version:
-        parser.add_argument('-V', '--version', action='version',
-                            version="%%(prog)s Command line client (version %s)" % (version,))
-
-
 def get_sub_command_names(module):
     return [name for _, name, _ in pkgutil.iter_modules([os.path.dirname(module.__file__)]) if not name.startswith('_')]
 
