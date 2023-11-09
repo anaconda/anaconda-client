@@ -56,7 +56,7 @@ def file_or_token(value: str) -> str:
     return value
 
 
-def json_action(action):
+def _json_action(action):
     # pylint: disable=protected-access  # intentional access of argparse object members
     a_data = dict(action._get_kwargs())
 
@@ -81,20 +81,21 @@ def json_action(action):
     return a_data
 
 
-def json_group(group):
+def _json_group(group):
     # pylint: disable=protected-access  # intentional access of argparse object members
-    grp_data = {'description': group.description,
-                'title': group.title,
-                'actions': [json_action(action) for action in group._group_actions if action.help != argparse.SUPPRESS],
-                }
+    grp_data = {
+        'description': group.description,
+        'title': group.title,
+        'actions': [_json_action(action) for action in group._group_actions if action.help != argparse.SUPPRESS],
+    }
 
     if group._action_groups:
-        grp_data['groups'] = [json_group(group) for group in group._action_groups]
+        grp_data['groups'] = [_json_group(group) for group in group._action_groups]
 
     return grp_data
 
 
-class JSONHelp(argparse.Action):
+class _JSONHelp(argparse.Action):
     # pylint: disable-next=redefined-builtin
     def __init__(self, option_strings, dest, nargs=0, help=argparse.SUPPRESS, **kwargs):
         argparse.Action.__init__(self, option_strings, dest, nargs=nargs, help=help, **kwargs)
@@ -102,39 +103,40 @@ class JSONHelp(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         # pylint: disable=protected-access  # intentional access of argparse object members
         self.nargs = 0
-        docs = {'prog': parser.prog,
-                'usage': parser.format_usage()[7:],
-                'description': parser.description,
-                'epilog': parser.epilog,
-                }
+        docs = {
+            'prog': parser.prog,
+            'usage': parser.format_usage()[7:],
+            'description': parser.description,
+            'epilog': parser.epilog,
+        }
 
         docs['groups'] = []
         for group in parser._action_groups:
             if group._group_actions:
-                docs['groups'].append(json_group(group))
+                docs['groups'].append(_json_group(group))
 
         json.dump(docs, sys.stdout, indent=2)
         raise SystemExit(0)
 
 
-def get_sub_command_names(module):
+def _get_sub_command_names(module):
     return [name for _, name, _ in pkgutil.iter_modules([os.path.dirname(module.__file__)]) if not name.startswith('_')]
 
 
-def get_sub_commands(module):
-    names = get_sub_command_names(module)
+def _get_sub_commands(module):
+    names = _get_sub_command_names(module)
     this_module = __import__(module.__package__ or module.__name__, fromlist=names)
 
     for name in names:
         yield getattr(this_module, name)
 
 
-def add_subparser_modules(parser, module=None, entry_point_name=None):
+def _add_subparser_modules(parser, module=None, entry_point_name=None):
 
     subparsers = parser.add_subparsers(title='Commands', metavar='')
 
     if module:  # LOAD sub parsers from module
-        for command_module in get_sub_commands(module):
+        for command_module in _get_sub_commands(module):
             command_module.add_parser(subparsers)
 
     if entry_point_name:  # LOAD sub parsers from setup.py entry_point
@@ -144,7 +146,7 @@ def add_subparser_modules(parser, module=None, entry_point_name=None):
 
     for key, sub_parser in subparsers.choices.items():
         sub_parser.set_defaults(sub_command_name=key)
-        sub_parser.add_argument('--json-help', action=JSONHelp)
+        sub_parser.add_argument('--json-help', action=_JSONHelp)
 
 
 def binstar_main(
@@ -187,7 +189,7 @@ def binstar_main(
             '-V', '--version', action='version', version=f'%(prog)s Command line client (version {__version__})',
         )
 
-    add_subparser_modules(parser, sub_command_module, 'conda_server.subcommand')
+    _add_subparser_modules(parser, sub_command_module, 'conda_server.subcommand')
 
     arguments: argparse.Namespace = parser.parse_args(args)
 
