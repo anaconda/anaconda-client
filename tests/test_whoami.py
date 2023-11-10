@@ -51,4 +51,7 @@ class Test(CLITestCase):
         user = urls.register(path='/user', status=401)
 
         main(['--show-traceback', 'whoami'])
-        self.assertNotIn('Authorization', user.req.headers)
+
+        # Not called because token is missing.
+        user.assertNotCalled()
+        self.assertIsNone(user.req)
