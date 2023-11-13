@@ -8,13 +8,13 @@ __all__ = ('main',)
 
 import argparse
 from importlib import metadata
+import json
 import logging
 import os
+import pkgutil
 import sys
 import types
 import typing
-
-from clyent import add_subparser_modules
 
 from binstar_client import __version__
 from binstar_client import commands
@@ -24,6 +24,13 @@ from binstar_client.utils import logging_utils
 
 
 logger = logging.getLogger('binstar')
+
+
+def _get_entry_points(group: str) -> typing.List[metadata.EntryPoint]:
+    # The API was changed in Python 3.10, see https://docs.python.org/3/library/importlib.metadata.html#entry-points
+    if sys.version_info.major == 3 and sys.version_info.minor < 10:
+        return metadata.entry_points().get(group, [])
+    return metadata.entry_points().select(group=group)  # type: ignore
 
 
 def file_or_token(value: str) -> str:
@@ -47,6 +54,99 @@ def file_or_token(value: str) -> str:
         raise ValueError()
 
     return value
+
+
+def _json_action(action):
+    # pylint: disable=protected-access  # intentional access of argparse object members
+    a_data = dict(action._get_kwargs())
+
+    if a_data.get('help'):
+        a_data['help'] = a_data['help'] % a_data
+
+    if isinstance(action, argparse._SubParsersAction):
+        a_data.pop('choices', None)
+        choices = {}
+        for choice in action._get_subactions():
+            choices[choice.dest] = choice.help
+        a_data['choices'] = choices
+
+    reg = {value: key for key, value in action.container._registries['action'].items()}
+    a_data['action'] = reg.get(type(action), type(action).__name__)
+    if a_data['action'] == 'store' and not a_data.get('metavar'):
+        a_data['metavar'] = action.dest.upper()
+
+    a_data.pop('type', None)
+    a_data.pop('default', None)
+
+    return a_data
+
+
+def _json_group(group):
+    # pylint: disable=protected-access  # intentional access of argparse object members
+    grp_data = {
+        'description': group.description,
+        'title': group.title,
+        'actions': [_json_action(action) for action in group._group_actions if action.help != argparse.SUPPRESS],
+    }
+
+    if group._action_groups:
+        grp_data['groups'] = [_json_group(group) for group in group._action_groups]
+
+    return grp_data
+
+
+class _JSONHelp(argparse.Action):
+    # pylint: disable-next=redefined-builtin
+    def __init__(self, option_strings, dest, nargs=0, help=argparse.SUPPRESS, **kwargs):
+        argparse.Action.__init__(self, option_strings, dest, nargs=nargs, help=help, **kwargs)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        # pylint: disable=protected-access  # intentional access of argparse object members
+        self.nargs = 0
+        docs = {
+            'prog': parser.prog,
+            'usage': parser.format_usage()[7:],
+            'description': parser.description,
+            'epilog': parser.epilog,
+        }
+
+        docs['groups'] = []
+        for group in parser._action_groups:
+            if group._group_actions:
+                docs['groups'].append(_json_group(group))
+
+        json.dump(docs, sys.stdout, indent=2)
+        raise SystemExit(0)
+
+
+def _get_sub_command_names(module):
+    return [name for _, name, _ in pkgutil.iter_modules([os.path.dirname(module.__file__)]) if not name.startswith('_')]
+
+
+def _get_sub_commands(module):
+    names = _get_sub_command_names(module)
+    this_module = __import__(module.__package__ or module.__name__, fromlist=names)
+
+    for name in names:
+        yield getattr(this_module, name)
+
+
+def _add_subparser_modules(parser, module=None, entry_point_name=None):
+
+    subparsers = parser.add_subparsers(title='Commands', metavar='')
+
+    if module:  # LOAD sub parsers from module
+        for command_module in _get_sub_commands(module):
+            command_module.add_parser(subparsers)
+
+    if entry_point_name:  # LOAD sub parsers from setup.py entry_point
+        for entry_point in _get_entry_points(entry_point_name):
+            add_parser = entry_point.load()
+            add_parser(subparsers)
+
+    for key, sub_parser in subparsers.choices.items():
+        sub_parser.set_defaults(sub_command_name=key)
+        sub_parser.add_argument('--json-help', action=_JSONHelp)
 
 
 def binstar_main(
@@ -89,7 +189,7 @@ def binstar_main(
             '-V', '--version', action='version', version=f'%(prog)s Command line client (version {__version__})',
         )
 
-    add_subparser_modules(parser, sub_command_module, 'conda_server.subcommand')
+    _add_subparser_modules(parser, sub_command_module, 'conda_server.subcommand')
 
     arguments: argparse.Namespace = parser.parse_args(args)
 
@@ -123,12 +223,7 @@ def _load_main_plugin() -> typing.Optional[typing.Callable[[], typing.Any]]:
     """Allow loading a new CLI main entrypoint via plugin mechanisms. There can only be one."""
     plugin_group_name: typing.Final[str] = 'anaconda_cli.main'
 
-    # The API was changed in Python 3.10, see https://docs.python.org/3/library/importlib.metadata.html#entry-points
-    plugin_mains: typing.List[metadata.EntryPoint]
-    if sys.version_info.major == 3 and sys.version_info.minor < 10:
-        plugin_mains = metadata.entry_points().get(plugin_group_name, [])
-    else:
-        plugin_mains = metadata.entry_points().select(group=plugin_group_name)  # type: ignore
+    plugin_mains: typing.List[metadata.EntryPoint] = _get_entry_points(plugin_group_name)
 
     if len(plugin_mains) > 1:
         raise EnvironmentError(
