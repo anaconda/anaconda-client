@@ -15,22 +15,20 @@ import warnings
 from urllib.parse import quote_plus
 
 import yaml
+from platformdirs import PlatformDirs
 
 from binstar_client.errors import BinstarError
-from binstar_client.utils.appdirs import AppDirs, EnvAppDirs
-from binstar_client.utils import conda
-from binstar_client.utils import paths
+from binstar_client.utils import conda, paths
+from binstar_client.utils.appdirs import EnvAppDirs
 from .yaml import yaml_load, yaml_dump
-
 
 logger = logging.getLogger('binstar')
 
-
 if 'BINSTAR_CONFIG_DIR' in os.environ:
-    dirs = EnvAppDirs('binstar', 'ContinuumIO', os.environ['BINSTAR_CONFIG_DIR'])
+    dirs = EnvAppDirs(os.environ['BINSTAR_CONFIG_DIR'])
     USER_CONFIG = os.path.join(dirs.user_data_dir, 'config.yaml')
 else:
-    dirs = AppDirs('binstar', 'ContinuumIO')  # type: ignore
+    dirs = PlatformDirs('binstar', 'ContinuumIO')  # type: ignore
     USER_CONFIG = os.path.join(os.path.expanduser('~'), '.continuum', 'anaconda-client', 'config.yaml')
 
 
@@ -249,7 +247,7 @@ def load_config(config_file):
 
 def load_file_configs(search_path):
     def _file_yaml_loader(fullpath):
-        assert (fullpath.endswith('.yml')   # nosec
+        assert (fullpath.endswith('.yml')  # nosec
                 or fullpath.endswith('.yaml') or fullpath.endswith('anacondarc')), fullpath
         yield fullpath, load_config(fullpath)
 
