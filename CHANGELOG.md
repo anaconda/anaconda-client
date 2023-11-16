@@ -2,6 +2,21 @@
 
 We [keep a changelog.](http://keepachangelog.com/)
 
+## 1.12.2
+
+### Tickets closed
+
+* AC-192 - SPIKE: Remove unnecessary /user calls
+* AC-194 - Check token before calling /user endpoint
+* AC-200 - Replacing vendored appdirs with platformdirs
+
+### Pull requests merged
+
+* [PR 693](https://github.com/Anaconda-Platform/anaconda-client/pull/693) - AC-200: replace appdirs with platformdirs
+* [PR 691](https://github.com/Anaconda-Platform/anaconda-client/pull/691) - Support Python 3.12
+* [PR 688](https://github.com/Anaconda-Platform/anaconda-client/pull/688) - AC-194: check token before making /user call
+* [PR 680](https://github.com/Anaconda-Platform/anaconda-client/pull/680) - use conda.gateways.anaconda_client for tokens possible 
+
 ## 1.12.1 - 2023-09-13
 
 ### Tickets closed

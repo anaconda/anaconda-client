@@ -236,9 +236,12 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
                       this method will return the information of the authenticated user.
         """
         if login:
-            url = '%s/user/%s' % (self.domain, login)
+            url = f'{self.domain}/user/{login}'
+        elif self.token:
+            url = f'{self.domain}/user'
         else:
-            url = '%s/user' % (self.domain)
+            raise errors.Unauthorized(
+                'Authentication token is missing. Please, use `anaconda login` to reauthenticate.', 401)
 
         res = self.session.get(url, verify=self.session.verify)
         self._check_response(res)

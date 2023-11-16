@@ -1,9 +1,6 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
-from clyent.errors import ClyentError
-
-
-class BinstarError(ClyentError):
+class BinstarError(Exception):
 
     def __init__(self, *args):
         super().__init__(*args)
