@@ -22,6 +22,11 @@ try:
 except ImportError:
     c_client = None
 
+try:
+    from conda.gateways import anaconda_client as c_client
+except ImportError:
+    c_client = None
+
 from binstar_client.errors import BinstarError
 from binstar_client.utils import conda, paths
 from binstar_client.utils.appdirs import EnvAppDirs

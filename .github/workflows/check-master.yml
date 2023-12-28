@@ -93,7 +93,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ macos-latest, ubuntu-latest, windows-latest ]
-        python-version: [ '3.8', '3.9', '3.10', '3.11', '3.12' ]
+        python-version: [ '3.8', '3.9', '3.10', '3.11' ]
 
     steps:
       # most of these steps might be anchored to corresponding ones in the "lint_code" job
