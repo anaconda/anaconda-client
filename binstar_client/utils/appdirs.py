@@ -18,6 +18,10 @@ class EnvAppDirs:
         return os.path.join(self.root_path, 'data')
 
     @property
+    def user_config_dir(self):
+        return os.path.join(self.root_path, 'data')
+
+    @property
     def site_data_dir(self):
         return os.path.join(self.root_path, 'data')
 
