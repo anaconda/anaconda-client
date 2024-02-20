@@ -36,7 +36,7 @@ logger = logging.getLogger('binstar')
 
 if 'BINSTAR_CONFIG_DIR' in os.environ:
     dirs = EnvAppDirs(os.environ['BINSTAR_CONFIG_DIR'])
-    USER_CONFIG = os.path.join(dirs.user_data_dir, 'config.yaml')
+    USER_CONFIG = os.path.join(dirs.user_config_dir, 'config.yaml')
 else:
     dirs = PlatformDirs('binstar', 'ContinuumIO')  # type: ignore
     USER_CONFIG = os.path.join(os.path.expanduser('~'), '.continuum', 'anaconda-client', 'config.yaml')
@@ -109,7 +109,7 @@ SEARCH_PATH = (
     dirs.site_data_dir,
     '/etc/anaconda-client/',
     '$CONDA_ROOT/etc/anaconda-client/',
-    dirs.user_data_dir,
+    dirs.user_config_dir,
     '~/.continuum/anaconda-client/',
     '$CONDA_PREFIX/etc/anaconda-client/',
 )
@@ -180,7 +180,7 @@ def get_binstar(args=None, cls=None):
 
 
 TOKEN_DIRS = [
-    dirs.user_data_dir,
+    dirs.user_config_dir,
     os.path.join(os.path.dirname(USER_CONFIG), 'tokens'),
 ]
 TOKEN_DIR = TOKEN_DIRS[-1]
