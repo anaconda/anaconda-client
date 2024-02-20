@@ -51,7 +51,7 @@ jobs:
           conda info
           conda config --show
           conda list --show-channel-urls
-          echo ::set-output name=exit_status::success
+          echo "exit_status=success" >> "$GITHUB_OUTPUT"
 
       - name: Check with pycodestyle
         if: ${{ always() && steps.conda_environment_information.outputs.exit_status == 'success' }}
