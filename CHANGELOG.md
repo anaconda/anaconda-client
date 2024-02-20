@@ -2,6 +2,17 @@
 
 We [keep a changelog.](http://keepachangelog.com/)
 
+## 1.12.3
+
+### Tickets closed
+
+* AC-207 - Accessing entry_points by index no longer supported in Python 3.12
+
+### Pull requests merged
+
+* [PR 705](https://github.com/Anaconda-Platform/anaconda-client/pull/705) - AC-207: add importlib.metadata python3.12 compatibility
+ 
+
 ## 1.12.2
 
 ### Tickets closed
