@@ -7,13 +7,18 @@ We [keep a changelog.](http://keepachangelog.com/)
 ### Tickets closed
 
 * AC-207 - Accessing entry_points by index no longer supported in Python 3.12
+* AC-208 - Fix uploads of existing packages
 
 ### Pull requests merged
 
+* [PR 708](https://github.com/Anaconda-Platform/anaconda-client/pull/708) - AC-208: fix uploads of existing packages
 * [PR 705](https://github.com/Anaconda-Platform/anaconda-client/pull/705) - AC-207: add importlib.metadata python3.12 compatibility
- 
+* [PR 701](https://github.com/Anaconda-Platform/anaconda-client/pull/701) - Restore default user config search path on Linux
+* [PR 700](https://github.com/Anaconda-Platform/anaconda-client/pull/700) - ci: Use GITHUB_OUTPUT envvar instead of set-output command
+* [PR 698](https://github.com/Anaconda-Platform/anaconda-client/pull/698) - AC-197: python 3.12 support
+* [PR 696](https://github.com/Anaconda-Platform/anaconda-client/pull/696) - Make arch and platform inside index.json optional
 
-## 1.12.2
+## 1.12.2 - 2023-11-16
 
 ### Tickets closed
 
