@@ -2,7 +2,7 @@
 
 We [keep a changelog.](http://keepachangelog.com/)
 
-## 1.12.3
+## 1.12.3 - 2024-02-22
 
 ### Tickets closed
 
