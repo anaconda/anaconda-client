@@ -522,6 +522,11 @@ class Uploader:  # pylint: disable=too-many-instance-attributes
             meta.release_attrs['summary'] = self.arguments.summary
         if self.arguments.description is not None:
             meta.release_attrs['description'] = self.arguments.description
+        if (meta.package_type is PackageType.CONDA) and (not self.arguments.keep_basename):
+            meta.rebuild_basename()
+
+        if not self._check_file(meta):
+            return False
 
         logger.info('Creating package "%s"', meta.name)
         package: PackageCacheRecord = self.get_package(meta)
@@ -530,9 +535,6 @@ class Uploader:  # pylint: disable=too-many-instance-attributes
 
         logger.info('Creating release "%s"', meta.version)
         self.get_release(meta)
-
-        if (meta.package_type is PackageType.CONDA) and (not self.arguments.keep_basename):
-            meta.rebuild_basename()
 
         logger.info('Uploading file "%s/%s/%s/%s"', self.username, meta.name, meta.version, meta.file_attrs['basename'])
         return self._upload_file(meta)
@@ -543,72 +545,71 @@ class Uploader:  # pylint: disable=too-many-instance-attributes
         self.uploaded_projects.append(uploaded_project)
         return True
 
+    def _check_file(self, meta: PackageMeta) -> bool:
+        """"""
+        basename: str = meta.file_attrs['basename']
+        try:
+            self.api.distribution(self.username, meta.name, meta.version, basename)
+        except errors.NotFound:
+            return True
+
+        if self.arguments.mode == 'skip':
+            logger.info('Distribution already exists. Skipping upload.\n')
+            return False
+
+        if self.arguments.mode == 'force':
+            logger.warning('Distribution "%s" already exists. Removing.', basename)
+            self.api.remove_dist(self.username, meta.name, meta.version, basename)
+            return True
+
+        if self.arguments.mode == 'interactive':
+            if bool_input(f'Distribution "{basename}" already exists. Would you like to replace it?'):
+                self.api.remove_dist(self.username, meta.name, meta.version, basename)
+                return True
+            logger.info('Not replacing distribution "%s"', basename)
+            return False
+
+        logger.info(
+            (
+                'Distribution already exists. '  # pylint: disable=implicit-str-concat
+                'Please use the -i/--interactive or --force or --skip options or `anaconda remove %s/%s/%s/%s`'
+            ),
+            self.username, meta.name, meta.version, basename,
+        )
+        raise errors.Conflict(f'file {basename} already exists for package {meta.name} version {meta.version}', 409)
+
     def _upload_file(self, meta: PackageMeta) -> bool:
         """Perform upload of a file after its metadata and related package and release are prepared."""
         basename: str = meta.file_attrs['basename']
         package_type: typing.Union[PackageType, str] = meta.file_attrs.pop('binstar_package_type', meta.package_type)
 
-        step: int
-        for step in range(2):
-            try:
-                stream: typing.BinaryIO
-                with open(meta.filename, 'rb') as stream:
-                    result: typing.Mapping[str, typing.Any] = self.api.upload(
-                        self.username,
-                        meta.name,
-                        meta.version,
-                        basename,
-                        stream,
-                        package_type,
-                        self.arguments.description,
-                        dependencies=meta.file_attrs.get('dependencies'),
-                        attrs=meta.file_attrs['attrs'],
-                        channels=self.arguments.labels,
-                    )
+        stream: typing.BinaryIO
+        with open(meta.filename, 'rb') as stream:
+            result: typing.Mapping[str, typing.Any] = self.api.upload(
+                self.username,
+                meta.name,
+                meta.version,
+                basename,
+                stream,
+                package_type,
+                self.arguments.description,
+                dependencies=meta.file_attrs.get('dependencies'),
+                attrs=meta.file_attrs['attrs'],
+                channels=self.arguments.labels,
+            )
 
-                self.uploaded_packages.append({
-                    'package_type': meta.package_type,
-                    'username': self.username,
-                    'name': meta.name,
-                    'version': meta.version,
-                    'basename': basename,
-                    'url': result.get('url', f'https://anaconda.org/{self.username}/{meta.name}'),
-                })
-                self.__package_cache[meta.package_key].update(meta.package_type)
-                self.__release_cache[meta.release_key].update()
-                logger.info('Upload complete\n')
-                return True
-
-            except errors.Conflict:
-                if step:
-                    raise
-
-                if self.arguments.mode == 'skip':
-                    logger.info('Distribution already exists. Skipping upload.\n')
-                    return False
-
-                if self.arguments.mode == 'force':
-                    logger.warning('Distribution "%s" already exists. Removing.', basename)
-                    self.api.remove_dist(self.username, meta.name, meta.version, basename)
-                    continue
-
-                if self.arguments.mode == 'interactive':
-                    if bool_input(f'Distribution "{basename}" already exists. Would you like to replace it?'):
-                        self.api.remove_dist(self.username, meta.name, meta.version, basename)
-                        continue
-                    logger.info('Not replacing distribution "%s"', basename)
-                    return False
-
-                logger.info(
-                    (
-                        'Distribution already exists. '  # pylint: disable=implicit-str-concat
-                        'Please use the -i/--interactive or --force or --skip options or `anaconda remove %s/%s/%s/%s`'
-                    ),
-                    self.username, meta.name, meta.version, basename,
-                )
-                raise
-
-        return False
+        self.uploaded_packages.append({
+            'package_type': meta.package_type,
+            'username': self.username,
+            'name': meta.name,
+            'version': meta.version,
+            'basename': basename,
+            'url': result.get('url', f'https://anaconda.org/{self.username}/{meta.name}'),
+        })
+        self.__package_cache[meta.package_key].update(meta.package_type)
+        self.__release_cache[meta.release_key].update()
+        logger.info('Upload complete\n')
+        return True
 
     @staticmethod
     def detect_package_meta(filename: str, package_type: typing.Optional[PackageType] = None) -> detect.Meta:

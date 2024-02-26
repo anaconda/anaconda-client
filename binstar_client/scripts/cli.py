@@ -237,7 +237,7 @@ def _load_main_plugin() -> typing.Optional[typing.Callable[[], typing.Any]]:
         # e.g. in pyproject.toml, where my_plugin_library.cli.main is the callable entrypoint function
         # [project.entry-points."anaconda_cli.main"]
         # anaconda = "my_plugin_library.cli:main"
-        return plugin_mains[0].load()
+        return tuple(plugin_mains)[0].load()
     return None
 
 

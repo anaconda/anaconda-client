@@ -101,8 +101,10 @@ def inspect_conda_info_dir(info_path, basename):  # pylint: disable=too-many-loc
         icon_b64 = data_uri_from(icon_path)
 
     subdir = get_subdir(index)
-    machine = index['arch']
-    operatingsystem = os_map.get(index['platform'], index['platform'])
+    machine = index.get('arch', None)
+    platform = index.get('platform', None)
+
+    operatingsystem = os_map.get(platform, platform)
 
     package_data = {
         'name': index.pop('name'),

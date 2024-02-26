@@ -51,7 +51,7 @@ jobs:
           conda info
           conda config --show
           conda list --show-channel-urls
-          echo ::set-output name=exit_status::success
+          echo "exit_status=success" >> "$GITHUB_OUTPUT"
 
       - name: Check with pycodestyle
         if: ${{ always() && steps.conda_environment_information.outputs.exit_status == 'success' }}
@@ -93,7 +93,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ macos-latest, ubuntu-latest, windows-latest ]
-        python-version: [ '3.8', '3.9', '3.10', '3.11' ]
+        python-version: [ '3.8', '3.9', '3.10', '3.11', '3.12' ]
 
     steps:
       # most of these steps might be anchored to corresponding ones in the "lint_code" job

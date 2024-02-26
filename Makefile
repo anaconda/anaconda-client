@@ -22,7 +22,7 @@ help:
 
 init:
 	@if [ -z "$${CONDA_SHLVL:+x}" ]; then echo "Conda is not installed." && exit 1; fi
-	@conda create -y -n anaconda_client python=3.8 --file requirements.txt --file requirements-extra.txt
+	@conda create -y -n anaconda_client python=3.12 --file requirements.txt --file requirements-extra.txt
 	@conda run -n anaconda_client pip install -r requirements-dev.txt
 	@echo "\n\nConda environment has been created. To activate run \"conda activate anaconda_client\"."
 
