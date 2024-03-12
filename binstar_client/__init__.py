@@ -624,3 +624,23 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
         res = self.session.get(url)
         self._check_response(res)
         return res.json()
+
+    def create_notices(self, login, label, notices):
+        """Create channel notices"""
+        url = f'{self.domain}/channels/{login}/{label}/notices'
+        res = self.session.post(url, json=notices)
+        self._check_response(res)
+
+    def remove_notices(self, login, label):
+        """Remove channel notices"""
+        url = f'{self.domain}/channels/{login}/{label}/notices'
+        res = self.session.delete(url)
+        self._check_response(res)
+
+    def notices(self, login, label):
+        """Retrieve channel notices"""
+        url = f'{self.domain}/channels/{login}/{label}/notices'
+        res = self.session.get(url)
+        self._check_response(res)
+
+        return res.json()
