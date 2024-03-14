@@ -2,43 +2,75 @@
 Anaconda channel notices utilities
 """
 import argparse
+import functools
 import json
 import logging
+import pathlib
 import typing
 
-from binstar_client.errors import UserError
+from binstar_client import errors
 from binstar_client.utils import get_server_api, get_config
 
 logger = logging.getLogger('binstar.notices')
 
 
-def main(args):
-    """Entry point for notices command"""
-    aserver_api = get_server_api(token=args.token, site=args.site, config=get_config(args.site))
-    aserver_api.check_server()
+def api_user(func):
+    """
+    Used to add ``api`` object to ``args`` and retrieve a default value for ``args.user``
+    """
+    @functools.wraps(func)
+    def inner(args):
+        args.api = get_server_api(
+            token=args.token, site=args.site, config=get_config(args.site)
+        )
+        args.api.check_server()
 
-    if args.user is None:
-        login = aserver_api.user().get('login')
+        if args.user is None:
+            args.user = args.api.user().get('login')
 
-        if login is None:
-            raise UserError("Unable to determine owner in user; please make sure you are logged in")
-    else:
-        login = args.user
+            if args.user is None:
+                message: str = "Unable to determine owner in user; please make sure you are logged in"
+                logger.error(message)
+                raise errors.BinstarError(message)
 
-    if args.notices:
+        return func(args)
+    return inner
+
+
+class NoticesAction(argparse.Action):
+    """
+    Used to parse the notices argument as either an JSON string or JSON file
+    """
+
+    def __call__(self, parser, namespace, values, *args, **kwargs):
+        """
+        We first test if ``values`` is a file and then try to parse it as JSON.
+        If it isn't, we assume it's a JSON string itself and attempt to parse it.
+        """
         try:
-            data = json.loads(args.notices)
-        except json.JSONDecoder:
-            raise UserError("Unable to parse JSON; please make sure it is valid JSON")
+            path = pathlib.Path(values)
+        except TypeError:
+            message: str = "Notices argument must be defined as a string"
+            logger.error(message)
+            raise SystemExit(1)
 
-        aserver_api.create_notices(login, args.label, data)
+        if path.exists():
+            try:
+                with path.open() as fp:
+                    values = fp.read()
+            except OSError as error:
+                message: str = f"Unable to read provided JSON file: {error}"
+                logger.error(message)
+                raise SystemExit(1)
 
-    elif args.remove:
-        aserver_api.remove_notices(login, args.label)
+        try:
+            data = json.loads(values)
+        except json.JSONDecodeError as error:
+            message: str = "Unable to parse provided JSON; please make sure it is valid JSON"
+            logger.error(message)
+            raise SystemExit(1)
 
-    elif args.get:
-        notices = aserver_api.notices(login, args.label)
-        logger.info(json.dumps(notices, indent=2))
+        setattr(namespace, self.dest, data)
 
 
 def add_parser(subparsers: typing.Any) -> None:
@@ -47,7 +79,7 @@ def add_parser(subparsers: typing.Any) -> None:
     """
     description: str = 'Create, modify and delete channels notices in your Anaconda repository'
     parser: argparse.ArgumentParser = subparsers.add_parser(
-        "notices",
+        'notices',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         help=description, description=description,
         epilog=__doc__,
@@ -70,6 +102,7 @@ def add_parser(subparsers: typing.Any) -> None:
         '--create',
         dest='notices',
         metavar='notices',
+        action=NoticesAction,
         help='Create notices; existing notices will be replaced'
     )
     group.add_argument(
@@ -84,3 +117,17 @@ def add_parser(subparsers: typing.Any) -> None:
     )
 
     parser.set_defaults(main=main)
+
+
+@api_user
+def main(args):
+    """Entry point for notices command"""
+    if args.notices:
+        args.api.create_notices(args.user, args.label, args.notices)
+
+    elif args.remove:
+        args.api.remove_notices(args.user, args.label)
+
+    elif args.get:
+        notices = args.api.notices(args.user, args.label)
+        logger.info(json.dumps(notices, indent=2))
