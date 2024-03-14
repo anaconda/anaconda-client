@@ -147,9 +147,9 @@ class Test(CLITestCase):
         })
 
         # Create tempfile for channel notices
-        temp = tempfile.NamedTemporaryFile('w', delete=False)
-        temp.write(notices_json)
-        temp.close()
+        with tempfile.NamedTemporaryFile('w', delete=False) as temp:
+            temp.write(notices_json)
+            temp.close()
 
         main(['notices', '--create', temp.name])
 
