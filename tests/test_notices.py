@@ -3,6 +3,7 @@
 
 """Tests for notices command."""
 import json
+import os
 import tempfile
 from unittest import mock
 
@@ -145,11 +146,14 @@ class Test(CLITestCase):
             }]
         })
 
-        with tempfile.NamedTemporaryFile('w') as file_pointer:
-            file_pointer.write(notices_json)
-            file_pointer.seek(0)
+        # Create tempfile for channel notices
+        temp = tempfile.NamedTemporaryFile('w', delete=False)
+        temp.write(notices_json)
+        temp.close()
 
-            main(['notices', '--create', file_pointer.file.name])
+        main(['notices', '--create', temp.name])
+
+        os.unlink(temp.name)
 
     @urlpatch
     def test_set_notices_with_label_and_user_option(self, registry):
