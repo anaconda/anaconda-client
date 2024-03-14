@@ -7,19 +7,23 @@ import logging
 import typing
 
 from binstar_client.errors import UserError
-from binstar_client.utils import get_server_api
+from binstar_client.utils import get_server_api, get_config
 
 logger = logging.getLogger('binstar.notices')
 
 
 def main(args):
     """Entry point for notices command"""
-    aserver_api = get_server_api(args.token, args.site)
+    aserver_api = get_server_api(token=args.token, site=args.site, config=get_config(args.site))
     aserver_api.check_server()
-    login = aserver_api.user().get('login')
 
-    if login is None:
-        raise UserError("Unable to determine logged in user; please make sure you are logged in")
+    if args.user is None:
+        login = aserver_api.user().get('login')
+
+        if login is None:
+            raise UserError("Unable to determine owner in user; please make sure you are logged in")
+    else:
+        login = args.user
 
     if args.notices:
         try:
@@ -53,6 +57,11 @@ def add_parser(subparsers: typing.Any) -> None:
         '-l', '--label',
         default='main',
         help='Label to use for channel notice'
+    )
+
+    parser.add_argument(
+        '-u', '--user',
+        help='User account or Organization, defaults to the current user',
     )
 
     agroup = parser.add_argument_group('actions')
