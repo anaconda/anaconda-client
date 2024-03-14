@@ -2,7 +2,6 @@
 Anaconda channel notices utilities
 """
 import argparse
-import functools
 import json
 import logging
 import pathlib
@@ -14,27 +13,30 @@ from binstar_client.utils import get_server_api, get_config
 logger = logging.getLogger('binstar.notices')
 
 
-def api_user(func):
-    """
-    Used to add ``api`` object to ``args`` and retrieve a default value for ``args.user``
-    """
-    @functools.wraps(func)
-    def inner(args):
-        args.api = get_server_api(
-            token=args.token, site=args.site, config=get_config(args.site)
-        )
-        args.api.check_server()
+def main(args):
+    """Entry point for notices command"""
+    api = get_server_api(
+        token=args.token, site=args.site, config=get_config(args.site)
+    )
+    api.check_server()
+
+    if args.user is None:
+        args.user = api.user().get('login')
 
         if args.user is None:
-            args.user = args.api.user().get('login')
+            message: str = "Unable to determine owner in user; please make sure you are logged in"
+            logger.error(message)
+            raise errors.BinstarError(message)
 
-            if args.user is None:
-                message: str = "Unable to determine owner in user; please make sure you are logged in"
-                logger.error(message)
-                raise errors.BinstarError(message)
+    if args.notices:
+        api.create_notices(args.user, args.label, args.notices)
 
-        return func(args)
-    return inner
+    elif args.remove:
+        api.remove_notices(args.user, args.label)
+
+    elif args.get:
+        notices = api.notices(args.user, args.label)
+        logger.info(json.dumps(notices, indent=2))
 
 
 class NoticesAction(argparse.Action):
@@ -65,7 +67,7 @@ class NoticesAction(argparse.Action):
 
         try:
             data = json.loads(values)
-        except json.JSONDecodeError as error:
+        except json.JSONDecodeError:
             message: str = "Unable to parse provided JSON; please make sure it is valid JSON"
             logger.error(message)
             raise SystemExit(1)
@@ -117,17 +119,3 @@ def add_parser(subparsers: typing.Any) -> None:
     )
 
     parser.set_defaults(main=main)
-
-
-@api_user
-def main(args):
-    """Entry point for notices command"""
-    if args.notices:
-        args.api.create_notices(args.user, args.label, args.notices)
-
-    elif args.remove:
-        args.api.remove_notices(args.user, args.label)
-
-    elif args.get:
-        notices = args.api.notices(args.user, args.label)
-        logger.info(json.dumps(notices, indent=2))
