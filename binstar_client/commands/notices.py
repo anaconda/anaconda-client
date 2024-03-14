@@ -24,7 +24,7 @@ def main(args):
         args.user = api.user().get('login')
 
         if args.user is None:
-            message: str = "Unable to determine owner in user; please make sure you are logged in"
+            message: str = 'Unable to determine owner in user; please make sure you are logged in'
             logger.error(message)
             raise errors.BinstarError(message)
 
@@ -51,26 +51,26 @@ class NoticesAction(argparse.Action):
         """
         try:
             path = pathlib.Path(values)
-        except TypeError:
-            message: str = "Notices argument must be defined as a string"
+        except TypeError as error:
+            message: str = 'Notices argument must be defined as a string'
             logger.error(message)
-            raise SystemExit(1)
+            raise SystemExit(1) from error
 
         if path.exists():
             try:
-                with path.open() as fp:
-                    values = fp.read()
+                with path.open(encoding='utf-8') as file_pointer:
+                    values = file_pointer.read()
             except OSError as error:
-                message: str = f"Unable to read provided JSON file: {error}"
+                message: str = f'Unable to read provided JSON file: {error}'
                 logger.error(message)
-                raise SystemExit(1)
+                raise SystemExit(1) from error
 
         try:
             data = json.loads(values)
-        except json.JSONDecodeError:
-            message: str = "Unable to parse provided JSON; please make sure it is valid JSON"
+        except json.JSONDecodeError as error:
+            message: str = 'Unable to parse provided JSON; please make sure it is valid JSON'
             logger.error(message)
-            raise SystemExit(1)
+            raise SystemExit(1) from error
 
         setattr(namespace, self.dest, data)
 

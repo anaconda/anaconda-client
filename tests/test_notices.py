@@ -3,7 +3,6 @@
 
 """Tests for notices command."""
 import json
-import pathlib
 import tempfile
 from unittest import mock
 
@@ -81,7 +80,7 @@ class Test(CLITestCase):
         }
 
         registry.register(
-            method="GET", path=f'/channels/{group}/{label}/notices', content=notices
+            method='GET', path=f'/channels/{group}/{label}/notices', content=notices
         )
 
         main(['notices', '--get', '--user', group, '--label', label])
@@ -144,15 +143,11 @@ class Test(CLITestCase):
             }]
         })
 
-        # make temp notices json file
-        temp = pathlib.Path(tempfile.mktemp())
+        with tempfile.NamedTemporaryFile('w') as file_pointer:
+            file_pointer.write(notices_json)
+            file_pointer.seek(0)
 
-        with temp.open("w") as fp:
-            fp.write(notices_json)
-
-        main(['notices', '--create', str(temp)])
-
-        temp.unlink()
+            main(['notices', '--create', file_pointer.file.name])
 
     @urlpatch
     def test_set_notices_with_label_and_user_option(self, registry):
