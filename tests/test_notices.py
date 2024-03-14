@@ -23,12 +23,14 @@ class Test(CLITestCase):
     """
 
     def setUp(self):
-        super()
+        super().setUp()
+
         self.notices_get_config_patch = mock.patch('binstar_client.commands.notices.get_config')
         self.notices_get_config = self.notices_get_config_patch.start()
         self.notices_get_config.return_value = {}
 
     def tearDown(self):
+        super().tearDown()
         self.notices_get_config_patch.stop()
 
     @urlpatch
