@@ -6,12 +6,10 @@
     anaconda upload notebook.ipynb
     anaconda upload environment.yml
 
-##### See Also
+See Also:
 
-  * [Uploading a Conda Package](
-  https://docs.anaconda.com/anaconda-repository/user-guide/tasks/pkgs/use-pkg-managers/#uploading-a-conda-package)
-  * [Uploading a Standard Python Package](
-  https://docs.anaconda.com/anaconda-repository/user-guide/tasks/pkgs/use-pkg-managers/#uploading-pypi-packages)
+* Uploading a Conda Package: https://docs.anaconda.com/free/anacondaorg/user-guide/packages/conda-packages/#cloud-uploading-conda-packages
+* Uploading a Standard Python Package: https://docs.anaconda.com/free/anacondaorg/user-guide/packages/standard-python-packages/#uploading-stdpython-packages
 
 """
 
