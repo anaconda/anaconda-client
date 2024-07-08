@@ -49,5 +49,8 @@ setuptools.setup(
             'binstar = binstar_client.scripts.cli:main',
             'conda-server = binstar_client.scripts.cli:main',
         ],
+        'anaconda_cli.subcommand': [
+            'org = binstar_client.plugins:app',
+        ]
     },
 )
