@@ -46,7 +46,6 @@ setuptools.setup(
     packages=setuptools.find_packages(include=['binstar_client', 'binstar_client.*']),
     entry_points={
         'console_scripts': [
-            'anaconda = binstar_client.scripts.cli:main',
             'binstar = binstar_client.scripts.cli:main',
             'conda-server = binstar_client.scripts.cli:main',
         ],
