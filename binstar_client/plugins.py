@@ -30,6 +30,8 @@ from binstar_client.scripts.cli import (
 from binstar_client.scripts.cli import main as binstar_main
 
 from anaconda_cli_base.cli import app as main_app
+import typer
+import typer.colors
 from typer import Context, Typer
 
 # All subcommands in anaconda-client
@@ -147,7 +149,8 @@ def _mount_subcommand(
 
     """
     if is_deprecated:
-        help_text = f"(deprecated) {help_text}"
+        deprecated_text = typer.style("(deprecated)", fg=typer.colors.RED, bold=True)
+        help_text = f"{deprecated_text} {help_text}"
         f = _deprecate(name, _subcommand)
     else:
         f = _subcommand
