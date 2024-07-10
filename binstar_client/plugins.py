@@ -186,13 +186,11 @@ def load_legacy_subcommands() -> None:
     parser = ArgumentParser()
     add_subparser_modules(parser, command_module)
 
-    # Define all of the subcommands in the typer app
     for name in LEGACY_SUBCOMMANDS:
         # TODO: Can we load the arguments, or at least the docstring to make the help nicer?
-        help_text = _get_help_text(parser, name)
         _mount_subcommand(
             name=name,
-            help_text=help_text,
+            help_text=_get_help_text(parser, name),
             is_deprecated=(name in DEPRECATED_SUBCOMMANDS),
             mount_to_main=(name not in {"login", "logout"}),
             is_hidden_on_main=(name not in NON_HIDDEN_SUBCOMMANDS),
