@@ -1,6 +1,16 @@
-"""Wrappers and functions to handle loading of legacy anaconda-client subcommands into the new CLI.
+"""Defines the subcommand plugins for the new CLI defined in anaconda-cli-base.
 
-A one-stop-shop for maintaining compatibility and helping to gracefully migrate & deprecate.
+We define a new subcommand called `anaconda org`, which nests all existing
+anaconda-client subcommands beneath it. Additionally, we mount all of the
+existing subcommands, with the exception of "login" and "logout" at the top
+level of the CLI, although some of these are mounted silently. This is done to
+maintain backwards compatibility while we work to deprecate some of them.
+
+Rather than re-write all the CLI code in anaconda-client, we opt to dynamically
+register each subcommand in the `load_legacy_subcommands` function.
+
+Note: This module should not be imported, except as defined as a plugin
+entrypoint in setup.py.
 
 """
 
