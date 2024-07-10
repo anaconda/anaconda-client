@@ -33,7 +33,7 @@ from anaconda_cli_base.cli import app as main_app
 from typer import Context, Typer
 
 # All subcommands in anaconda-client
-LEGACY_SUBCOMMANDS = {
+ALL_SUBCOMMANDS = {
     "auth",
     "channel",
     "config",
@@ -186,7 +186,7 @@ def load_legacy_subcommands() -> None:
     parser = ArgumentParser()
     add_subparser_modules(parser, command_module)
 
-    for name in LEGACY_SUBCOMMANDS:
+    for name in ALL_SUBCOMMANDS:
         # TODO: Can we load the arguments, or at least the docstring to make the help nicer?
         _mount_subcommand(
             name=name,
