@@ -60,7 +60,7 @@ NON_HIDDEN_SUBCOMMANDS = {
     "upload",
 }
 # Any subcommands that should emit deprecation warnings, and show as deprecated in the help
-DEPRECATED_SUBCOMMANDS: str = {
+DEPRECATED_SUBCOMMANDS = {
     "notebook",
 }
 
