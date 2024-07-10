@@ -88,6 +88,13 @@ def _get_help_text(parser: ArgumentParser, name: str) -> str:
 
 
 def _deprecate(name: str, f: Callable) -> Callable:
+    """Mark a named subcommand as deprecated.
+
+    Args:
+        name: The name of the subcommand.
+        f: The subcommand callable.
+
+    """
     def new_f(ctx: Context) -> Any:
         if name in DEPRECATED_SUBCOMMANDS:
             log.warning(
