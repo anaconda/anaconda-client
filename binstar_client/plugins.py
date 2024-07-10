@@ -19,7 +19,6 @@ from binstar_client.scripts.cli import (
 )
 from binstar_client.scripts.cli import main as binstar_main
 
-from anaconda_cli_base.cli import app as main_app
 from typer import Context, Typer
 
 # All subcommands in anaconda-client
@@ -45,24 +44,7 @@ LEGACY_SUBCOMMANDS = {
 }
 # These subcommands will be shown in the top-level help
 NON_HIDDEN_SUBCOMMANDS = {
-    "auth",
-    "channel",
-    "config",
-    "copy",
-    "download",
-    "groups",
-    "label",
-    "login",
-    "logout",
-    "move",
-    "notebook",
-    "package",
-    "remove",
-    "search",
-    "show",
-    "update",
     "upload",
-    "whoami",
 }
 # Any subcommands that should emit deprecation warnings, and show as deprecated in the help
 DEPRECATED_SUBCOMMANDS: Set[str] = set()
@@ -125,6 +107,8 @@ def load_legacy_subcommands() -> None:
 
     """
 
+    from anaconda_cli_base.cli import app as main_app
+
     parser = ArgumentParser()
     add_subparser_modules(parser, command_module)
 
@@ -140,18 +124,19 @@ def load_legacy_subcommands() -> None:
         )(subcommand_function)
 
         # Mount some CLI subcommands at the top-level, but optionally emit a deprecation warning
-        help_text = f"anaconda.org: {help_text + ' ' if help_text else ''}(alias for 'anaconda org {name}')"
-        if name in DEPRECATED_SUBCOMMANDS:
-            help_text = f"(deprecated) {help_text}"
-        main_app.command(
-            name=name,
-            help=help_text,
-            hidden=name not in NON_HIDDEN_SUBCOMMANDS,
-            context_settings={
-                "allow_extra_args": True,
-                "ignore_unknown_options": True,
-            },
-        )(_deprecate(name, subcommand_function))
+        if name not in {"login", "logout"}:
+            help_text = f"anaconda.org: {help_text + ' ' if help_text else ''}(alias for 'anaconda org {name}')"
+            if name in DEPRECATED_SUBCOMMANDS:
+                help_text = f"(deprecated) {help_text}"
+            main_app.command(
+                name=name,
+                help=help_text,
+                hidden=name not in NON_HIDDEN_SUBCOMMANDS,
+                context_settings={
+                    "allow_extra_args": True,
+                    "ignore_unknown_options": True,
+                },
+            )(_deprecate(name, subcommand_function))
 
 
 def legacy_main(args: Optional[List[str]] = None) -> None:
