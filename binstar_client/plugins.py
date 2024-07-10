@@ -100,14 +100,18 @@ def _deprecate(name: str, f: Callable) -> Callable:
     return new_f
 
 
-def subcommand_function(ctx: Context) -> None:
+def _legacy_main(args: Optional[List[str]] = None) -> None:
+    binstar_main(args if args is not None else sys.argv[1:], allow_plugin_main=False)
+
+
+def _subcommand_function(ctx: Context) -> None:
     # Here, we are using the ctx instead of sys.argv because the test invoker doesn't
     # use sys.argv
     args = []
     if ctx.info_name is not None:
         args.append(ctx.info_name)
     args.extend(ctx.args)
-    legacy_main(args=args)
+    _legacy_main(args=args)
 
 
 def load_legacy_subcommands() -> None:
@@ -131,7 +135,7 @@ def load_legacy_subcommands() -> None:
             name=name,
             help=help_text,
             context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
-        )(subcommand_function)
+        )(_subcommand_function)
 
         # Mount some CLI subcommands at the top-level, but optionally emit a deprecation warning
         if name not in {"login", "logout"}:
@@ -146,11 +150,7 @@ def load_legacy_subcommands() -> None:
                     "allow_extra_args": True,
                     "ignore_unknown_options": True,
                 },
-            )(_deprecate(name, subcommand_function))
-
-
-def legacy_main(args: Optional[List[str]] = None) -> None:
-    binstar_main(args if args is not None else sys.argv[1:], allow_plugin_main=False)
+            )(_deprecate(name, _subcommand_function))
 
 
 load_legacy_subcommands()
