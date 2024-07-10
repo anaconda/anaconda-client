@@ -25,7 +25,7 @@ from typing import Set
 
 from binstar_client import commands as command_module
 from binstar_client.scripts.cli import (
-    _add_subparser_modules as add_subparser_modules,
+    _add_subparser_modules as add_subparser_modules, main as binstar_main,
 )
 from binstar_client.scripts.cli import main as binstar_main
 
@@ -100,18 +100,21 @@ def _deprecate(name: str, f: Callable) -> Callable:
     return new_f
 
 
-def _legacy_main(args: Optional[List[str]] = None) -> None:
-    binstar_main(args if args is not None else sys.argv[1:], allow_plugin_main=False)
+def _subcommand(ctx: Context) -> None:
+    """A common function to use for all subcommands.
 
+    In a proper typer/click app, this is the function that is decorated.
 
-def _subcommand_function(ctx: Context) -> None:
-    # Here, we are using the ctx instead of sys.argv because the test invoker doesn't
-    # use sys.argv
+    We use the typer.Context object to extract the args passed into the CLI, and then delegate
+    to the binstar_main function.
+
+    """
     args = []
+    # Ensure we capture the subcommand name if there is one
     if ctx.info_name is not None:
         args.append(ctx.info_name)
     args.extend(ctx.args)
-    _legacy_main(args=args)
+    binstar_main(args, allow_plugin_main=False)
 
 
 def load_legacy_subcommands() -> None:
@@ -135,7 +138,7 @@ def load_legacy_subcommands() -> None:
             name=name,
             help=help_text,
             context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
-        )(_subcommand_function)
+        )(_subcommand)
 
         # Mount some CLI subcommands at the top-level, but optionally emit a deprecation warning
         if name not in {"login", "logout"}:
@@ -150,7 +153,7 @@ def load_legacy_subcommands() -> None:
                     "allow_extra_args": True,
                     "ignore_unknown_options": True,
                 },
-            )(_deprecate(name, _subcommand_function))
+            )(_deprecate(name, _subcommand))
 
 
 load_legacy_subcommands()
