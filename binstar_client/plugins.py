@@ -29,6 +29,7 @@ from binstar_client.scripts.cli import (
 )
 from binstar_client.scripts.cli import main as binstar_main
 
+from anaconda_cli_base.cli import app as main_app
 from typer import Context, Typer
 
 # All subcommands in anaconda-client
@@ -57,7 +58,9 @@ NON_HIDDEN_SUBCOMMANDS = {
     "upload",
 }
 # Any subcommands that should emit deprecation warnings, and show as deprecated in the help
-DEPRECATED_SUBCOMMANDS: Set[str] = set()
+DEPRECATED_SUBCOMMANDS: str = {
+    "notebook",
+}
 
 # The logger
 log = logging.getLogger(__name__)
@@ -96,12 +99,11 @@ def _deprecate(name: str, f: Callable) -> Callable:
 
     """
     def new_f(ctx: Context) -> Any:
-        if name in DEPRECATED_SUBCOMMANDS:
-            log.warning(
-                "The existing anaconda-client commands will be deprecated. To maintain compatibility, "
-                "please either pin `anaconda-client<2` or update your system call with the `org` prefix, "
-                f'e.g. "anaconda org {name} ..."'
-            )
+        log.warning(
+            "The existing anaconda-client commands will be deprecated. To maintain compatibility, "
+            "please either pin `anaconda-client<2` or update your system call with the `org` prefix, "
+            f'e.g. "anaconda org {name} ..."'
+        )
         return f(ctx)
 
     return new_f
@@ -124,43 +126,77 @@ def _subcommand(ctx: Context) -> None:
     binstar_main(args, allow_plugin_main=False)
 
 
+def _mount_subcommand(
+    *,
+    name: str,
+    help_text: str,
+    is_deprecated: bool,
+    mount_to_main: bool,
+    is_hidden_on_main: bool,
+) -> None:
+    """Mount an existing subcommand to the `anaconda org` typer application.
+
+    Args:
+        name: The name of the subcommand.
+        help_text: The help text for the subcommand
+        is_deprecated: If True, mark the subcommand as deprecated. This will cause a warning to be
+            emitted, and also add "(deprecated)" to the help text.
+        mount_to_main: If True, also mount the subcommand to the main typer app.
+        is_hidden_on_main: If True, the subcommand is registered as a hidden subcommand of the main CLI
+            for backwards-compatibility
+
+    """
+    if is_deprecated:
+        help_text = f"(deprecated) {help_text}"
+        f = _deprecate(name, _subcommand)
+    else:
+        f = _subcommand
+
+    # Mount the subcommand to the `anaconda org` application.
+    app.command(
+        name=name,
+        help=help_text,
+        context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
+    )(f)
+
+    # Exit early if we are not mounting to the main `anaconda` app
+    if not mount_to_main:
+        return
+
+    # Mount some CLI subcommands at the top-level, but optionally emit a deprecation warning
+    help_text = f"anaconda.org: {help_text + ' ' if help_text else ''}(alias for 'anaconda org {name}')"
+
+    main_app.command(
+        name=name,
+        help=help_text,
+        hidden=is_hidden_on_main,
+        context_settings={
+            "allow_extra_args": True,
+            "ignore_unknown_options": True,
+        },
+    )(f)
+
+
 def load_legacy_subcommands() -> None:
     """Load each of the legacy subcommands into its own typer subcommand.
 
     This allows them to be called from the new CLI, without having to manually migrate.
 
     """
-
-    from anaconda_cli_base.cli import app as main_app
-
     parser = ArgumentParser()
     add_subparser_modules(parser, command_module)
 
+    # Define all of the subcommands in the typer app
     for name in LEGACY_SUBCOMMANDS:
-
-        # Define all of the subcommands in the typer app
         # TODO: Can we load the arguments, or at least the docstring to make the help nicer?
         help_text = _get_help_text(parser, name)
-        app.command(
+        _mount_subcommand(
             name=name,
-            help=help_text,
-            context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
-        )(_subcommand)
-
-        # Mount some CLI subcommands at the top-level, but optionally emit a deprecation warning
-        if name not in {"login", "logout"}:
-            help_text = f"anaconda.org: {help_text + ' ' if help_text else ''}(alias for 'anaconda org {name}')"
-            if name in DEPRECATED_SUBCOMMANDS:
-                help_text = f"(deprecated) {help_text}"
-            main_app.command(
-                name=name,
-                help=help_text,
-                hidden=name not in NON_HIDDEN_SUBCOMMANDS,
-                context_settings={
-                    "allow_extra_args": True,
-                    "ignore_unknown_options": True,
-                },
-            )(_deprecate(name, _subcommand))
+            help_text=help_text,
+            is_deprecated=(name in DEPRECATED_SUBCOMMANDS),
+            mount_to_main=(name not in {"login", "logout"}),
+            is_hidden_on_main=(name not in NON_HIDDEN_SUBCOMMANDS),
+        )
 
 
 load_legacy_subcommands()
