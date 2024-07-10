@@ -5,7 +5,7 @@ package:
   version: {{ data.get('version') }}
 
 source:
-  git_url: ../
+  path: ..
 
 build:
   number: 0
