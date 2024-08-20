@@ -15,24 +15,20 @@ entrypoint in setup.py.
 """
 
 import logging
-import sys
+import warnings
 from argparse import ArgumentParser
 from typing import Any
 from typing import Callable
-from typing import List
-from typing import Optional
-from typing import Set
+
+import typer
+import typer.colors
+from anaconda_cli_base.cli import app as main_app
+from typer import Context, Typer
 
 from binstar_client import commands as command_module
 from binstar_client.scripts.cli import (
     _add_subparser_modules as add_subparser_modules, main as binstar_main,
 )
-from binstar_client.scripts.cli import main as binstar_main
-
-from anaconda_cli_base.cli import app as main_app
-import typer
-import typer.colors
-from typer import Context, Typer
 
 # All subcommands in anaconda-client
 ALL_SUBCOMMANDS = {
@@ -66,6 +62,7 @@ DEPRECATED_SUBCOMMANDS = {
 
 # The logger
 log = logging.getLogger(__name__)
+warnings.simplefilter("always")
 
 app = Typer(
     add_completion=False,
@@ -77,13 +74,13 @@ app = Typer(
 
 def _get_help_text(parser: ArgumentParser, name: str) -> str:
     """Extract the help text from the anaconda-client CLI Argument Parser."""
-    if parser._subparsers is None:
+    if parser._subparsers is None:  # pylint: disable=protected-access
         return ""
-    if parser._subparsers._actions is None:
+    if parser._subparsers._actions is None:  # pylint: disable=protected-access
         return ""
-    if parser._subparsers._actions[1].choices is None:
+    if parser._subparsers._actions[1].choices is None:  # pylint: disable=protected-access
         return ""
-    subcommand_parser = dict(parser._subparsers._actions[1].choices).get(name)
+    subcommand_parser = dict(parser._subparsers._actions[1].choices).get(name)  # pylint: disable=protected-access
     if subcommand_parser is None:
         return ""
     description = subcommand_parser.description
@@ -92,7 +89,7 @@ def _get_help_text(parser: ArgumentParser, name: str) -> str:
     return description.strip()
 
 
-def _deprecate(name: str, f: Callable) -> Callable:
+def _deprecate(name: str, func: Callable) -> Callable:
     """Mark a named subcommand as deprecated.
 
     Args:
@@ -100,15 +97,16 @@ def _deprecate(name: str, f: Callable) -> Callable:
         f: The subcommand callable.
 
     """
-    def new_f(ctx: Context) -> Any:
-        log.warning(
-            "The existing anaconda-client commands will be deprecated. To maintain compatibility, "
-            "please either pin `anaconda-client<2` or update your system call with the `org` prefix, "
+    def new_func(ctx: Context) -> Any:
+        msg = (
+            f"The existing anaconda-client commands will be deprecated. To maintain compatibility, "
+            f"please either pin `anaconda-client<2` or update your system call with the `org` prefix, "
             f'e.g. "anaconda org {name} ..."'
         )
-        return f(ctx)
+        log.warning(msg)
+        return func(ctx)
 
-    return new_f
+    return new_func
 
 
 def _subcommand(ctx: Context) -> None:
@@ -151,16 +149,16 @@ def _mount_subcommand(
     if is_deprecated:
         deprecated_text = typer.style("(deprecated)", fg=typer.colors.RED, bold=True)
         help_text = f"{deprecated_text} {help_text}"
-        f = _deprecate(name, _subcommand)
+        func = _deprecate(name, _subcommand)
     else:
-        f = _subcommand
+        func = _subcommand
 
     # Mount the subcommand to the `anaconda org` application.
     app.command(
         name=name,
         help=help_text,
         context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
-    )(f)
+    )(func)
 
     # Exit early if we are not mounting to the main `anaconda` app
     if not mount_to_main:
@@ -177,7 +175,7 @@ def _mount_subcommand(
             "allow_extra_args": True,
             "ignore_unknown_options": True,
         },
-    )(f)
+    )(func)
 
 
 def load_legacy_subcommands() -> None:
@@ -190,7 +188,7 @@ def load_legacy_subcommands() -> None:
     add_subparser_modules(parser, command_module)
 
     for name in ALL_SUBCOMMANDS:
-        # TODO: Can we load the arguments, or at least the docstring to make the help nicer?
+        # TODO: Can we load the arguments, or at least the docstring to make the help nicer?  # pylint: disable=fixme
         _mount_subcommand(
             name=name,
             help_text=_get_help_text(parser, name),
