@@ -31,6 +31,7 @@ init:
 	@if [ -z "$${CONDA_SHLVL:+x}" ]; then echo "Conda is not installed." && exit 1; fi
 	@conda create \
 		--channel defaults \
+		--channel anaconda-cloud/label/dev \
 		--yes \
 		--prefix $(conda_env_dir) \
 		python=3.11 \
