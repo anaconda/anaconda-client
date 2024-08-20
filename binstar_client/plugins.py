@@ -195,7 +195,7 @@ def load_legacy_subcommands() -> None:
             name=name,
             help_text=_get_help_text(parser, name),
             is_deprecated=(name in DEPRECATED_SUBCOMMANDS),
-            mount_to_main=(name not in {"login", "logout"}),
+            mount_to_main=(name not in {"login", "logout", "whoami"}),
             is_hidden_on_main=(name not in NON_HIDDEN_SUBCOMMANDS),
         )
 
