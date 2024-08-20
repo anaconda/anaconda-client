@@ -41,6 +41,7 @@ def test_org_subcommands(cmd: str) -> None:
     org = next((group for group in anaconda_cli_base.cli.app.registered_groups if group.name == "org"), None)
     assert org is not None
 
+    assert org.typer_instance
     subcmd = next((subcmd for subcmd in org.typer_instance.registered_commands if subcmd.name == cmd), None)
     assert subcmd is not None
     assert subcmd.hidden is False

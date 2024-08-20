@@ -76,8 +76,9 @@ def _get_help_text(parser: ArgumentParser, name: str) -> str:
     """Extract the help text from the anaconda-client CLI Argument Parser."""
     if parser._subparsers is None:  # pylint: disable=protected-access
         return ""
-    if parser._subparsers._actions is None:  # pylint: disable=protected-access
-        return ""
+    # MyPy says this was unreachable
+    # if parser._subparsers._actions is None:  # pylint: disable=protected-access
+    #     return ""
     if parser._subparsers._actions[1].choices is None:  # pylint: disable=protected-access
         return ""
     subcommand_parser = dict(parser._subparsers._actions[1].choices).get(name)  # pylint: disable=protected-access
