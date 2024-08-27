@@ -49,6 +49,21 @@ class ConsoleFormatter(logging.Formatter):
         self._style._fmt = self.FORMAT_CUSTOM.get(record.levelno, self.FORMAT_DEFAULT)
         return super().format(record)
 
+def _purge_rich_handler_from_logging_root() -> None:
+    # Remove all handlers associated with the root logger object.
+    # We do this since anaconda-cli-base defines the RichHandler, which conflicts with anaconda-client's logging
+    # We can remove this once we clean up logging.
+    for handler in logging.root.handlers[:]:
+        try:
+            from rich.logging import RichHandler
+        except:
+            pass
+        else:
+            # Only remove the root RichHandler, and only if rich is installed
+            # This should always happen, but just being super careful here.
+            if isinstance(handler, RichHandler):
+                logging.root.removeHandler(handler)
+
 
 def setup_logging(
         logger: logging.Logger,
@@ -57,6 +72,7 @@ def setup_logging(
         disable_ssl_warnings: bool = False
 ) -> None:
     """Configure logging for the application."""
+    _purge_rich_handler_from_logging_root()
     logger.setLevel(logging.DEBUG)
 
     os.makedirs(config.USER_LOGDIR, exist_ok=True)
