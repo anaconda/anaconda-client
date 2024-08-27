@@ -10,15 +10,19 @@ import unittest.mock
 import pytest
 
 from binstar_client import errors
-from tests.fixture import CLITestCase, main
-from tests.urlmock import urlpatch
+from tests.fixture import main
 from tests.utils.utils import data_dir
 
 
-class Test(CLITestCase):
+@pytest.fixture()
+def mock_upload_bool_input():
+    with unittest.mock.patch('binstar_client.commands.upload.bool_input') as p:
+        yield p
+
+
+class TestUpload:
     """Tests for package upload commands."""
 
-    @urlpatch
     def test_upload_bad_package(self, registry):
         registry.register(method='HEAD', path='/', status=200)
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
@@ -36,21 +40,19 @@ class Test(CLITestCase):
 
         main(['--show-traceback', 'upload', data_dir('foo-0.1-0.tar.bz2')])
 
-        self.assertIsNotNone(json.loads(staging_response.req.body).get('sha256'))
+        assert json.loads(staging_response.req.body).get('sha256') is not None
 
-    @urlpatch
     def test_upload_bad_package_no_register(self, registry):
         registry.register(method='HEAD', path='/', status=200)
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
         registry.register(method='GET', path='/dist/eggs/foo/0.1/osx-64/foo-0.1-0.tar.bz2', status=404)
         registry.register(method='GET', path='/package/eggs/foo', status=404)
 
-        with self.assertRaises(errors.UserError):
+        with pytest.raises(errors.UserError):
             main(['--show-traceback', 'upload', '--no-register', data_dir('foo-0.1-0.tar.bz2')])
 
         registry.assertAllCalled()
 
-    @urlpatch
     def test_upload_conda(self, registry):
         registry.register(method='HEAD', path='/', status=200)
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
@@ -68,9 +70,8 @@ class Test(CLITestCase):
         main(['--show-traceback', 'upload', data_dir('foo-0.1-0.tar.bz2')])
 
         registry.assertAllCalled()
-        self.assertIsNotNone(json.loads(staging_response.req.body).get('sha256'))
+        assert json.loads(staging_response.req.body).get('sha256') is not None
 
-    @urlpatch
     def test_upload_conda_v2(self, registry):
         registry.register(method='HEAD', path='/', status=200)
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
@@ -90,9 +91,8 @@ class Test(CLITestCase):
         main(['--show-traceback', 'upload', data_dir('mock-2.0.0-py37_1000.conda')])
 
         registry.assertAllCalled()
-        self.assertIsNotNone(json.loads(staging_response.req.body).get('sha256'))
+        assert json.loads(staging_response.req.body).get('sha256') is not None
 
-    @urlpatch
     def test_upload_use_pkg_metadata(self, registry):
         registry.register(method='HEAD', path='/', status=200)
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
@@ -116,9 +116,8 @@ class Test(CLITestCase):
         main(['--show-traceback', 'upload', '--force-metadata-update', data_dir('mock-2.0.0-py37_1000.conda')])
 
         registry.assertAllCalled()
-        self.assertIsNotNone(json.loads(staging_response.req.body).get('sha256'))
+        assert json.loads(staging_response.req.body).get('sha256') is not None
 
-    @urlpatch
     def test_upload_pypi(self, registry):
         registry.register(method='HEAD', path='/', status=200)
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
@@ -141,9 +140,8 @@ class Test(CLITestCase):
         main(['--show-traceback', 'upload', data_dir('test_package34-0.3.1.tar.gz')])
 
         registry.assertAllCalled()
-        self.assertIsNotNone(json.loads(staging_response.req.body).get('sha256'))
+        assert json.loads(staging_response.req.body).get('sha256') is not None
 
-    @urlpatch
     def test_upload_pypi_with_conda_package_name_allowed(self, registry):
         registry.register(method='HEAD', path='/', status=200)
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
@@ -169,15 +167,14 @@ class Test(CLITestCase):
             data_dir('test_package34-0.3.1.tar.gz'),
         ])
         registry.assertAllCalled()
-        self.assertIsNotNone(json.loads(staging_response.req.body).get('sha256'))
+        assert json.loads(staging_response.req.body).get('sha256') is not None
 
-    @urlpatch
     def test_upload_conda_package_with_name_override_fails(self, registry):
         registry.register(method='HEAD', path='/', status=200)
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
 
         # Passing -o for `file` package_type doesn't override channel
-        with self.assertRaises(errors.BinstarError):
+        with pytest.raises(errors.BinstarError):
             main([
                 '--show-traceback', 'upload', '--package', 'test_package', '--package-type', 'file',
                 data_dir('test_package34-0.3.1.tar.gz'),
@@ -185,17 +182,15 @@ class Test(CLITestCase):
 
         registry.assertAllCalled()
 
-    @urlpatch
     def test_upload_pypi_with_random_name(self, registry):
         registry.register(method='HEAD', path='/', status=200)
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
 
-        with self.assertRaises(errors.BinstarError):
+        with pytest.raises(errors.BinstarError):
             main(['--show-traceback', 'upload', '--package', 'alpha_omega', data_dir('test_package34-0.3.1.tar.gz')])
 
         registry.assertAllCalled()
 
-    @urlpatch
     def test_upload_file(self, registry):
         registry.register(method='HEAD', path='/', status=200)
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
@@ -221,10 +216,9 @@ class Test(CLITestCase):
         ])
 
         registry.assertAllCalled()
-        self.assertIsNotNone(json.loads(staging_response.req.body).get('sha256'))
+        assert json.loads(staging_response.req.body).get('sha256') is not None
 
     @pytest.mark.xfail(reason='anaconda-project removed')
-    @urlpatch
     def test_upload_project(self, registry):
         # there's redundant work between anaconda-client which checks auth and anaconda-project also checks auth;
         # -project has no way to know it was already checked :-/
@@ -245,7 +239,6 @@ class Test(CLITestCase):
         registry.assertAllCalled()
 
     @pytest.mark.xfail(reason='anaconda-project removed')
-    @urlpatch
     def test_upload_notebook_as_project(self, registry):
         registry.register(method='HEAD', path='/', status=200)
         registry.register(method='GET', path='/user/eggs', content='{"login": "eggs"}')
@@ -263,7 +256,6 @@ class Test(CLITestCase):
 
         registry.assertAllCalled()
 
-    @urlpatch
     def test_upload_notebook_as_package(self, registry):
         test_datetime = datetime.datetime(2022, 5, 19, 15, 29)
         mock_version = test_datetime.strftime('%Y.%m.%d.%H%M')
@@ -291,10 +283,9 @@ class Test(CLITestCase):
             main(['--show-traceback', 'upload', data_dir('foo.ipynb')])
 
         registry.assertAllCalled()
-        self.assertIsNotNone(json.loads(staging_response.req.body).get('sha256'))
+        assert json.loads(staging_response.req.body).get('sha256') is not None
 
     @pytest.mark.xfail(reason='anaconda-project removed')
-    @urlpatch
     def test_upload_project_specifying_user(self, registry):
         registry.register(method='HEAD', path='/', status=200)
         registry.register(method='GET', path='/user/alice', content='{"login": "alice"}')
@@ -312,7 +303,6 @@ class Test(CLITestCase):
         registry.assertAllCalled()
 
     @pytest.mark.xfail(reason='anaconda-project removed')
-    @urlpatch
     def test_upload_project_specifying_token(self, registry):
         registry.register(method='HEAD', path='/', status=200)
         registry.register(
@@ -335,23 +325,19 @@ class Test(CLITestCase):
 
         registry.assertAllCalled()
 
-    @urlpatch
-    @unittest.mock.patch('binstar_client.commands.upload.bool_input')
-    def test_upload_interactive_no_overwrite(self, registry, bool_input):
+    def test_upload_interactive_no_overwrite(self, registry, mock_upload_bool_input):
         # regression test for #364
         registry.register(method='HEAD', path='/', status=200)
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
         registry.register(method='GET', path='/dist/eggs/foo/0.1/osx-64/foo-0.1-0.tar.bz2', content='{}')
 
-        bool_input.return_value = False  # do not overwrite package
+        mock_upload_bool_input.return_value = False  # do not overwrite package
 
         main(['--show-traceback', 'upload', '-i', data_dir('foo-0.1-0.tar.bz2')])
 
         registry.assertAllCalled()
 
-    @urlpatch
-    @unittest.mock.patch('binstar_client.commands.upload.bool_input')
-    def test_upload_interactive_overwrite(self, registry, bool_input):
+    def test_upload_interactive_overwrite(self, registry, mock_upload_bool_input):
         registry.register(method='HEAD', path='/', status=200)
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
         registry.register(method='GET', path='/dist/eggs/foo/0.1/osx-64/foo-0.1-0.tar.bz2', content='{}')
@@ -366,14 +352,13 @@ class Test(CLITestCase):
         registry.register(method='POST', path='/s3_url', status=201)
         registry.register(method='POST', path='/commit/eggs/foo/0.1/osx-64/foo-0.1-0.tar.bz2', status=200, content={})
 
-        bool_input.return_value = True
+        mock_upload_bool_input.return_value = True
 
         main(['--show-traceback', 'upload', '-i', data_dir('foo-0.1-0.tar.bz2')])
 
         registry.assertAllCalled()
-        self.assertIsNotNone(json.loads(staging_response.req.body).get('sha256'))
+        assert json.loads(staging_response.req.body).get('sha256') is not None
 
-    @urlpatch
     def test_upload_private_package(self, registry):
         registry.register(method='HEAD', path='/', status=200)
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
@@ -392,9 +377,8 @@ class Test(CLITestCase):
         main(['--show-traceback', 'upload', '--private', data_dir('foo-0.1-0.tar.bz2')])
 
         registry.assertAllCalled()
-        self.assertIsNotNone(json.loads(staging_response.req.body).get('sha256'))
+        assert json.loads(staging_response.req.body).get('sha256') is not None
 
-    @urlpatch
     def test_upload_private_package_not_allowed(self, registry):
         registry.register(method='HEAD', path='/', status=200)
         registry.register(method='GET', path='/user', content='{"login": "eggs"}')
@@ -407,5 +391,5 @@ class Test(CLITestCase):
             status=400,
         )
 
-        with self.assertRaises(errors.BinstarError):
+        with pytest.raises(errors.BinstarError):
             main(['--show-traceback', 'upload', '--private', data_dir('foo-0.1-0.tar.bz2')])
