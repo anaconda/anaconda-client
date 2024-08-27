@@ -3,11 +3,11 @@
 
 from __future__ import annotations
 
-__all__ = ['NullAuth']
-
 import logging
 
 from requests.auth import AuthBase
+
+__all__ = ['NullAuth']
 
 logger = logging.getLogger('binstar.requests_ext')
 
