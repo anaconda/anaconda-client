@@ -6,14 +6,11 @@ from __future__ import annotations
 __all__ = ['NullAuth']
 
 import logging
-import typing
 
 from requests.auth import AuthBase
 
 logger = logging.getLogger('binstar.requests_ext')
 
-KeyT = typing.TypeVar('KeyT')
-ValueT = typing.TypeVar('ValueT')
 
 class NullAuth(AuthBase):  # pylint: disable=too-few-public-methods
     """force requests to ignore the ``.netrc``
