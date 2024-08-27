@@ -9,11 +9,11 @@ import hashlib
 import logging
 import os
 import platform as _platform
+from urllib.parse import quote
 
 import defusedxml.ElementTree as ET
 import requests
 from pkg_resources import parse_version as pv
-from six.moves.urllib.parse import quote
 from tqdm import tqdm
 
 from . import errors
