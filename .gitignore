@@ -20,12 +20,15 @@ lib
 lib64
 record.txt
 
+# Local conda environment
+/env
+
 # Installer logs
 pip-log.txt
 
 # Unit test / coverage reports
 .coveragerc
-.coverage
+.coverage*
 .tox
 nosetests.xml
 
