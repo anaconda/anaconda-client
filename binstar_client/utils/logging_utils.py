@@ -53,7 +53,7 @@ class ConsoleFormatter(logging.Formatter):
 try:
     from rich.logging import RichHandler
 except (ImportError, ModuleNotFoundError):
-    RichHandler = None
+    RichHandler = None  # type: ignore
 
 
 def _purge_rich_handler_from_logging_root() -> None:
