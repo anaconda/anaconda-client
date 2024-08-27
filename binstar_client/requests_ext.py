@@ -23,7 +23,7 @@ class NullAuth(AuthBase):  # pylint: disable=too-few-public-methods
     as form elements. Without this, requests would otherwise use the
     .netrc which leads, on some sites, to a 401 error.
 
-    https://github.com/kennethreitz/requests/issues/2773
+    https://github.com/psf/requests/issues/2773
 
     Use with::
 
