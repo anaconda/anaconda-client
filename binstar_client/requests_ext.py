@@ -8,7 +8,7 @@ __all__ = ['NullAuth']
 import logging
 import typing
 
-import requests
+from requests.auth import AuthBase
 
 logger = logging.getLogger('binstar.requests_ext')
 
@@ -26,7 +26,7 @@ def iter_fields(
     return iter(fields)
 
 
-class NullAuth(requests.auth.AuthBase):  # pylint: disable=too-few-public-methods
+class NullAuth(AuthBase):  # pylint: disable=too-few-public-methods
     """force requests to ignore the ``.netrc``
 
     Some sites do not support regular authentication, but we still
