@@ -168,14 +168,3 @@ class MultiPartIO:
             [fd.seek(pos, mode) for fd in self.have_read]  # pylint: disable=expression-not-assigned
             self._total = self.tell()
 
-
-def stream_multipart(data, files=None, callback=None):
-    if files:
-        fields = chain(iter_fields(data), iter_fields(files))
-    else:
-        fields = data
-
-    body, content_type = encode_multipart_formdata_stream(fields)
-    data = MultiPartIO(body, callback=callback)
-    headers = {'Content-Type': content_type}
-    return data, headers
