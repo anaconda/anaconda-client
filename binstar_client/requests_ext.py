@@ -12,19 +12,8 @@ from requests.auth import AuthBase
 
 logger = logging.getLogger('binstar.requests_ext')
 
-
 KeyT = typing.TypeVar('KeyT')
 ValueT = typing.TypeVar('ValueT')
-
-
-def iter_fields(
-        fields: typing.Union[typing.Mapping[KeyT, ValueT], typing.Iterable[typing.Tuple[KeyT, ValueT]]],
-) -> typing.Iterator[typing.Tuple[KeyT, ValueT]]:
-    """Iterate over fields."""
-    if isinstance(fields, typing.Mapping):
-        return iter(fields.items())
-    return iter(fields)
-
 
 class NullAuth(AuthBase):  # pylint: disable=too-few-public-methods
     """force requests to ignore the ``.netrc``
