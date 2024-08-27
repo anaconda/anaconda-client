@@ -11,7 +11,7 @@ import requests
 try:
     from PIL import Image
 except ImportError:
-    Image = None
+    Image = None  # type: ignore
 
 from ...errors import PillowNotInstalled
 
