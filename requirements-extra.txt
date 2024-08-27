@@ -1,4 +1,5 @@
 # Additional requirements for complete experience
 
 anaconda-project>=0.9.1
+ruamel.yaml  # Required by anaconda-project
 pillow>=8.2
