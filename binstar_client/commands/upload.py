@@ -25,6 +25,7 @@ import itertools
 import logging
 import os
 import typing
+import warnings
 
 import nbformat
 
@@ -541,6 +542,7 @@ class Uploader:  # pylint: disable=too-many-instance-attributes
 
     def upload_project(self, filename: str) -> bool:
         """Upload a project to the server."""
+        warnings.warn('Uploading projects is deprecated', DeprecationWarning)
         uploaded_project: projects.UploadedProject = projects.upload_project(filename, self.arguments, self.username)
         self.uploaded_projects.append(uploaded_project)
         return True
