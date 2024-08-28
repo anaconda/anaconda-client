@@ -3,16 +3,15 @@
 
 from __future__ import annotations
 
-__all__ = ['NullAuth', 'encode_multipart_formdata_stream', 'stream_multipart']
-
 from io import BytesIO, StringIO
 from itertools import chain
 import logging
 import typing
 
-import requests
-import six
+from requests.auth import AuthBase
 from urllib3.filepost import choose_boundary
+
+__all__ = ['NullAuth', 'encode_multipart_formdata_stream', 'stream_multipart']
 
 logger = logging.getLogger('binstar.requests_ext')
 
@@ -30,7 +29,7 @@ def iter_fields(
     return iter(fields)
 
 
-class NullAuth(requests.auth.AuthBase):  # pylint: disable=too-few-public-methods
+class NullAuth(AuthBase):  # pylint: disable=too-few-public-methods
     """force requests to ignore the ``.netrc``
 
     Some sites do not support regular authentication, but we still
@@ -38,7 +37,7 @@ class NullAuth(requests.auth.AuthBase):  # pylint: disable=too-few-public-method
     as form elements. Without this, requests would otherwise use the
     .netrc which leads, on some sites, to a 401 error.
 
-    https://github.com/kennethreitz/requests/issues/2773
+    https://github.com/psf/requests/issues/2773
 
     Use with::
 
@@ -68,9 +67,9 @@ def encode_multipart_formdata_stream(fields, boundary=None):
     body = []
 
     def body_write(item):
-        if isinstance(item, six.binary_type):
+        if isinstance(item, bytes):
             item = BytesIO(item)
-        elif isinstance(item, six.text_type):
+        elif isinstance(item, str):
             item = StringIO(item)
         body.append(item)
 
@@ -102,10 +101,10 @@ def encode_multipart_formdata_stream(fields, boundary=None):
                               % (fieldname))
             body_write(b'\r\n')
 
-        if isinstance(data, six.integer_types):
-            data = six.text_type(data)  # Backwards compatibility
+        if isinstance(data, (int,)):
+            data = str(data)  # Backwards compatibility
 
-        if isinstance(data, six.text_type):
+        if isinstance(data, str):
             body_write_encode(data)
         else:
             body_write(data)

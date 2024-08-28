@@ -34,6 +34,7 @@ jobs:
         with:
           auto-update-conda: true
           python-version: ${{ matrix.python-version }}
+          miniconda-version: "latest"
 
       - name: Install latest conda
         run: |
@@ -41,7 +42,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          conda install python=${{ matrix.python-version }} pip --file requirements.txt --file requirements-extra.txt
+          conda install -c defaults -c anaconda-cloud python=${{ matrix.python-version }} pip --file requirements.txt --file requirements-extra.txt
           pip install -r requirements-dev.txt
           python setup.py develop --no-deps
 
@@ -107,6 +108,7 @@ jobs:
         with:
           auto-update-conda: true
           python-version: ${{ matrix.python-version }}
+          miniconda-version: "latest"
 
       - name: Install latest conda
         run: |
@@ -114,7 +116,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          conda install python=${{ matrix.python-version }} pip --file requirements.txt --file requirements-extra.txt
+          conda install -c defaults -c anaconda-cloud python=${{ matrix.python-version }} pip --file requirements.txt --file requirements-extra.txt
           pip install -r requirements-dev.txt
           python setup.py develop --no-deps
 

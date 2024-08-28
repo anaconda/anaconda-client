@@ -7,6 +7,8 @@ import datetime
 import json
 import unittest.mock
 
+import pytest
+
 from binstar_client import errors
 from tests.fixture import CLITestCase, main
 from tests.urlmock import urlpatch
@@ -221,6 +223,7 @@ class Test(CLITestCase):
         registry.assertAllCalled()
         self.assertIsNotNone(json.loads(staging_response.req.body).get('sha256'))
 
+    @pytest.mark.xfail(reason='anaconda-project removed')
     @urlpatch
     def test_upload_project(self, registry):
         # there's redundant work between anaconda-client which checks auth and anaconda-project also checks auth;
@@ -241,6 +244,7 @@ class Test(CLITestCase):
 
         registry.assertAllCalled()
 
+    @pytest.mark.xfail(reason='anaconda-project removed')
     @urlpatch
     def test_upload_notebook_as_project(self, registry):
         registry.register(method='HEAD', path='/', status=200)
@@ -289,6 +293,7 @@ class Test(CLITestCase):
         registry.assertAllCalled()
         self.assertIsNotNone(json.loads(staging_response.req.body).get('sha256'))
 
+    @pytest.mark.xfail(reason='anaconda-project removed')
     @urlpatch
     def test_upload_project_specifying_user(self, registry):
         registry.register(method='HEAD', path='/', status=200)
@@ -306,6 +311,7 @@ class Test(CLITestCase):
 
         registry.assertAllCalled()
 
+    @pytest.mark.xfail(reason='anaconda-project removed')
     @urlpatch
     def test_upload_project_specifying_token(self, registry):
         registry.register(method='HEAD', path='/', status=200)
