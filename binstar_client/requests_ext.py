@@ -12,7 +12,7 @@ import six
 from requests.auth import AuthBase
 from urllib3.filepost import choose_boundary
 
-__all__ = ['NullAuth', 'encode_multipart_formdata_stream']
+__all__ = ['NullAuth', 'encode_multipart_formdata_stream', 'stream_multipart']
 
 logger = logging.getLogger('binstar.requests_ext')
 
