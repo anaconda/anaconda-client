@@ -11,7 +11,7 @@ See Also:
 * Uploading a Conda Package: https://docs.anaconda.com/free/anacondaorg/user-guide/packages/conda-packages/#cloud-uploading-conda-packages
 * Uploading a Standard Python Package: https://docs.anaconda.com/free/anacondaorg/user-guide/packages/standard-python-packages/#uploading-stdpython-packages
 
-"""
+"""  # noqa: E501, pylint: disable=line-too-long
 
 from __future__ import annotations
 
