@@ -19,7 +19,7 @@ with open(os.path.join(root, 'requirements-extra.txt'), 'rt', encoding='utf-8') 
     )))
 
 # This is temporarily here so we don't pull in the incompatible dependency in CI
-# and during local development as we move to 0.13.0. But to not change the behavior
+# and during local development as we move to 1.13.0. But to not change the behavior
 # around the "full" extra at all. We will soon explicitly drop this dependency.
 extras_require.append("anaconda-project>=0.9.1")
 
