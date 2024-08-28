@@ -5,13 +5,12 @@ package:
   version: {{ data.get('version') }}
 
 source:
-  git_url: ../
+  path: ..
 
 build:
   number: 0
   script: {{ PYTHON }} -m pip install --no-build-isolation --no-deps .
   entry_points:
-    - anaconda = binstar_client.scripts.cli:main
     - binstar = binstar_client.scripts.cli:main
     - conda-server = binstar_client.scripts.cli:main
 
@@ -35,6 +34,7 @@ requirements:
     - setuptools >=58.0.4
     - tqdm >=4.56.0
     - urllib3 >=1.26.4
+    - anaconda-cli-base >=0.3.0
 
 test:
   requires:
