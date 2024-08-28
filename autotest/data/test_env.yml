@@ -88,7 +88,6 @@ dependencies:
   - ripgrep=12.1.1=0
   - ruamel_yaml=0.15.100=py38h27cfd23_0
   - setuptools=52.0.0=py38h06a4308_0
-  - six=1.16.0=pyhd3eb1b0_0
   - soupsieve=2.2.1=pyhd3eb1b0_0
   - sqlite=3.35.4=hdfb4753_0
   - tk=8.6.10=hbc83047_0

@@ -4,15 +4,14 @@ import base64
 import io
 import os
 import sys
+from urllib.parse import urlparse
 
 import requests
-
-from six.moves.urllib.parse import urlparse
 
 try:
     from PIL import Image
 except ImportError:
-    Image = None
+    Image = None  # type: ignore
 
 from ...errors import PillowNotInstalled
 
