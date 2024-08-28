@@ -8,7 +8,6 @@ from itertools import chain
 import logging
 import typing
 
-import six
 from requests.auth import AuthBase
 from urllib3.filepost import choose_boundary
 
@@ -68,9 +67,9 @@ def encode_multipart_formdata_stream(fields, boundary=None):
     body = []
 
     def body_write(item):
-        if isinstance(item, six.binary_type):
+        if isinstance(item, bytes):
             item = BytesIO(item)
-        elif isinstance(item, six.text_type):
+        elif isinstance(item, str):
             item = StringIO(item)
         body.append(item)
 
@@ -102,10 +101,10 @@ def encode_multipart_formdata_stream(fields, boundary=None):
                               % (fieldname))
             body_write(b'\r\n')
 
-        if isinstance(data, six.integer_types):
-            data = six.text_type(data)  # Backwards compatibility
+        if isinstance(data, (int,)):
+            data = str(data)  # Backwards compatibility
 
-        if isinstance(data, six.text_type):
+        if isinstance(data, str):
             body_write_encode(data)
         else:
             body_write(data)
