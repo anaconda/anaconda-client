@@ -2,6 +2,10 @@
 
 We [keep a changelog.](http://keepachangelog.com/)
 
+## [Unreleased]
+
+* [PR 717](https://github.com/anaconda/anaconda-client/pull/717) - Drop dependency on `six`
+
 ## 1.12.3 - 2024-02-22
 
 ### Tickets closed
