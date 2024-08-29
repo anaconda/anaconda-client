@@ -1,8 +1,9 @@
 """Test entrypoint to anaconda-cli-base"""
+# pylint: disable=redefined-outer-name
 
 from importlib import reload
 import logging
-from typing import Generator
+from typing import Any, Generator
 
 import pytest
 from pytest import LogCaptureFixture
@@ -10,6 +11,8 @@ from pytest import MonkeyPatch
 from typer.testing import CliRunner
 import anaconda_cli_base.cli
 import binstar_client.plugins
+import binstar_client.scripts.cli
+from binstar_client import commands
 from binstar_client.plugins import ALL_SUBCOMMANDS, NON_HIDDEN_SUBCOMMANDS, DEPRECATED_SUBCOMMANDS
 
 BASE_COMMANDS = {"login", "logout", "whoami"}
@@ -43,8 +46,21 @@ def test_org_subcommand_help(flag: str) -> None:
     assert result.exit_code == 0
 
 
-@pytest.mark.parametrize("cmd", ALL_SUBCOMMANDS)
-def test_org_subcommands(cmd: str) -> None:
+@pytest.fixture()
+def assert_binstar_args(mocker):
+    """
+    Returns a closure that can be used to assert that binstar_main was called with a specific list of args.
+    """
+    mock = mocker.spy(binstar_client.scripts.cli, "binstar_main")
+
+    def check_args(args):
+        mock.assert_called_once_with(commands, args, True)
+
+    return check_args
+
+
+@pytest.mark.parametrize("cmd", sorted(ALL_SUBCOMMANDS))
+def test_org_subcommands(cmd: str, assert_binstar_args: Any) -> None:
     """anaconda org <cmd>"""
 
     org = next((group for group in anaconda_cli_base.cli.app.registered_groups if group.name == "org"), None)
@@ -60,9 +76,11 @@ def test_org_subcommands(cmd: str) -> None:
     assert result.exit_code == 0
     assert result.stdout.startswith("usage")
 
+    assert_binstar_args([cmd, "-h"])
 
-@pytest.mark.parametrize("cmd", HIDDEN_SUBCOMMANDS)
-def test_hidden_commands(cmd: str) -> None:
+
+@pytest.mark.parametrize("cmd", list(HIDDEN_SUBCOMMANDS))
+def test_hidden_commands(cmd: str, assert_binstar_args: Any) -> None:
     """anaconda <cmd>"""
 
     subcmd = next((subcmd for subcmd in anaconda_cli_base.cli.app.registered_commands if subcmd.name == cmd), None)
@@ -75,9 +93,11 @@ def test_hidden_commands(cmd: str) -> None:
     assert result.exit_code == 0
     assert result.stdout.startswith("usage")
 
+    assert_binstar_args([cmd, "-h"])
 
-@pytest.mark.parametrize("cmd", NON_HIDDEN_SUBCOMMANDS)
-def test_non_hidden_commands(cmd: str) -> None:
+
+@pytest.mark.parametrize("cmd", list(NON_HIDDEN_SUBCOMMANDS))
+def test_non_hidden_commands(cmd: str, assert_binstar_args: Any) -> None:
     """anaconda login"""
 
     subcmd = next((subcmd for subcmd in anaconda_cli_base.cli.app.registered_commands if subcmd.name == cmd), None)
@@ -90,9 +110,11 @@ def test_non_hidden_commands(cmd: str) -> None:
     assert result.exit_code == 0
     assert result.stdout.startswith("usage")
 
+    assert_binstar_args([cmd, "-h"])
 
-@pytest.mark.parametrize("cmd", DEPRECATED_SUBCOMMANDS)
-def test_deprecated_message(cmd: str, caplog: LogCaptureFixture) -> None:
+
+@pytest.mark.parametrize("cmd", list(DEPRECATED_SUBCOMMANDS))
+def test_deprecated_message(cmd: str, caplog: LogCaptureFixture, assert_binstar_args: Any) -> None:
     """anaconda <cmd> warning"""
 
     with caplog.at_level(logging.WARNING):
@@ -100,3 +122,5 @@ def test_deprecated_message(cmd: str, caplog: LogCaptureFixture) -> None:
         result = runner.invoke(anaconda_cli_base.cli.app, [cmd, "-h"])
         assert result.exit_code == 0
         assert "commands will be deprecated" in caplog.records[0].msg
+
+    assert_binstar_args([cmd, "-h"])
