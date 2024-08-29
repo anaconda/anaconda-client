@@ -128,3 +128,18 @@ def test_deprecated_message(cmd: str, caplog: LogCaptureFixture, monkeypatch, as
         assert "commands will be deprecated" in caplog.records[0].msg
 
     assert_binstar_args([cmd, "-h"])
+
+
+@pytest.mark.parametrize("cmd", list(NON_HIDDEN_SUBCOMMANDS))
+def test_top_level_options_passed_through(cmd: str, monkeypatch, assert_binstar_args) -> None:
+    """Ensure top-level CLI options are passed through to binstar_main."""
+
+    args = ["-t", "TOKEN", "-s", "some-site.com", cmd, "-h"]
+    monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
+
+    runner = CliRunner()
+    result = runner.invoke(anaconda_cli_base.cli.app, args)
+    assert result.exit_code == 0
+    assert result.stdout.startswith("usage")
+
+    assert_binstar_args(["-t", "TOKEN", "-s", "some-site.com", cmd, "-h"])
