@@ -1,5 +1,5 @@
 """Test entrypoint to anaconda-cli-base"""
-
+import sys
 from importlib import reload
 import logging
 from typing import Generator
@@ -34,9 +34,15 @@ def test_entrypoint() -> None:
     assert "org" in groups
 
 
-@pytest.mark.parametrize("cmd", ALL_SUBCOMMANDS)
-def test_org_subcommands(cmd: str) -> None:
+# TODO: We should mocker.spy to see what gets passed into binstar_main
+
+
+@pytest.mark.parametrize("cmd", sorted(ALL_SUBCOMMANDS))
+def test_org_subcommands(cmd: str, monkeypatch) -> None:
     """anaconda org <cmd>"""
+
+    args = ["org", cmd, "-h"]
+    monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
 
     org = next((group for group in anaconda_cli_base.cli.app.registered_groups if group.name == "org"), None)
     assert org is not None
@@ -47,14 +53,17 @@ def test_org_subcommands(cmd: str) -> None:
     assert subcmd.hidden is False
 
     runner = CliRunner()
-    result = runner.invoke(anaconda_cli_base.cli.app, ["org", cmd, "-h"])
+    result = runner.invoke(anaconda_cli_base.cli.app, args)
     assert result.exit_code == 0
     assert result.stdout.startswith("usage")
 
 
-@pytest.mark.parametrize("cmd", HIDDEN_SUBCOMMANDS)
-def test_hidden_commands(cmd: str) -> None:
+@pytest.mark.parametrize("cmd", list(HIDDEN_SUBCOMMANDS))
+def test_hidden_commands(cmd: str, monkeypatch) -> None:
     """anaconda <cmd>"""
+
+    args = [cmd, "-h"]
+    monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
 
     subcmd = next((subcmd for subcmd in anaconda_cli_base.cli.app.registered_commands if subcmd.name == cmd), None)
     assert subcmd is not None
@@ -63,14 +72,17 @@ def test_hidden_commands(cmd: str) -> None:
     assert subcmd.help.startswith("anaconda.org")
 
     runner = CliRunner()
-    result = runner.invoke(anaconda_cli_base.cli.app, [cmd, "-h"])
-    assert result.exit_code == 0
+    result = runner.invoke(anaconda_cli_base.cli.app, args)
+    assert result.exit_code == 0, result.stdout
     assert result.stdout.startswith("usage")
 
 
-@pytest.mark.parametrize("cmd", NON_HIDDEN_SUBCOMMANDS)
-def test_non_hidden_commands(cmd: str) -> None:
+@pytest.mark.parametrize("cmd", list(NON_HIDDEN_SUBCOMMANDS))
+def test_non_hidden_commands(cmd: str, monkeypatch) -> None:
     """anaconda login"""
+
+    args = [cmd, "-h"]
+    monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
 
     subcmd = next((subcmd for subcmd in anaconda_cli_base.cli.app.registered_commands if subcmd.name == cmd), None)
     assert subcmd is not None
@@ -79,17 +91,20 @@ def test_non_hidden_commands(cmd: str) -> None:
     assert subcmd.help.startswith("anaconda.org")
 
     runner = CliRunner()
-    result = runner.invoke(anaconda_cli_base.cli.app, [cmd, "-h"])
+    result = runner.invoke(anaconda_cli_base.cli.app, args)
     assert result.exit_code == 0
     assert result.stdout.startswith("usage")
 
 
-@pytest.mark.parametrize("cmd", DEPRECATED_SUBCOMMANDS)
-def test_deprecated_message(cmd: str, caplog: LogCaptureFixture) -> None:
+@pytest.mark.parametrize("cmd", list(DEPRECATED_SUBCOMMANDS))
+def test_deprecated_message(cmd: str, caplog: LogCaptureFixture, monkeypatch) -> None:
     """anaconda <cmd> warning"""
+
+    args = [cmd, "-h"]
+    monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
 
     with caplog.at_level(logging.WARNING):
         runner = CliRunner()
-        result = runner.invoke(anaconda_cli_base.cli.app, [cmd, "-h"])
+        result = runner.invoke(anaconda_cli_base.cli.app, args)
         assert result.exit_code == 0
         assert "commands will be deprecated" in caplog.records[0].msg
