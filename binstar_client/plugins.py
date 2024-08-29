@@ -15,6 +15,7 @@ entrypoint in setup.py.
 """
 
 import logging
+import sys
 import warnings
 from argparse import ArgumentParser
 from typing import Any
@@ -98,19 +99,19 @@ def _deprecate(name: str, func: Callable) -> Callable:
         f: The subcommand callable.
 
     """
-    def new_func(ctx: Context) -> Any:
+    def new_func() -> Any:
         msg = (
             f"The existing anaconda-client commands will be deprecated. To maintain compatibility, "
             f"please either pin `anaconda-client<2` or update your system call with the `org` prefix, "
             f'e.g. "anaconda org {name} ..."'
         )
         log.warning(msg)
-        return func(ctx)
+        return func()
 
     return new_func
 
 
-def _subcommand(ctx: Context) -> None:
+def _subcommand() -> None:
     """A common function to use for all subcommands.
 
     In a proper typer/click app, this is the function that is decorated.
@@ -119,11 +120,7 @@ def _subcommand(ctx: Context) -> None:
     to the binstar_main function.
 
     """
-    args = []
-    # Ensure we capture the subcommand name if there is one
-    if ctx.info_name is not None:
-        args.append(ctx.info_name)
-    args.extend(ctx.args)
+    args = [arg for arg in sys.argv[1:] if arg != "org"]
     binstar_main(args, allow_plugin_main=False)
 
 
