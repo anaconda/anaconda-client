@@ -1,6 +1,7 @@
 """Test entrypoint to anaconda-cli-base"""
 # pylint: disable=redefined-outer-name
 
+import sys
 from importlib import reload
 import logging
 from typing import Any, Generator
@@ -60,8 +61,11 @@ def assert_binstar_args(mocker):
 
 
 @pytest.mark.parametrize("cmd", sorted(ALL_SUBCOMMANDS))
-def test_org_subcommands(cmd: str, assert_binstar_args: Any) -> None:
+def test_org_subcommands(cmd: str, monkeypatch: MonkeyPatch, assert_binstar_args: Any) -> None:
     """anaconda org <cmd>"""
+
+    args = ["org", cmd, "-h"]
+    monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
 
     org = next((group for group in anaconda_cli_base.cli.app.registered_groups if group.name == "org"), None)
     assert org is not None
@@ -72,7 +76,7 @@ def test_org_subcommands(cmd: str, assert_binstar_args: Any) -> None:
     assert subcmd.hidden is False
 
     runner = CliRunner()
-    result = runner.invoke(anaconda_cli_base.cli.app, ["org", cmd, "-h"])
+    result = runner.invoke(anaconda_cli_base.cli.app, args)
     assert result.exit_code == 0
     assert result.stdout.startswith("usage")
 
@@ -80,8 +84,11 @@ def test_org_subcommands(cmd: str, assert_binstar_args: Any) -> None:
 
 
 @pytest.mark.parametrize("cmd", list(HIDDEN_SUBCOMMANDS))
-def test_hidden_commands(cmd: str, assert_binstar_args: Any) -> None:
+def test_hidden_commands(cmd: str, monkeypatch: MonkeyPatch, assert_binstar_args: Any) -> None:
     """anaconda <cmd>"""
+
+    args = [cmd, "-h"]
+    monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
 
     subcmd = next((subcmd for subcmd in anaconda_cli_base.cli.app.registered_commands if subcmd.name == cmd), None)
     assert subcmd is not None
@@ -89,7 +96,7 @@ def test_hidden_commands(cmd: str, assert_binstar_args: Any) -> None:
     assert subcmd.help is not None
 
     runner = CliRunner()
-    result = runner.invoke(anaconda_cli_base.cli.app, [cmd, "-h"])
+    result = runner.invoke(anaconda_cli_base.cli.app, args)
     assert result.exit_code == 0
     assert result.stdout.startswith("usage")
 
@@ -97,8 +104,11 @@ def test_hidden_commands(cmd: str, assert_binstar_args: Any) -> None:
 
 
 @pytest.mark.parametrize("cmd", list(NON_HIDDEN_SUBCOMMANDS))
-def test_non_hidden_commands(cmd: str, assert_binstar_args: Any) -> None:
+def test_non_hidden_commands(cmd: str, monkeypatch: MonkeyPatch, assert_binstar_args: Any) -> None:
     """anaconda login"""
+
+    args = [cmd, "-h"]
+    monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
 
     subcmd = next((subcmd for subcmd in anaconda_cli_base.cli.app.registered_commands if subcmd.name == cmd), None)
     assert subcmd is not None
@@ -106,7 +116,7 @@ def test_non_hidden_commands(cmd: str, assert_binstar_args: Any) -> None:
     assert subcmd.help is not None
 
     runner = CliRunner()
-    result = runner.invoke(anaconda_cli_base.cli.app, [cmd, "-h"])
+    result = runner.invoke(anaconda_cli_base.cli.app, args)
     assert result.exit_code == 0
     assert result.stdout.startswith("usage")
 
@@ -114,13 +124,33 @@ def test_non_hidden_commands(cmd: str, assert_binstar_args: Any) -> None:
 
 
 @pytest.mark.parametrize("cmd", list(DEPRECATED_SUBCOMMANDS))
-def test_deprecated_message(cmd: str, caplog: LogCaptureFixture, assert_binstar_args: Any) -> None:
+def test_deprecated_message(
+        cmd: str, caplog: LogCaptureFixture, monkeypatch: MonkeyPatch, assert_binstar_args: Any
+) -> None:
     """anaconda <cmd> warning"""
+
+    args = [cmd, "-h"]
+    monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
 
     with caplog.at_level(logging.WARNING):
         runner = CliRunner()
-        result = runner.invoke(anaconda_cli_base.cli.app, [cmd, "-h"])
+        result = runner.invoke(anaconda_cli_base.cli.app, args)
         assert result.exit_code == 0
         assert "commands will be deprecated" in caplog.records[0].msg
 
     assert_binstar_args([cmd, "-h"])
+
+
+@pytest.mark.parametrize("cmd", list(NON_HIDDEN_SUBCOMMANDS))
+def test_top_level_options_passed_through(cmd: str, monkeypatch: MonkeyPatch, assert_binstar_args: Any) -> None:
+    """Ensure top-level CLI options are passed through to binstar_main."""
+
+    args = ["-t", "TOKEN", "-s", "some-site.com", cmd, "-h"]
+    monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
+
+    runner = CliRunner()
+    result = runner.invoke(anaconda_cli_base.cli.app, args)
+    assert result.exit_code == 0
+    assert result.stdout.startswith("usage")
+
+    assert_binstar_args(["-t", "TOKEN", "-s", "some-site.com", cmd, "-h"])
