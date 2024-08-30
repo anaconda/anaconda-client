@@ -81,7 +81,11 @@ app = Typer(
     # context_settings={"help_option_names": ["-h", "--help"]},
 )
 def main_callback(ctx: typer.Context):
-    ctx.params.update({**ctx.parent.params, **ctx.params})
+    # Ensure a dict
+    ctx.obj = ctx.obj if ctx.obj is not None else {}
+    # Merge in parent and local params
+    # Parent can go away when we move that logic into anaconda-cli-base
+    ctx.obj.update({**ctx.parent.params, **ctx.params})
 
 
 def _get_help_text(parser: ArgumentParser, name: str) -> str:

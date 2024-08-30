@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 
 import argparse
 import logging
+from typing import Optional
 
 import typer
 
@@ -21,15 +22,16 @@ logger = logging.getLogger('binstar.whoami')
 def mount_subcommand(app: typer.Typer, name, context_settings):
     @app.command(name=name, context_settings=context_settings)
     def whoami(ctx: typer.Context):
-        ctx.params.update({**ctx.parent.params, **ctx.params})
-        args = argparse.Namespace(**ctx.params)
-        logger.debug(f"{args=}")
-        logger.debug(f"{ctx.params=}")
-        main(args)
+        logger.debug(f"{ctx.obj=}")
+        main(token=ctx.obj.get("token"), site=ctx.obj.get("site"))
 
 
-def main(args):  # pylint: disable=inconsistent-return-statements
-    aserver_api = get_server_api(args.token, args.site)
+def main(args: Optional[argparse.Namespace] = None, *, token: Optional[str] = None, site: Optional[str] = None):  # pylint: disable=inconsistent-return-statements
+    if args is not None:
+        token = args.token
+        site = args.site
+
+    aserver_api = get_server_api(token, site)
 
     try:
         user = aserver_api.user()
