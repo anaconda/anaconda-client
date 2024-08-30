@@ -22,6 +22,8 @@ import logging
 import os
 import typing
 
+import typer
+
 import binstar_client
 from binstar_client import errors
 from binstar_client.deprecations import DEPRECATION_MESSAGE_NOTEBOOKS_PROJECTS_ENVIRONMENTS_REMOVED
@@ -790,3 +792,41 @@ def add_parser(subparsers: typing.Any) -> None:
     )
 
     parser.set_defaults(main=main)
+
+
+def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, context_settings: dict) -> None:
+    # pylint: disable=missing-function-docstring
+    @app.command(
+        name=name,
+        hidden=hidden,
+        help=help_text,
+        context_settings=context_settings,
+    )
+    def upload(
+        ctx: typer.Context,
+        files: typing.List[str] = typer.Argument(),
+        interactive: bool = typer.Option(
+            False,
+            '-i',
+            '--interactive',
+            is_flag=True,
+            help='Run an interactive prompt if any packages are missing',
+        ),
+    ) -> None:
+        """Upload one or more files to anaconda.org."""
+        if interactive:
+            mode = 'interactive'
+        else:
+            mode = None
+
+        # pylint: disable=fixme
+        arguments = argparse.Namespace(
+            # TODO: argparse handles this as a list of lists, with one filename in each.
+            #       We should probably fix that one.
+            files=[[f] for f in files],  # pylint: disable=invalid-name
+            token=ctx.obj.params.get('token'),
+            site=ctx.obj.params.get('site'),
+            mode=mode,
+        )
+
+        main(arguments)

@@ -221,7 +221,7 @@ def test_hidden_commands(cmd: str, monkeypatch: MonkeyPatch, assert_binstar_args
     runner = CliRunner()
     result = runner.invoke(anaconda_cli_base.cli.app, args)
     assert result.exit_code == 0
-    assert result.stdout.startswith("usage")
+    assert "usage:" in result.stdout.lower()
 
     assert_binstar_args([cmd, "-h"])
 
@@ -241,9 +241,10 @@ def test_non_hidden_commands(cmd: str, monkeypatch: MonkeyPatch, assert_binstar_
     runner = CliRunner()
     result = runner.invoke(anaconda_cli_base.cli.app, args)
     assert result.exit_code == 0
-    assert result.stdout.startswith("usage")
+    assert "usage:" in result.stdout.lower()
 
-    assert_binstar_args([cmd, "-h"])
+    if cmd not in SUBCOMMANDS_WITH_NEW_CLI:
+        assert_binstar_args([cmd, "-h"])
 
 
 @pytest.mark.parametrize("cmd", list(DEPRECATED_SUBCOMMANDS))
@@ -274,9 +275,10 @@ def test_top_level_options_passed_through(cmd: str, monkeypatch: MonkeyPatch, as
     runner = CliRunner()
     result = runner.invoke(anaconda_cli_base.cli.app, args)
     assert result.exit_code == 0
-    assert result.stdout.startswith("usage")
+    assert "usage:" in result.stdout.lower()
 
-    assert_binstar_args(["-t", "TOKEN", "-s", "some-site.com", cmd, "-h"])  # nosec
+    if cmd not in SUBCOMMANDS_WITH_NEW_CLI:
+        assert_binstar_args(["-t", "TOKEN", "-s", "some-site.com", cmd, "-h"])  # nosec
 
 
 @pytest.mark.parametrize(
@@ -298,6 +300,36 @@ def test_whoami_arg_parsing(
     expected = {**defaults, **mods}
 
     mock = cli_mocker("binstar_client.commands.whoami.main")
+    result = mock.invoke(args, prefix_args=prefix_args)
+    assert result.exit_code == 0, result.stdout
+    mock.assert_main_called_once()
+    mock.assert_main_args_contains(expected)
+
+
+@pytest.mark.parametrize(
+    "prefix_args, args, mods",
+    [
+        pytest.param([], [], dict(), id="defaults"),
+        pytest.param([], ["-i"], dict(mode="interactive"), id="interactive-short"),
+        pytest.param([], ["--interactive"], dict(mode="interactive"), id="interactive-long"),
+        pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),  # nosec
+        pytest.param(["--site", "my-site.com"], [], dict(site="my-site.com"), id="site"),
+    ]
+)
+def test_upload_arg_parsing(
+    prefix_args: List[str], args: List[str], mods: Dict[str, Any], cli_mocker: InvokerFactory
+) -> None:
+    filename = "some-file"
+    args = ["upload"] + args + [filename]
+    defaults = dict(
+        token=None,
+        site=None,
+        mode=None,
+        files=[[filename]],
+    )
+    expected = {**defaults, **mods}
+
+    mock = cli_mocker("binstar_client.commands.upload.main")
     result = mock.invoke(args, prefix_args=prefix_args)
     assert result.exit_code == 0, result.stdout
     mock.assert_main_called_once()
