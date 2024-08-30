@@ -19,7 +19,7 @@ import os
 import sys
 import warnings
 from argparse import ArgumentParser
-from typing import Any
+from typing import Any, Annotated, Optional
 from typing import Callable
 
 import typer
@@ -78,12 +78,20 @@ app = Typer(
 
 
 @app.callback()
-def main_callback(ctx: typer.Context):
+@main_app.callback()
+def main_callback(
+    ctx: typer.Context,
+    token: Annotated[Optional[str], typer.Option()] = None,
+):
     # Ensure a dict
     ctx.obj = ctx.obj if ctx.obj is not None else {}
     # Merge in parent and local params
     # Parent can go away when we move that logic into anaconda-cli-base
-    ctx.obj.update({**ctx.parent.params, **ctx.params})
+    if ctx.parent is not None:
+        ctx.obj.update({**ctx.parent.params})
+    if token:
+        ctx.obj["token"] = token
+
 
 
 def _get_help_text(parser: ArgumentParser, name: str) -> str:
