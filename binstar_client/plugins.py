@@ -78,17 +78,15 @@ app = Typer(
 
 
 @app.callback()
-@main_app.callback()
 def main_callback(
     ctx: typer.Context,
-    token: Annotated[Optional[str], typer.Option()] = None,
+    token: Annotated[Optional[str], typer.Option(
+        "-t",
+        "--token",
+        help="Authentication token to use. A token string or path to a file containing a token",
+        hidden=True,
+    )] =None,
 ):
-    # Ensure a dict
-    ctx.obj = ctx.obj if ctx.obj is not None else {}
-    # Merge in parent and local params
-    # Parent can go away when we move that logic into anaconda-cli-base
-    if ctx.parent is not None:
-        ctx.obj.update({**ctx.parent.params})
     if token:
         ctx.obj["token"] = token
 
@@ -178,6 +176,8 @@ def _mount_subcommand(
     # Mount the subcommand to the `anaconda org` application.
     if force_use_new_cli and name in SUBCOMMANDS_WITH_NEW_CLI:
         _load_new_subcommand(app, name)
+        if mount_to_main:
+            _load_new_subcommand(main_app, name, hidden=is_hidden_on_main)
     else:
         # Create a legacy passthrough
         app.command(
@@ -204,7 +204,7 @@ def _mount_subcommand(
     )(func)
 
 
-def _load_new_subcommand(app: typer.Typer, name: str) -> None:
+def _load_new_subcommand(app: typer.Typer, name: str, hidden: bool = False) -> None:
     """Load the new typer version of a subcommand from a commands module.
 
     Args:
@@ -216,6 +216,7 @@ def _load_new_subcommand(app: typer.Typer, name: str) -> None:
     subcommand_module.mount_subcommand(
         app=app,
         name=name,
+        hidden=hidden,
         context_settings={
             "allow_extra_args": True,
             "ignore_unknown_options": True,
