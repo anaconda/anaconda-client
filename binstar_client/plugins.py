@@ -24,7 +24,7 @@ from typing import Callable
 import typer
 import typer.colors
 from anaconda_cli_base.cli import app as main_app
-from typer import Context, Typer
+from typer import Typer
 
 from binstar_client import commands as command_module
 from binstar_client.scripts.cli import (

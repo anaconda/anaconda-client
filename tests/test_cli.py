@@ -1,8 +1,9 @@
 """Test entrypoint to anaconda-cli-base"""
+# pylint: disable=redefined-outer-name
 import sys
 from importlib import reload
 import logging
-from typing import Generator
+from typing import Any, Generator
 
 import pytest
 from pytest import LogCaptureFixture
@@ -38,18 +39,19 @@ def test_entrypoint() -> None:
 
 @pytest.fixture()
 def assert_binstar_args(mocker):
-    # Returns a closure that can be used to assert that binstar_main was
-    # called with a specific list of args.
-    m = mocker.spy(binstar_client.scripts.cli, "binstar_main")
+    """
+    Returns a closure that can be used to assert that binstar_main was called with a specific list of args.
+    """
+    mock = mocker.spy(binstar_client.scripts.cli, "binstar_main")
 
     def check_args(args):
-        m.assert_called_once_with(commands, args, True)
+        mock.assert_called_once_with(commands, args, True)
 
     return check_args
 
 
 @pytest.mark.parametrize("cmd", sorted(ALL_SUBCOMMANDS))
-def test_org_subcommands(cmd: str, monkeypatch, assert_binstar_args) -> None:
+def test_org_subcommands(cmd: str, monkeypatch: MonkeyPatch, assert_binstar_args: Any) -> None:
     """anaconda org <cmd>"""
 
     args = ["org", cmd, "-h"]
@@ -72,7 +74,7 @@ def test_org_subcommands(cmd: str, monkeypatch, assert_binstar_args) -> None:
 
 
 @pytest.mark.parametrize("cmd", list(HIDDEN_SUBCOMMANDS))
-def test_hidden_commands(cmd: str, monkeypatch, assert_binstar_args) -> None:
+def test_hidden_commands(cmd: str, monkeypatch: MonkeyPatch, assert_binstar_args: Any) -> None:
     """anaconda <cmd>"""
 
     args = [cmd, "-h"]
@@ -93,7 +95,7 @@ def test_hidden_commands(cmd: str, monkeypatch, assert_binstar_args) -> None:
 
 
 @pytest.mark.parametrize("cmd", list(NON_HIDDEN_SUBCOMMANDS))
-def test_non_hidden_commands(cmd: str, monkeypatch, assert_binstar_args) -> None:
+def test_non_hidden_commands(cmd: str, monkeypatch: MonkeyPatch, assert_binstar_args: Any) -> None:
     """anaconda login"""
 
     args = [cmd, "-h"]
@@ -114,7 +116,9 @@ def test_non_hidden_commands(cmd: str, monkeypatch, assert_binstar_args) -> None
 
 
 @pytest.mark.parametrize("cmd", list(DEPRECATED_SUBCOMMANDS))
-def test_deprecated_message(cmd: str, caplog: LogCaptureFixture, monkeypatch, assert_binstar_args) -> None:
+def test_deprecated_message(
+    cmd: str, caplog: LogCaptureFixture, monkeypatch: MonkeyPatch, assert_binstar_args: Any
+) -> None:
     """anaconda <cmd> warning"""
 
     args = [cmd, "-h"]
@@ -130,7 +134,7 @@ def test_deprecated_message(cmd: str, caplog: LogCaptureFixture, monkeypatch, as
 
 
 @pytest.mark.parametrize("cmd", list(NON_HIDDEN_SUBCOMMANDS))
-def test_top_level_options_passed_through(cmd: str, monkeypatch, assert_binstar_args) -> None:
+def test_top_level_options_passed_through(cmd: str, monkeypatch: MonkeyPatch, assert_binstar_args: Any) -> None:
     """Ensure top-level CLI options are passed through to binstar_main."""
 
     args = ["-t", "TOKEN", "-s", "some-site.com", cmd, "-h"]
