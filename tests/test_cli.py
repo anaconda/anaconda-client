@@ -48,7 +48,6 @@ def assert_binstar_args(mocker):
     return check_args
 
 
-
 @pytest.mark.parametrize("cmd", sorted(ALL_SUBCOMMANDS))
 def test_org_subcommands(cmd: str, monkeypatch, assert_binstar_args) -> None:
     """anaconda org <cmd>"""
