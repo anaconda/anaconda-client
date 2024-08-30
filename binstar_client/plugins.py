@@ -77,9 +77,7 @@ app = Typer(
 )
 
 
-@app.callback(
-    # context_settings={"help_option_names": ["-h", "--help"]},
-)
+@app.callback()
 def main_callback(ctx: typer.Context):
     # Ensure a dict
     ctx.obj = ctx.obj if ctx.obj is not None else {}
