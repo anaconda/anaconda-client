@@ -22,6 +22,8 @@ import logging
 import os
 import typing
 
+import typer
+
 import binstar_client
 from binstar_client import errors
 from binstar_client.deprecations import DEPRECATION_MESSAGE_NOTEBOOKS_PROJECTS_ENVIRONMENTS_REMOVED
@@ -42,6 +44,17 @@ ReleaseKey: typing_extensions.TypeAlias = typing.Tuple[str, str]
 
 
 logger = logging.getLogger('binstar.upload')
+
+
+def mount_subcommand(app: typer.Typer, name, hidden: bool, context_settings):
+    @app.command(name=name, hidden=hidden, context_settings=context_settings)
+    def upload(
+        ctx: typer.Context,
+    ):
+
+        arguments = argparse.Namespace()
+
+        main(arguments=arguments)
 
 
 def main(arguments: argparse.Namespace) -> None:

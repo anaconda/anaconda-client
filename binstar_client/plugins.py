@@ -61,7 +61,9 @@ NON_HIDDEN_SUBCOMMANDS = {
 DEPRECATED_SUBCOMMANDS = {
     "notebook",
 }
+# Subcommands which have typer subcommands defined
 SUBCOMMANDS_WITH_NEW_CLI = {
+    "upload",
     "whoami",
 }
 
@@ -186,22 +188,22 @@ def _mount_subcommand(
             context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
         )(func)
 
-    # Exit early if we are not mounting to the main `anaconda` app
-    if not mount_to_main:
-        return
+        # Exit early if we are not mounting to the main `anaconda` app
+        if not mount_to_main:
+            return
 
-    # Mount some CLI subcommands at the top-level, but optionally emit a deprecation warning
-    help_text = f"anaconda.org: {help_text + ' ' if help_text else ''}(alias for 'anaconda org {name}')"
+        # Mount some CLI subcommands at the top-level, but optionally emit a deprecation warning
+        help_text = f"anaconda.org: {help_text + ' ' if help_text else ''}(alias for 'anaconda org {name}')"
 
-    main_app.command(
-        name=name,
-        help=help_text,
-        hidden=is_hidden_on_main,
-        context_settings={
-            "allow_extra_args": True,
-            "ignore_unknown_options": True,
-        },
-    )(func)
+        main_app.command(
+            name=name,
+            help=help_text,
+            hidden=is_hidden_on_main,
+            context_settings={
+                "allow_extra_args": True,
+                "ignore_unknown_options": True,
+            },
+        )(func)
 
 
 def _load_new_subcommand(app: typer.Typer, name: str, hidden: bool = False) -> None:
