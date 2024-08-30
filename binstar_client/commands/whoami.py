@@ -22,7 +22,6 @@ logger = logging.getLogger('binstar.whoami')
 def mount_subcommand(app: typer.Typer, name, hidden: bool, context_settings):
     @app.command(name=name, hidden=hidden, context_settings=context_settings)
     def whoami(ctx: typer.Context):
-        logger.debug(f"{ctx.obj=}")
         main(token=ctx.obj.get("token"), site=ctx.obj.get("site"))
 
 
