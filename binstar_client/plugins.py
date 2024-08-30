@@ -15,6 +15,7 @@ entrypoint in setup.py.
 """
 
 import logging
+import os
 import sys
 import warnings
 from argparse import ArgumentParser
@@ -60,6 +61,9 @@ NON_HIDDEN_SUBCOMMANDS = {
 DEPRECATED_SUBCOMMANDS = {
     "notebook",
 }
+SUBCOMMANDS_WITH_NEW_CLI = {
+    "whoami",
+}
 
 # The logger
 log = logging.getLogger(__name__)
@@ -71,6 +75,13 @@ app = Typer(
     help="Interact with anaconda.org",
     no_args_is_help=True,
 )
+
+
+@app.callback(
+    # context_settings={"help_option_names": ["-h", "--help"]},
+)
+def main_callback(ctx: typer.Context):
+    ctx.params.update({**ctx.parent.params, **ctx.params})
 
 
 def _get_help_text(parser: ArgumentParser, name: str) -> str:
@@ -144,6 +155,9 @@ def _mount_subcommand(
             for backwards-compatibility
 
     """
+
+    force_use_new_cli = bool(os.getenv("ANACONDA_CLI_FORCE_NEW", False))
+
     if is_deprecated:
         deprecated_text = typer.style("(deprecated)", fg=typer.colors.RED, bold=True)
         help_text = f"{deprecated_text} {help_text}"
@@ -152,11 +166,15 @@ def _mount_subcommand(
         func = _subcommand
 
     # Mount the subcommand to the `anaconda org` application.
-    app.command(
-        name=name,
-        help=help_text,
-        context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
-    )(func)
+    if force_use_new_cli and name in SUBCOMMANDS_WITH_NEW_CLI:
+        _load_new_subcommand(app, name)
+    else:
+        # Create a legacy passthrough
+        app.command(
+            name=name,
+            help=help_text,
+            context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
+        )(func)
 
     # Exit early if we are not mounting to the main `anaconda` app
     if not mount_to_main:
@@ -174,6 +192,27 @@ def _mount_subcommand(
             "ignore_unknown_options": True,
         },
     )(func)
+
+
+def _load_new_subcommand(app: typer.Typer, name: str) -> None:
+    """Load the new typer version of a subcommand from a commands module.
+
+    Args:
+        name: The name of the module, within the binstar_client.commands subpackage.
+
+    """
+
+    subcommand_module = getattr(command_module, name)
+    subcommand_module.mount_subcommand(
+        app=app,
+        name=name,
+        context_settings={
+            "allow_extra_args": True,
+            "ignore_unknown_options": True,
+            "help_option_names": ["-h", "--help"],
+        },
+    )
+
 
 
 def load_legacy_subcommands() -> None:

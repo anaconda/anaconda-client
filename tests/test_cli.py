@@ -13,7 +13,7 @@ import anaconda_cli_base.cli
 import binstar_client.plugins
 import binstar_client.scripts.cli
 from binstar_client import commands
-from binstar_client.plugins import ALL_SUBCOMMANDS, NON_HIDDEN_SUBCOMMANDS, DEPRECATED_SUBCOMMANDS
+from binstar_client.plugins import ALL_SUBCOMMANDS, NON_HIDDEN_SUBCOMMANDS, DEPRECATED_SUBCOMMANDS, SUBCOMMANDS_WITH_NEW_CLI
 
 BASE_COMMANDS = {"login", "logout", "whoami"}
 HIDDEN_SUBCOMMANDS = ALL_SUBCOMMANDS - BASE_COMMANDS - NON_HIDDEN_SUBCOMMANDS
@@ -68,9 +68,10 @@ def test_org_subcommands(cmd: str, monkeypatch: MonkeyPatch, assert_binstar_args
     runner = CliRunner()
     result = runner.invoke(anaconda_cli_base.cli.app, args)
     assert result.exit_code == 0
-    assert result.stdout.startswith("usage")
+    assert "usage:" in result.stdout.lower()
 
-    assert_binstar_args([cmd, "-h"])
+    if cmd not in SUBCOMMANDS_WITH_NEW_CLI:
+        assert_binstar_args([cmd, "-h"])
 
 
 @pytest.mark.parametrize("cmd", list(HIDDEN_SUBCOMMANDS))
