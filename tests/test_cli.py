@@ -14,7 +14,8 @@ import anaconda_cli_base.cli
 import binstar_client.plugins
 import binstar_client.scripts.cli
 from binstar_client import commands
-from binstar_client.plugins import ALL_SUBCOMMANDS, NON_HIDDEN_SUBCOMMANDS, DEPRECATED_SUBCOMMANDS, SUBCOMMANDS_WITH_NEW_CLI
+from binstar_client.plugins import ALL_SUBCOMMANDS, NON_HIDDEN_SUBCOMMANDS, DEPRECATED_SUBCOMMANDS, \
+    SUBCOMMANDS_WITH_NEW_CLI
 
 BASE_COMMANDS = {"login", "logout", "whoami"}
 HIDDEN_SUBCOMMANDS = ALL_SUBCOMMANDS - BASE_COMMANDS - NON_HIDDEN_SUBCOMMANDS
@@ -120,7 +121,7 @@ def test_non_hidden_commands(cmd: str, monkeypatch: MonkeyPatch, assert_binstar_
 
 @pytest.mark.parametrize("cmd", list(DEPRECATED_SUBCOMMANDS))
 def test_deprecated_message(
-    cmd: str, caplog: LogCaptureFixture, monkeypatch: MonkeyPatch, assert_binstar_args: Any
+        cmd: str, caplog: LogCaptureFixture, monkeypatch: MonkeyPatch, assert_binstar_args: Any
 ) -> None:
     """anaconda <cmd> warning"""
 
@@ -167,4 +168,24 @@ def test_arg_parsing(monkeypatch, mocker):
         files=[],
         interactive=True,
         token=None,
+        disable_ssl_warnings=False,
+        show_traceback=False,
+        log_level=20,
+        site=None,
+        labels=[],
+        no_progress=False,
+        user=None,
+        keep_basename=False,
+        package=None,
+        version=None,
+        summary=None,
+        package_type=None,
+        description=None,
+        thumbnail=None,
+        private=False,
+        auto_register=True,
+        build_id=None,
+        mode='interactive',
+        force_metadata_update=False,
+        json_help=None
     ))

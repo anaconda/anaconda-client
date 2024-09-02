@@ -63,6 +63,8 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             is_flag=True,
             help='Run an interactive prompt if any packages are missing',
         ),
+        labels: typing.Annotated[list[str], typer.Option("-l", "--labels")] = None,
+        progress: typing.Annotated[bool, typer.Option(is_flag=True, help="Show upload progress")] = True,
     ):
         files = files or []
 
@@ -70,6 +72,26 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             files=files,
             token=ctx.obj.get("token"),
             interactive=interactive,
+            disable_ssl_warnings=False,
+            show_traceback=False,
+            log_level=20,
+            site=None,
+            labels=labels,
+            no_progress=not progress,
+            user=None,
+            keep_basename=False,
+            package=None,
+            version=None,
+            summary=None,
+            package_type=None,
+            description=None,
+            thumbnail=None,
+            private=False,
+            auto_register=True,
+            build_id=None,
+            mode='interactive',
+            force_metadata_update=False,
+            json_help=None
         )
 
         main(arguments=arguments)
