@@ -321,11 +321,29 @@ def test_upload_arg_parsing(
 ) -> None:
     filename = "some-file"
     args = ["upload"] + args + [filename]
-    defaults = dict(
+    defaults: Dict[str, Any] = dict(
         token=None,
         site=None,
-        mode=None,
         files=[[filename]],
+        disable_ssl_warnings=False,
+        show_traceback=False,
+        log_level=20,
+        labels=[],
+        no_progress=False,
+        user=None,
+        keep_basename=False,
+        package=None,
+        version=None,
+        summary=None,
+        package_type=None,
+        description=None,
+        thumbnail=None,
+        private=False,
+        auto_register=True,
+        build_id=None,
+        mode=None,
+        force_metadata_update=False,
+        json_help=None
     )
     expected = {**defaults, **mods}
 
