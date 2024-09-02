@@ -805,6 +805,9 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
     def upload(
         ctx: typer.Context,
         files: typing.List[str] = typer.Argument(),
+        labels: list[str] = typer.Option([], '-l', '--label'),
+        channels: list[str] = typer.Option([], '-c', '--channel'),
+        progress: bool = typer.Option(True, is_flag=True, help='Show upload progress'),
         interactive: bool = typer.Option(
             False,
             '-i',
@@ -814,6 +817,9 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         ),
     ) -> None:
         """Upload one or more files to anaconda.org."""
+        # pylint: disable=too-many-arguments
+        labels += channels  # Support for deprecated --channels option
+
         if interactive:
             mode = 'interactive'
         else:
@@ -829,8 +835,8 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             disable_ssl_warnings=False,
             show_traceback=False,
             log_level=20,
-            labels=[],
-            no_progress=False,
+            labels=labels,
+            no_progress=not progress,
             user=None,
             keep_basename=False,
             package=None,

@@ -1,5 +1,5 @@
 """Test entrypoint to anaconda-cli-base"""
-# pylint: disable=missing-function-docstring
+# pylint: disable=line-too-long
 # pylint: disable=redefined-outer-name
 # pylint: disable=missing-class-docstring
 # pylint: disable=missing-function-docstring
@@ -310,6 +310,13 @@ def test_whoami_arg_parsing(
     "prefix_args, args, mods",
     [
         pytest.param([], [], dict(), id="defaults"),
+        pytest.param([], ["-l", "some-label"], dict(labels=["some-label"]), id="labels-short-single"),
+        pytest.param([], ["--label", "some-label"], dict(labels=["some-label"]), id="labels-long-single"),
+        pytest.param([], ["-l", "some-label", "-l", "another"], dict(labels=["some-label", "another"]), id="labels-short-multiple"),  # noqa: E501
+        pytest.param([], ["--label", "some-label", "--label", "another"], dict(labels=["some-label", "another"]), id="labels-long-multiple"),  # noqa: E501
+        pytest.param([], ["-l", "some-label", "--label", "another"], dict(labels=["some-label", "another"]), id="labels-mixed-multiple"),  # noqa: E501
+        pytest.param([], ["-c", "some-label", "--channel", "another"], dict(labels=["some-label", "another"]), id="channels-mixed-multiple"),  # noqa: E501
+        pytest.param([], ["--no-progress"], dict(no_progress=True), id="no-progress"),
         pytest.param([], ["-i"], dict(mode="interactive"), id="interactive-short"),
         pytest.param([], ["--interactive"], dict(mode="interactive"), id="interactive-long"),
         pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),  # nosec
