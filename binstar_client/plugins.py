@@ -168,6 +168,8 @@ def _mount_subcommand(
 
     force_use_new_cli = bool(os.getenv("ANACONDA_CLI_FORCE_NEW", False))
 
+    main_help_text = f"anaconda.org: {help_text + ' ' if help_text else ''}(alias for 'anaconda org {name}')"
+
     if is_deprecated:
         deprecated_text = typer.style("(deprecated)", fg=typer.colors.RED, bold=True)
         help_text = f"{deprecated_text} {help_text}"
@@ -177,9 +179,10 @@ def _mount_subcommand(
 
     # Mount the subcommand to the `anaconda org` application.
     if force_use_new_cli and name in SUBCOMMANDS_WITH_NEW_CLI:
-        _load_new_subcommand(app, name)
+        _load_new_subcommand(app, name, help_text=help_text)
         if mount_to_main:
-            _load_new_subcommand(main_app, name, hidden=is_hidden_on_main)
+            # Mount some CLI subcommands at the top-level, but optionally emit a deprecation warning
+            _load_new_subcommand(main_app, name, help_text=main_help_text, hidden=is_hidden_on_main)
     else:
         # Create a legacy passthrough
         app.command(
@@ -192,12 +195,9 @@ def _mount_subcommand(
         if not mount_to_main:
             return
 
-        # Mount some CLI subcommands at the top-level, but optionally emit a deprecation warning
-        help_text = f"anaconda.org: {help_text + ' ' if help_text else ''}(alias for 'anaconda org {name}')"
-
         main_app.command(
             name=name,
-            help=help_text,
+            help=main_help_text,
             hidden=is_hidden_on_main,
             context_settings={
                 "allow_extra_args": True,
@@ -206,7 +206,7 @@ def _mount_subcommand(
         )(func)
 
 
-def _load_new_subcommand(app: typer.Typer, name: str, hidden: bool = False) -> None:
+def _load_new_subcommand(app: typer.Typer, name: str, help_text: str, hidden: bool = False) -> None:
     """Load the new typer version of a subcommand from a commands module.
 
     Args:
@@ -219,6 +219,7 @@ def _load_new_subcommand(app: typer.Typer, name: str, hidden: bool = False) -> N
         app=app,
         name=name,
         hidden=hidden,
+        help_text=help_text,
         context_settings={
             "allow_extra_args": True,
             "ignore_unknown_options": True,

@@ -46,13 +46,31 @@ ReleaseKey: typing_extensions.TypeAlias = typing.Tuple[str, str]
 logger = logging.getLogger('binstar.upload')
 
 
-def mount_subcommand(app: typer.Typer, name, hidden: bool, context_settings):
-    @app.command(name=name, hidden=hidden, context_settings=context_settings)
+def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, context_settings: dict):
+    @app.command(
+        name=name,
+        hidden=hidden,
+        help=help_text,
+        context_settings=context_settings,
+    )
     def upload(
         ctx: typer.Context,
+        files: typing.List[str] = typer.Argument(default=None),
+        interactive: bool = typer.Option(
+            False,
+            "-i",
+            '--interactive',
+            is_flag=True,
+            help='Run an interactive prompt if any packages are missing',
+        ),
     ):
+        files = files or []
 
-        arguments = argparse.Namespace()
+        arguments = argparse.Namespace(
+            files=files,
+            token=ctx.obj.get("token"),
+            interactive=interactive,
+        )
 
         main(arguments=arguments)
 

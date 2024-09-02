@@ -1,6 +1,7 @@
 """Test entrypoint to anaconda-cli-base"""
 # pylint: disable=redefined-outer-name
 import sys
+from argparse import Namespace
 from importlib import reload
 import logging
 from typing import Any, Generator
@@ -90,7 +91,7 @@ def test_hidden_commands(cmd: str, monkeypatch: MonkeyPatch, assert_binstar_args
     runner = CliRunner()
     result = runner.invoke(anaconda_cli_base.cli.app, args)
     assert result.exit_code == 0, result.stdout
-    assert result.stdout.startswith("usage")
+    assert "usage:" in result.stdout.lower()
 
     assert_binstar_args([cmd, "-h"])
 
@@ -111,9 +112,10 @@ def test_non_hidden_commands(cmd: str, monkeypatch: MonkeyPatch, assert_binstar_
     runner = CliRunner()
     result = runner.invoke(anaconda_cli_base.cli.app, args)
     assert result.exit_code == 0
-    assert result.stdout.startswith("usage")
+    assert "usage:" in result.stdout.lower()
 
-    assert_binstar_args([cmd, "-h"])
+    if cmd not in SUBCOMMANDS_WITH_NEW_CLI:
+        assert_binstar_args([cmd, "-h"])
 
 
 @pytest.mark.parametrize("cmd", list(DEPRECATED_SUBCOMMANDS))
@@ -144,6 +146,25 @@ def test_top_level_options_passed_through(cmd: str, monkeypatch: MonkeyPatch, as
     runner = CliRunner()
     result = runner.invoke(anaconda_cli_base.cli.app, args)
     assert result.exit_code == 0
-    assert result.stdout.startswith("usage")
+    assert "usage:" in result.stdout.lower()
 
-    assert_binstar_args(["-t", "TOKEN", "-s", "some-site.com", cmd, "-h"])
+    if cmd not in SUBCOMMANDS_WITH_NEW_CLI:
+        assert_binstar_args(["-t", "TOKEN", "-s", "some-site.com", cmd, "-h"])
+
+
+def test_arg_parsing(monkeypatch, mocker):
+    args = ["org", "upload", "-i"]
+
+    monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
+
+    runner = CliRunner()
+
+    mock = mocker.patch("binstar_client.commands.upload.main")
+    result = runner.invoke(anaconda_cli_base.cli.app, args)
+    assert result.exit_code == 0, result.stdout
+
+    mock.assert_called_once_with(arguments=Namespace(
+        files=[],
+        interactive=True,
+        token=None,
+    ))
