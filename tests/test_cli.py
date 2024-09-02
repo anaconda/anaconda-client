@@ -163,7 +163,7 @@ def test_top_level_options_passed_through(cmd: str, monkeypatch: MonkeyPatch, as
         pytest.param(["--label", "some-label"], dict(labels=["some-label"]), id="labels-long-single"),
         pytest.param(["-l", "some-label", "-l", "another"], dict(labels=["some-label", "another"]), id="labels-short-multiple"),
         pytest.param(["--label", "some-label", "--label", "another"], dict(labels=["some-label", "another"]), id="labels-long-multiple"),
-        pytest.param(["-l", "some-label", "--label", "another"], dict(labels=["some-label", "another"]), id="labels-mixed-multiple"),
+        pytest.param(["-c", "some-label", "--channel", "another"], dict(labels=["some-label", "another"]), id="channels-mixed-multiple"),
         pytest.param(["--progress"], dict(no_progress=False), id="progress"),
         pytest.param(["--no-progress"], dict(no_progress=True), id="no-progress"),
     ]

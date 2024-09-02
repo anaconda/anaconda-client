@@ -63,10 +63,12 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             is_flag=True,
             help='Run an interactive prompt if any packages are missing',
         ),
+        channels: list[str] = typer.Option([], "-c", "--channel"),
         labels: list[str] = typer.Option([], "-l", "--label"),
         progress: bool = typer.Option(True, is_flag=True, help="Show upload progress"),
     ):
         files = files or []
+        labels = channels + labels
 
         arguments = argparse.Namespace(
             files=files,
