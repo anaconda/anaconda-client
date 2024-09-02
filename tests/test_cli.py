@@ -153,8 +153,16 @@ def test_top_level_options_passed_through(cmd: str, monkeypatch: MonkeyPatch, as
         assert_binstar_args(["-t", "TOKEN", "-s", "some-site.com", cmd, "-h"])
 
 
-def test_arg_parsing(monkeypatch, mocker):
-    args = ["org", "upload", "-i"]
+@pytest.mark.parametrize(
+    "args, mods",
+    [
+        pytest.param([], {}, id="defaults"),
+        pytest.param(["-i"], dict(interactive=True), id="interactive-short"),
+        pytest.param(["--interactive"], dict(interactive=True), id="interactive-long"),
+    ]
+)
+def test_arg_parsing_upload_command(monkeypatch, mocker, args, mods):
+    args = ["org", "upload"] + args
 
     monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
 
@@ -164,9 +172,9 @@ def test_arg_parsing(monkeypatch, mocker):
     result = runner.invoke(anaconda_cli_base.cli.app, args)
     assert result.exit_code == 0, result.stdout
 
-    mock.assert_called_once_with(arguments=Namespace(
+    defaults = dict(
         files=[],
-        interactive=True,
+        interactive=False,
         token=None,
         disable_ssl_warnings=False,
         show_traceback=False,
@@ -187,5 +195,7 @@ def test_arg_parsing(monkeypatch, mocker):
         build_id=None,
         mode='interactive',
         force_metadata_update=False,
-        json_help=None
-    ))
+        json_help=None,
+    )
+    expected = {**defaults, **mods}
+    mock.assert_called_once_with(arguments=Namespace(**expected))
