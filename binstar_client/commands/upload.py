@@ -66,6 +66,8 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
         channels: list[str] = typer.Option([], "-c", "--channel"),
         labels: list[str] = typer.Option([], "-l", "--label"),
         progress: bool = typer.Option(True, is_flag=True, help="Show upload progress"),
+        user: typing.Optional[str] = typer.Option(None, "-u", "--user",
+        help='User account or Organization, defaults to the current user'),
     ):
         files = files or []
         labels = channels + labels
@@ -80,7 +82,7 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             site=None,
             labels=labels,
             no_progress=not progress,
-            user=None,
+            user=user,
             keep_basename=False,
             package=None,
             version=None,

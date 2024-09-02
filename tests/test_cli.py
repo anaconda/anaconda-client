@@ -166,6 +166,8 @@ def test_top_level_options_passed_through(cmd: str, monkeypatch: MonkeyPatch, as
         pytest.param(["-c", "some-label", "--channel", "another"], dict(labels=["some-label", "another"]), id="channels-mixed-multiple"),
         pytest.param(["--progress"], dict(no_progress=False), id="progress"),
         pytest.param(["--no-progress"], dict(no_progress=True), id="no-progress"),
+        pytest.param(["-u", "username"], dict(user="username"), id="username-short"),
+        pytest.param(["--user", "username"], dict(user="username"), id="username-long"),
     ]
 )
 def test_arg_parsing_upload_command(monkeypatch, mocker, args, mods):
