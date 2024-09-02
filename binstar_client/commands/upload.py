@@ -63,8 +63,8 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             is_flag=True,
             help='Run an interactive prompt if any packages are missing',
         ),
-        labels: typing.Annotated[list[str], typer.Option("-l", "--labels")] = None,
-        progress: typing.Annotated[bool, typer.Option(is_flag=True, help="Show upload progress")] = True,
+        labels: list[str] = typer.Option([], "-l", "--label"),
+        progress: bool = typer.Option(True, is_flag=True, help="Show upload progress"),
     ):
         files = files or []
 

@@ -159,6 +159,10 @@ def test_top_level_options_passed_through(cmd: str, monkeypatch: MonkeyPatch, as
         pytest.param([], {}, id="defaults"),
         pytest.param(["-i"], dict(interactive=True), id="interactive-short"),
         pytest.param(["--interactive"], dict(interactive=True), id="interactive-long"),
+        pytest.param(["-l", "some-label"], dict(labels=["some-label"]), id="labels-short-single"),
+        pytest.param(["--label", "some-label"], dict(labels=["some-label"]), id="labels-long-single"),
+        pytest.param(["--progress"], dict(no_progress=False), id="progress"),
+        pytest.param(["--no-progress"], dict(no_progress=True), id="no-progress"),
     ]
 )
 def test_arg_parsing_upload_command(monkeypatch, mocker, args, mods):
