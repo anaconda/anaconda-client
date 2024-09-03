@@ -192,6 +192,7 @@ def test_top_level_options_passed_through(cmd: str, monkeypatch: MonkeyPatch, as
         pytest.param(["-f"], dict(mode="fail"), id="fail-short"),
         pytest.param(["--fail"], dict(mode="fail"), id="fail-long"),
         pytest.param(["--force"], dict(mode="force"), id="force-long"),
+        pytest.param(["--skip-existing"], dict(mode="skip"), id="skip-existing-long"),
     ]
 )
 def test_arg_parsing_upload_command(monkeypatch, mocker, org_prefix, args, mods):
@@ -259,6 +260,9 @@ def test_arg_parsing_upload_command(monkeypatch, mocker, org_prefix, args, mods)
         ),
         pytest.param(
             ["--fail", "--force"], "'--force'", "'-f' / '--fail'"
+        ),
+        pytest.param(
+            ["--interactive", "--skip-existing"], "'--skip-existing'", "'-i' / '--interactive'"
         ),
     ]
 )

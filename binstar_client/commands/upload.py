@@ -141,6 +141,11 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             help="Force a package upload regardless of errors",
             callback=_exclusive_mode,
         ),
+        skip_existing: bool = typer.Option(
+            False,
+            help="Skip errors on package batch upload if it already exists",
+            callback=_exclusive_mode,
+        ),
     ):
         files = files or []
         labels = channels + labels
@@ -152,6 +157,8 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             mode = "fail"
         elif force:
             mode = "force"
+        elif skip_existing:
+            mode = "skip"
         else:
             mode = None
 
