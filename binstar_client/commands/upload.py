@@ -111,10 +111,22 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             "--interactive/--no-interactive",
             help='Run an interactive prompt if any packages are missing',
         ),
+        fail: bool = typer.Option(
+            False,
+            "-f",
+            "--fail/--no-fail",
+            help="Fail if a package or release does not exist (default)",
+        ),
     ):
         files = files or []
         labels = channels + labels
-        mode = "interactive" if interactive else None
+
+        # TODO: These should be mutually exclusive
+        mode = None
+        if interactive:
+            mode = "interactive"
+        if fail:
+            mode = "fail"
 
         arguments = argparse.Namespace(
             files=files,
