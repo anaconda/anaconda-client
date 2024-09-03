@@ -79,6 +79,11 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             '-p', '--package',
             help='Defaults to the package name in the uploaded file',
         ),
+        version: typing.Optional[str] = typer.Option(
+            None,
+            '-v', '--version',
+            help='Defaults to the package version in the uploaded file',
+        ),
     ):
         files = files or []
         labels = channels + labels
@@ -96,7 +101,7 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             user=user,
             keep_basename=keep_basename,
             package=package,
-            version=None,
+            version=version,
             summary=None,
             package_type=None,
             description=None,
