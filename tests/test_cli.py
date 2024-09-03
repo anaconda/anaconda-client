@@ -187,6 +187,8 @@ def test_top_level_options_passed_through(cmd: str, monkeypatch: MonkeyPatch, as
         pytest.param(["-d", "Some package description"], dict(description="Some package description"), id="description-short"),
         pytest.param(["--thumbnail", "/path/to/thumbnail"], dict(thumbnail="/path/to/thumbnail"), id="thumbnail-long"),
         pytest.param(["--private"], dict(private=True), id="private-long"),
+        pytest.param(["--register"], dict(auto_register=True), id="register-long"),
+        pytest.param(["--no-register"], dict(auto_register=False), id="no-register-long"),
     ]
 )
 def test_arg_parsing_upload_command(monkeypatch, mocker, org_prefix, args, mods):

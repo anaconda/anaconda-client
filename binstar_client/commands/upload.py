@@ -108,6 +108,10 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             is_flag=True,
             help='Create the package with private access',
         ),
+        register: bool = typer.Option(
+            DEFAULT_CONFIG.get('auto_register', True),
+            help="Register new package namespace if it does not exist",
+        ),
     ):
         files = files or []
         labels = channels + labels
@@ -131,7 +135,7 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             description=description,
             thumbnail=thumbnail,
             private=private,
-            auto_register=True,
+            auto_register=register,
             build_id=None,
             mode='interactive',
             force_metadata_update=False,
