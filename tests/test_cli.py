@@ -154,6 +154,11 @@ def test_top_level_options_passed_through(cmd: str, monkeypatch: MonkeyPatch, as
 
 
 @pytest.mark.parametrize(
+    "org_prefix",
+    [[], ["org"]],
+    ids=["bare", "org"],
+)
+@pytest.mark.parametrize(
     "args, mods",
     [
         pytest.param([], {}, id="defaults"),
@@ -170,8 +175,14 @@ def test_top_level_options_passed_through(cmd: str, monkeypatch: MonkeyPatch, as
         pytest.param(["--user", "username"], dict(user="username"), id="username-long"),
     ]
 )
-def test_arg_parsing_upload_command(monkeypatch, mocker, args, mods):
-    args = ["org", "upload"] + args
+def test_arg_parsing_upload_command(monkeypatch, mocker, org_prefix, args, mods):
+    """Test parsing of the arguments for the upload command. We call `anaconda org upload` both
+    with and without the "org" subcommand.
+
+    We check that the main upload function is called with the expected Namespace.
+
+    """
+    args = org_prefix + ["upload"] + args
 
     monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
 
