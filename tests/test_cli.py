@@ -163,8 +163,6 @@ def test_top_level_options_passed_through(cmd: str, monkeypatch: MonkeyPatch, as
     "args, mods",
     [
         pytest.param([], {}, id="defaults"),
-        pytest.param(["-i"], dict(interactive=True), id="interactive-short"),
-        pytest.param(["--interactive"], dict(interactive=True), id="interactive-long"),
         pytest.param(["-l", "some-label"], dict(labels=["some-label"]), id="labels-short-single"),
         pytest.param(["--label", "some-label"], dict(labels=["some-label"]), id="labels-long-single"),
         pytest.param(["-l", "some-label", "-l", "another"], dict(labels=["some-label", "another"]), id="labels-short-multiple"),
@@ -189,6 +187,8 @@ def test_top_level_options_passed_through(cmd: str, monkeypatch: MonkeyPatch, as
         pytest.param(["--private"], dict(private=True), id="private-long"),
         pytest.param(["--register"], dict(auto_register=True), id="register-long"),
         pytest.param(["--no-register"], dict(auto_register=False), id="no-register-long"),
+        pytest.param(["-i"], dict(mode="interactive"), id="interactive-short"),
+        pytest.param(["--interactive"], dict(mode="interactive"), id="interactive-long"),
     ]
 )
 def test_arg_parsing_upload_command(monkeypatch, mocker, org_prefix, args, mods):
@@ -210,7 +210,6 @@ def test_arg_parsing_upload_command(monkeypatch, mocker, org_prefix, args, mods)
 
     defaults = dict(
         files=[],
-        interactive=False,
         token=None,
         disable_ssl_warnings=False,
         show_traceback=False,
@@ -229,7 +228,7 @@ def test_arg_parsing_upload_command(monkeypatch, mocker, org_prefix, args, mods)
         private=False,
         auto_register=True,
         build_id=None,
-        mode='interactive',
+        mode=None,
         force_metadata_update=False,
         json_help=None,
     )

@@ -57,13 +57,6 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
     def upload(
         ctx: typer.Context,
         files: typing.List[str] = typer.Argument(default=None),
-        interactive: bool = typer.Option(
-            False,
-            "-i",
-            '--interactive',
-            is_flag=True,
-            help='Run an interactive prompt if any packages are missing',
-        ),
         channels: list[str] = typer.Option([], "-c", "--channel"),
         labels: list[str] = typer.Option([], "-l", "--label"),
         progress: bool = typer.Option(True, is_flag=True, help="Show upload progress"),
@@ -112,14 +105,20 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             DEFAULT_CONFIG.get('auto_register', True),
             help="Register new package namespace if it does not exist",
         ),
+        interactive: bool = typer.Option(
+            False,
+            "-i",
+            "--interactive/--no-interactive",
+            help='Run an interactive prompt if any packages are missing',
+        ),
     ):
         files = files or []
         labels = channels + labels
+        mode = "interactive" if interactive else None
 
         arguments = argparse.Namespace(
             files=files,
             token=ctx.obj.get("token"),
-            interactive=interactive,
             disable_ssl_warnings=False,
             show_traceback=False,
             log_level=20,
@@ -137,7 +136,7 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             private=private,
             auto_register=register,
             build_id=None,
-            mode='interactive',
+            mode=mode,
             force_metadata_update=False,
             json_help=None
         )
