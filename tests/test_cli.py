@@ -146,7 +146,6 @@ def test_deprecated_message(
 @pytest.mark.parametrize(
     "prefix_args, args, mods",
     [
-        pytest.param([], [], {}, id="defaults"),
         pytest.param([], ["-l", "some-label"], dict(labels=["some-label"]), id="labels-short-single"),
         pytest.param([], ["--label", "some-label"], dict(labels=["some-label"]), id="labels-long-single"),
         pytest.param([], ["-l", "some-label", "-l", "another"], dict(labels=["some-label", "another"]), id="labels-short-multiple"),
@@ -197,7 +196,7 @@ def test_arg_parsing_upload_command(monkeypatch, mocker, org_prefix, prefix_args
     We check that the main upload function is called with the expected Namespace.
 
     """
-    args = prefix_args + org_prefix + ["upload"] + args
+    args = prefix_args + org_prefix + ["upload"] + args + ["some-file"]
 
     monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
 
@@ -208,7 +207,7 @@ def test_arg_parsing_upload_command(monkeypatch, mocker, org_prefix, prefix_args
     assert result.exit_code == 0, result.stdout
 
     defaults = dict(
-        files=[],
+        files=["some-file"],
         token=None,
         disable_ssl_warnings=False,
         show_traceback=False,

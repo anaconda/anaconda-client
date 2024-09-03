@@ -70,6 +70,7 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
         hidden=hidden,
         help=help_text,
         context_settings=context_settings,
+        no_args_is_help=True,
     )
     def upload(
         ctx: typer.Context,
