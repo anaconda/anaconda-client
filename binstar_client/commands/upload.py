@@ -117,6 +117,10 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             "--fail/--no-fail",
             help="Fail if a package or release does not exist (default)",
         ),
+        force: bool = typer.Option(
+            False,
+            help="Force a package upload regardless of errors",
+        ),
     ):
         files = files or []
         labels = channels + labels
@@ -127,6 +131,8 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             mode = "interactive"
         if fail:
             mode = "fail"
+        if force:
+            mode = "force"
 
         arguments = argparse.Namespace(
             files=files,

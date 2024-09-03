@@ -191,6 +191,7 @@ def test_top_level_options_passed_through(cmd: str, monkeypatch: MonkeyPatch, as
         pytest.param(["--interactive"], dict(mode="interactive"), id="interactive-long"),
         pytest.param(["-f"], dict(mode="fail"), id="fail-short"),
         pytest.param(["--fail"], dict(mode="fail"), id="fail-long"),
+        pytest.param(["--force"], dict(mode="force"), id="force-long"),
     ]
 )
 def test_arg_parsing_upload_command(monkeypatch, mocker, org_prefix, args, mods):
