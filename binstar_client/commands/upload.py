@@ -954,6 +954,8 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             build_id=build_id,
             mode=mode,
             force_metadata_update=force_metadata_update,
+            # TODO: Explicitly ignoring the --json-help option since it would be very hard to
+            #       support and I'd bet is never used.
             json_help=None,
         )
 
