@@ -173,15 +173,22 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
         else:
             mode = None
 
+        if ctx.obj.get("verbose"):
+            log_level = logging.DEBUG
+        elif ctx.obj.get("quiet"):
+            log_level = logging.WARNING
+        else:
+            log_level = logging.INFO
+
         # TODO: Explicitly ignoring the --json-help option since it would be very hard to
         #       support and I'd bet is never used.
         arguments = argparse.Namespace(
             files=files,
             token=ctx.obj.get("token"),
-            disable_ssl_warnings=False,
-            show_traceback=False,
-            log_level=20,
-            site=None,
+            disable_ssl_warnings=ctx.obj.get("disable_ssl_warnings"),
+            show_traceback=ctx.obj.get("show_traceback"),
+            log_level=log_level,
+            site=ctx.obj.get("site"),
             labels=labels,
             no_progress=not progress,
             user=user,

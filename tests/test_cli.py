@@ -138,74 +138,66 @@ def test_deprecated_message(
     assert_binstar_args([cmd, "-h"])
 
 
-@pytest.mark.parametrize("cmd", list(NON_HIDDEN_SUBCOMMANDS))
-def test_top_level_options_passed_through(cmd: str, monkeypatch: MonkeyPatch, assert_binstar_args: Any) -> None:
-    """Ensure top-level CLI options are passed through to binstar_main."""
-
-    args = ["-t", "TOKEN", "-s", "some-site.com", cmd, "-h"]
-    monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
-
-    runner = CliRunner()
-    result = runner.invoke(anaconda_cli_base.cli.app, args)
-    assert result.exit_code == 0
-    assert "usage:" in result.stdout.lower()
-
-    if cmd not in SUBCOMMANDS_WITH_NEW_CLI:
-        assert_binstar_args(["-t", "TOKEN", "-s", "some-site.com", cmd, "-h"])
-
-
 @pytest.mark.parametrize(
     "org_prefix",
     [[], ["org"]],
     ids=["bare", "org"],
 )
 @pytest.mark.parametrize(
-    "args, mods",
+    "prefix_args, args, mods",
     [
-        pytest.param([], {}, id="defaults"),
-        pytest.param(["-l", "some-label"], dict(labels=["some-label"]), id="labels-short-single"),
-        pytest.param(["--label", "some-label"], dict(labels=["some-label"]), id="labels-long-single"),
-        pytest.param(["-l", "some-label", "-l", "another"], dict(labels=["some-label", "another"]), id="labels-short-multiple"),
-        pytest.param(["--label", "some-label", "--label", "another"], dict(labels=["some-label", "another"]), id="labels-long-multiple"),
-        pytest.param(["-c", "some-label", "--channel", "another"], dict(labels=["some-label", "another"]), id="channels-mixed-multiple"),
-        pytest.param(["--progress"], dict(no_progress=False), id="progress"),
-        pytest.param(["--no-progress"], dict(no_progress=True), id="no-progress"),
-        pytest.param(["-u", "username"], dict(user="username"), id="username-short"),
-        pytest.param(["--user", "username"], dict(user="username"), id="username-long"),
-        pytest.param(["--keep-basename"], dict(keep_basename=True), id="keep-basename-long"),
-        pytest.param(["-p", "my_package"], dict(package="my_package"), id="package-short"),
-        pytest.param(["--package", "my_package"], dict(package="my_package"), id="package-long"),
-        pytest.param(["--version", "1.2.3"], dict(version="1.2.3"), id="version-long"),
-        pytest.param(["-v", "1.2.3"], dict(version="1.2.3"), id="version-short"),
-        pytest.param(["--summary", "Some package summary"], dict(summary="Some package summary"), id="summary-long"),
-        pytest.param(["-s", "Some package summary"], dict(summary="Some package summary"), id="summary-short"),
-        pytest.param(["--package-type", "conda"], dict(package_type="conda"), id="package-type-long"),
-        pytest.param(["-t", "conda"], dict(package_type="conda"), id="package-type-short"),
-        pytest.param(["--description", "Some package description"], dict(description="Some package description"), id="description-long"),
-        pytest.param(["-d", "Some package description"], dict(description="Some package description"), id="description-short"),
-        pytest.param(["--thumbnail", "/path/to/thumbnail"], dict(thumbnail="/path/to/thumbnail"), id="thumbnail-long"),
-        pytest.param(["--private"], dict(private=True), id="private-long"),
-        pytest.param(["--register"], dict(auto_register=True), id="register-long"),
-        pytest.param(["--no-register"], dict(auto_register=False), id="no-register-long"),
-        pytest.param(["--build-id", "BUILD123"], dict(build_id="BUILD123"), id="build-id-long"),
-        pytest.param(["-i"], dict(mode="interactive"), id="interactive-short"),
-        pytest.param(["--interactive"], dict(mode="interactive"), id="interactive-long"),
-        pytest.param(["-f"], dict(mode="fail"), id="fail-short"),
-        pytest.param(["--fail"], dict(mode="fail"), id="fail-long"),
-        pytest.param(["--force"], dict(mode="force"), id="force-long"),
-        pytest.param(["--skip-existing"], dict(mode="skip"), id="skip-existing-long"),
-        pytest.param(["-m"], dict(force_metadata_update=True), id="force-metadata-update-short"),
-        pytest.param(["--force-metadata-update"], dict(force_metadata_update=True), id="force-metadata-update-long"),
+        pytest.param([], [], {}, id="defaults"),
+        pytest.param([], ["-l", "some-label"], dict(labels=["some-label"]), id="labels-short-single"),
+        pytest.param([], ["--label", "some-label"], dict(labels=["some-label"]), id="labels-long-single"),
+        pytest.param([], ["-l", "some-label", "-l", "another"], dict(labels=["some-label", "another"]), id="labels-short-multiple"),
+        pytest.param([], ["--label", "some-label", "--label", "another"], dict(labels=["some-label", "another"]), id="labels-long-multiple"),
+        pytest.param([], ["-c", "some-label", "--channel", "another"], dict(labels=["some-label", "another"]), id="channels-mixed-multiple"),
+        pytest.param([], ["--progress"], dict(no_progress=False), id="progress"),
+        pytest.param([], ["--no-progress"], dict(no_progress=True), id="no-progress"),
+        pytest.param([], ["-u", "username"], dict(user="username"), id="username-short"),
+        pytest.param([], ["--user", "username"], dict(user="username"), id="username-long"),
+        pytest.param([], ["--keep-basename"], dict(keep_basename=True), id="keep-basename-long"),
+        pytest.param([], ["-p", "my_package"], dict(package="my_package"), id="package-short"),
+        pytest.param([], ["--package", "my_package"], dict(package="my_package"), id="package-long"),
+        pytest.param([], ["--version", "1.2.3"], dict(version="1.2.3"), id="version-long"),
+        pytest.param([], ["-v", "1.2.3"], dict(version="1.2.3"), id="version-short"),
+        pytest.param([], ["--summary", "Some package summary"], dict(summary="Some package summary"), id="summary-long"),
+        pytest.param([], ["-s", "Some package summary"], dict(summary="Some package summary"), id="summary-short"),
+        pytest.param([], ["--package-type", "conda"], dict(package_type="conda"), id="package-type-long"),
+        pytest.param([], ["-t", "conda"], dict(package_type="conda"), id="package-type-short"),
+        pytest.param([], ["--description", "Some package description"], dict(description="Some package description"), id="description-long"),
+        pytest.param([], ["-d", "Some package description"], dict(description="Some package description"), id="description-short"),
+        pytest.param([], ["--thumbnail", "/path/to/thumbnail"], dict(thumbnail="/path/to/thumbnail"), id="thumbnail-long"),
+        pytest.param([], ["--private"], dict(private=True), id="private-long"),
+        pytest.param([], ["--register"], dict(auto_register=True), id="register-long"),
+        pytest.param([], ["--no-register"], dict(auto_register=False), id="no-register-long"),
+        pytest.param([], ["--build-id", "BUILD123"], dict(build_id="BUILD123"), id="build-id-long"),
+        pytest.param([], ["-i"], dict(mode="interactive"), id="interactive-short"),
+        pytest.param([], ["--interactive"], dict(mode="interactive"), id="interactive-long"),
+        pytest.param([], ["-f"], dict(mode="fail"), id="fail-short"),
+        pytest.param([], ["--fail"], dict(mode="fail"), id="fail-long"),
+        pytest.param([], ["--force"], dict(mode="force"), id="force-long"),
+        pytest.param([], ["--skip-existing"], dict(mode="skip"), id="skip-existing-long"),
+        pytest.param([], ["-m"], dict(force_metadata_update=True), id="force-metadata-update-short"),
+        pytest.param([], ["--force-metadata-update"], dict(force_metadata_update=True), id="force-metadata-update-long"),
+        pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),
+        pytest.param(["--site", "site.com"], [], dict(site="site.com"), id="site"),
+        pytest.param(["--disable-ssl-warnings"], [], dict(disable_ssl_warnings=True), id="disable-ssl-warnings"),
+        pytest.param(["--show-traceback"], [], dict(show_traceback=True), id="show-traceback"),
+        pytest.param(["--verbose"], [], dict(log_level=logging.DEBUG), id="verbose-long"),
+        pytest.param(["-v"], [], dict(log_level=logging.DEBUG), id="verbose-short"),
+        pytest.param(["--quiet"], [], dict(log_level=logging.WARNING), id="quiet-long"),
+        pytest.param(["-q"], [], dict(log_level=logging.WARNING), id="quiet-short"),
     ]
 )
-def test_arg_parsing_upload_command(monkeypatch, mocker, org_prefix, args, mods):
+def test_arg_parsing_upload_command(monkeypatch, mocker, org_prefix, prefix_args, args, mods):
     """Test parsing of the arguments for the upload command. We call `anaconda org upload` both
     with and without the "org" subcommand.
 
     We check that the main upload function is called with the expected Namespace.
 
     """
-    args = org_prefix + ["upload"] + args
+    args = prefix_args + org_prefix + ["upload"] + args
 
     monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
 
@@ -241,6 +233,22 @@ def test_arg_parsing_upload_command(monkeypatch, mocker, org_prefix, args, mods)
     )
     expected = {**defaults, **mods}
     mock.assert_called_once_with(arguments=Namespace(**expected))
+
+
+@pytest.mark.parametrize("cmd", list(NON_HIDDEN_SUBCOMMANDS))
+def test_top_level_options_passed_through(cmd: str, monkeypatch: MonkeyPatch, assert_binstar_args: Any) -> None:
+    """Ensure top-level CLI options are passed through to binstar_main."""
+
+    args = ["-t", "TOKEN", "-s", "some-site.com", cmd, "-h"]
+    monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
+
+    runner = CliRunner()
+    result = runner.invoke(anaconda_cli_base.cli.app, args)
+    assert result.exit_code == 0
+    assert "usage:" in result.stdout.lower()
+
+    if cmd not in SUBCOMMANDS_WITH_NEW_CLI:
+        assert_binstar_args(["-t", "TOKEN", "-s", "some-site.com", cmd, "-h"])
 
 
 @pytest.mark.parametrize(
