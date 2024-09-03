@@ -185,6 +185,7 @@ def test_top_level_options_passed_through(cmd: str, monkeypatch: MonkeyPatch, as
         pytest.param(["-t", "conda"], dict(package_type="conda"), id="package-type-short"),
         pytest.param(["--description", "Some package description"], dict(description="Some package description"), id="description-long"),
         pytest.param(["-d", "Some package description"], dict(description="Some package description"), id="description-short"),
+        pytest.param(["--thumbnail", "/path/to/thumbnail"], dict(thumbnail="/path/to/thumbnail"), id="thumbnail-long"),
     ]
 )
 def test_arg_parsing_upload_command(monkeypatch, mocker, org_prefix, args, mods):
