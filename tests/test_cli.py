@@ -187,6 +187,7 @@ def test_top_level_options_passed_through(cmd: str, monkeypatch: MonkeyPatch, as
         pytest.param(["--private"], dict(private=True), id="private-long"),
         pytest.param(["--register"], dict(auto_register=True), id="register-long"),
         pytest.param(["--no-register"], dict(auto_register=False), id="no-register-long"),
+        pytest.param(["--build-id", "BUILD123"], dict(build_id="BUILD123"), id="build-id-long"),
         pytest.param(["-i"], dict(mode="interactive"), id="interactive-short"),
         pytest.param(["--interactive"], dict(mode="interactive"), id="interactive-long"),
         pytest.param(["-f"], dict(mode="fail"), id="fail-short"),

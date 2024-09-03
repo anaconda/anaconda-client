@@ -122,6 +122,10 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             DEFAULT_CONFIG.get('auto_register', True),
             help="Register new package namespace if it does not exist",
         ),
+        build_id: typing.Optional[str] = typer.Option(
+            None,
+            help="Anaconda repository Build ID (internal only)",
+        ),
         interactive: bool = typer.Option(
             False,
             "-i",
@@ -188,7 +192,7 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             thumbnail=thumbnail,
             private=private,
             auto_register=register,
-            build_id=None,
+            build_id=build_id,
             mode=mode,
             force_metadata_update=force_metadata_update,
             json_help=None
