@@ -56,10 +56,10 @@ def _exclusive_mode(ctx: typer.Context, param: typer.CallbackParam, value: str) 
     """
     if getattr(ctx, "_modes", None) is None:
         ctx._modes = set()
-    if ctx._modes:
-        used_mode, = ctx._modes
-        raise typer.BadParameter(f"mutually exclusive with {used_mode}")
     if value:
+        if ctx._modes:
+            used_mode, = ctx._modes
+            raise typer.BadParameter(f"mutually exclusive with {used_mode}")
         ctx._modes.add(" / ".join(f"'{o}'" for o in param.opts))
     return value
 
