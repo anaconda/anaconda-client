@@ -96,6 +96,11 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             "-t",
             "--package-type",
             help="Set the package type. Defaults to autodetect.",
+        ),
+        description: typing.Optional[str] = typer.Option(
+            None,
+            '-d', '--description',
+            help='description of the file(s)',
         )
     ):
         files = files or []
@@ -117,7 +122,7 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             version=version,
             summary=summary,
             package_type=package_type,
-            description=None,
+            description=description,
             thumbnail=None,
             private=False,
             auto_register=True,

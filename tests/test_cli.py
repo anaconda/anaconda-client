@@ -183,6 +183,8 @@ def test_top_level_options_passed_through(cmd: str, monkeypatch: MonkeyPatch, as
         pytest.param(["-s", "Some package summary"], dict(summary="Some package summary"), id="summary-short"),
         pytest.param(["--package-type", "conda"], dict(package_type="conda"), id="package-type-long"),
         pytest.param(["-t", "conda"], dict(package_type="conda"), id="package-type-short"),
+        pytest.param(["--description", "Some package description"], dict(description="Some package description"), id="description-long"),
+        pytest.param(["-d", "Some package description"], dict(description="Some package description"), id="description-short"),
     ]
 )
 def test_arg_parsing_upload_command(monkeypatch, mocker, org_prefix, args, mods):
