@@ -153,6 +153,7 @@ def test_top_level_options_passed_through(cmd: str, monkeypatch: MonkeyPatch, as
         assert_binstar_args(["-t", "TOKEN", "-s", "some-site.com", cmd, "-h"])
 
 
+
 @pytest.mark.parametrize(
     "org_prefix",
     [[], ["org"]],
@@ -180,6 +181,8 @@ def test_top_level_options_passed_through(cmd: str, monkeypatch: MonkeyPatch, as
         pytest.param(["-v", "1.2.3"], dict(version="1.2.3"), id="version-short"),
         pytest.param(["--summary", "Some package summary"], dict(summary="Some package summary"), id="summary-long"),
         pytest.param(["-s", "Some package summary"], dict(summary="Some package summary"), id="summary-short"),
+        pytest.param(["--package-type", "conda"], dict(package_type="conda"), id="package-type-long"),
+        pytest.param(["-t", "conda"], dict(package_type="conda"), id="package-type-short"),
     ]
 )
 def test_arg_parsing_upload_command(monkeypatch, mocker, org_prefix, args, mods):

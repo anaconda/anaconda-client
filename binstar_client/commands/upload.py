@@ -23,6 +23,7 @@ import os
 import typing
 
 import typer
+from mypyc.common import JsonDict
 
 import binstar_client
 from binstar_client import errors
@@ -89,6 +90,12 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             '-s',
             '--summary',
             help='Set the summary of the package',
+        ),
+        package_type: typing.Optional[str] = typer.Option(
+            None,
+            "-t",
+            "--package-type",
+            help="Set the package type. Defaults to autodetect.",
         )
     ):
         files = files or []
@@ -109,7 +116,7 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             package=package,
             version=version,
             summary=summary,
-            package_type=None,
+            package_type=package_type,
             description=None,
             thumbnail=None,
             private=False,
