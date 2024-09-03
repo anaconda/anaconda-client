@@ -74,6 +74,11 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             False,
             help="Do not normalize a basename when uploading a conda package.",
         ),
+        package: typing.Optional[str] = typer.Option(
+            None,
+            '-p', '--package',
+            help='Defaults to the package name in the uploaded file',
+        ),
     ):
         files = files or []
         labels = channels + labels
@@ -90,7 +95,7 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             no_progress=not progress,
             user=user,
             keep_basename=keep_basename,
-            package=None,
+            package=package,
             version=None,
             summary=None,
             package_type=None,

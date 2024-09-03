@@ -174,6 +174,8 @@ def test_top_level_options_passed_through(cmd: str, monkeypatch: MonkeyPatch, as
         pytest.param(["-u", "username"], dict(user="username"), id="username-short"),
         pytest.param(["--user", "username"], dict(user="username"), id="username-long"),
         pytest.param(["--keep-basename"], dict(keep_basename=True), id="keep-basename-long"),
+        pytest.param(["-p", "my_package"], dict(package="my_package"), id="package-short"),
+        pytest.param(["--package", "my_package"], dict(package="my_package"), id="package-long"),
     ]
 )
 def test_arg_parsing_upload_command(monkeypatch, mocker, org_prefix, args, mods):
