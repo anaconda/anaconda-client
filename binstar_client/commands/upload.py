@@ -103,6 +103,11 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             help='description of the file(s)',
         ),
         thumbnail: typing.Optional[str] = typer.Option(None, help="Notebook's thumbnail image"),
+        private: bool = typer.Option(
+            False,
+            is_flag=True,
+            help='Create the package with private access',
+        ),
     ):
         files = files or []
         labels = channels + labels
@@ -125,7 +130,7 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             package_type=package_type,
             description=description,
             thumbnail=thumbnail,
-            private=False,
+            private=private,
             auto_register=True,
             build_id=None,
             mode='interactive',
