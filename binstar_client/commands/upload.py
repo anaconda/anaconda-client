@@ -47,6 +47,23 @@ ReleaseKey: typing_extensions.TypeAlias = typing.Tuple[str, str]
 logger = logging.getLogger('binstar.upload')
 
 
+def _exclusive_mode(ctx: typer.Context, param: typer.CallbackParam, value: str) -> str:
+    """Check for exclusivity of mode arguments.
+
+    To do this, we attach a new special attribute onto the typer Context the first time
+    one of the options in the group is used.
+
+    """
+    if getattr(ctx, "_modes", None) is None:
+        ctx._modes = set()
+    if ctx._modes:
+        used_mode, = ctx._modes
+        raise typer.BadParameter(f"mutually exclusive with {used_mode}")
+    if value:
+        ctx._modes.add(" / ".join(f"'{o}'" for o in param.opts))
+    return value
+
+
 def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, context_settings: dict):
     @app.command(
         name=name,
@@ -110,29 +127,33 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             "-i",
             "--interactive/--no-interactive",
             help='Run an interactive prompt if any packages are missing',
+            callback=_exclusive_mode,
         ),
         fail: bool = typer.Option(
             False,
             "-f",
             "--fail/--no-fail",
             help="Fail if a package or release does not exist (default)",
+            callback=_exclusive_mode,
         ),
         force: bool = typer.Option(
             False,
             help="Force a package upload regardless of errors",
+            callback=_exclusive_mode,
         ),
     ):
         files = files or []
         labels = channels + labels
 
-        # TODO: These should be mutually exclusive
-        mode = None
+        # These are mutually exclusive, enforced by a callback
         if interactive:
             mode = "interactive"
-        if fail:
+        elif fail:
             mode = "fail"
-        if force:
+        elif force:
             mode = "force"
+        else:
+            mode = None
 
         arguments = argparse.Namespace(
             files=files,

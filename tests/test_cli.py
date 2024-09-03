@@ -9,6 +9,7 @@ from typing import Any, Generator
 import pytest
 from pytest import LogCaptureFixture
 from pytest import MonkeyPatch
+from typer import rich_utils
 from typer.testing import CliRunner
 import anaconda_cli_base.cli
 import binstar_client.plugins
@@ -153,7 +154,6 @@ def test_top_level_options_passed_through(cmd: str, monkeypatch: MonkeyPatch, as
         assert_binstar_args(["-t", "TOKEN", "-s", "some-site.com", cmd, "-h"])
 
 
-
 @pytest.mark.parametrize(
     "org_prefix",
     [[], ["org"]],
@@ -237,3 +237,42 @@ def test_arg_parsing_upload_command(monkeypatch, mocker, org_prefix, args, mods)
     )
     expected = {**defaults, **mods}
     mock.assert_called_once_with(arguments=Namespace(**expected))
+
+
+@pytest.mark.parametrize(
+    "opts, error_opt, conflict_opt",
+    [
+        pytest.param(
+            ["--interactive", "--force"], "'--force'", "'-i' / '--interactive'"
+        ),
+        pytest.param(
+            ["--force", "-i"], "'-i' / '--interactive'", "'--force'"
+        ),
+        pytest.param(
+            ["--fail", "-i"], "'-i' / '--interactive'", "'-f' / '--fail'"
+        ),
+        pytest.param(
+            ["--interactive", "--fail"], "'-f' / '--fail'", "'-i' / '--interactive'"
+        ),
+        pytest.param(
+            ["--force", "--fail"], "'-f' / '--fail'", "'--force'"
+        ),
+        pytest.param(
+            ["--fail", "--force"], "'--force'", "'-f' / '--fail'"
+        ),
+    ]
+)
+def test_upload_mutually_exclusive_options(monkeypatch, mocker, opts, error_opt, conflict_opt):
+    # We need to ensure the terminal is wide enough for long output to stdout
+    monkeypatch.setattr(rich_utils, "MAX_WIDTH", 1000)
+
+    mock = mocker.patch("binstar_client.commands.upload.main")
+
+    runner = CliRunner()
+    args = ["org", "upload"] + opts + ["./some-file"]
+    result = runner.invoke(anaconda_cli_base.cli.app, args, terminal_width=1000)
+
+    assert result.exit_code == 2, result.stdout
+    assert f"Invalid value for {error_opt}: mutually exclusive with {conflict_opt}" in result.stdout, result.stdout
+
+    mock.assert_not_called()
