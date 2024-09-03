@@ -79,7 +79,7 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
     )
     def upload(
         ctx: typer.Context,
-        files: typing.List[str] = typer.Argument(default=None),
+        files: typing.List[str] = typer.Argument(),
         channels: list[str] = typer.Option(
             [],
             "-c",
