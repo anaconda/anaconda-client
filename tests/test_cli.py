@@ -173,6 +173,7 @@ def test_top_level_options_passed_through(cmd: str, monkeypatch: MonkeyPatch, as
         pytest.param(["--no-progress"], dict(no_progress=True), id="no-progress"),
         pytest.param(["-u", "username"], dict(user="username"), id="username-short"),
         pytest.param(["--user", "username"], dict(user="username"), id="username-long"),
+        pytest.param(["--keep-basename"], dict(keep_basename=True), id="keep-basename-long"),
     ]
 )
 def test_arg_parsing_upload_command(monkeypatch, mocker, org_prefix, args, mods):

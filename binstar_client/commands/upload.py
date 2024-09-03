@@ -66,8 +66,14 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
         channels: list[str] = typer.Option([], "-c", "--channel"),
         labels: list[str] = typer.Option([], "-l", "--label"),
         progress: bool = typer.Option(True, is_flag=True, help="Show upload progress"),
-        user: typing.Optional[str] = typer.Option(None, "-u", "--user",
-        help='User account or Organization, defaults to the current user'),
+        user: typing.Optional[str] = typer.Option(
+            None, "-u", "--user",
+            help='User account or Organization, defaults to the current user'
+        ),
+        keep_basename: bool = typer.Option(
+            False,
+            help="Do not normalize a basename when uploading a conda package.",
+        ),
     ):
         files = files or []
         labels = channels + labels
@@ -83,7 +89,7 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             labels=labels,
             no_progress=not progress,
             user=user,
-            keep_basename=False,
+            keep_basename=keep_basename,
             package=None,
             version=None,
             summary=None,
