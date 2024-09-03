@@ -178,6 +178,8 @@ def test_top_level_options_passed_through(cmd: str, monkeypatch: MonkeyPatch, as
         pytest.param(["--package", "my_package"], dict(package="my_package"), id="package-long"),
         pytest.param(["--version", "1.2.3"], dict(version="1.2.3"), id="version-long"),
         pytest.param(["-v", "1.2.3"], dict(version="1.2.3"), id="version-short"),
+        pytest.param(["--summary", "Some package summary"], dict(summary="Some package summary"), id="summary-long"),
+        pytest.param(["-s", "Some package summary"], dict(summary="Some package summary"), id="summary-short"),
     ]
 )
 def test_arg_parsing_upload_command(monkeypatch, mocker, org_prefix, args, mods):
