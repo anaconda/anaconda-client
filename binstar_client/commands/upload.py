@@ -146,6 +146,13 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             help="Skip errors on package batch upload if it already exists",
             callback=_exclusive_mode,
         ),
+        force_metadata_update: bool = typer.Option(
+            False,
+            "-m",
+            "--force-metadata-update",
+            help="Overwrite existing release metadata with the metadata from the package.",
+            callback=_exclusive_mode,
+        ),
     ):
         files = files or []
         labels = channels + labels
@@ -183,7 +190,7 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             auto_register=register,
             build_id=None,
             mode=mode,
-            force_metadata_update=False,
+            force_metadata_update=force_metadata_update,
             json_help=None
         )
 
