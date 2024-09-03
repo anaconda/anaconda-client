@@ -173,6 +173,8 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
         else:
             mode = None
 
+        # TODO: Explicitly ignoring the --json-help option since it would be very hard to
+        #       support and I'd bet is never used.
         arguments = argparse.Namespace(
             files=files,
             token=ctx.obj.get("token"),
