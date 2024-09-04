@@ -6,12 +6,32 @@ Copy packages from one account to another
 
 from __future__ import unicode_literals, print_function
 
+import argparse
 import logging
+
+import typer
 
 from binstar_client.utils import get_server_api, parse_specs
 from binstar_client import errors
 
 logger = logging.getLogger('binstar.copy')
+
+def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, context_settings: dict):
+    @app.command(
+        name=name,
+        hidden=hidden,
+        help=help_text,
+        context_settings=context_settings,
+        no_args_is_help=True,
+    )
+    def copy(
+        spec: str = typer.Argument(),
+    ):
+        args = argparse.Namespace(
+            spec=spec,
+        )
+
+        main(args=args)
 
 
 def main(args):

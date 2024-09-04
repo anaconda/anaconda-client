@@ -290,3 +290,32 @@ def test_upload_mutually_exclusive_options(monkeypatch, mocker, opts, error_opt,
     assert f"Invalid value for {error_opt}: mutually exclusive with {conflict_opt}" in result.stdout, result.stdout
 
     mock.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "org_prefix",
+    [[], ["org"]],
+    ids=["bare", "org"],
+)
+@pytest.mark.parametrize(
+    "prefix_args, args, mods",
+    [
+        pytest.param([], [], dict(), id="defaults"),
+    ]
+)
+def test_arg_parsing_copy_command(monkeypatch, mocker, org_prefix, prefix_args, args, mods):
+    args = prefix_args + org_prefix + ["copy"] + args + ["some-spec"]
+
+    monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
+
+    runner = CliRunner()
+
+    mock = mocker.patch("binstar_client.commands.copy.main")
+    result = runner.invoke(anaconda_cli_base.cli.app, args)
+    assert result.exit_code == 0, result.stdout
+
+    defaults = dict(spec="some-spec"
+
+    )
+    expected = {**defaults, **mods}
+    mock.assert_called_once_with(args=Namespace(**expected))
