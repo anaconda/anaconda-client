@@ -383,6 +383,8 @@ def test_arg_parsing_move_command(monkeypatch, mocker, org_prefix, prefix_args, 
     "prefix_args, args, mods",
     [
         pytest.param([], [], dict(), id="defaults"),
+        pytest.param([], ["--organization", "some-org"], dict(organization="some-org"), id="organization-long"),
+        pytest.param([], ["-o", "some-org"], dict(organization="some-org"), id="organization-short"),
         pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),
         pytest.param(["--site", "site.com"], [], dict(site="site.com"), id="site"),
     ]
