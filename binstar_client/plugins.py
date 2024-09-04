@@ -63,7 +63,9 @@ DEPRECATED_SUBCOMMANDS = {
 }
 # Subcommands which have typer subcommands defined
 SUBCOMMANDS_WITH_NEW_CLI = {
+    "channel",
     "copy",
+    "label",
     "move",
     "upload",
     "whoami",
@@ -215,8 +217,12 @@ def _load_new_subcommand(app: typer.Typer, name: str, help_text: str, hidden: bo
         name: The name of the module, within the binstar_client.commands subpackage.
 
     """
-
-    subcommand_module = getattr(command_module, name)
+    # This hack is here to handle the existing deprecation of the channel subcommand
+    if name == "label":
+        mod_name = "channel"
+    else:
+        mod_name = name
+    subcommand_module = getattr(command_module, mod_name)
     subcommand_module.mount_subcommand(
         app=app,
         name=name,

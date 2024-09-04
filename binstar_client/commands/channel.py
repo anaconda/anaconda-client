@@ -9,10 +9,40 @@ from __future__ import unicode_literals, print_function
 import argparse
 import functools
 import logging
+from typing import Optional
+
+import typer
 
 from binstar_client.utils import get_server_api
 
 logger = logging.getLogger('binstar.channel')
+
+
+def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, context_settings: dict):
+
+    @app.command(
+        name=name,
+        hidden=hidden,
+        help=help_text,
+        context_settings=context_settings,
+        # no_args_is_help=True,
+    )
+    def channel(
+        ctx: typer.Context,
+        organization: Optional[str] = typer.Option(
+            None,
+            "-o",
+            "--organization",
+            help='Manage an organizations {}s'.format(name),
+        )
+    ):
+        args = argparse.Namespace(
+            token=ctx.obj.get("token"),
+            site=ctx.obj.get("site"),
+            organization=organization,
+        )
+
+        main(args=args, name="channel", deprecated=True)
 
 
 def main(args, name, deprecated=False):  # pylint: disable=too-many-branches
