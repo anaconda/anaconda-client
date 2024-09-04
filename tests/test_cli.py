@@ -379,6 +379,7 @@ def test_arg_parsing_move_command(monkeypatch, mocker, org_prefix, prefix_args, 
     [[], ["org"]],
     ids=["bare", "org"],
 )
+@pytest.mark.parametrize("command_name", ["label", "channel"])
 @pytest.mark.parametrize(
     "prefix_args, args, mods",
     [
@@ -394,8 +395,8 @@ def test_arg_parsing_move_command(monkeypatch, mocker, org_prefix, prefix_args, 
         pytest.param(["--site", "site.com"], ["--list"], dict(site="site.com", list=True), id="site"),
     ]
 )
-def test_arg_parsing_channel_command(monkeypatch, mocker, org_prefix, prefix_args, args, mods):
-    args = prefix_args + org_prefix + ["channel"] + args
+def test_arg_parsing_channel_command(monkeypatch, mocker, org_prefix, command_name, prefix_args, args, mods):
+    args = prefix_args + org_prefix + [command_name] + args
 
     monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
 
