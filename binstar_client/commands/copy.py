@@ -6,7 +6,10 @@ Copy packages from one account to another
 
 from __future__ import unicode_literals, print_function
 
+import argparse
 import logging
+
+import typer
 
 from binstar_client.utils import get_server_api, parse_specs
 from binstar_client import errors
@@ -68,3 +71,27 @@ def add_parser(subparsers):
     method_group.add_argument('--update',
                               help='Update missing data in destination package metadata', action='store_true')
     parser.set_defaults(main=main)
+
+
+def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, context_settings: dict) -> None:
+    @app.command(
+        name=name,
+        hidden=hidden,
+        help=help_text,
+        context_settings=context_settings,
+        no_args_is_help=True,
+    )
+    def copy(
+        spec: str = typer.Argument(
+            help=(
+                'Package - written as user/package/version[/filename]. '
+                'If filename is not given, copy all files in the version'
+            ),
+            callback=parse_specs,
+        ),
+    ) -> None:
+        args = argparse.Namespace(
+            spec=spec,
+        )
+
+        main(args)

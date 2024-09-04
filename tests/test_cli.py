@@ -29,6 +29,7 @@ from binstar_client.plugins import (
     DEPRECATED_SUBCOMMANDS,
     SUBCOMMANDS_WITH_NEW_CLI,
 )
+from binstar_client.utils import parse_specs
 
 BASE_COMMANDS = {"login", "logout", "whoami"}
 HIDDEN_SUBCOMMANDS = ALL_SUBCOMMANDS - BASE_COMMANDS - NON_HIDDEN_SUBCOMMANDS
@@ -436,3 +437,25 @@ def test_upload_mutually_exclusive_options(opts, error_opt, conflict_opt, mocker
     assert f"Invalid value for {error_opt}: mutually exclusive with {conflict_opt}" in result.stdout, result.stdout
 
     mock.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "prefix_args, args, mods",
+    [
+        pytest.param([], [], dict(), id="defaults"),
+    ]
+)
+def test_copy_arg_parsing(
+    prefix_args: List[str], args: List[str], mods: Dict[str, Any], cli_mocker: InvokerFactory
+) -> None:
+    args = ["copy"] + args + ["some-spec"]
+    defaults: Dict[str, Any] = dict(
+        spec=parse_specs("some-spec")
+    )
+    expected = {**defaults, **mods}
+
+    mock = cli_mocker("binstar_client.commands.copy.main")
+    result = mock.invoke(args, prefix_args=prefix_args)
+    assert result.exit_code == 0, result.stdout
+    mock.assert_main_called_once()
+    mock.assert_main_args_contains(expected)
