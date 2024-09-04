@@ -52,6 +52,10 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             is_flag=True,
             help=f"List all {name}s for a user",
         ),
+        show: Optional[str] = typer.Option(
+            None,
+            help=f"Show all of the files in a {name}",
+        ),
     ):
         args = argparse.Namespace(
             token=ctx.obj.get("token"),
@@ -59,7 +63,7 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             organization=organization,
             copy=_parse_optional_tuple(copy),
             list=list_,
-            show=None,
+            show=show,
             lock=None,
             unlock=None,
             remove=None,
