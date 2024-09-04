@@ -9,6 +9,9 @@ from __future__ import unicode_literals, print_function
 import argparse
 import functools
 import logging
+from typing import List, Optional, Tuple
+
+import typer
 
 from binstar_client.utils import get_server_api
 
@@ -103,3 +106,36 @@ def _add_parser(subparsers, name, deprecated=False):
 def add_parser(subparsers):
     _add_parser(subparsers, name='label')
     _add_parser(subparsers, name='channel', deprecated=True)
+
+
+def _parse_optional_tuple(value: Tuple[str, str]) -> Optional[List[str]]:
+    # Convert a sentinel tuple of empty strings to None, since it is not possible with typer parser or callback
+    if value == ('', ''):
+        return None
+    return list(value)
+
+
+def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, context_settings: dict) -> None:
+    @app.command(
+        name=name,
+        hidden=hidden,
+        help=help_text,
+        context_settings=context_settings,
+        no_args_is_help=True,
+    )
+    def channel(
+        ctx: typer.Context,
+        copy: Tuple[str, str] = typer.Option(
+            ('', ''),
+            help=f'Copy a package from one {name} to another',
+            show_default=False,
+        ),
+    ) -> None:
+        parsed_copy = _parse_optional_tuple(copy)
+        args = argparse.Namespace(
+            token=ctx.obj.params.get('token'),
+            site=ctx.obj.params.get('site'),
+            copy=parsed_copy,
+        )
+
+        main(args, name='channel', deprecated=True)

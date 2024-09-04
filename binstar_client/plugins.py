@@ -77,7 +77,9 @@ DEPRECATED_SUBCOMMANDS = {
 }
 # Subcommands which have typer subcommands defined
 SUBCOMMANDS_WITH_NEW_CLI = {
+    "channel",
     "copy",
+    "label",
     "move",
     "upload",
     "whoami",
@@ -236,8 +238,13 @@ def _load_new_subcommand(name: str, help_text: str, app_: Optional[typer.Typer] 
         hidden: If True, the subcommand won't show up in help.
 
     """
-    subcommand_module = getattr(command_module, name)
+    # This is here to handle the existing deprecation of the channel subcommand
+    if name == "label":
+        mod_name = "channel"
+    else:
+        mod_name = name
     # TODO: More safely check that mount_subcommand exists  # pylint: disable=fixme
+    subcommand_module = getattr(command_module, mod_name)
     subcommand_module.mount_subcommand(
         app=app_ or app,
         name=name,

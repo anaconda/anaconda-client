@@ -234,7 +234,8 @@ def test_hidden_commands(cmd: str, monkeypatch: MonkeyPatch, assert_binstar_args
     assert result.exit_code == 0
     assert "usage:" in result.stdout.lower()
 
-    assert_binstar_args([cmd, "-h"])
+    if cmd not in SUBCOMMANDS_WITH_NEW_CLI:
+        assert_binstar_args([cmd, "-h"])
 
 
 @pytest.mark.parametrize("cmd", list(NON_HIDDEN_SUBCOMMANDS))
@@ -271,9 +272,10 @@ def test_deprecated_message(
         runner = CliRunner()
         result = runner.invoke(anaconda_cli_base.cli.app, args)
         assert result.exit_code == 0
-        assert "commands will be deprecated" in caplog.records[0].msg
 
-    assert_binstar_args([cmd, "-h"])
+    if cmd not in SUBCOMMANDS_WITH_NEW_CLI:
+        assert "commands will be deprecated" in caplog.records[0].msg
+        assert_binstar_args([cmd, "-h"])
 
 
 @pytest.mark.parametrize("cmd", list(NON_HIDDEN_SUBCOMMANDS))
@@ -527,6 +529,31 @@ def test_move_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
     expected = {**defaults, **case.mods}
 
     mock = cli_mocker("binstar_client.commands.move.main")
+    result = mock.invoke(args, prefix_args=case.prefix_args)
+    assert result.exit_code == 0, result.stdout
+    mock.assert_main_called_once()
+    mock.assert_main_args_contains(expected)
+
+
+@pytest.mark.parametrize(
+    "subcommand", ["channel", "label"],
+)
+@pytest.mark.parametrize(
+    "case",
+    [
+        CLICase("--copy from to", dict(copy=["from", "to"]), id="copy"),
+    ]
+)
+def test_channel_arg_parsing(subcommand: str, case: CLICase, cli_mocker: InvokerFactory) -> None:
+    args = [subcommand] + case.args
+    defaults = dict(
+        token=None,
+        site=None,
+        copy=None,
+    )
+    expected = {**defaults, **case.mods}
+
+    mock = cli_mocker("binstar_client.commands.channel.main")
     result = mock.invoke(args, prefix_args=case.prefix_args)
     assert result.exit_code == 0, result.stdout
     mock.assert_main_called_once()
