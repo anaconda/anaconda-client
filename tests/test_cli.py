@@ -385,6 +385,7 @@ def test_arg_parsing_move_command(monkeypatch, mocker, org_prefix, prefix_args, 
         pytest.param([], [], dict(), id="defaults"),
         pytest.param([], ["--organization", "some-org"], dict(organization="some-org"), id="organization-long"),
         pytest.param([], ["-o", "some-org"], dict(organization="some-org"), id="organization-short"),
+        pytest.param([], ["--copy", "source-label", "dest-channel"], dict(copy=("source-label", "dest-channel")), id="copy"),
         pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),
         pytest.param(["--site", "site.com"], [], dict(site="site.com"), id="site"),
     ]
@@ -404,6 +405,7 @@ def test_arg_parsing_channel_command(monkeypatch, mocker, org_prefix, prefix_arg
         token=None,
         site=None,
         organization=None,
+        copy=None,
     )
     expected = {**defaults, **mods}
     mock.assert_called_once_with(args=Namespace(**expected), name="channel", deprecated=True)

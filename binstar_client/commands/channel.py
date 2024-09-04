@@ -9,13 +9,19 @@ from __future__ import unicode_literals, print_function
 import argparse
 import functools
 import logging
-from typing import Optional
+from typing import Optional, Tuple
 
 import typer
 
 from binstar_client.utils import get_server_api
 
 logger = logging.getLogger('binstar.channel')
+
+def _parse_optional_tuple(value: Tuple[str, str]) -> Optional[Tuple[str, str]]:
+    # Convert a sentinel tuple of empty strings to None, since it is not possible with typer parser or callback
+    if value == ("", ""):
+        return None
+    return value
 
 
 def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, context_settings: dict):
@@ -34,12 +40,18 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             "-o",
             "--organization",
             help='Manage an organizations {}s'.format(name),
+        ),
+        copy: Optional[Tuple[str, str]] = typer.Option(
+            ("", ""),
+            help=f"Copy a package from one {name} to another",
+            show_default=False,
         )
     ):
         args = argparse.Namespace(
             token=ctx.obj.get("token"),
             site=ctx.obj.get("site"),
             organization=organization,
+            copy=_parse_optional_tuple(copy),
         )
 
         main(args=args, name="channel", deprecated=True)
