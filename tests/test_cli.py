@@ -388,6 +388,8 @@ def test_arg_parsing_move_command(monkeypatch, mocker, org_prefix, prefix_args, 
         pytest.param([], ["--copy", "source-label", "dest-channel"], dict(copy=("source-label", "dest-channel")), id="copy"),
         pytest.param([], ["--list"], dict(list=True), id="list"),
         pytest.param([], ["--show", "label-name"], dict(show="label-name"), id="show"),
+        pytest.param([], ["--lock", "label-name"], dict(lock="label-name"), id="lock"),
+        pytest.param([], ["--unlock", "label-name"], dict(unlock="label-name"), id="unlock"),
         pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),
         pytest.param(["--site", "site.com"], [], dict(site="site.com"), id="site"),
     ]
