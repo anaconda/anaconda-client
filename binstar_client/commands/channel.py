@@ -64,6 +64,10 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             None,
             help=f"Unlock a {name}",
         ),
+        remove: Optional[str] = typer.Option(
+            None,
+            help=f"Remove a {name}",
+        ),
     ):
         args = argparse.Namespace(
             token=ctx.obj.get("token"),
@@ -74,7 +78,7 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             show=show,
             lock=lock,
             unlock=unlock,
-            remove=None,
+            remove=remove,
         )
 
         main(args=args, name="channel", deprecated=True)
