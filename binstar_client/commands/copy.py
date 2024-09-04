@@ -44,7 +44,13 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
         no_args_is_help=True,
     )
     def copy(
-        spec: str = typer.Argument(),
+        spec: str = typer.Argument(
+            help=(
+                'Package - written as user/package/version[/filename]. '
+                'If filename is not given, copy all files in the version'
+            ),
+            callback=parse_specs,
+        ),
         to_owner: Optional[str] = typer.Option(
             None,
             help='User account to copy package to (default: your account)',

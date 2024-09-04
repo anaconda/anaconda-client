@@ -17,6 +17,7 @@ import binstar_client.scripts.cli
 from binstar_client import commands
 from binstar_client.plugins import ALL_SUBCOMMANDS, NON_HIDDEN_SUBCOMMANDS, DEPRECATED_SUBCOMMANDS, \
     SUBCOMMANDS_WITH_NEW_CLI
+from binstar_client.utils import parse_specs
 
 BASE_COMMANDS = {"login", "logout", "whoami"}
 HIDDEN_SUBCOMMANDS = ALL_SUBCOMMANDS - BASE_COMMANDS - NON_HIDDEN_SUBCOMMANDS
@@ -320,7 +321,7 @@ def test_arg_parsing_copy_command(monkeypatch, mocker, org_prefix, prefix_args, 
     assert result.exit_code == 0, result.stdout
 
     defaults = dict(
-        spec="some-spec",
+        spec=parse_specs("some-spec"),
         to_owner=None,
         from_label="main",
         to_label="main",
