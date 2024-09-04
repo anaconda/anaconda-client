@@ -443,6 +443,7 @@ def test_upload_mutually_exclusive_options(opts, error_opt, conflict_opt, mocker
     "prefix_args, args, mods",
     [
         pytest.param([], [], dict(), id="defaults"),
+        pytest.param([], ["--to-owner", "some-recipient"], dict(to_owner="some-recipient"), id="to-owner"),
     ]
 )
 def test_copy_arg_parsing(
@@ -450,7 +451,8 @@ def test_copy_arg_parsing(
 ) -> None:
     args = ["copy"] + args + ["some-spec"]
     defaults: Dict[str, Any] = dict(
-        spec=parse_specs("some-spec")
+        spec=parse_specs("some-spec"),
+        to_owner=None,
     )
     expected = {**defaults, **mods}
 
