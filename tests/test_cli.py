@@ -419,3 +419,30 @@ def test_arg_parsing_channel_command(monkeypatch, mocker, org_prefix, prefix_arg
     )
     expected = {**defaults, **mods}
     mock.assert_called_once_with(args=Namespace(**expected), name="channel", deprecated=True)
+
+
+
+@pytest.mark.parametrize(
+    "opts, error_opt, conflict_opt",
+    [
+        pytest.param(
+            ["--copy", "from", "to", "--list"], "'--list'", "'--copy'"
+        ),
+    ]
+)
+def test_channel_mutually_exclusive_options(monkeypatch, mocker, opts, error_opt, conflict_opt):
+    # We need to ensure the terminal is wide enough for long output to stdout
+    monkeypatch.setattr(rich_utils, "MAX_WIDTH", 1000)
+
+    mock = mocker.patch("binstar_client.commands.channel.main")
+
+    args = ["org", "channel"] + opts
+    monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
+    runner = CliRunner()
+    result = runner.invoke(anaconda_cli_base.cli.app, args)
+
+    assert result.exit_code == 2, result.stdout
+    assert f"Invalid value for {error_opt}: mutually exclusive with {conflict_opt}" in result.stdout, result.stdout
+
+    mock.assert_not_called()
+

@@ -24,6 +24,29 @@ def _parse_optional_tuple(value: Tuple[str, str]) -> Optional[Tuple[str, str]]:
     return value
 
 
+def _exclusive_action(ctx: typer.Context, param: typer.CallbackParam, value: str) -> str:
+    """Check for exclusivity of action options.
+
+    To do this, we attach a new special attribute onto the typer Context the first time
+    one of the options in the group is used.
+
+    """
+    if isinstance(value, tuple):
+        # This is here so we can treat the empty tuple as falsy, but I don't like it
+        parsed_value = _parse_optional_tuple(value)
+    else:
+        parsed_value = value
+
+    if getattr(ctx, "_actions", None) is None:
+        ctx._actions = set()
+    if parsed_value:
+        if ctx._actions:
+            used_action, = ctx._actions
+            raise typer.BadParameter(f"mutually exclusive with {used_action}")
+        ctx._actions.add(" / ".join(f"'{o}'" for o in param.opts))
+    return value
+
+
 def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, context_settings: dict):
 
     @app.command(
@@ -45,12 +68,14 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             ("", ""),
             help=f"Copy a package from one {name} to another",
             show_default=False,
+            callback=_exclusive_action,
         ),
         list_: Optional[bool] = typer.Option(
             None,
             "--list",
             is_flag=True,
             help=f"List all {name}s for a user",
+            callback=_exclusive_action,
         ),
         show: Optional[str] = typer.Option(
             None,
