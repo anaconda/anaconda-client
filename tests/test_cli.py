@@ -503,3 +503,31 @@ def test_copy_arg_parsing(
     assert result.exit_code == 0, result.stdout
     mock.assert_main_called_once()
     mock.assert_main_args_contains(expected)
+
+
+@pytest.mark.parametrize(
+    "case",
+    [
+        CLICase(id="defaults"),
+        CLICase("--from-label source-label", dict(from_label="source-label"), id="from-label"),
+        CLICase("--to-label destination-label", dict(to_label="destination-label"), id="to-label"),
+        CLICase("--token TOKEN", dict(token="TOKEN"), id="token", prefix=True),  # nosec
+        CLICase("--site my-site.com", dict(site="my-site.com"), id="site", prefix=True),
+    ]
+)
+def test_move_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
+    args = ["move"] + case.args + ["some-spec"]
+    defaults: Dict[str, Any] = dict(
+        token=None,
+        site=None,
+        spec=parse_specs("some-spec"),
+        from_label="main",
+        to_label="main",
+    )
+    expected = {**defaults, **case.mods}
+
+    mock = cli_mocker("binstar_client.commands.move.main")
+    result = mock.invoke(args, prefix_args=case.prefix_args)
+    assert result.exit_code == 0, result.stdout
+    mock.assert_main_called_once()
+    mock.assert_main_args_contains(expected)
