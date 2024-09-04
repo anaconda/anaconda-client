@@ -17,6 +17,24 @@ from binstar_client import errors
 
 logger = logging.getLogger('binstar.copy')
 
+
+def _exclusive_method(ctx: typer.Context, param: typer.CallbackParam, value: str) -> str:
+    """Check for exclusivity of method arguments.
+
+    To do this, we attach a new special attribute onto the typer Context the first time
+    one of the options in the group is used.
+
+    """
+    if getattr(ctx, "_methods", None) is None:
+        ctx._methods = set()
+    if value:
+        if ctx._methods:
+            used_mode, = ctx._methods
+            raise typer.BadParameter(f"mutually exclusive with {used_mode}")
+        ctx._methods.add(" / ".join(f"'{o}'" for o in param.opts))
+    return value
+
+
 def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, context_settings: dict):
     @app.command(
         name=name,
@@ -39,12 +57,24 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             "main",
             help='Label to put all packages into',
         ),
+        replace: bool = typer.Option(
+            False,
+            help="Overwrite destination package metadata",
+            callback=_exclusive_method,
+        ),
+        update: bool = typer.Option(
+            False,
+            help="Update missing data in destination package metadata",
+            callback=_exclusive_method,
+        ),
     ):
         args = argparse.Namespace(
             spec=spec,
             to_owner=to_owner,
             from_label=from_label,
             to_label=to_label,
+            replace=replace,
+            update=update,
         )
 
         main(args=args)
