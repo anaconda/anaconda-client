@@ -44,6 +44,7 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
         no_args_is_help=True,
     )
     def copy(
+        ctx: typer.Context,
         spec: str = typer.Argument(
             help=(
                 'Package - written as user/package/version[/filename]. '
@@ -75,6 +76,8 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
         ),
     ):
         args = argparse.Namespace(
+            token=ctx.obj.get("token"),
+            site=ctx.obj.get("site"),
             spec=spec,
             to_owner=to_owner,
             from_label=from_label,

@@ -96,7 +96,8 @@ def test_hidden_commands(cmd: str, monkeypatch: MonkeyPatch, assert_binstar_args
     assert result.exit_code == 0, result.stdout
     assert "usage:" in result.stdout.lower()
 
-    assert_binstar_args([cmd, "-h"])
+    if cmd not in SUBCOMMANDS_WITH_NEW_CLI:
+        assert_binstar_args([cmd, "-h"])
 
 
 @pytest.mark.parametrize("cmd", list(NON_HIDDEN_SUBCOMMANDS))
@@ -307,6 +308,8 @@ def test_upload_mutually_exclusive_options(monkeypatch, mocker, opts, error_opt,
         pytest.param([], ["--to-label", "destination-label"], dict(to_label="destination-label"), id="to-label"),
         pytest.param([], ["--replace"], dict(replace=True), id="replace"),
         pytest.param([], ["--update"], dict(update=True), id="update"),
+        pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),
+        pytest.param(["--site", "site.com"], [], dict(site="site.com"), id="site"),
     ]
 )
 def test_arg_parsing_copy_command(monkeypatch, mocker, org_prefix, prefix_args, args, mods):
@@ -321,6 +324,8 @@ def test_arg_parsing_copy_command(monkeypatch, mocker, org_prefix, prefix_args, 
     assert result.exit_code == 0, result.stdout
 
     defaults = dict(
+        token=None,
+        site=None,
         spec=parse_specs("some-spec"),
         to_owner=None,
         from_label="main",
