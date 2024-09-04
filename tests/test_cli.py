@@ -425,9 +425,11 @@ def test_arg_parsing_channel_command(monkeypatch, mocker, org_prefix, prefix_arg
 @pytest.mark.parametrize(
     "opts, error_opt, conflict_opt",
     [
-        pytest.param(
-            ["--copy", "from", "to", "--list"], "'--list'", "'--copy'"
-        ),
+        pytest.param(["--list", "--copy", "from", "to"], "'--copy'", "'--list'"),
+        pytest.param(["--list", "--show", "some-label"], "'--show'", "'--list'"),
+        pytest.param(["--list", "--lock", "some-label"], "'--lock'", "'--list'"),
+        pytest.param(["--list", "--unlock", "some-label"], "'--unlock'", "'--list'"),
+        pytest.param(["--list", "--remove", "some-label"], "'--remove'", "'--list'"),
     ]
 )
 def test_channel_mutually_exclusive_options(monkeypatch, mocker, opts, error_opt, conflict_opt):

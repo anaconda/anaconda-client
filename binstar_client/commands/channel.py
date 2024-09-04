@@ -80,18 +80,22 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
         show: Optional[str] = typer.Option(
             None,
             help=f"Show all of the files in a {name}",
+            callback=_exclusive_action,
         ),
         lock: Optional[str] = typer.Option(
             None,
             help=f"Lock a {name}",
+            callback=_exclusive_action,
         ),
         unlock: Optional[str] = typer.Option(
             None,
             help=f"Unlock a {name}",
+            callback=_exclusive_action,
         ),
         remove: Optional[str] = typer.Option(
             None,
             help=f"Remove a {name}",
+            callback=_exclusive_action,
         ),
     ):
         args = argparse.Namespace(
