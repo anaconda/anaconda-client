@@ -8,6 +8,7 @@ from __future__ import unicode_literals, print_function
 
 import argparse
 import logging
+from typing import Optional
 
 import typer
 
@@ -26,9 +27,14 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
     )
     def copy(
         spec: str = typer.Argument(),
+        to_owner: Optional[str] = typer.Option(
+            None,
+            help='User account to copy package to (default: your account)',
+        ),
     ):
         args = argparse.Namespace(
             spec=spec,
+            to_owner=to_owner,
         )
 
         main(args=args)

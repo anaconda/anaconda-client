@@ -301,6 +301,8 @@ def test_upload_mutually_exclusive_options(monkeypatch, mocker, opts, error_opt,
     "prefix_args, args, mods",
     [
         pytest.param([], [], dict(), id="defaults"),
+        pytest.param([], ["--to-owner", "some-recipient"], dict(to_owner="some-recipient"), id="to-owner"),
+
     ]
 )
 def test_arg_parsing_copy_command(monkeypatch, mocker, org_prefix, prefix_args, args, mods):
@@ -314,8 +316,9 @@ def test_arg_parsing_copy_command(monkeypatch, mocker, org_prefix, prefix_args, 
     result = runner.invoke(anaconda_cli_base.cli.app, args)
     assert result.exit_code == 0, result.stdout
 
-    defaults = dict(spec="some-spec"
-
+    defaults = dict(
+        spec="some-spec",
+        to_owner=None,
     )
     expected = {**defaults, **mods}
     mock.assert_called_once_with(args=Namespace(**expected))
