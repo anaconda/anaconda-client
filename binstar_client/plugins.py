@@ -64,6 +64,7 @@ DEPRECATED_SUBCOMMANDS = {
 # Subcommands which have typer subcommands defined
 SUBCOMMANDS_WITH_NEW_CLI = {
     "copy",
+    "move",
     "upload",
     "whoami",
 }
