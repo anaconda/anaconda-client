@@ -98,11 +98,15 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             callback=_exclusive_action,
         ),
     ):
+        copy = _parse_optional_tuple(copy)
+        if not any([copy, list_, show, lock, unlock, remove]):
+            raise typer.BadParameter("one of --copy, --list, --show, --lock, --unlock, or --remove must be provided")
+
         args = argparse.Namespace(
             token=ctx.obj.get("token"),
             site=ctx.obj.get("site"),
             organization=organization,
-            copy=_parse_optional_tuple(copy),
+            copy=copy,
             list=list_,
             show=show,
             lock=lock,

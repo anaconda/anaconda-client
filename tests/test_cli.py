@@ -382,17 +382,16 @@ def test_arg_parsing_move_command(monkeypatch, mocker, org_prefix, prefix_args, 
 @pytest.mark.parametrize(
     "prefix_args, args, mods",
     [
-        pytest.param([], [], dict(), id="defaults"),
-        pytest.param([], ["--organization", "some-org"], dict(organization="some-org"), id="organization-long"),
-        pytest.param([], ["-o", "some-org"], dict(organization="some-org"), id="organization-short"),
+        pytest.param([], ["--organization", "some-org", "--list"], dict(organization="some-org", list=True), id="organization-long"),
+        pytest.param([], ["-o", "some-org", "--list"], dict(organization="some-org", list=True), id="organization-short"),
         pytest.param([], ["--copy", "source-label", "dest-channel"], dict(copy=("source-label", "dest-channel")), id="copy"),
         pytest.param([], ["--list"], dict(list=True), id="list"),
         pytest.param([], ["--show", "label-name"], dict(show="label-name"), id="show"),
         pytest.param([], ["--lock", "label-name"], dict(lock="label-name"), id="lock"),
         pytest.param([], ["--unlock", "label-name"], dict(unlock="label-name"), id="unlock"),
         pytest.param([], ["--remove", "label-name"], dict(remove="label-name"), id="remove"),
-        pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),
-        pytest.param(["--site", "site.com"], [], dict(site="site.com"), id="site"),
+        pytest.param(["--token", "TOKEN"], ["--list"], dict(token="TOKEN", list=True), id="token"),
+        pytest.param(["--site", "site.com"], ["--list"], dict(site="site.com", list=True), id="site"),
     ]
 )
 def test_arg_parsing_channel_command(monkeypatch, mocker, org_prefix, prefix_args, args, mods):
@@ -445,6 +444,23 @@ def test_channel_mutually_exclusive_options(monkeypatch, mocker, opts, error_opt
 
     assert result.exit_code == 2, result.stdout
     assert f"Invalid value for {error_opt}: mutually exclusive with {conflict_opt}" in result.stdout, result.stdout
+
+    mock.assert_not_called()
+
+
+def test_channel_mutually_exclusive_options_required(monkeypatch, mocker):
+    # We need to ensure the terminal is wide enough for long output to stdout
+    monkeypatch.setattr(rich_utils, "MAX_WIDTH", 1000)
+
+    mock = mocker.patch("binstar_client.commands.channel.main")
+
+    args = ["org", "channel"]
+    monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
+    runner = CliRunner()
+    result = runner.invoke(anaconda_cli_base.cli.app, args)
+
+    assert result.exit_code == 2, result.stdout
+    assert "one of --copy, --list, --show, --lock, --unlock, or --remove must be provided" in result.stdout, result.stdout
 
     mock.assert_not_called()
 
