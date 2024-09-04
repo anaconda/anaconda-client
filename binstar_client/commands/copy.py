@@ -31,10 +31,20 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             None,
             help='User account to copy package to (default: your account)',
         ),
+        from_label: str = typer.Option(
+            "main",
+            help='Label to copy packages from',
+        ),
+        to_label: str = typer.Option(
+            "main",
+            help='Label to put all packages into',
+        ),
     ):
         args = argparse.Namespace(
             spec=spec,
             to_owner=to_owner,
+            from_label=from_label,
+            to_label=to_label,
         )
 
         main(args=args)
