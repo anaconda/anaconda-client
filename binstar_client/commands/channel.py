@@ -45,13 +45,24 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             ("", ""),
             help=f"Copy a package from one {name} to another",
             show_default=False,
-        )
+        ),
+        list_: Optional[bool] = typer.Option(
+            None,
+            "--list",
+            is_flag=True,
+            help=f"List all {name}s for a user",
+        ),
     ):
         args = argparse.Namespace(
             token=ctx.obj.get("token"),
             site=ctx.obj.get("site"),
             organization=organization,
             copy=_parse_optional_tuple(copy),
+            list=list_,
+            show=None,
+            lock=None,
+            unlock=None,
+            remove=None,
         )
 
         main(args=args, name="channel", deprecated=True)
