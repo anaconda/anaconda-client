@@ -138,6 +138,22 @@ def test_deprecated_message(
     assert_binstar_args([cmd, "-h"])
 
 
+@pytest.mark.parametrize("cmd", list(NON_HIDDEN_SUBCOMMANDS))
+def test_top_level_options_passed_through(cmd: str, monkeypatch: MonkeyPatch, assert_binstar_args: Any) -> None:
+    """Ensure top-level CLI options are passed through to binstar_main."""
+
+    args = ["-t", "TOKEN", "-s", "some-site.com", cmd, "-h"]
+    monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
+
+    runner = CliRunner()
+    result = runner.invoke(anaconda_cli_base.cli.app, args)
+    assert result.exit_code == 0
+    assert "usage:" in result.stdout.lower()
+
+    if cmd not in SUBCOMMANDS_WITH_NEW_CLI:
+        assert_binstar_args(["-t", "TOKEN", "-s", "some-site.com", cmd, "-h"])
+
+
 @pytest.mark.parametrize(
     "org_prefix",
     [[], ["org"]],
@@ -232,22 +248,6 @@ def test_arg_parsing_upload_command(monkeypatch, mocker, org_prefix, prefix_args
     )
     expected = {**defaults, **mods}
     mock.assert_called_once_with(arguments=Namespace(**expected))
-
-
-@pytest.mark.parametrize("cmd", list(NON_HIDDEN_SUBCOMMANDS))
-def test_top_level_options_passed_through(cmd: str, monkeypatch: MonkeyPatch, assert_binstar_args: Any) -> None:
-    """Ensure top-level CLI options are passed through to binstar_main."""
-
-    args = ["-t", "TOKEN", "-s", "some-site.com", cmd, "-h"]
-    monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
-
-    runner = CliRunner()
-    result = runner.invoke(anaconda_cli_base.cli.app, args)
-    assert result.exit_code == 0
-    assert "usage:" in result.stdout.lower()
-
-    if cmd not in SUBCOMMANDS_WITH_NEW_CLI:
-        assert_binstar_args(["-t", "TOKEN", "-s", "some-site.com", cmd, "-h"])
 
 
 @pytest.mark.parametrize(
