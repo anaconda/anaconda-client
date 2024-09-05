@@ -13,6 +13,7 @@ import logging
 from argparse import Namespace
 from importlib import reload
 from pathlib import Path
+from socket import gethostname
 from typing import Any, Callable, Dict, Generator, List, Optional
 
 import pytest
@@ -818,6 +819,8 @@ def test_remove_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
     "case",
     [
         CLICase(id="defaults"),
+        CLICase("--name my-token", dict(name="my-token"), id="name-long"),
+        CLICase("-n my-token", dict(name="my-token"), id="name-short"),
         CLICase("--token TOKEN", dict(token="TOKEN"), id="token", prefix=True),  # nosec
         CLICase("--site my-site.com", dict(site="my-site.com"), id="site", prefix=True),
     ]
@@ -828,7 +831,7 @@ def test_auth_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
     defaults = dict(
         token=None,
         site=None,
-        name="",
+        name=f"anaconda_token:{gethostname()}",
     )
     expected = {**defaults, **case.mods}
 

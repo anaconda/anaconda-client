@@ -284,15 +284,18 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
     )
     def auth_subcommand(
         ctx: typer.Context,
-        name: str = typer.Option(
-            default='',
+        name_: str = typer.Option(
+            ...,
+            '-n',
+            '--name',
+            default_factory=lambda: f'anaconda_token:{socket.gethostname()}',
             help='A unique name so you can identify this token later. View your tokens at anaconda.org/settings/access'
         ),
     ) -> None:
         args = argparse.Namespace(
             token=ctx.obj.params.get('token'),
             site=ctx.obj.params.get('site'),
-            name=name,
+            name=name_,
         )
 
         main(args)
