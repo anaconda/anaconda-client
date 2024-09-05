@@ -354,6 +354,9 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
                 'this option multiple times, e.g. --scopes repo --scopes conda:download.'
             ),
         ),
+        out: typing.Optional[typer.FileTextWrite] = typer.Option(
+            sys.stdout,
+        ),
         list_scopes: typing.Optional[bool] = typer.Option(
             False,
             "-x",
@@ -414,6 +417,7 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             url=url,
             max_age=max_age,
             scopes=scopes,
+            out=out,
         )
 
         main(args=args)

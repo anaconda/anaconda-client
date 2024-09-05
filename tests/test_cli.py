@@ -762,6 +762,11 @@ def test_arg_parsing_auth_command(monkeypatch, mocker, org_prefix, prefix_args, 
     result = runner.invoke(anaconda_cli_base.cli.app, args)
     assert result.exit_code == 0, result.stdout
 
+    class NotNone:
+        # Just a hack to test the out parameter, which I am not actually testing
+        def __eq__(self, other):
+            return other is not None
+
     defaults = dict(
         token=None,
         site=None,
@@ -777,6 +782,7 @@ def test_arg_parsing_auth_command(monkeypatch, mocker, org_prefix, prefix_args, 
         url='http://anaconda.org',
         max_age=None,
         scopes=[],
+        out=NotNone(),
     )
     expected = {**defaults, **mods}
     mock.assert_called_once_with(args=Namespace(**expected))
