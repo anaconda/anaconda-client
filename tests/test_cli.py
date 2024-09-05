@@ -149,10 +149,13 @@ def cli_mocker(
 
         monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
         if parser == "original":
-            binstar_client.scripts.cli.main(args, allow_plugin_main=False)
-            return Namespace(exit_code=0)
+            try:
+                binstar_client.scripts.cli.main(args, allow_plugin_main=False)
+                return Namespace(exit_code=0)
+            except SystemExit as e:
+                return Namespace(exit_code=e.code)
         runner = CliRunner()
-        return runner.invoke(anaconda_cli_base.cli.app, args)
+        return runner.invoke(anaconda_cli_base.cli.app, args, catch_exceptions=False)
 
     def closure(main_func: str) -> MockedCliInvoker:
         return MockedCliInvoker(func=func, main_func=main_func, mocker=mocker, parser=parser)
@@ -651,6 +654,8 @@ def test_update_arg_parsing(case: CLICase, cli_mocker: InvokerFactory, tmp_path:
         CLICase(id="defaults"),
         CLICase("--package-type conda", dict(package_type="conda"), id="package-type-long"),
         CLICase("-t conda", dict(package_type="conda"), id="package-type-short"),
+        CLICase("--platform osx-64", dict(platform="osx-64"), id="platform-long"),
+        CLICase("-p osx-64", dict(platform="osx-64"), id="platform-short"),
         CLICase("--token TOKEN", dict(token="TOKEN"), id="token", prefix=True),  # nosec
         CLICase("--site my-site.com", dict(site="my-site.com"), id="site", prefix=True),
     ]
@@ -669,5 +674,46 @@ def test_search_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
     mock = cli_mocker("binstar_client.commands.search.search")
     result = mock.invoke(args, prefix_args=case.prefix_args)
     assert result.exit_code == 0, result.stdout
+    mock.assert_main_called_once()
+    mock.assert_main_args_contains(expected)
+
+
+@pytest.mark.parametrize(
+    "platform, expected_exit_code",
+    [
+        ("osx-32", 0),
+        ("osx-64", 0),
+        ("win-32", 0),
+        ("win-64", 0),
+        ("linux-32", 0),
+        ("linux-64", 0),
+        ("linux-aarch64", 0),
+        ("linux-armv6l", 0),
+        ("linux-armv7l", 0),
+        ("linux-ppc64le", 0),
+        ("linux-s390x", 0),
+        ("noarch", 0),
+        ("atari-2600", 2),
+    ]
+)
+def test_arg_parsing_search_command_platform_choice(
+    platform: str, expected_exit_code: int, cli_mocker: InvokerFactory
+) -> None:
+    args = ["search", "--platform", platform, "search-term"]
+
+    mock = cli_mocker("binstar_client.commands.search.search")
+    result = mock.invoke(args)
+    assert result.exit_code == expected_exit_code, result.stdout
+    if result.exit_code != 0:
+        return
+
+    expected = dict(
+        token=None,
+        site=None,
+        name=["search-term"],
+        package_type=None,
+        platform=platform,
+    )
+
     mock.assert_main_called_once()
     mock.assert_main_args_contains(expected)

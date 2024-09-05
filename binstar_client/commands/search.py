@@ -6,6 +6,7 @@ Search your Anaconda repository for packages.
 
 import argparse
 import logging
+from enum import Enum
 from typing import Optional
 
 import typer
@@ -58,6 +59,22 @@ def add_parser(subparsers):
     parser.set_defaults(main=search)
 
 
+class Platform(Enum):
+    # pylint: disable=missing-class-docstring
+    OSX_32 = 'osx-32'
+    OSX_64 = 'osx-64'
+    WIN_32 = 'win-32'
+    WIN_64 = 'win-64'
+    LINUX_32 = 'linux-32'
+    LINUX_64 = 'linux-64'
+    LINUX_AARCH64 = 'linux-aarch64'
+    LINUX_ARMV6L = 'linux-armv6l'
+    LINUX_ARMV7L = 'linux-armv7l'
+    LINUX_PPC64LE = 'linux-ppc64le'
+    LINUX_S390X = 'linux-s390x'
+    NOARCH = 'noarch'
+
+
 def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, context_settings: dict) -> None:
     @app.command(
         name=name,
@@ -78,7 +95,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             '--package-type',
             help='Only search for packages of this type',
         ),
-        platform: Optional[str] = typer.Option(
+        platform: Optional[Platform] = typer.Option(
             None,
             '-p',
             '--platform',
@@ -90,7 +107,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             site=ctx.obj.params.get('site'),
             name=[name],
             package_type=package_type,
-            platform=platform,
+            platform=platform.value if platform is not None else None,
         )
 
         search(args)
