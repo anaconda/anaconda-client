@@ -836,6 +836,11 @@ def test_remove_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
         CLICase("--remove token-1", dict(remove=["token-1"]), id="remove-long-single"),
         CLICase("--remove token-1 token-2", dict(remove=["token-1", "token-2"]), id="remove-long-multiple"),
         CLICase("-r token-1 token-2", dict(remove=["token-1", "token-2"]), id="remove-short-multiple"),
+        CLICase("--create --strength strong", dict(create=True, strength="strong"), id="create-strength-strong"),
+        CLICase("--create --strength weak", dict(create=True, strength="weak"), id="create-strength-weak"),
+        CLICase("--create --strong", dict(create=True, strength="strong"), id="create-strong"),
+        CLICase("--create --weak", dict(create=True, strength="weak"), id="create-weak-long"),
+        CLICase("--create -w", dict(create=True, strength="weak"), id="create-weak-short"),
         CLICase("--token TOKEN", dict(token="TOKEN"), id="token", prefix=True),  # nosec
         CLICase("--site my-site.com", dict(site="my-site.com"), id="site", prefix=True),
     ]
@@ -855,6 +860,7 @@ def test_auth_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
         site=None,
         name=f"binstar_token:{gethostname()}",
         organization=None,
+        strength="strong",
         list_scopes=False,
         list=False,
         create=False,

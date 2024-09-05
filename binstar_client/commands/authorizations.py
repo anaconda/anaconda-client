@@ -1,3 +1,4 @@
+# pylint: disable=missing-class-docstring
 # pylint: disable=missing-function-docstring
 # pylint: disable=too-many-arguments
 """
@@ -19,6 +20,7 @@ import logging
 import socket
 import sys
 import typing
+from enum import Enum
 
 import pytz
 import typer
@@ -293,6 +295,11 @@ def _exclusive_action(ctx: typer.Context, param: typer.CallbackParam, value: str
     return value
 
 
+class TokenStrength(Enum):
+    STRONG = 'strong'
+    WEAK = 'weak'
+
+
 def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, context_settings: dict) -> None:
     @app.command(
         name=name,
@@ -316,6 +323,20 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             '--org',
             '--organization',
             help='Set the token owner (must be an organization)',
+        ),
+        strength: TokenStrength = typer.Option(
+            default='strong',
+            help='Specify the strength of the token',
+        ),
+        strong: typing.Optional[bool] = typer.Option(
+            None,
+            help='Create a longer token (default)',
+        ),
+        weak: typing.Optional[bool] = typer.Option(
+            None,
+            '-w',
+            '--weak',
+            help='Create a shorter token',
         ),
         list_scopes: typing.Optional[bool] = typer.Option(
             False,
@@ -363,11 +384,18 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             # requires --remove token-1 --remove token-2. This makes them compatible.
             remove += extra_args
 
+        if weak:
+            strength = TokenStrength.WEAK
+        if strong:
+            # Strong overrides everything
+            strength = TokenStrength.STRONG
+
         args = argparse.Namespace(
             token=ctx.obj.params.get('token'),
             site=ctx.obj.params.get('site'),
             name=name_,
             organization=organization,
+            strength=strength.value,
             list_scopes=list_scopes,
             list=list_,
             create=create,
