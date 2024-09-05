@@ -430,6 +430,8 @@ def test_arg_parsing_update_command(monkeypatch, mocker, tmp_path, org_prefix, p
         pytest.param([], [], dict(), id="defaults"),
         pytest.param([], ["--package-type", "conda"], dict(package_type="conda"), id="package-type-long"),
         pytest.param([], ["-t", "conda"], dict(package_type="conda"), id="package-type-short"),
+        pytest.param([], ["--platform", "osx-64"], dict(platform="osx-64"), id="platform-long"),
+        pytest.param([], ["-p", "osx-64"], dict(platform="osx-64"), id="platform-short"),
         pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),
         pytest.param(["--site", "my-site.com"], [], dict(site="my-site.com"), id="site"),
     ]
@@ -456,6 +458,32 @@ def test_arg_parsing_search_command(monkeypatch, mocker, org_prefix, prefix_args
     )
     expected = {**defaults, **mods}
     mock.assert_called_once_with(args=Namespace(**expected))
+
+
+@pytest.mark.parametrize(
+    "org_prefix",
+    [[], ["org"]],
+    ids=["bare", "org"],
+)
+@pytest.mark.parametrize(
+    "platform, expected_exit_code",
+    [
+        ("osx-64", 0),
+        ("atari-2600", 2),
+    ]
+)
+def test_arg_parsing_search_command_platform_choice(monkeypatch, mocker, org_prefix, platform, expected_exit_code):
+
+    args = org_prefix + ["search", "--platform", platform, "search-term"]
+
+    monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
+
+    runner = CliRunner()
+
+    mocker.patch("binstar_client.commands.search.search")
+
+    result = runner.invoke(anaconda_cli_base.cli.app, args)
+    assert result.exit_code == expected_exit_code, result.stdout
 
 
 @pytest.mark.parametrize(
