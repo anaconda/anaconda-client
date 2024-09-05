@@ -99,11 +99,18 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             parser=parse_specs,
             help='Package written as USER[/PACKAGE[/VERSION[/FILE]]]'
         ),
+        force: bool = typer.Option(
+            False,
+            '-f',
+            '--force',
+            help='Do not prompt removal',
+        )
     ):
         args = Namespace(
             token=ctx.obj.params.get("token"),
             site=ctx.obj.params.get("site"),
             specs=specs,
+            force=force,
         )
 
         main(args=args)

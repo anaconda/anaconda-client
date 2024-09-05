@@ -677,6 +677,8 @@ def test_arg_parsing_show_command(monkeypatch, mocker, org_prefix, prefix_args, 
     "prefix_args, args, mods",
     [
         pytest.param([], [], dict(), id="defaults"),
+        pytest.param([], ["--force"], dict(force=True), id="force-long"),
+        pytest.param([], ["-f"], dict(force=True), id="force-short"),
         pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),
         pytest.param(["--site", "my-site.com"], [], dict(site="my-site.com"), id="site"),
     ]
@@ -701,6 +703,7 @@ def test_arg_parsing_remove_command(monkeypatch, mocker, org_prefix, prefix_args
         token=None,
         site=None,
         specs=[parse_specs(spec_1), parse_specs(spec_2)],
+        force=False
     )
     expected = {**defaults, **mods}
     mock.assert_called_once_with(args=Namespace(**expected))
