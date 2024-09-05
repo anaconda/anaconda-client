@@ -5,6 +5,7 @@
 # pylint: disable=missing-class-docstring
 # pylint: disable=redefined-builtin
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-few-public-methods
 # pylint: disable=use-dict-literal
 
 import shlex
@@ -860,6 +861,11 @@ def test_auth_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
 
     args = ["auth"] + case.args
 
+    class NotNone:
+        # Just a hack to test the out parameter, which I am not actually testing
+        def __eq__(self, other):
+            return other is not None
+
     defaults: Dict[str, Any] = dict(
         token=None,
         site=None,
@@ -875,6 +881,7 @@ def test_auth_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
         url="http://anaconda.org",
         max_age=None,
         scopes=[],
+        out=NotNone(),
     )
     expected = {**defaults, **case.mods}
 
