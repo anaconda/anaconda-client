@@ -21,6 +21,7 @@ import sys
 import typing
 
 import pytz
+import typer
 from dateutil.parser import parse as parse_date
 
 from binstar_client import errors
@@ -271,3 +272,27 @@ def add_parser(subparsers):
                        action='store_true', help='Show information about the current authentication token')
 
     parser.set_defaults(main=main)
+
+
+def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, context_settings: dict):
+    @app.command(
+        name=name,
+        hidden=hidden,
+        help=help_text,
+        context_settings=context_settings,
+        # no_args_is_help=True,
+    )
+    def auth_subcommand(
+        ctx: typer.Context,
+        name: str = typer.Option(
+            default="",
+            help='A unique name so you can identify this token later. View your tokens at anaconda.org/settings/access'
+        ),
+    ):
+        args = argparse.Namespace(
+            token=ctx.obj.params.get("token"),
+            site=ctx.obj.params.get("site"),
+            name=name,
+        )
+
+        main(args=args)

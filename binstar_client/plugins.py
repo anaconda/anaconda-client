@@ -63,6 +63,7 @@ DEPRECATED_SUBCOMMANDS = {
 }
 # Subcommands which have typer subcommands defined
 SUBCOMMANDS_WITH_NEW_CLI = {
+    "auth",
     "channel",
     "copy",
     "groups",
@@ -225,6 +226,8 @@ def _load_new_subcommand(app: typer.Typer, name: str, help_text: str, hidden: bo
     # This hack is here to handle the existing deprecation of the channel subcommand
     if name == "label":
         mod_name = "channel"
+    elif name == "auth":
+        mod_name = "authorizations"
     else:
         mod_name = name
     subcommand_module = getattr(command_module, mod_name)
