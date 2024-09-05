@@ -932,6 +932,7 @@ def test_auth_mutually_exclusive_options_required(mocker):
     [
         CLICase("--set key value", dict(set=[["key", "value"]]), id="set-single"),
         CLICase("--set key value --set key2 val2", dict(set=[["key", "value"], ["key2", "val2"]]), id="set-multiple"),
+        CLICase("--get key", dict(get="key"), id="get"),
         CLICase("--token TOKEN", dict(token="TOKEN"), id="token", prefix=True),  # nosec
         CLICase("--site my-site.com", dict(site="my-site.com"), id="site", prefix=True),
     ]

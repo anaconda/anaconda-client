@@ -210,6 +210,10 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             help='sets a new variable: name value',
             click_type=click.Tuple([str, str]),
         ),
+        get: Optional[str] = typer.Option(
+            None,
+            help='get value: name',
+        ),
     ) -> None:
         # There's an existing bug in the type argument for anything but default
         # TODO: Remove the --type option. The below code is what I think was intended, but it's not what happens
@@ -227,7 +231,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             site=ctx.obj.params.get('site'),
             type=type_func,
             set=set_list,
-            get=None,
+            get=get,
             remove=[],
             show=False,
             files=False,
