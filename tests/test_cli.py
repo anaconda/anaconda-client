@@ -824,6 +824,15 @@ def test_remove_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
         CLICase("--organization my-org", dict(organization="my-org"), id="organization-long"),
         CLICase("--org my-org", dict(organization="my-org"), id="organization-mid"),
         CLICase("-o my-org", dict(organization="my-org"), id="organization-short"),
+        CLICase("--list-scopes", dict(list_scopes=True), id="list-scopes-long"),
+        CLICase("-x", dict(list_scopes=True), id="list-scopes-short"),
+        CLICase("--list", dict(list=True), id="list-long"),
+        CLICase("-l", dict(list=True), id="list-short"),
+        CLICase("--create", dict(create=True), id="create-long"),
+        CLICase("-c", dict(create=True), id="create-short"),
+        CLICase("--current-info", dict(info=True), id="info-long"),
+        CLICase("--info", dict(info=True), id="info-mid"),
+        CLICase("-i", dict(info=True), id="info-short"),
         CLICase("--token TOKEN", dict(token="TOKEN"), id="token", prefix=True),  # nosec
         CLICase("--site my-site.com", dict(site="my-site.com"), id="site", prefix=True),
     ]
@@ -831,11 +840,16 @@ def test_remove_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
 def test_auth_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
     args = ["auth"] + case.args
 
-    defaults = dict(
+    defaults: Dict[str, Any] = dict(
         token=None,
         site=None,
         name=f"anaconda_token:{gethostname()}",
         organization=None,
+        list_scopes=False,
+        list=False,
+        create=False,
+        info=False,
+        remove=[],
     )
     expected = {**defaults, **case.mods}
 
