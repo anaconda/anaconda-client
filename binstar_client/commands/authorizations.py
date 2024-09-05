@@ -1,6 +1,5 @@
 # pylint: disable=missing-function-docstring
 # pylint: disable=too-many-arguments
-
 """
 Manage Authentication tokens
 
@@ -275,6 +274,25 @@ def add_parser(subparsers):
     parser.set_defaults(main=main)
 
 
+def _exclusive_action(ctx: typer.Context, param: typer.CallbackParam, value: str) -> str:
+    """Check for exclusivity of action options.
+
+    To do this, we attach a new special attribute onto the typer Context the first time
+    one of the options in the group is used.
+
+    """
+    # pylint: disable=invalid-name
+    # pylint: disable=protected-access
+    if getattr(ctx, '_actions', None) is None:
+        ctx._actions = set()  # type: ignore[attr-defined]
+    if value:
+        if ctx._actions:  # type: ignore[attr-defined]
+            used_action, = ctx._actions  # type: ignore[attr-defined]
+            raise typer.BadParameter(f'mutually exclusive with {used_action}')
+        ctx._actions.add(' / '.join(f"'{o}'" for o in param.opts))  # type: ignore[attr-defined]
+    return value
+
+
 def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, context_settings: dict) -> None:
     @app.command(
         name=name,
@@ -304,18 +322,21 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             '-x',
             '--list-scopes',
             help='List all authentication scopes',
+            callback=_exclusive_action,
         ),
         list_: typing.Optional[bool] = typer.Option(
             False,
             '-l',
             '--list',
             help='List all user authentication tokens',
+            callback=_exclusive_action,
         ),
         create: typing.Optional[bool] = typer.Option(
             False,
             '-c',
             '--create',
             help='Create an authentication token',
+            callback=_exclusive_action,
         ),
         info: typing.Optional[bool] = typer.Option(
             False,
@@ -323,14 +344,19 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             '--info',
             '--current-info',
             help='Show information about the current authentication token',
+            callback=_exclusive_action,
         ),
         remove: typing.List[str] = typer.Option(
             [],
             '-r',
             '--remove',
             help='Remove authentication tokens. Multiple token names can be provided',
+            callback=_exclusive_action,
         ),
     ) -> None:
+        if not any([list_scopes, list_, create, info, remove]):
+            raise typer.BadParameter('one of --list-scopes, --list, --list, --info, or --remove must be provided')
+
         args = argparse.Namespace(
             token=ctx.obj.params.get('token'),
             site=ctx.obj.params.get('site'),

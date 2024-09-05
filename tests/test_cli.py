@@ -861,3 +861,38 @@ def test_auth_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
     assert result.exit_code == 0, result.stdout
     mock.assert_main_called_once()
     mock.assert_main_args_contains(expected)
+
+
+@pytest.mark.parametrize(
+    "opts, error_opt, conflict_opt",
+    [
+        pytest.param(["--list-scopes", "--list"], "'-l' / '--list'", "'-x' / '--list-scopes'"),
+        pytest.param(["--list-scopes", "--create"], "'-c' / '--create'", "'-x' / '--list-scopes'"),
+        pytest.param(["--list-scopes", "--info"], "'-i' / '--info' / '--current-info'", "'-x' / '--list-scopes'"),
+        pytest.param(["--list-scopes", "--remove", "token-name"], "'-r' / '--remove'", "'-x' / '--list-scopes'"),
+    ]
+)
+def test_auth_mutually_exclusive_options(opts, error_opt, conflict_opt, mocker):
+    mock = mocker.patch("binstar_client.commands.authorizations.main")
+
+    runner = CliRunner()
+    args = ["auth"] + opts
+    result = runner.invoke(anaconda_cli_base.cli.app, args)
+
+    assert result.exit_code == 2, result.stdout
+    assert f"Invalid value for {error_opt}: mutually exclusive with {conflict_opt}" in result.stdout, result.stdout
+
+    mock.assert_not_called()
+
+
+def test_auth_mutually_exclusive_options_required(mocker):
+    mock = mocker.patch("binstar_client.commands.authorizations.main")
+
+    args = ["auth"]
+    runner = CliRunner()
+    result = runner.invoke(anaconda_cli_base.cli.app, args)
+
+    assert result.exit_code == 2, result.stdout
+    assert "one of --list-scopes, --list, --list, --info, or --remove must be provided" in result.stdout, result.stdout
+
+    mock.assert_not_called()
