@@ -11,14 +11,19 @@ from pytest import LogCaptureFixture
 from pytest import MonkeyPatch
 from typer import rich_utils
 from typer.testing import CliRunner
+
 import anaconda_cli_base.cli
+
 import binstar_client.plugins
 import binstar_client.scripts.cli
 from binstar_client import commands
-from binstar_client.plugins import ALL_SUBCOMMANDS, NON_HIDDEN_SUBCOMMANDS, DEPRECATED_SUBCOMMANDS, \
-    SUBCOMMANDS_WITH_NEW_CLI
-from binstar_client.utils import parse_specs
-from binstar_client.utils.spec import group_spec
+from binstar_client.plugins import (
+    ALL_SUBCOMMANDS,
+    NON_HIDDEN_SUBCOMMANDS,
+    DEPRECATED_SUBCOMMANDS,
+    SUBCOMMANDS_WITH_NEW_CLI,
+)
+from binstar_client.utils.spec import parse_specs, group_spec
 
 BASE_COMMANDS = {"login", "logout", "whoami"}
 HIDDEN_SUBCOMMANDS = ALL_SUBCOMMANDS - BASE_COMMANDS - NON_HIDDEN_SUBCOMMANDS

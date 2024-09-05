@@ -23,7 +23,6 @@ import os
 import typing
 
 import typer
-from mypyc.common import JsonDict
 
 import binstar_client
 from binstar_client import errors
