@@ -103,8 +103,8 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             raise typer.BadParameter("one of --copy, --list, --show, --lock, --unlock, or --remove must be provided")
 
         args = argparse.Namespace(
-            token=ctx.obj.get("token"),
-            site=ctx.obj.get("site"),
+            token=ctx.obj.params.get("token"),
+            site=ctx.obj.params.get("site"),
             organization=organization,
             copy=copy,
             list=list_,

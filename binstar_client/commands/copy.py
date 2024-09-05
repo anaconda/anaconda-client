@@ -76,8 +76,8 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
         ),
     ):
         args = argparse.Namespace(
-            token=ctx.obj.get("token"),
-            site=ctx.obj.get("site"),
+            token=ctx.obj.params.get("token"),
+            site=ctx.obj.params.get("site"),
             spec=spec,
             to_owner=to_owner,
             from_label=from_label,

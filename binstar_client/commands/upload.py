@@ -195,9 +195,9 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
         else:
             mode = None
 
-        if ctx.obj.get("verbose"):
+        if ctx.obj.params.get("verbose"):
             log_level = logging.DEBUG
-        elif ctx.obj.get("quiet"):
+        elif ctx.obj.params.get("quiet"):
             log_level = logging.WARNING
         else:
             log_level = logging.INFO
@@ -206,11 +206,11 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
         #       support and I'd bet is never used.
         arguments = argparse.Namespace(
             files=files,
-            token=ctx.obj.get("token"),
-            disable_ssl_warnings=ctx.obj.get("disable_ssl_warnings"),
-            show_traceback=ctx.obj.get("show_traceback"),
+            token=ctx.obj.params.get("token"),
+            disable_ssl_warnings=ctx.obj.params.get("disable_ssl_warnings"),
+            show_traceback=ctx.obj.params.get("show_traceback"),
             log_level=log_level,
-            site=ctx.obj.get("site"),
+            site=ctx.obj.params.get("site"),
             labels=labels,
             no_progress=not progress,
             user=user,

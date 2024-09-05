@@ -27,7 +27,7 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
         context_settings=context_settings,
     )
     def whoami(ctx: typer.Context):
-        main(token=ctx.obj.get("token"), site=ctx.obj.get("site"))
+        main(token=ctx.obj.params.get("token"), site=ctx.obj.params.get("site"))
 
 
 def main(args: Optional[argparse.Namespace] = None, *, token: Optional[str] = None, site: Optional[str] = None):  # pylint: disable=inconsistent-return-statements
