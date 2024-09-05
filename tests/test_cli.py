@@ -385,6 +385,8 @@ def test_arg_parsing_move_command(monkeypatch, mocker, org_prefix, prefix_args, 
         pytest.param([], [], dict(), id="defaults"),
         pytest.param([], ["--package-type", "conda"], dict(package_type="conda"), id="package-type-long"),
         pytest.param([], ["-t", "conda"], dict(package_type="conda"), id="package-type-short"),
+        pytest.param([], ["--release"], dict(release=True), id="release"),
+        pytest.param([], ["--no-release"], dict(release=False), id="no-release"),
         pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),
         pytest.param(["--site", "my-site.com"], [], dict(site="my-site.com"), id="site"),
     ]
