@@ -83,6 +83,7 @@ SUBCOMMANDS_WITH_NEW_CLI = {
     "label",
     "move",
     "search",
+    "show",
     "update",
     "upload",
     "whoami",
