@@ -65,6 +65,7 @@ DEPRECATED_SUBCOMMANDS = {
 SUBCOMMANDS_WITH_NEW_CLI = {
     "auth",
     "channel",
+    "config",
     "copy",
     "groups",
     "label",

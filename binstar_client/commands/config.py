@@ -66,7 +66,10 @@ If no, then an upload will fail if the package name does not already exist on th
 from __future__ import print_function
 
 import logging
-from argparse import RawDescriptionHelpFormatter
+from argparse import Namespace, RawDescriptionHelpFormatter
+from typing import Optional
+
+import typer
 
 from binstar_client.errors import ShowHelp
 from binstar_client.utils.config import (SEARCH_PATH, USER_CONFIG, SYSTEM_CONFIG, CONFIGURATION_KEYS,
@@ -182,3 +185,28 @@ def add_parser(subparsers):
                         help='set a variable for all users on this machine')
 
     parser.set_defaults(main=main, sub_parser=parser)
+
+
+def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, context_settings: dict):
+
+    @app.command(
+        name=name,
+        hidden=hidden,
+        help=help_text,
+        context_settings=context_settings,
+        no_args_is_help=True,
+    )
+    def config_subcommand(
+        ctx: typer.Context,
+        type_: Optional[str] = typer.Option(
+            safe_load,
+            "--type",
+            help='The type of the values in the set commands'
+        ),
+    ):
+        args = Namespace(
+            token=ctx.obj.params.get("token"),
+            site=ctx.obj.params.get("site"),
+        )
+
+        main(args=args)
