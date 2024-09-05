@@ -95,11 +95,16 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
     def groups_subcommand(
         ctx: typer.Context,
         action: GroupAction = typer.Argument(help='The group management command to execute'),
+        spec: str = typer.Argument(
+            callback=group_spec,
+            help=group_spec.__doc__,
+        ),
     ) -> None:
         args = argparse.Namespace(
             token=ctx.obj.params.get('token'),
             site=ctx.obj.params.get('site'),
             action=action.value,
+            spec=spec,
         )
 
         main(args)

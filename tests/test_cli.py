@@ -33,6 +33,7 @@ from binstar_client.plugins import (
     SUBCOMMANDS_WITH_NEW_CLI,
 )
 from binstar_client.utils import parse_specs
+from binstar_client.utils.spec import group_spec
 
 BASE_COMMANDS = {"login", "logout", "whoami"}
 HIDDEN_SUBCOMMANDS = ALL_SUBCOMMANDS - BASE_COMMANDS - NON_HIDDEN_SUBCOMMANDS
@@ -736,11 +737,13 @@ def test_arg_parsing_search_command_platform_choice(
     ]
 )
 def test_groups_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
-    args = ["groups"] + (case.args or ["add", "some/spec"])
+    spec = "my-org/my-group/my-member"
+    args = ["groups"] + (case.args or ["add"]) + [spec]
     defaults = dict(
         token=None,
         site=None,
         action=None,
+        spec=group_spec(spec)
     )
     expected = {**defaults, **case.mods}
 
