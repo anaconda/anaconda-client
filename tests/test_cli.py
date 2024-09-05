@@ -722,16 +722,25 @@ def test_arg_parsing_search_command_platform_choice(
 @pytest.mark.parametrize(
     "case",
     [
-        CLICase(id="defaults"),
-        CLICase("--token TOKEN", dict(token="TOKEN"), id="token", prefix=True),  # nosec
-        CLICase("--site my-site.com", dict(site="my-site.com"), id="site", prefix=True),
+        CLICase(mods=dict(action="add"), id="defaults"),
+        CLICase("add", dict(action="add"), id="action-add"),
+        CLICase("show", dict(action="show"), id="action-show"),
+        CLICase("members", dict(action="members"), id="action-members"),
+        CLICase("add_member", dict(action="add_member"), id="action-add-member"),
+        CLICase("remove_member", dict(action="remove_member"), id="action-remove-member"),
+        CLICase("packages", dict(action="packages"), id="action-packages"),
+        CLICase("add_package", dict(action="add_package"), id="action-add-package"),
+        CLICase("remove_package", dict(action="remove_package"), id="action-remove-package"),
+        CLICase("--token TOKEN", dict(token="TOKEN", action="add"), id="token", prefix=True),  # nosec
+        CLICase("--site my-site.com", dict(site="my-site.com", action="add"), id="site", prefix=True),
     ]
 )
 def test_groups_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
-    args = ["groups"] + case.args
+    args = ["groups"] + (case.args or ["add", "some/spec"])
     defaults = dict(
         token=None,
         site=None,
+        action=None,
     )
     expected = {**defaults, **case.mods}
 
