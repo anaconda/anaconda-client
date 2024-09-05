@@ -718,12 +718,11 @@ def test_arg_parsing_remove_command(monkeypatch, mocker, org_prefix, prefix_args
 @pytest.mark.parametrize(
     "prefix_args, args, mods",
     [
-        pytest.param([], [], dict(), id="defaults"),
-        pytest.param([], ["--name", "my-token"], dict(name="my-token"), id="name-long"),
-        pytest.param([], ["-n", "my-token"], dict(name="my-token"), id="name-short"),
-        pytest.param([], ["--organization", "my-org"], dict(organization="my-org"), id="organization-long"),
-        pytest.param([], ["--org", "my-org"], dict(organization="my-org"), id="organization-mid"),
-        pytest.param([], ["-o", "my-org"], dict(organization="my-org"), id="organization-short"),
+        pytest.param([], ["--name", "my-token", "--info"], dict(name="my-token", info=True), id="name-long"),
+        pytest.param([], ["-n", "my-token", "--info"], dict(name="my-token", info=True), id="name-short"),
+        pytest.param([], ["--organization", "my-org", "--info"], dict(organization="my-org", info=True), id="organization-long"),
+        pytest.param([], ["--org", "my-org", "--info"], dict(organization="my-org", info=True), id="organization-mid"),
+        pytest.param([], ["-o", "my-org", "--info"], dict(organization="my-org", info=True), id="organization-short"),
         pytest.param([], ["--list-scopes"], dict(list_scopes=True), id="list-scopes-long"),
         pytest.param([], ["-x"], dict(list_scopes=True), id="list-scopes-short"),
         pytest.param([], ["--list"], dict(list=True), id="list-long"),
@@ -736,8 +735,8 @@ def test_arg_parsing_remove_command(monkeypatch, mocker, org_prefix, prefix_args
         pytest.param([], ["--remove", "token-1"], dict(remove=["token-1"]), id="remove-long-single"),
         pytest.param([], ["--remove", "token-1", "--remove", "token-2"], dict(remove=["token-1", "token-2"]), id="remove-long-multiple"),
         pytest.param([], ["-r", "token-1", "-r", "token-2"], dict(remove=["token-1", "token-2"]), id="remove-short-multiple"),
-        pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),
-        pytest.param(["--site", "my-site.com"], [], dict(site="my-site.com"), id="site"),
+        pytest.param(["--token", "TOKEN"], ["--info"], dict(token="TOKEN", info=True), id="token"),
+        pytest.param(["--site", "my-site.com"], ["--info"], dict(site="my-site.com", info=True), id="site"),
     ]
 )
 def test_arg_parsing_auth_command(monkeypatch, mocker, org_prefix, prefix_args, args, mods):
@@ -766,3 +765,48 @@ def test_arg_parsing_auth_command(monkeypatch, mocker, org_prefix, prefix_args, 
     )
     expected = {**defaults, **mods}
     mock.assert_called_once_with(args=Namespace(**expected))
+
+
+
+@pytest.mark.parametrize(
+    "opts, error_opt, conflict_opt",
+    [
+        pytest.param(["--list-scopes", "--list"], "'-l' / '--list'", "'-x' / '--list-scopes'"),
+        pytest.param(["--list-scopes", "--create"], "'-c' / '--create'", "'-x' / '--list-scopes'"),
+        pytest.param(["--list-scopes", "--info"], "'-i' / '--info' / '--current-info'", "'-x' / '--list-scopes'"),
+        pytest.param(["--list-scopes", "--remove", "token-name"], "'-r' / '--remove'", "'-x' / '--list-scopes'"),
+    ]
+)
+def test_auth_mutually_exclusive_options(monkeypatch, mocker, opts, error_opt, conflict_opt):
+    # We need to ensure the terminal is wide enough for long output to stdout
+    monkeypatch.setattr(rich_utils, "MAX_WIDTH", 1000)
+
+    mock = mocker.patch("binstar_client.commands.authorizations.main")
+
+    args = ["org", "auth"] + opts
+    monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
+    runner = CliRunner()
+    result = runner.invoke(anaconda_cli_base.cli.app, args)
+
+    assert result.exit_code == 2, result.stdout
+    assert f"Invalid value for {error_opt}: mutually exclusive with {conflict_opt}" in result.stdout, result.stdout
+
+    mock.assert_not_called()
+
+
+def test_auth_mutually_exclusive_options_required(monkeypatch, mocker):
+    # We need to ensure the terminal is wide enough for long output to stdout
+    monkeypatch.setattr(rich_utils, "MAX_WIDTH", 1000)
+
+    mock = mocker.patch("binstar_client.commands.authorizations.main")
+
+    args = ["org", "auth"]
+    monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
+    runner = CliRunner()
+    result = runner.invoke(anaconda_cli_base.cli.app, args)
+
+    assert result.exit_code == 2, result.stdout
+    assert "one of --list-scopes, --list, --list, --info, or --remove must be provided" in result.stdout, result.stdout
+
+    mock.assert_not_called()
+
