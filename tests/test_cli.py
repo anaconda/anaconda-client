@@ -595,6 +595,9 @@ def test_channel_mutually_exclusive_options_required(monkeypatch, mocker):
         pytest.param([], ["packages"], dict(action="packages"), id="action-packages"),
         pytest.param([], ["add_package"], dict(action="add_package"), id="action-add-package"),
         pytest.param([], ["remove_package"], dict(action="remove_package"), id="action-remove-package"),
+        pytest.param([], ["--perms", "read", "add"], dict(perms="read", action="add"), id="perms-read"),
+        pytest.param([], ["--perms", "write", "add"], dict(perms="write", action="add"), id="perms-write"),
+        pytest.param([], ["--perms", "admin", "add"], dict(perms="admin", action="add"), id="perms-admin"),
         pytest.param(["--token", "TOKEN"], ["add"], dict(token="TOKEN", action="add"), id="token"),
         pytest.param(["--site", "my-site.com"], ["add"], dict(site="my-site.com", action="add"), id="site"),
     ]
@@ -617,7 +620,8 @@ def test_arg_parsing_groups_command(monkeypatch, mocker, org_prefix, prefix_args
         token=None,
         site=None,
         action=None,
-        spec=group_spec(spec)
+        spec=group_spec(spec),
+        perms="read",
     )
     expected = {**defaults, **mods}
     mock.assert_called_once_with(args=Namespace(**expected))
