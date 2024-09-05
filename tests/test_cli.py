@@ -930,6 +930,8 @@ def test_auth_mutually_exclusive_options_required(mocker):
 @pytest.mark.parametrize(
     "case",
     [
+        CLICase("--set key value", dict(set=[["key", "value"]]), id="set-single"),
+        CLICase("--set key value --set key2 val2", dict(set=[["key", "value"], ["key2", "val2"]]), id="set-multiple"),
         CLICase("--token TOKEN", dict(token="TOKEN"), id="token", prefix=True),  # nosec
         CLICase("--site my-site.com", dict(site="my-site.com"), id="site", prefix=True),
     ]
@@ -937,9 +939,16 @@ def test_auth_mutually_exclusive_options_required(mocker):
 def test_config_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
     args = ["config"] + case.args + ["--type", "int"]
 
-    defaults = dict(
+    defaults: Dict[str, Any] = dict(
         token=None,
         site=None,
+        set=[],
+        get=None,
+        remove=[],
+        show=False,
+        files=False,
+        show_sources=False,
+        user=True,
     )
     expected = {**defaults, **case.mods}
 

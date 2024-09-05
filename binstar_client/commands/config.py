@@ -68,8 +68,9 @@ from __future__ import print_function
 
 import logging
 from argparse import Namespace, RawDescriptionHelpFormatter
-from typing import Callable, Optional
+from typing import Callable, List, Optional
 
+import click
 import typer
 
 from binstar_client.errors import ShowHelp
@@ -203,6 +204,12 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             '--type',
             help='The type of the values in the set commands'
         ),
+        set_: List[click.Tuple] = typer.Option(
+            [],
+            '--set',
+            help='sets a new variable: name value',
+            click_type=click.Tuple([str, str]),
+        ),
     ) -> None:
         # There's an existing bug in the type argument for anything but default
         # TODO: Remove the --type option. The below code is what I think was intended, but it's not what happens
@@ -212,10 +219,20 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         elif type_ == 'int':
             type_func = int
 
+        # Existing parser is a list of lists, instead of list of tuples
+        set_list = [list(item) for item in set_]  # type: ignore[call-overload]
+
         args = Namespace(
             token=ctx.obj.params.get('token'),
             site=ctx.obj.params.get('site'),
             type=type_func,
+            set=set_list,
+            get=None,
+            remove=[],
+            show=False,
+            files=False,
+            show_sources=False,
+            user=True,
         )
 
         main(args)
