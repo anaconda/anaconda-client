@@ -339,6 +339,10 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             'http://anaconda.org',
             help='The url of the application that will use this token',
         ),
+        max_age: typing.Optional[int] = typer.Option(
+            None,
+            help='The maximum age in seconds that this token will be valid for',
+        ),
         list_scopes: typing.Optional[bool] = typer.Option(
             False,
             "-x",
@@ -397,6 +401,7 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             info=info,
             remove=remove,
             url=url,
+            max_age=max_age,
         )
 
         main(args=args)
