@@ -586,9 +586,16 @@ def test_channel_mutually_exclusive_options_required(monkeypatch, mocker):
 @pytest.mark.parametrize(
     "prefix_args, args, mods",
     [
-        pytest.param([], [], dict(), id="defaults"),
-        pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),
-        pytest.param(["--site", "my-site.com"], [], dict(site="my-site.com"), id="site"),
+        pytest.param([], ["add"], dict(action="add"), id="action-add"),
+        pytest.param([], ["show"], dict(action="show"), id="action-show"),
+        pytest.param([], ["members"], dict(action="members"), id="action-members"),
+        pytest.param([], ["add_member"], dict(action="add_member"), id="action-add-member"),
+        pytest.param([], ["remove_member"], dict(action="remove_member"), id="action-remove-member"),
+        pytest.param([], ["packages"], dict(action="packages"), id="action-packages"),
+        pytest.param([], ["add_package"], dict(action="add_package"), id="action-add-package"),
+        pytest.param([], ["remove_package"], dict(action="remove_package"), id="action-remove-package"),
+        pytest.param(["--token", "TOKEN"], ["add"], dict(token="TOKEN", action="add"), id="token"),
+        pytest.param(["--site", "my-site.com"], ["add"], dict(site="my-site.com", action="add"), id="site"),
     ]
 )
 def test_arg_parsing_groups_command(monkeypatch, mocker, org_prefix, prefix_args, args, mods):
@@ -607,6 +614,7 @@ def test_arg_parsing_groups_command(monkeypatch, mocker, org_prefix, prefix_args
     defaults = dict(
         token=None,
         site=None,
+        action=None,
     )
     expected = {**defaults, **mods}
     mock.assert_called_once_with(args=Namespace(**expected))
