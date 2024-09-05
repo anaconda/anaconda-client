@@ -81,6 +81,7 @@ SUBCOMMANDS_WITH_NEW_CLI = {
     "copy",
     "label",
     "move",
+    "update",
     "upload",
     "whoami",
 }

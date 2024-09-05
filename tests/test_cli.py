@@ -12,6 +12,7 @@ import sys
 import logging
 from argparse import Namespace
 from importlib import reload
+from pathlib import Path
 from typing import Any, Callable, Dict, Generator, List, Optional
 
 import pytest
@@ -607,3 +608,34 @@ def test_channel_mutually_exclusive_options_required(mocker):
     assert "one of --copy, --list, --show, --lock, --unlock, or --remove must be provided" in result.stdout, result.stdout  # noqa: E501
 
     mock.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "case",
+    [
+        CLICase(id="defaults"),
+        CLICase("--token TOKEN", dict(token="TOKEN"), id="token", prefix=True),  # nosec
+        CLICase("--site my-site.com", dict(site="my-site.com"), id="site", prefix=True),
+    ]
+)
+def test_update_arg_parsing(case: CLICase, cli_mocker: InvokerFactory, tmp_path: Path) -> None:
+    source_path = str(tmp_path / "metadata.json")
+    with open(source_path, "w", encoding="utf-8") as fp:
+        fp.write("Hi")
+
+    args = ["update"] + case.args + ["some-spec", source_path]
+    defaults = dict(
+        token=None,
+        site=None,
+        spec=parse_specs("some-spec"),
+        source=source_path,
+        package_type=None,
+        release=False,
+    )
+    expected = {**defaults, **case.mods}
+
+    mock = cli_mocker("binstar_client.commands.update.main")
+    result = mock.invoke(args, prefix_args=case.prefix_args)
+    assert result.exit_code == 0, result.stdout
+    mock.assert_main_called_once()
+    mock.assert_main_args_contains(expected)
