@@ -925,3 +925,26 @@ def test_auth_mutually_exclusive_options_required(mocker):
     assert "one of --list-scopes, --list, --list, --info, or --remove must be provided" in result.stdout, result.stdout
 
     mock.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "case",
+    [
+        CLICase("--token TOKEN", dict(token="TOKEN"), id="token", prefix=True),  # nosec
+        CLICase("--site my-site.com", dict(site="my-site.com"), id="site", prefix=True),
+    ]
+)
+def test_config_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
+    args = ["config"] + case.args + ["--type", "int"]
+
+    defaults = dict(
+        token=None,
+        site=None,
+    )
+    expected = {**defaults, **case.mods}
+
+    mock = cli_mocker("binstar_client.commands.config.main")
+    result = mock.invoke(args, prefix_args=case.prefix_args)
+    assert result.exit_code == 0, result.stdout
+    mock.assert_main_called_once()
+    mock.assert_main_args_contains(expected)
