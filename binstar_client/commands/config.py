@@ -204,9 +204,15 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             help='The type of the values in the set commands'
         ),
     ):
+        # There's an existing bug in the type argument for anything but default
+        # TODO: Remove the --type option. The below code is what I think was intended, but it's not what happens
+        if type_ == "int":
+            type_ = int
+
         args = Namespace(
             token=ctx.obj.params.get("token"),
             site=ctx.obj.params.get("site"),
+            type=type_,
         )
 
         main(args=args)

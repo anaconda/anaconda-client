@@ -25,6 +25,7 @@ from binstar_client.plugins import (
     SUBCOMMANDS_WITH_NEW_CLI,
 )
 from binstar_client.utils.spec import parse_specs, group_spec
+from binstar_client.utils.yaml import safe_load
 
 BASE_COMMANDS = {"login", "logout", "whoami"}
 HIDDEN_SUBCOMMANDS = ALL_SUBCOMMANDS - BASE_COMMANDS - NON_HIDDEN_SUBCOMMANDS
@@ -840,8 +841,8 @@ def test_auth_mutually_exclusive_options_required(monkeypatch, mocker):
 @pytest.mark.parametrize(
     "prefix_args, args, mods",
     [
-        pytest.param(["--token", "TOKEN"], ["--type", "int"], dict(token="TOKEN"), id="token"),
-        pytest.param(["--site", "my-site.com"], ["--type", "int"], dict(site="my-site.com"), id="site"),
+        pytest.param(["--token", "TOKEN"], ["--type", "int"], dict(token="TOKEN", type=int), id="token"),
+        pytest.param(["--site", "my-site.com"], ["--type", "int"], dict(site="my-site.com", type=int), id="site"),
     ]
 )
 def test_arg_parsing_config_command(monkeypatch, mocker, org_prefix, prefix_args, args, mods):
@@ -860,6 +861,7 @@ def test_arg_parsing_config_command(monkeypatch, mocker, org_prefix, prefix_args
     defaults = dict(
         token=None,
         site=None,
+        type=safe_load,
     )
     expected = {**defaults, **mods}
     mock.assert_called_once_with(args=Namespace(**expected))
