@@ -1,9 +1,10 @@
 """Test entrypoint to anaconda-cli-base"""
 # pylint: disable=redefined-outer-name
+import logging
 import sys
 from argparse import Namespace
 from importlib import reload
-import logging
+from socket import gethostname
 from typing import Any, Generator
 
 import pytest
@@ -718,6 +719,8 @@ def test_arg_parsing_remove_command(monkeypatch, mocker, org_prefix, prefix_args
     "prefix_args, args, mods",
     [
         pytest.param([], [], dict(), id="defaults"),
+        pytest.param([], ["--name", "my-token"], dict(name="my-token"), id="name-long"),
+        pytest.param([], ["-n", "my-token"], dict(name="my-token"), id="name-short"),
         pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),
         pytest.param(["--site", "my-site.com"], [], dict(site="my-site.com"), id="site"),
     ]
@@ -738,7 +741,7 @@ def test_arg_parsing_auth_command(monkeypatch, mocker, org_prefix, prefix_args, 
     defaults = dict(
         token=None,
         site=None,
-        name="",
+        name=f"anaconda_token:{gethostname()}",
     )
     expected = {**defaults, **mods}
     mock.assert_called_once_with(args=Namespace(**expected))
