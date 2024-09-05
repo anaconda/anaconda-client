@@ -733,6 +733,9 @@ def test_arg_parsing_remove_command(monkeypatch, mocker, org_prefix, prefix_args
         pytest.param([], ["--current-info"], dict(info=True), id="info-long"),
         pytest.param([], ["--info"], dict(info=True), id="info-mid"),
         pytest.param([], ["-i"], dict(info=True), id="info-short"),
+        pytest.param([], ["--remove", "token-1"], dict(remove=["token-1"]), id="remove-long-single"),
+        pytest.param([], ["--remove", "token-1", "--remove", "token-2"], dict(remove=["token-1", "token-2"]), id="remove-long-multiple"),
+        pytest.param([], ["-r", "token-1", "-r", "token-2"], dict(remove=["token-1", "token-2"]), id="remove-short-multiple"),
         pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),
         pytest.param(["--site", "my-site.com"], [], dict(site="my-site.com"), id="site"),
     ]
