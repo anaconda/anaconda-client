@@ -155,14 +155,20 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             ),
             show_default=False,
             callback=file_type,
-        )
+        ),
+        package_type: typing.Optional[str] = typer.Option(
+            None,
+            "-t",
+            "--package-type",
+            help="Set the package type. Defaults to autodetect.",
+        ),
     ):
         args = argparse.Namespace(
             token=ctx.obj.params.get("token"),
             site=ctx.obj.params.get("site"),
             spec=spec,
             source=source,
-            package_type=None,
+            package_type=package_type,
             release=None,
         )
 
