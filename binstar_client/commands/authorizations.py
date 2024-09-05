@@ -291,11 +291,19 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             default_factory=lambda: f'anaconda_token:{socket.gethostname()}',
             help='A unique name so you can identify this token later. View your tokens at anaconda.org/settings/access'
         ),
+        organization: typing.Optional[str] = typer.Option(
+            None,
+            '-o',
+            '--org',
+            '--organization',
+            help='Set the token owner (must be an organization)',
+        ),
     ):
         args = argparse.Namespace(
             token=ctx.obj.params.get("token"),
             site=ctx.obj.params.get("site"),
             name=name_,
+            organization=organization,
         )
 
         main(args=args)

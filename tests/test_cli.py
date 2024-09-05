@@ -721,6 +721,9 @@ def test_arg_parsing_remove_command(monkeypatch, mocker, org_prefix, prefix_args
         pytest.param([], [], dict(), id="defaults"),
         pytest.param([], ["--name", "my-token"], dict(name="my-token"), id="name-long"),
         pytest.param([], ["-n", "my-token"], dict(name="my-token"), id="name-short"),
+        pytest.param([], ["--organization", "my-org"], dict(organization="my-org"), id="organization-long"),
+        pytest.param([], ["--org", "my-org"], dict(organization="my-org"), id="organization-mid"),
+        pytest.param([], ["-o", "my-org"], dict(organization="my-org"), id="organization-short"),
         pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),
         pytest.param(["--site", "my-site.com"], [], dict(site="my-site.com"), id="site"),
     ]
@@ -742,6 +745,7 @@ def test_arg_parsing_auth_command(monkeypatch, mocker, org_prefix, prefix_args, 
         token=None,
         site=None,
         name=f"anaconda_token:{gethostname()}",
+        organization=None,
     )
     expected = {**defaults, **mods}
     mock.assert_called_once_with(args=Namespace(**expected))
