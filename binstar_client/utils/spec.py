@@ -128,6 +128,9 @@ class GroupSpec:
     def __repr__(self):
         return f'<GroupSpec {self.spec_str!r}>'
 
+    def __eq__(self, other):
+        return self.spec_str == other.spec_str
+
     @property
     def org(self):
         if self._org is None:

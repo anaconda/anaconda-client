@@ -18,6 +18,7 @@ from binstar_client import commands
 from binstar_client.plugins import ALL_SUBCOMMANDS, NON_HIDDEN_SUBCOMMANDS, DEPRECATED_SUBCOMMANDS, \
     SUBCOMMANDS_WITH_NEW_CLI
 from binstar_client.utils import parse_specs
+from binstar_client.utils.spec import group_spec
 
 BASE_COMMANDS = {"login", "logout", "whoami"}
 HIDDEN_SUBCOMMANDS = ALL_SUBCOMMANDS - BASE_COMMANDS - NON_HIDDEN_SUBCOMMANDS
@@ -600,7 +601,8 @@ def test_channel_mutually_exclusive_options_required(monkeypatch, mocker):
 )
 def test_arg_parsing_groups_command(monkeypatch, mocker, org_prefix, prefix_args, args, mods):
 
-    args = prefix_args + org_prefix + ["groups"] + args
+    spec = "my-org/my-group/my-member"
+    args = prefix_args + org_prefix + ["groups"] + args + [spec]
 
     monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
 
@@ -615,6 +617,7 @@ def test_arg_parsing_groups_command(monkeypatch, mocker, org_prefix, prefix_args
         token=None,
         site=None,
         action=None,
+        spec=group_spec(spec)
     )
     expected = {**defaults, **mods}
     mock.assert_called_once_with(args=Namespace(**expected))
