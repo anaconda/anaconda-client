@@ -379,6 +379,45 @@ def test_arg_parsing_move_command(monkeypatch, mocker, org_prefix, prefix_args, 
     [[], ["org"]],
     ids=["bare", "org"],
 )
+@pytest.mark.parametrize(
+    "prefix_args, args, mods",
+    [
+        pytest.param([], [], dict(), id="defaults"),
+    ]
+)
+def test_arg_parsing_update_command(monkeypatch, mocker, tmp_path, org_prefix, prefix_args, args, mods):
+    source_path = str(tmp_path / "metadata.json")
+    with open(source_path, "w") as fp:
+        fp.write("Hi")
+
+    args = prefix_args + org_prefix + ["update"] + args + ["some-spec", source_path]
+
+    monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
+
+    runner = CliRunner()
+
+    mock = mocker.patch("binstar_client.commands.update.main")
+
+    result = runner.invoke(anaconda_cli_base.cli.app, args)
+    assert result.exit_code == 0, result.stdout
+
+    defaults = dict(
+        token=None,
+        site=None,
+        spec=parse_specs("some-spec"),
+        source=source_path,
+        package_type=None,
+        release=None,
+    )
+    expected = {**defaults, **mods}
+    mock.assert_called_once_with(args=Namespace(**expected))
+
+
+@pytest.mark.parametrize(
+    "org_prefix",
+    [[], ["org"]],
+    ids=["bare", "org"],
+)
 @pytest.mark.parametrize("command_name", ["label", "channel"])
 @pytest.mark.parametrize(
     "prefix_args, args, mods",

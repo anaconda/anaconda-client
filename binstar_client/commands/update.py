@@ -12,6 +12,7 @@ import logging
 import os
 import typing
 
+import typer
 import yaml
 
 from binstar_client import errors
@@ -127,3 +128,42 @@ def add_parser(subparsers: typing.Any) -> None:
     )
 
     parser.set_defaults(main=main)
+
+
+def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, context_settings: dict):
+    @app.command(
+        name=name,
+        hidden=hidden,
+        help=help_text,
+        context_settings=context_settings,
+        no_args_is_help=True,
+    )
+    def update(
+        ctx: typer.Context,
+        spec: str = typer.Argument(
+            help=(
+                'Package - written as user/package/version[/filename]. '
+                'If filename is not given, copy all files in the version'
+            ),
+            show_default=False,
+            callback=parse_specs,
+        ),
+        source: str = typer.Argument(
+            help=(
+                'Path to the file that consists of metadata that will be updated in the destination package. '
+                'It may be a valid package file or `.json` file with described attributes to update'
+            ),
+            show_default=False,
+            callback=file_type,
+        )
+    ):
+        args = argparse.Namespace(
+            token=ctx.obj.params.get("token"),
+            site=ctx.obj.params.get("site"),
+            spec=spec,
+            source=source,
+            package_type=None,
+            release=None,
+        )
+
+        main(args=args)
