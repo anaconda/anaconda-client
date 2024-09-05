@@ -724,6 +724,15 @@ def test_arg_parsing_remove_command(monkeypatch, mocker, org_prefix, prefix_args
         pytest.param([], ["--organization", "my-org"], dict(organization="my-org"), id="organization-long"),
         pytest.param([], ["--org", "my-org"], dict(organization="my-org"), id="organization-mid"),
         pytest.param([], ["-o", "my-org"], dict(organization="my-org"), id="organization-short"),
+        pytest.param([], ["--list-scopes"], dict(list_scopes=True), id="list-scopes-long"),
+        pytest.param([], ["-x"], dict(list_scopes=True), id="list-scopes-short"),
+        pytest.param([], ["--list"], dict(list=True), id="list-long"),
+        pytest.param([], ["-l"], dict(list=True), id="list-short"),
+        pytest.param([], ["--create"], dict(create=True), id="create-long"),
+        pytest.param([], ["-c"], dict(create=True), id="create-short"),
+        pytest.param([], ["--current-info"], dict(info=True), id="info-long"),
+        pytest.param([], ["--info"], dict(info=True), id="info-mid"),
+        pytest.param([], ["-i"], dict(info=True), id="info-short"),
         pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),
         pytest.param(["--site", "my-site.com"], [], dict(site="my-site.com"), id="site"),
     ]
@@ -746,6 +755,11 @@ def test_arg_parsing_auth_command(monkeypatch, mocker, org_prefix, prefix_args, 
         site=None,
         name=f"anaconda_token:{gethostname()}",
         organization=None,
+        list_scopes=False,
+        list=False,
+        create=False,
+        info=False,
+        remove=[],
     )
     expected = {**defaults, **mods}
     mock.assert_called_once_with(args=Namespace(**expected))

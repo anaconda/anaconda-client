@@ -298,12 +298,42 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             '--organization',
             help='Set the token owner (must be an organization)',
         ),
+        list_scopes: typing.Optional[bool] = typer.Option(
+            False,
+            "-x",
+            "--list-scopes",
+            help="List all authentication scopes",
+        ),
+        list_: typing.Optional[bool] = typer.Option(
+            False,
+            "-l",
+            "--list",
+            help="List all user authentication tokens",
+        ),
+        create: typing.Optional[bool] = typer.Option(
+            False,
+            "-c",
+            "--create",
+            help="Create an authentication token",
+        ),
+        info: typing.Optional[bool] = typer.Option(
+            False,
+            "-i",
+            "--info",
+            "--current-info",
+            help="Show information about the current authentication token",
+        ),
     ):
         args = argparse.Namespace(
             token=ctx.obj.params.get("token"),
             site=ctx.obj.params.get("site"),
             name=name_,
             organization=organization,
+            list_scopes=list_scopes,
+            list=list_,
+            create=create,
+            info=info,
+            remove=[],
         )
 
         main(args=args)
