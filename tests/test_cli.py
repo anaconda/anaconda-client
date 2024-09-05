@@ -841,6 +841,7 @@ def test_remove_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
         CLICase("--create --strong", dict(create=True, strength="strong"), id="create-strong"),
         CLICase("--create --weak", dict(create=True, strength="weak"), id="create-weak-long"),
         CLICase("--create -w", dict(create=True, strength="weak"), id="create-weak-short"),
+        CLICase("--create --url some-repo.com", dict(create=True, url="some-repo.com"), id="url"),
         CLICase("--token TOKEN", dict(token="TOKEN"), id="token", prefix=True),  # nosec
         CLICase("--site my-site.com", dict(site="my-site.com"), id="site", prefix=True),
     ]
@@ -860,12 +861,14 @@ def test_auth_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
         site=None,
         name=f"binstar_token:{gethostname()}",
         organization=None,
-        strength="strong",
         list_scopes=False,
         list=False,
         create=False,
         info=expected_info,
         remove=None,
+        # Token creation options
+        strength="strong",
+        url="http://anaconda.org",
     )
     expected = {**defaults, **case.mods}
 
