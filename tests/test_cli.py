@@ -788,6 +788,8 @@ def test_show_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
     "case",
     [
         CLICase(id="defaults"),
+        CLICase("--force", dict(force=True), id="force-long"),
+        CLICase("-f", dict(force=True), id="force-short"),
         CLICase("--token TOKEN", dict(token="TOKEN"), id="token", prefix=True),  # nosec
         CLICase("--site my-site.com", dict(site="my-site.com"), id="site", prefix=True),
     ]
@@ -801,6 +803,7 @@ def test_remove_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
         token=None,
         site=None,
         specs=[parse_specs(spec_1), parse_specs(spec_2)],
+        force=False,
     )
     expected = {**defaults, **case.mods}
 
