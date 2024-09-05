@@ -1,7 +1,10 @@
 # pylint: disable=missing-module-docstring,missing-function-docstring
 
+import argparse
 import logging
+from enum import Enum
 
+import typer
 from pprint import pformat
 
 from binstar_client.pprintb import package_list, user_list
@@ -66,3 +69,33 @@ def add_parser(subparsers):
                         help='The permission the group should provide')
 
     parser.set_defaults(main=main)
+
+
+class GroupAction(Enum):
+    ADD = 'add'
+    SHOW = 'show'
+    MEMBERS = 'members'
+    ADD_MEMBER = 'add_member'
+    REMOVE_MEMBER = 'remove_member'
+    PACKAGES = 'packages'
+    ADD_PACKAGE = 'add_package'
+    REMOVE_PACKAGE = 'remove_package'
+
+
+def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, context_settings: dict):
+    @app.command(
+        name=name,
+        hidden=hidden,
+        help=help_text,
+        context_settings=context_settings,
+        # no_args_is_help=True,
+    )
+    def groups_subcommand(
+        ctx: typer.Context,
+    ):
+        args = argparse.Namespace(
+            token=ctx.obj.params.get("token"),
+            site=ctx.obj.params.get("site"),
+        )
+
+        main(args=args)
