@@ -843,6 +843,9 @@ def test_remove_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
         CLICase("--create -w", dict(create=True, strength="weak"), id="create-weak-short"),
         CLICase("--create --url some-repo.com", dict(create=True, url="some-repo.com"), id="url"),
         CLICase("--create --max-age 3600", dict(create=True, max_age=3600), id="max-age"),
+        CLICase("--create --scopes repo", dict(create=True, scopes=["repo"]), id="scopes-single-long"),
+        CLICase("--create --scopes repo --scopes conda:download", dict(create=True, scopes=["repo", "conda:download"]), id="scopes-multiple-long"),  # noqa: E501
+        CLICase("--create -s repo -s conda:download", dict(create=True, scopes=["repo", "conda:download"]), id="scopes-multiple-short"),  # noqa: E501
         CLICase("--token TOKEN", dict(token="TOKEN"), id="token", prefix=True),  # nosec
         CLICase("--site my-site.com", dict(site="my-site.com"), id="site", prefix=True),
     ]
@@ -871,6 +874,7 @@ def test_auth_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
         strength="strong",
         url="http://anaconda.org",
         max_age=None,
+        scopes=[],
     )
     expected = {**defaults, **case.mods}
 

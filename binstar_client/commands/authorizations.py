@@ -1,6 +1,7 @@
 # pylint: disable=missing-class-docstring
 # pylint: disable=missing-function-docstring
 # pylint: disable=too-many-arguments
+# pylint: disable=too-many-locals
 """
 Manage Authentication tokens
 
@@ -346,6 +347,17 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             None,
             help='The maximum age in seconds that this token will be valid for',
         ),
+        scopes: typing.Optional[typing.List[str]] = typer.Option(
+            [],
+            '-s',
+            '--scopes',
+            help=(
+                'Scopes for token. ' +
+                'For example if you want to limit this token to conda downloads only you would use ' +
+                '--scopes "repo conda:download". You can also provide multiple scopes by providing ' +
+                'this option multiple times, e.g. --scopes repo --scopes conda:download.'
+            ),
+        ),
         list_scopes: typing.Optional[bool] = typer.Option(
             False,
             '-x',
@@ -411,6 +423,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             remove=remove or None,  # The default of None here is to match existing argparse behavior
             url=url,
             max_age=max_age,
+            scopes=scopes,
         )
 
         main(args)
