@@ -732,6 +732,9 @@ def test_arg_parsing_search_command_platform_choice(
         CLICase("packages", dict(action="packages"), id="action-packages"),
         CLICase("add_package", dict(action="add_package"), id="action-add-package"),
         CLICase("remove_package", dict(action="remove_package"), id="action-remove-package"),
+        CLICase("--perms read add", dict(perms="read", action="add"), id="perms-read"),
+        CLICase("--perms write add", dict(perms="write", action="add"), id="perms-write"),
+        CLICase("--perms admin add", dict(perms="admin", action="add"), id="perms-admin"),
         CLICase("--token TOKEN", dict(token="TOKEN", action="add"), id="token", prefix=True),  # nosec
         CLICase("--site my-site.com", dict(site="my-site.com", action="add"), id="site", prefix=True),
     ]
@@ -743,7 +746,8 @@ def test_groups_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
         token=None,
         site=None,
         action=None,
-        spec=group_spec(spec)
+        spec=group_spec(spec),
+        perms="read",
     )
     expected = {**defaults, **case.mods}
 

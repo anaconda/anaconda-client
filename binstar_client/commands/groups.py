@@ -84,6 +84,12 @@ class GroupAction(Enum):
     REMOVE_PACKAGE = 'remove_package'
 
 
+class Permission(Enum):
+    READ = 'read'
+    WRITE = 'write'
+    ADMIN = 'admin'
+
+
 def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, context_settings: dict) -> None:
     @app.command(
         name=name,
@@ -99,12 +105,17 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             callback=group_spec,
             help=group_spec.__doc__,
         ),
+        perms: Permission = typer.Option(
+            'read',
+            help='The permission the group should provide',
+        ),
     ) -> None:
         args = argparse.Namespace(
             token=ctx.obj.params.get('token'),
             site=ctx.obj.params.get('site'),
             action=action.value,
             spec=spec,
+            perms=perms.value,
         )
 
         main(args)
