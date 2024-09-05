@@ -324,6 +324,12 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             '--current-info',
             help='Show information about the current authentication token',
         ),
+        remove: typing.List[str] = typer.Option(
+            [],
+            '-r',
+            '--remove',
+            help='Remove authentication tokens. Multiple token names can be provided',
+        ),
     ) -> None:
         args = argparse.Namespace(
             token=ctx.obj.params.get('token'),
@@ -334,7 +340,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             list=list_,
             create=create,
             info=info,
-            remove=[],
+            remove=remove,
         )
 
         main(args)
