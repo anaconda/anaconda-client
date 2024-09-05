@@ -66,9 +66,11 @@ If no, then an upload will fail if the package name does not already exist on th
 from __future__ import print_function
 
 import logging
+import typing
 from argparse import Namespace, RawDescriptionHelpFormatter
 from typing import Optional
 
+import click
 import typer
 
 from binstar_client.errors import ShowHelp
@@ -199,20 +201,35 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
     def config_subcommand(
         ctx: typer.Context,
         type_: Optional[str] = typer.Option(
-            safe_load,
+            None,
             "--type",
             help='The type of the values in the set commands'
+        ),
+        set_: Optional[typing.List[click.Tuple]] = typer.Option(
+            [],
+            "--set",
+            help='sets a new variable: name value',
+            click_type=click.Tuple([str, str]),
         ),
     ):
         # There's an existing bug in the type argument for anything but default
         # TODO: Remove the --type option. The below code is what I think was intended, but it's not what happens
         if type_ == "int":
             type_ = int
+        else:
+            type_ = safe_load
 
         args = Namespace(
             token=ctx.obj.params.get("token"),
             site=ctx.obj.params.get("site"),
             type=type_,
+            set=set_,
+            get=None,
+            remove=[],
+            show=False,
+            files=False,
+            show_sources=False,
+            user=True,
         )
 
         main(args=args)

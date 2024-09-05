@@ -841,6 +841,8 @@ def test_auth_mutually_exclusive_options_required(monkeypatch, mocker):
 @pytest.mark.parametrize(
     "prefix_args, args, mods",
     [
+        pytest.param([], ["--set", "key", "value"], dict(set=[("key", "value")]), id="set-single"),
+        pytest.param([], ["--set", "key", "value", "--set", "key2", "val2"], dict(set=[("key", "value"), ("key2", "val2")]), id="set-multiple"),
         pytest.param(["--token", "TOKEN"], ["--type", "int"], dict(token="TOKEN", type=int), id="token"),
         pytest.param(["--site", "my-site.com"], ["--type", "int"], dict(site="my-site.com", type=int), id="site"),
     ]
@@ -862,6 +864,13 @@ def test_arg_parsing_config_command(monkeypatch, mocker, org_prefix, prefix_args
         token=None,
         site=None,
         type=safe_load,
+        set=[],
+        get=None,
+        remove=[],
+        show=False,
+        files=False,
+        show_sources=False,
+        user=True,
     )
     expected = {**defaults, **mods}
     mock.assert_called_once_with(args=Namespace(**expected))
