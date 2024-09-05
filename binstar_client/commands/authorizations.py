@@ -19,6 +19,7 @@ import logging
 import socket
 import sys
 import typing
+from enum import Enum
 
 import pytz
 import typer
@@ -291,6 +292,11 @@ def _exclusive_action(ctx: typer.Context, param: typer.CallbackParam, value: str
     return value
 
 
+class TokenStrength(Enum):
+    STRONG = 'strong'
+    WEAK = 'weak'
+
+
 def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, context_settings: dict):
     @app.command(
         name=name,
@@ -314,6 +320,20 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             '--org',
             '--organization',
             help='Set the token owner (must be an organization)',
+        ),
+        strength: typing.Optional[TokenStrength] = typer.Option(
+            default="strong",
+            help="Specify the strength of the token",
+        ),
+        strong: typing.Optional[bool] = typer.Option(
+            None,
+            help="Create a longer token (default)",
+        ),
+        weak: typing.Optional[bool] = typer.Option(
+            None,
+            "-w",
+            "--weak",
+            help="Create a shorter token",
         ),
         list_scopes: typing.Optional[bool] = typer.Option(
             False,
@@ -355,11 +375,18 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
         if not any([list_scopes, list_, create, info, remove]):
             raise typer.BadParameter("one of --list-scopes, --list, --list, --info, or --remove must be provided")
 
+        if weak:
+            strength = TokenStrength.WEAK
+        if strong:
+            # Strong overrides everything
+            strength = TokenStrength.STRONG
+
         args = argparse.Namespace(
             token=ctx.obj.params.get("token"),
             site=ctx.obj.params.get("site"),
             name=name_,
             organization=organization,
+            strength=strength.value,
             list_scopes=list_scopes,
             list=list_,
             create=create,
