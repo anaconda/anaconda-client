@@ -77,6 +77,7 @@ DEPRECATED_SUBCOMMANDS = {
 }
 # Subcommands which have typer subcommands defined
 SUBCOMMANDS_WITH_NEW_CLI = {
+    "auth",
     "channel",
     "copy",
     "groups",
@@ -246,6 +247,8 @@ def _load_new_subcommand(name: str, help_text: str, app_: Optional[typer.Typer] 
     # This is here to handle the existing deprecation of the channel subcommand
     if name == "label":
         mod_name = "channel"
+    elif name == "auth":
+        mod_name = "authorizations"
     else:
         mod_name = name
     # TODO: More safely check that mount_subcommand exists  # pylint: disable=fixme
