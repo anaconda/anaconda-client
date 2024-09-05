@@ -335,6 +335,10 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             "--weak",
             help="Create a shorter token",
         ),
+        url: str = typer.Option(
+            'http://anaconda.org',
+            help='The url of the application that will use this token',
+        ),
         list_scopes: typing.Optional[bool] = typer.Option(
             False,
             "-x",
@@ -392,6 +396,7 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             create=create,
             info=info,
             remove=remove,
+            url=url,
         )
 
         main(args=args)

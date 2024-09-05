@@ -740,6 +740,8 @@ def test_arg_parsing_remove_command(monkeypatch, mocker, org_prefix, prefix_args
         pytest.param([], ["--create", "--strong"], dict(create=True, strength="strong"), id="create-strong"),
         pytest.param([], ["--create", "--weak"], dict(create=True, strength="weak"), id="create-weak-long"),
         pytest.param([], ["--create", "-w"], dict(create=True, strength="weak"), id="create-weak-short"),
+        pytest.param([], ["--create", "--url", "some-repo.com"], dict(create=True, url="some-repo.com"), id="url"),
+
         pytest.param(["--token", "TOKEN"], ["--info"], dict(token="TOKEN", info=True), id="token"),
         pytest.param(["--site", "my-site.com"], ["--info"], dict(site="my-site.com", info=True), id="site"),
     ]
@@ -762,12 +764,14 @@ def test_arg_parsing_auth_command(monkeypatch, mocker, org_prefix, prefix_args, 
         site=None,
         name=f"anaconda_token:{gethostname()}",
         organization=None,
-        strength="strong",
         list_scopes=False,
         list=False,
         create=False,
         info=False,
         remove=[],
+        # Token creation options
+        strength="strong",
+        url='http://anaconda.org',
     )
     expected = {**defaults, **mods}
     mock.assert_called_once_with(args=Namespace(**expected))
