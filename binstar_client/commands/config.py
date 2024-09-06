@@ -215,6 +215,10 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             None,
             help='get value: name',
         ),
+        remove: typing.List[str] = typer.Option(
+            [],
+            help = 'removes a variable',
+        )
     ):
         # There's an existing bug in the type argument for anything but default
         # TODO: Remove the --type option. The below code is what I think was intended, but it's not what happens
@@ -229,7 +233,7 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             type=type_,
             set=set_,
             get=get,
-            remove=[],
+            remove=remove,
             show=False,
             files=False,
             show_sources=False,
