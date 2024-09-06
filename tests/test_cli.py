@@ -712,11 +712,6 @@ def test_arg_parsing_show_command(cli_mocker, prefix_args, args, mods):
 
 
 @pytest.mark.parametrize(
-    "org_prefix",
-    [[], ["org"]],
-    ids=["bare", "org"],
-)
-@pytest.mark.parametrize(
     "prefix_args, args, mods",
     [
         pytest.param([], [], dict(), id="defaults"),
@@ -726,21 +721,14 @@ def test_arg_parsing_show_command(cli_mocker, prefix_args, args, mods):
         pytest.param(["--site", "my-site.com"], [], dict(site="my-site.com"), id="site"),
     ]
 )
-def test_arg_parsing_remove_command(monkeypatch, mocker, org_prefix, prefix_args, args, mods):
-
+def test_arg_parsing_remove_command(cli_mocker, prefix_args, args, mods):
     spec_1 = "some-user/some-package/some-version/some-file"
     spec_2 = "some-user/some-package/some-version/some-other-file"
 
-    args = prefix_args + org_prefix + ["remove"] + args + [spec_1, spec_2]
-
-    monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
-
-    runner = CliRunner()
-
-    mock = mocker.patch("binstar_client.commands.remove.main")
-
-    result = runner.invoke(anaconda_cli_base.cli.app, args)
+    mock = cli_mocker(main_func="binstar_client.commands.remove.main")
+    result = mock.invoke(["remove", *args, spec_1, spec_2], prefix_args=prefix_args)
     assert result.exit_code == 0, result.stdout
+    mock.assert_main_called_once()
 
     defaults = dict(
         token=None,
@@ -749,7 +737,7 @@ def test_arg_parsing_remove_command(monkeypatch, mocker, org_prefix, prefix_args
         force=False
     )
     expected = {**defaults, **mods}
-    mock.assert_called_once_with(args=Namespace(**expected))
+    mock.assert_main_args_contains(expected)
 
 
 @pytest.mark.parametrize(
