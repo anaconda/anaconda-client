@@ -979,23 +979,39 @@ def test_package_mutually_exclusive_options_required(monkeypatch, mocker):
 
 @pytest.fixture(
     params=[
-        "original",
-        "wrapped",
-        "new",
+        ("original", ""),
+        ("wrapped", ""),
+        ("wrapped", "org"),
+        ("new", ""),
+        ("new", "org"),
     ]
 )
 def invoke_cli(request, monkeypatch: MonkeyPatch) -> Generator[None, None, None]:
-    """Make sure that we get a clean app with plugins loaded"""
+    """Fixture returns a function that can be used to invoke the CLI via different methods.
 
-    if request.param == "original":
+    The different methods are various levels of gradual migration:
+        * original: Uses the original argparse-based CLI parsing and direct call of main entrypoint function.
+        * wrapped: Uses a common wrapper typer subcommand, that delegates to the main entrypoint function.
+        * new: Uses the new typer subcommands if available.
+
+    For the "wrapped" and "new" options, tests will be run both with and without the "org" prefix.
+
+    Usage:
+        invoke_cli(["upload", "some-file"])
+
+    """
+
+    parser, org_prefix = request.param
+
+    if parser == "original":
         monkeypatch.delenv("ANACONDA_CLI_FORCE_NEW", raising=False)
         monkeypatch.setenv("ANACONDA_CLIENT_FORCE_STANDALONE", "true")
         monkeypatch.setenv("ANACONDA_CLI_DISABLE_PLUGINS", "true")
-    elif request.param == "wrapped":
+    elif parser == "wrapped":
         monkeypatch.setattr(binstar_client.plugins, "SUBCOMMANDS_WITH_NEW_CLI", set())
         monkeypatch.setenv("ANACONDA_CLI_FORCE_NEW", "true")
         monkeypatch.delenv("ANACONDA_CLIENT_FORCE_STANDALONE", raising=False)
-    elif request.param == "new":
+    elif parser == "new":
         monkeypatch.setenv("ANACONDA_CLI_FORCE_NEW", "true")
         monkeypatch.delenv("ANACONDA_CLIENT_FORCE_STANDALONE", raising=False)
     else:
@@ -1005,8 +1021,10 @@ def invoke_cli(request, monkeypatch: MonkeyPatch) -> Generator[None, None, None]
     reload(binstar_client.plugins)
 
     def f(args):
+        if org_prefix:
+            args = [org_prefix] + args
         monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
-        if request.param == "original":
+        if parser == "original":
             binstar_client.scripts.cli.main(args, allow_plugin_main=False)
             return Namespace(exit_code=0)
         else:
@@ -1028,7 +1046,6 @@ def test_all_cli_same_parsing(mocker, invoke_cli):
 
     mock = mocker.patch("binstar_client.commands.package.main")
 
-    # runner = CliRunner()
     result = invoke_cli(args)
     assert result.exit_code == 0, result.stdout
 
