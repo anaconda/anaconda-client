@@ -981,6 +981,8 @@ def test_config_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
         CLICase("--summary SUMMARY --create", dict(summary="SUMMARY", create=True), id="summary"),
         CLICase("--license MIT --create", dict(license="MIT", create=True), id="license"),
         CLICase("--license-url license.com --create", dict(license_url="license.com", create=True), id="license-url"),
+        CLICase("--personal --create", dict(access="personal", create=True), id="personal"),
+        CLICase("--private --create", dict(access="private", create=True), id="private"),
         CLICase("--token TOKEN", dict(token="TOKEN"), id="token", prefix=True),  # nosec
         CLICase("--site my-site.com", dict(site="my-site.com"), id="site", prefix=True),
     ]
