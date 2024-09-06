@@ -93,6 +93,13 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             token=ctx.obj.params.get('token'),
             site=ctx.obj.params.get('site'),
             spec=spec,
+            add_collaborator=None,
+            list_collaborators=False,
+            create=False,
+            summary=None,
+            license=None,
+            license_url=None,
+            access=None,
         )
 
         main(args)

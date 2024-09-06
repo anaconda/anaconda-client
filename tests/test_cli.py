@@ -986,6 +986,13 @@ def test_package_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
         token=None,
         site=None,
         spec=parse_specs(spec),
+        add_collaborator=None,
+        list_collaborators=False,
+        create=False,
+        summary=None,
+        license=None,
+        license_url=None,
+        access=None,
     )
     expected = {**defaults, **case.mods}
 
