@@ -895,12 +895,11 @@ def test_arg_parsing_config_command(monkeypatch, mocker, org_prefix, prefix_args
 @pytest.mark.parametrize(
     "prefix_args, args, mods",
     [
-        pytest.param([], [], dict(), id="defaults"),
         pytest.param([], ["--add-collaborator", "jim"], dict(add_collaborator="jim"), id="add-collaborator"),
         pytest.param([], ["--list-collaborators"], dict(list_collaborators=True), id="list-collaborators"),
         pytest.param([], ["--create"], dict(create=True), id="create"),
-        pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),
-        pytest.param(["--site", "my-site.com"], [], dict(site="my-site.com"), id="site"),
+        pytest.param(["--token", "TOKEN"], ["--create"], dict(token="TOKEN", create=True), id="token"),
+        pytest.param(["--site", "my-site.com"], ["--create"], dict(site="my-site.com", create=True), id="site"),
     ]
 )
 def test_arg_parsing_package_command(monkeypatch, mocker, org_prefix, prefix_args, args, mods):
