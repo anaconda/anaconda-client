@@ -6,6 +6,7 @@
 # pylint: disable=redefined-builtin
 # pylint: disable=redefined-outer-name
 # pylint: disable=too-few-public-methods
+# pylint: disable=too-many-lines
 # pylint: disable=use-dict-literal
 
 import shlex
@@ -1008,3 +1009,36 @@ def test_package_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
     assert result.exit_code == 0, result.stdout
     mock.assert_main_called_once()
     mock.assert_main_args_contains(expected)
+
+
+@pytest.mark.parametrize(
+    "opts, error_opt, conflict_opt",
+    [
+        pytest.param(["--add-collaborator", "joe", "--list-collaborators"], "'--list-collaborators'", "'--add-collaborator'"),  # noqa: E501
+        pytest.param(["--add-collaborator", "joe", "--create"], "'--create'", "'--add-collaborator'"),
+    ]
+)
+def test_package_mutually_exclusive_options(mocker, opts, error_opt, conflict_opt):
+    mock = mocker.patch("binstar_client.commands.package.main")
+
+    args = ["package"] + opts + ["spec"]
+    runner = CliRunner()
+    result = runner.invoke(anaconda_cli_base.cli.app, args)
+
+    assert result.exit_code == 2, result.stdout
+    assert f"Invalid value for {error_opt}: mutually exclusive with {conflict_opt}" in result.stdout, result.stdout
+
+    mock.assert_not_called()
+
+
+def test_package_mutually_exclusive_options_required(mocker):
+    mock = mocker.patch("binstar_client.commands.package.main")
+
+    args = ["package", "spec"]
+    runner = CliRunner()
+    result = runner.invoke(anaconda_cli_base.cli.app, args)
+
+    assert result.exit_code == 2, result.stdout
+    assert "one of --add-collaborator, --list-collaborators, or --create must be provided" in result.stdout, result.stdout  # noqa: E501
+
+    mock.assert_not_called()

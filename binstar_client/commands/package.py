@@ -72,6 +72,25 @@ def add_parser(subparsers):
     parser.set_defaults(main=main)
 
 
+def _exclusive_action(ctx: typer.Context, param: typer.CallbackParam, value: str) -> str:
+    """Check for exclusivity of action options.
+
+    To do this, we attach a new special attribute onto the typer Context the first time
+    one of the options in the group is used.
+
+    """
+    # pylint: disable=invalid-name
+    # pylint: disable=protected-access
+    if getattr(ctx, '_actions', None) is None:
+        ctx._actions = set()  # type: ignore[attr-defined]
+    if value:
+        if ctx._actions:  # type: ignore[attr-defined]
+            used_action, = ctx._actions  # type: ignore[attr-defined]
+            raise typer.BadParameter(f'mutually exclusive with {used_action}')
+        ctx._actions.add(' / '.join(f"'{o}'" for o in param.opts))  # type: ignore[attr-defined]
+    return value
+
+
 def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, context_settings: dict) -> None:
 
     @app.command(
@@ -91,16 +110,22 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         add_collaborator: Optional[str] = typer.Option(
             None,
             help='username of the collaborator you want to add',
+            callback=_exclusive_action,
         ),
         list_collaborators: bool = typer.Option(
             False,
             help='list all of the collaborators in a package',
+            callback=_exclusive_action,
         ),
         create: bool = typer.Option(
             False,
             help='Create a package',
+            callback=_exclusive_action,
         ),
     ) -> None:
+
+        if not any([add_collaborator, list_collaborators, create]):
+            raise typer.BadParameter('one of --add-collaborator, --list-collaborators, or --create must be provided')
 
         args = Namespace(
             token=ctx.obj.params.get('token'),
