@@ -88,15 +88,27 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             help='Package to operate on',
             parser=parse_specs,
         ),
+        add_collaborator: Optional[str] = typer.Option(
+            None,
+            help='username of the collaborator you want to add',
+        ),
+        list_collaborators: Optional[bool] = typer.Option(
+            False,
+            help='list all of the collaborators in a package',
+        ),
+        create: Optional[bool] = typer.Option(
+            False,
+            help='Create a package',
+        ),
     ):
 
         args = Namespace(
             token=ctx.obj.params.get("token"),
             site=ctx.obj.params.get("site"),
             spec=spec,
-            add_collaborator=None,
-            list_collaborators=False,
-            create=False,
+            add_collaborator=add_collaborator,
+            list_collaborators=list_collaborators,
+            create=create,
             summary=None,
             license=None,
             license_url=None,
