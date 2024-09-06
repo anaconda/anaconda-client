@@ -104,7 +104,8 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
         args = argparse.Namespace(
             token=ctx.obj.params.get("token"),
             site=ctx.obj.params.get("site"),
-            name=name,
+            # TODO: This is only a list to ensure parity with argparse
+            name=[name],
             package_type=package_type,
             platform=platform.value if platform is not None else None,
         )
