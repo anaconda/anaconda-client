@@ -1,5 +1,6 @@
 # pylint: disable=fixme
 # pylint: disable=missing-function-docstring
+# pylint: disable=too-many-arguments
 
 """
 anaconda-client configuration
@@ -218,6 +219,20 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             [],
             help='removes a variable',
         ),
+        show: bool = typer.Option(
+            False,
+            help='Show all variables'
+        ),
+        files: bool = typer.Option(
+            False,
+            '-f',
+            '--files',
+            help='show the config file names',
+        ),
+        show_sources: bool = typer.Option(
+            False,
+            help='Display all identified config sources',
+        ),
     ) -> None:
         # There's an existing bug in the type argument for anything but default
         # TODO: Remove the --type option. The below code is what I think was intended, but it's not what happens
@@ -237,9 +252,9 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             set=set_list,
             get=get,
             remove=remove,
-            show=False,
-            files=False,
-            show_sources=False,
+            show=show,
+            files=files,
+            show_sources=show_sources,
             user=True,
         )
 

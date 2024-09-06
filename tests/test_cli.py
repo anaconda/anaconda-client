@@ -935,6 +935,9 @@ def test_auth_mutually_exclusive_options_required(mocker):
         CLICase("--get key", dict(get="key"), id="get"),
         CLICase("--remove key", dict(remove=["key"]), id="remove-single"),
         CLICase("--remove key1 --remove key2", dict(remove=["key1", "key2"]), id="remove-multiple"),
+        CLICase("--show", dict(show=True), id="show"),
+        CLICase("--files", dict(files=True), id="files"),
+        CLICase("--show-sources", dict(show_sources=True), id="show-sources"),
         CLICase("--token TOKEN", dict(token="TOKEN"), id="token", prefix=True),  # nosec
         CLICase("--site my-site.com", dict(site="my-site.com"), id="site", prefix=True),
     ]
