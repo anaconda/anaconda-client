@@ -218,7 +218,21 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
         remove: typing.List[str] = typer.Option(
             [],
             help = 'removes a variable',
-        )
+        ),
+        show: typing.Optional[bool] = typer.Option(
+            False,
+            help='Show all variables'
+        ),
+        files: typing.Optional[bool] = typer.Option(
+            False,
+            '-f',
+            '--files',
+            help='show the config file names',
+        ),
+        show_sources: typing.Optional[bool] = typer.Option(
+            False,
+            help='Display all identified config sources',
+        ),
     ):
         # There's an existing bug in the type argument for anything but default
         # TODO: Remove the --type option. The below code is what I think was intended, but it's not what happens
@@ -234,9 +248,9 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             set=set_,
             get=get,
             remove=remove,
-            show=False,
-            files=False,
-            show_sources=False,
+            show=show,
+            files=files,
+            show_sources=show_sources,
             user=True,
         )
 
