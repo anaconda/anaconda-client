@@ -120,6 +120,19 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             help='Create a package',
             callback=_exclusive_action,
         ),
+        summary: Optional[str] = typer.Option(
+            None,
+            help='Set the package short summary',
+        ),
+        license_: Optional[str] = typer.Option(
+            None,
+            "--license",
+            help='Set the package license',
+        ),
+        license_url: Optional[str] = typer.Option(
+            None,
+            help="Set the package license url",
+        )
     ):
 
         if not any([add_collaborator, list_collaborators, create]):
@@ -132,9 +145,9 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             add_collaborator=add_collaborator,
             list_collaborators=list_collaborators,
             create=create,
-            summary=None,
-            license=None,
-            license_url=None,
+            summary=summary,
+            license=license_,
+            license_url=license_url,
             access=None,
         )
 
