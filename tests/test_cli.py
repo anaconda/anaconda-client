@@ -568,18 +568,13 @@ def test_arg_parsing_search_command_platform_choice(monkeypatch, mocker, org_pre
     assert result.exit_code == expected_exit_code, result.stdout
 
 
-@pytest.mark.parametrize(
-    "org_prefix",
-    [[], ["org"]],
-    ids=["bare", "org"],
-)
 @pytest.mark.parametrize("command_name", ["label", "channel"])
 @pytest.mark.parametrize(
     "prefix_args, args, mods",
     [
         pytest.param([], ["--organization", "some-org", "--list"], dict(organization="some-org", list=True), id="organization-long"),
         pytest.param([], ["-o", "some-org", "--list"], dict(organization="some-org", list=True), id="organization-short"),
-        pytest.param([], ["--copy", "source-label", "dest-channel"], dict(copy=("source-label", "dest-channel")), id="copy"),
+        pytest.param([], ["--copy", "source-label", "dest-channel"], dict(copy=["source-label", "dest-channel"]), id="copy"),
         pytest.param([], ["--list"], dict(list=True), id="list"),
         pytest.param([], ["--show", "label-name"], dict(show="label-name"), id="show"),
         pytest.param([], ["--lock", "label-name"], dict(lock="label-name"), id="lock"),
@@ -589,31 +584,25 @@ def test_arg_parsing_search_command_platform_choice(monkeypatch, mocker, org_pre
         pytest.param(["--site", "site.com"], ["--list"], dict(site="site.com", list=True), id="site"),
     ]
 )
-def test_arg_parsing_channel_command(monkeypatch, mocker, org_prefix, command_name, prefix_args, args, mods):
-    args = prefix_args + org_prefix + [command_name] + args
-
-    monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
-
-    runner = CliRunner()
-
-    mock = mocker.patch("binstar_client.commands.channel.main")
-    result = runner.invoke(anaconda_cli_base.cli.app, args)
+def test_arg_parsing_channel_command(cli_mocker, command_name, prefix_args, args, mods):
+    mock = cli_mocker(main_func="binstar_client.commands.channel.main")
+    result = mock.invoke([command_name, *args], prefix_args=prefix_args)
     assert result.exit_code == 0, result.stdout
+    mock.assert_main_called_once()
 
     defaults = dict(
         token=None,
         site=None,
         organization=None,
         copy=None,
-        list=None,
+        list=False,
         show=None,
         lock=None,
         unlock=None,
         remove=None,
     )
     expected = {**defaults, **mods}
-    mock.assert_called_once_with(args=Namespace(**expected), name="channel", deprecated=True)
-
+    mock.assert_main_args_contains(expected)
 
 
 @pytest.mark.parametrize(

@@ -112,7 +112,8 @@ def _parse_optional_tuple(value: Tuple[str, str]) -> Optional[Tuple[str, str]]:
     # Convert a sentinel tuple of empty strings to None, since it is not possible with typer parser or callback
     if value == ("", ""):
         return None
-    return value
+    # TODO: We only return a list because argparse does. Should really be a tuple.
+    return list(value)
 
 
 def _exclusive_action(ctx: typer.Context, param: typer.CallbackParam, value: str) -> str:
@@ -162,7 +163,7 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             callback=_exclusive_action,
         ),
         list_: Optional[bool] = typer.Option(
-            None,
+            False,
             "--list",
             is_flag=True,
             help=f"List all {name}s for a user",
