@@ -79,15 +79,21 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
         hidden=hidden,
         help=help_text,
         context_settings=context_settings,
-        # no_args_is_help=True,
+        no_args_is_help=True,
     )
     def package_subcommand(
         ctx: typer.Context,
+        spec: str = typer.Argument(
+            ...,
+            help='Package to operate on',
+            parser=parse_specs,
+        ),
     ):
 
         args = Namespace(
             token=ctx.obj.params.get("token"),
             site=ctx.obj.params.get("site"),
+            spec=spec,
         )
 
         main(args=args)

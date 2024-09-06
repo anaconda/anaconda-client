@@ -902,7 +902,8 @@ def test_arg_parsing_config_command(monkeypatch, mocker, org_prefix, prefix_args
 )
 def test_arg_parsing_package_command(monkeypatch, mocker, org_prefix, prefix_args, args, mods):
 
-    args = prefix_args + org_prefix + ["package"] + args + []
+    spec = "user/package"
+    args = prefix_args + org_prefix + ["package"] + args + [spec]
 
     monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
 
@@ -916,6 +917,7 @@ def test_arg_parsing_package_command(monkeypatch, mocker, org_prefix, prefix_arg
     defaults = dict(
         token=None,
         site=None,
+        spec=parse_specs(spec),
     )
     expected = {**defaults, **mods}
     mock.assert_called_once_with(args=Namespace(**expected))
