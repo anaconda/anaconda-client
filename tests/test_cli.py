@@ -931,3 +931,43 @@ def test_arg_parsing_package_command(monkeypatch, mocker, org_prefix, prefix_arg
     )
     expected = {**defaults, **mods}
     mock.assert_called_once_with(args=Namespace(**expected))
+
+@pytest.mark.parametrize(
+    "opts, error_opt, conflict_opt",
+    [
+        pytest.param(["--add-collaborator", "joe", "--list-collaborators"], "'--list-collaborators'", "'--add-collaborator'"),
+        pytest.param(["--add-collaborator", "joe", "--create"], "'--create'", "'--add-collaborator'"),
+    ]
+)
+def test_package_mutually_exclusive_options(monkeypatch, mocker, opts, error_opt, conflict_opt):
+    # We need to ensure the terminal is wide enough for long output to stdout
+    monkeypatch.setattr(rich_utils, "MAX_WIDTH", 1000)
+
+    mock = mocker.patch("binstar_client.commands.package.main")
+
+    args = ["org", "package"] + opts + ["spec"]
+    monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
+    runner = CliRunner()
+    result = runner.invoke(anaconda_cli_base.cli.app, args)
+
+    assert result.exit_code == 2, result.stdout
+    assert f"Invalid value for {error_opt}: mutually exclusive with {conflict_opt}" in result.stdout, result.stdout
+
+    mock.assert_not_called()
+
+
+def test_package_mutually_exclusive_options_required(monkeypatch, mocker):
+    # We need to ensure the terminal is wide enough for long output to stdout
+    monkeypatch.setattr(rich_utils, "MAX_WIDTH", 1000)
+
+    mock = mocker.patch("binstar_client.commands.package.main")
+
+    args = ["org", "package", "spec"]
+    monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
+    runner = CliRunner()
+    result = runner.invoke(anaconda_cli_base.cli.app, args)
+
+    assert result.exit_code == 2, result.stdout
+    assert "one of --add-collaborator, --list-collaborators, or --create must be provided" in result.stdout, result.stdout
+
+    mock.assert_not_called()
