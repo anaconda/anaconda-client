@@ -19,7 +19,7 @@ import os
 import sys
 import warnings
 from argparse import ArgumentParser
-from typing import Any, Annotated, Optional
+from typing import Annotated, Any, Optional
 from typing import Callable
 
 import typer
