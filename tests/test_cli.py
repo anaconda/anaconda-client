@@ -986,7 +986,7 @@ def test_package_mutually_exclusive_options_required(monkeypatch, mocker):
         ("new", "org"),
     ]
 )
-def invoke_cli(request, monkeypatch: MonkeyPatch) -> Generator[None, None, None]:
+def cli_mocker(request, monkeypatch: MonkeyPatch, mocker) -> Generator[None, None, None]:
     """Fixture returns a function that can be used to invoke the CLI via different methods.
 
     The different methods are various levels of gradual migration:
@@ -1031,7 +1031,10 @@ def invoke_cli(request, monkeypatch: MonkeyPatch) -> Generator[None, None, None]
             runner = CliRunner()
             return runner.invoke(anaconda_cli_base.cli.app, args)
 
-    yield f
+    def closure(main_func: str):
+        return MockedCliInvoker(func=f, main_func=main_func, mocker=mocker)
+
+    yield closure
 
     if isinstance(anaconda_cli_base.cli.app, Typer):
         # Clear out all the groups, commands, and callbacks from the top-level application
@@ -1040,25 +1043,49 @@ def invoke_cli(request, monkeypatch: MonkeyPatch) -> Generator[None, None, None]
         anaconda_cli_base.cli.app.registered_callback = None
 
 
-def test_all_cli_same_parsing(mocker, invoke_cli):
+class MockedCliInvoker:
+    def __init__(self, func, main_func: str, mocker):
+        self._func = func
+        self._main_mock = mocker.patch(main_func)
+        self._invoked = False
+
+    def invoke(self, args: list[str]):
+        """Invoke the CLI with a list of arguments"""
+        result = self._func(args)
+        self._invoked = True
+        return result
+
+    def main_called_once(self) -> bool:
+        """Assert that the mocked main function was called once."""
+        try:
+            self._main_mock.assert_called_once()
+        except AssertionError:
+            return False
+        else:
+            return True
+
+    def main_args_contained(self, **expected: Any) -> bool:
+        """Return True if the args passed to the main function is a superset of the kwargs provided."""
+        assert self._invoked, "cli_mocker was never invoked"
+
+        # args are either passed positionally, or as kwargs called "args" or "arguments"
+        # This extracts the Namespace for all of those cases
+        args, kwargs = self._main_mock.call_args
+        actual = (args[0] if args else None) or kwargs.get("args") or kwargs.get("arguments")
+
+        # Now we can assert that the passed args are a superset of some expected dictionary of values
+        return vars(actual).items() >= expected.items()
+
+
+def test_all_cli_same_parsing(cli_mocker):
     spec = "user/package"
     args = ["package", "--create", spec]
 
-    mock = mocker.patch("binstar_client.commands.package.main")
-
-    result = invoke_cli(args)
+    mock = cli_mocker(main_func="binstar_client.commands.package.main")
+    result = mock.invoke(args)
     assert result.exit_code == 0, result.stdout
-
-    # Make sure we called the main() function
-    mock.assert_called_once()
-
-    # args are either passed positionally, or as kwargs called "args" or "arguments"
-    # This extracts the Namespace for all of those cases
-    args, kwargs = mock.call_args
-    actual = (args[0] if args else None) or kwargs.get("args") or kwargs.get("arguments")
-
-    # Now we can assert that the passed args are a superset of some expected dictionary of values
-    assert vars(actual).items() >= dict(
+    assert mock.main_called_once()
+    assert mock.main_args_contained(
         token=None,
         site=None,
         spec=parse_specs(spec),
@@ -1069,10 +1096,4 @@ def test_all_cli_same_parsing(mocker, invoke_cli):
         license=None,
         license_url=None,
         access=None,
-        # main=NotNone,
-        # sub_command_name="package",
-        # json_help=None,
-        # disable_ssl_warnings=False,
-        # show_traceback=False,
-        # log_level=20,
-    ).items()
+    )
