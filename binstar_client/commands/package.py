@@ -7,6 +7,10 @@ Anaconda repository package utilities
 from __future__ import print_function
 
 import logging
+from argparse import Namespace
+from typing import Optional
+
+import typer
 
 from binstar_client.utils import get_server_api, parse_specs
 
@@ -66,3 +70,24 @@ def add_parser(subparsers):
                              'This package will require authorized and authenticated access to install'))
 
     parser.set_defaults(main=main)
+
+
+def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, context_settings: dict):
+
+    @app.command(
+        name=name,
+        hidden=hidden,
+        help=help_text,
+        context_settings=context_settings,
+        # no_args_is_help=True,
+    )
+    def package_subcommand(
+        ctx: typer.Context,
+    ):
+
+        args = Namespace(
+            token=ctx.obj.params.get("token"),
+            site=ctx.obj.params.get("site"),
+        )
+
+        main(args=args)

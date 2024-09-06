@@ -885,3 +885,37 @@ def test_arg_parsing_config_command(monkeypatch, mocker, org_prefix, prefix_args
     )
     expected = {**defaults, **mods}
     mock.assert_called_once_with(args=Namespace(**expected))
+
+
+@pytest.mark.parametrize(
+    "org_prefix",
+    [[], ["org"]],
+    ids=["bare", "org"],
+)
+@pytest.mark.parametrize(
+    "prefix_args, args, mods",
+    [
+        pytest.param([], [], dict(), id="defaults"),
+        pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),
+        pytest.param(["--site", "my-site.com"], [], dict(site="my-site.com"), id="site"),
+    ]
+)
+def test_arg_parsing_package_command(monkeypatch, mocker, org_prefix, prefix_args, args, mods):
+
+    args = prefix_args + org_prefix + ["package"] + args + []
+
+    monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
+
+    runner = CliRunner()
+
+    mock = mocker.patch("binstar_client.commands.package.main")
+
+    result = runner.invoke(anaconda_cli_base.cli.app, args)
+    assert result.exit_code == 0, result.stdout
+
+    defaults = dict(
+        token=None,
+        site=None,
+    )
+    expected = {**defaults, **mods}
+    mock.assert_called_once_with(args=Namespace(**expected))
