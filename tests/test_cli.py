@@ -44,11 +44,11 @@ def enable_base_cli_plugin(monkeypatch: MonkeyPatch) -> Generator[None, None, No
 
 @pytest.fixture(
     params=[
-        ("original", ""),
-        ("wrapped", ""),
-        ("wrapped", "org"),
-        ("new", ""),
-        ("new", "org"),
+        pytest.param(("original", ""), id="orig-bare"),
+        pytest.param(("wrapped", ""), id="wrapped-bare"),
+        pytest.param(("wrapped", "org"), id="wrapped-prefix"),
+        pytest.param(("new", ""), id="new-bare"),
+        pytest.param(("new", "org"), id="new-prefix"),
     ]
 )
 def cli_mocker(request, monkeypatch: MonkeyPatch, mocker) -> Generator[None, None, None]:
@@ -128,16 +128,11 @@ class MockedCliInvoker:
         self._invoked = True
         return result
 
-    def main_called_once(self) -> bool:
+    def assert_main_called_once(self) -> None:
         """Assert that the mocked main function was called once."""
-        try:
-            self._main_mock.assert_called_once()
-        except AssertionError:
-            return False
-        else:
-            return True
+        self._main_mock.assert_called_once()
 
-    def main_args_contains(self, d = None, /, **expected: Any) -> bool:
+    def assert_main_args_contains(self, d = None, /, **expected: Any) -> None:
         """Return True if the args passed to the main function is a superset of the kwargs provided."""
         assert self._invoked, "cli_mocker was never invoked"
 
@@ -149,7 +144,7 @@ class MockedCliInvoker:
         expected = {**(d or {}), **expected}
 
         # Now we can assert that the passed args are a superset of some expected dictionary of values
-        return vars(actual).items() >= expected.items()
+        assert vars(actual).items() >= expected.items()
 
 
 def test_entrypoint() -> None:
@@ -1019,7 +1014,7 @@ def test_arg_parsing_package_command(cli_mocker, prefix_args, args, mods):
     mock = cli_mocker(main_func="binstar_client.commands.package.main")
     result = mock.invoke(args, prefix_args=prefix_args)
     assert result.exit_code == 0, result.stdout
-    assert mock.main_called_once()
+    mock.assert_main_called_once()
 
     defaults = dict(
         token=None,
@@ -1034,7 +1029,7 @@ def test_arg_parsing_package_command(cli_mocker, prefix_args, args, mods):
         access=None,
     )
     expected = {**defaults, **mods}
-    assert mock.main_args_contains(expected)
+    mock.assert_main_args_contains(expected)
 
 
 @pytest.mark.parametrize(
