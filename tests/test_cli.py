@@ -101,7 +101,7 @@ def cli_mocker(request, monkeypatch: MonkeyPatch, mocker) -> Generator[None, Non
             return runner.invoke(anaconda_cli_base.cli.app, args)
 
     def closure(main_func: str):
-        return MockedCliInvoker(func=f, main_func=main_func, mocker=mocker)
+        return MockedCliInvoker(func=f, main_func=main_func, mocker=mocker, parser=parser)
 
     yield closure
 
@@ -113,10 +113,11 @@ def cli_mocker(request, monkeypatch: MonkeyPatch, mocker) -> Generator[None, Non
 
 
 class MockedCliInvoker:
-    def __init__(self, func, main_func: str, mocker):
+    def __init__(self, func, main_func: str, mocker, parser):
         self._func = func
         self._main_mock = mocker.patch(main_func)
         self._invoked = False
+        self.parser = parser
 
     def invoke(self, args: list[str], prefix_args: Optional[list[str]] = None):
         """Invoke the CLI with a list of arguments.
@@ -270,13 +271,10 @@ def test_top_level_options_passed_through(cmd: str, monkeypatch: MonkeyPatch, as
 
 
 @pytest.mark.parametrize(
-    "org_prefix",
-    [[], ["org"]],
-    ids=["bare", "org"],
-)
-@pytest.mark.parametrize(
     "prefix_args, args, mods",
     [
+        pytest.param([], [], dict(), id="defaults"),
+        pytest.param([], ["first-file"], dict(files=[["first-file"], ["some-file"]]), id="multiple-files"),
         pytest.param([], ["-l", "some-label"], dict(labels=["some-label"]), id="labels-short-single"),
         pytest.param([], ["--label", "some-label"], dict(labels=["some-label"]), id="labels-long-single"),
         pytest.param([], ["-l", "some-label", "-l", "another"], dict(labels=["some-label", "another"]), id="labels-short-multiple"),
@@ -320,25 +318,27 @@ def test_top_level_options_passed_through(cmd: str, monkeypatch: MonkeyPatch, as
         pytest.param(["-q"], [], dict(log_level=logging.WARNING), id="quiet-short"),
     ]
 )
-def test_arg_parsing_upload_command(monkeypatch, mocker, org_prefix, prefix_args, args, mods):
+def test_arg_parsing_upload_command(cli_mocker, prefix_args, args, mods):
     """Test parsing of the arguments for the upload command. We call `anaconda org upload` both
     with and without the "org" subcommand.
 
     We check that the main upload function is called with the expected Namespace.
 
     """
-    args = prefix_args + org_prefix + ["upload"] + args + ["some-file"]
+    filename = "some-file"
+    args = ["upload"] + args + [filename]
 
-    monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
+    mock = cli_mocker(main_func="binstar_client.commands.upload.main")
 
-    runner = CliRunner()
+    if "--progress" in args and mock.parser == "original":
+        return  # Skip because this option isn't handled by argparse
 
-    mock = mocker.patch("binstar_client.commands.upload.main")
-    result = runner.invoke(anaconda_cli_base.cli.app, args)
+    result = mock.invoke(args, prefix_args=prefix_args)
     assert result.exit_code == 0, result.stdout
+    mock.assert_main_called_once()
 
     defaults = dict(
-        files=["some-file"],
+        files=[[filename]],
         token=None,
         disable_ssl_warnings=False,
         show_traceback=False,
@@ -362,7 +362,7 @@ def test_arg_parsing_upload_command(monkeypatch, mocker, org_prefix, prefix_args
         json_help=None,
     )
     expected = {**defaults, **mods}
-    mock.assert_called_once_with(arguments=Namespace(**expected))
+    mock.assert_main_args_contains(expected)
 
 
 @pytest.mark.parametrize(

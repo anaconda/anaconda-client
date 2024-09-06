@@ -949,7 +949,8 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
         # TODO: Explicitly ignoring the --json-help option since it would be very hard to
         #       support and I'd bet is never used.
         arguments = argparse.Namespace(
-            files=files,
+            # TODO: argparse handles this as a list of lists, with one filename in each. We should probably fix that one.
+            files=[[f] for f in files],
             token=ctx.obj.params.get("token"),
             disable_ssl_warnings=ctx.obj.params.get("disable_ssl_warnings"),
             show_traceback=ctx.obj.params.get("show_traceback"),
