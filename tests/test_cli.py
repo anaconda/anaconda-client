@@ -1004,14 +1004,14 @@ def invoke_cli(request, monkeypatch: MonkeyPatch) -> Generator[None, None, None]
     reload(anaconda_cli_base.cli)
     reload(binstar_client.plugins)
 
-    if request.param != "original":
-        def f(args):
-            runner = CliRunner()
-            return runner.invoke(anaconda_cli_base.cli.app, args)
-    else:
-        def f(args):
+    def f(args):
+        monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
+        if request.param == "original":
             binstar_client.scripts.cli.main(args, allow_plugin_main=False)
             return Namespace(exit_code=0)
+        else:
+            runner = CliRunner()
+            return runner.invoke(anaconda_cli_base.cli.app, args)
 
     yield f
 
@@ -1022,11 +1022,9 @@ def invoke_cli(request, monkeypatch: MonkeyPatch) -> Generator[None, None, None]
         anaconda_cli_base.cli.app.registered_callback = None
 
 
-def test_all_cli_same_parsing(monkeypatch, mocker, invoke_cli):
+def test_all_cli_same_parsing(mocker, invoke_cli):
     spec = "user/package"
     args = ["package", "--create", spec]
-
-    monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
 
     mock = mocker.patch("binstar_client.commands.package.main")
 
