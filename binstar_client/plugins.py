@@ -84,6 +84,7 @@ SUBCOMMANDS_WITH_NEW_CLI = {
     "groups",
     "label",
     "move",
+    "package",
     "remove",
     "search",
     "show",

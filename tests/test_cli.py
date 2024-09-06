@@ -968,3 +968,28 @@ def test_config_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
     assert result.exit_code == 0, result.stdout
     mock.assert_main_called_once()
     mock.assert_main_args_contains(expected)
+
+
+@pytest.mark.parametrize(
+    "case",
+    [
+        CLICase(id="defaults"),
+        CLICase("--token TOKEN", dict(token="TOKEN"), id="token", prefix=True),  # nosec
+        CLICase("--site my-site.com", dict(site="my-site.com"), id="site", prefix=True),
+    ]
+)
+def test_package_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
+    spec = "some/package"
+    args = ["package"] + case.args + ["--list-collaborators", spec]
+
+    defaults: Dict[str, Any] = dict(
+        token=None,
+        site=None,
+    )
+    expected = {**defaults, **case.mods}
+
+    mock = cli_mocker("binstar_client.commands.package.main")
+    result = mock.invoke(args, prefix_args=case.prefix_args)
+    assert result.exit_code == 0, result.stdout
+    mock.assert_main_called_once()
+    mock.assert_main_args_contains(expected)
