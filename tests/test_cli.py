@@ -938,6 +938,11 @@ def test_auth_mutually_exclusive_options_required(mocker):
         CLICase("--show", dict(show=True), id="show"),
         CLICase("--files", dict(files=True), id="files"),
         CLICase("--show-sources", dict(show_sources=True), id="show-sources"),
+        CLICase("--user", dict(user=True), id="user-long"),
+        CLICase("-u", dict(user=True), id="user-short"),
+        CLICase("--system", dict(user=False), id="system-long"),
+        CLICase("-s", dict(user=False), id="system-short"),
+        CLICase("--site", dict(user=False), id="site"),
         CLICase("--token TOKEN", dict(token="TOKEN"), id="token", prefix=True),  # nosec
         CLICase("--site my-site.com", dict(site="my-site.com"), id="site", prefix=True),
     ]

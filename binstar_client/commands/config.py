@@ -233,6 +233,19 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             False,
             help='Display all identified config sources',
         ),
+        user: Optional[bool] = typer.Option(
+            None,
+            '-u',
+            '--user',
+            help='set a variable for this user',
+        ),
+        system: bool = typer.Option(
+            False,
+            '-s',
+            '--system',
+            '--site',
+            help='set a variable for all users on this machine'
+        )
     ) -> None:
         # There's an existing bug in the type argument for anything but default
         # TODO: Remove the --type option. The below code is what I think was intended, but it's not what happens
@@ -245,6 +258,11 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         # Existing parser is a list of lists, instead of list of tuples
         set_list = [list(item) for item in set_]  # type: ignore[call-overload]
 
+        if user is None:
+            user = True
+        if system:
+            user = False
+
         args = Namespace(
             token=ctx.obj.params.get('token'),
             site=ctx.obj.params.get('site'),
@@ -255,7 +273,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             show=show,
             files=files,
             show_sources=show_sources,
-            user=True,
+            user=user,
         )
 
         main(args)
