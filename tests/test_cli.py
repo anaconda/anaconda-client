@@ -974,13 +974,20 @@ def test_config_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
     "case",
     [
         CLICase(id="defaults"),
+        CLICase("--add-collaborator jim", dict(add_collaborator="jim"), id="add-collaborator"),
+        CLICase("--list-collaborators", dict(list_collaborators=True), id="list-collaborators"),
+        CLICase("--create", dict(create=True), id="create"),
         CLICase("--token TOKEN", dict(token="TOKEN"), id="token", prefix=True),  # nosec
         CLICase("--site my-site.com", dict(site="my-site.com"), id="site", prefix=True),
     ]
 )
 def test_package_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
     spec = "user/package"
-    args = ["package"] + case.args + ["--list-collaborators", spec]
+    if not case.args:
+        case.args = ["--list-collaborators"]
+        case.mods["list_collaborators"] = True
+
+    args = ["package"] + case.args + [spec]
 
     defaults: Dict[str, Any] = dict(
         token=None,
