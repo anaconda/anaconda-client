@@ -163,7 +163,7 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             help="Set the package type. Defaults to autodetect.",
         ),
         release: typing.Optional[bool] = typer.Option(
-            None,
+            False,
             help='Use `source` file to update public attributes of the release specified in `spec`',
         ),
     ):
