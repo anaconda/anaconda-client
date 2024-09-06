@@ -132,11 +132,34 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
         license_url: Optional[str] = typer.Option(
             None,
             help="Set the package license url",
-        )
+        ),
+        personal: Optional[bool] = typer.Option(
+            False,
+            help=(
+                'Set the package access to personal '
+                'This package will be available only on your personal registries'
+            )
+        ),
+        private: Optional[bool] = typer.Option(
+            False,
+            help=(
+                'Set the package access to private '
+                'This package will require authorized and authenticated access to install'
+            )
+        ),
     ):
 
         if not any([add_collaborator, list_collaborators, create]):
             raise typer.BadParameter("one of --add-collaborator, --list-collaborators, or --create must be provided")
+
+        if private and personal:
+            raise typer.BadParameter("Cannot set both --private and --personal")
+        elif private:
+            access = "private"
+        elif personal:
+            access = "personal"
+        else:
+            access = None
 
         args = Namespace(
             token=ctx.obj.params.get("token"),
@@ -148,7 +171,7 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             summary=summary,
             license=license_,
             license_url=license_url,
-            access=None,
+            access=access,
         )
 
         main(args=args)

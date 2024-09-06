@@ -901,6 +901,8 @@ def test_arg_parsing_config_command(monkeypatch, mocker, org_prefix, prefix_args
         pytest.param([], ["--summary", "SUMMARY", "--create"], dict(summary="SUMMARY", create=True), id="summary"),
         pytest.param([], ["--license", "MIT", "--create"], dict(license="MIT", create=True), id="license"),
         pytest.param([], ["--license-url", "license.com", "--create"], dict(license_url="license.com", create=True), id="license-url"),
+        pytest.param([], ["--personal", "--create"], dict(access="personal", create=True), id="personal"),
+        pytest.param([], ["--private", "--create"], dict(access="private", create=True), id="private"),
         pytest.param(["--token", "TOKEN"], ["--create"], dict(token="TOKEN", create=True), id="token"),
         pytest.param(["--site", "my-site.com"], ["--create"], dict(site="my-site.com", create=True), id="site"),
     ]
