@@ -122,8 +122,21 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             help='Create a package',
             callback=_exclusive_action,
         ),
+        summary: Optional[str] = typer.Option(
+            None,
+            help='Set the package short summary',
+        ),
+        license_: Optional[str] = typer.Option(
+            None,
+            '--license',
+            help='Set the package license',
+        ),
+        license_url: Optional[str] = typer.Option(
+            None,
+            help='Set the package license url',
+        ),
     ) -> None:
-
+        # pylint: disable=too-many-arguments
         if not any([add_collaborator, list_collaborators, create]):
             raise typer.BadParameter('one of --add-collaborator, --list-collaborators, or --create must be provided')
 
@@ -134,9 +147,9 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             add_collaborator=add_collaborator,
             list_collaborators=list_collaborators,
             create=create,
-            summary=None,
-            license=None,
-            license_url=None,
+            summary=summary,
+            license=license_,
+            license_url=license_url,
             access=None,
         )
 
