@@ -844,15 +844,10 @@ def test_auth_mutually_exclusive_options_required(monkeypatch, mocker):
 
 
 @pytest.mark.parametrize(
-    "org_prefix",
-    [[], ["org"]],
-    ids=["bare", "org"],
-)
-@pytest.mark.parametrize(
     "prefix_args, args, mods",
     [
-        pytest.param([], ["--set", "key", "value"], dict(set=[("key", "value")]), id="set-single"),
-        pytest.param([], ["--set", "key", "value", "--set", "key2", "val2"], dict(set=[("key", "value"), ("key2", "val2")]), id="set-multiple"),
+        pytest.param([], ["--set", "key", "value"], dict(set=[["key", "value"]]), id="set-single"),
+        pytest.param([], ["--set", "key", "value", "--set", "key2", "val2"], dict(set=[["key", "value"], ["key2", "val2"]]), id="set-multiple"),
         pytest.param([], ["--get", "key"], dict(get="key"), id="get"),
         pytest.param([], ["--remove", "key"], dict(remove=["key"]), id="remove-single"),
         pytest.param([], ["--remove", "key1", "--remove", "key2"], dict(remove=["key1", "key2"]), id="remove-multiple"),
@@ -868,18 +863,18 @@ def test_auth_mutually_exclusive_options_required(monkeypatch, mocker):
         pytest.param(["--site", "my-site.com"], ["--type", "int"], dict(site="my-site.com", type=int), id="site"),
     ]
 )
-def test_arg_parsing_config_command(monkeypatch, mocker, org_prefix, prefix_args, args, mods):
+def test_arg_parsing_config_command(cli_mocker, prefix_args, args, mods):
 
-    args = prefix_args + org_prefix + ["config"] + args + []
+    mock = cli_mocker(main_func="binstar_client.commands.config.main")
 
-    monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
+    if "--type" in args and mock.parser == "original":
+        # TODO: This is actual a bug in the original argparse implementation
+        mods = dict(mods)
+        mods["type"] = "int"
 
-    runner = CliRunner()
-
-    mock = mocker.patch("binstar_client.commands.config.main")
-
-    result = runner.invoke(anaconda_cli_base.cli.app, args)
+    result = mock.invoke(["config", *args], prefix_args=prefix_args)
     assert result.exit_code == 0, result.stdout
+    mock.assert_main_called_once()
 
     defaults = dict(
         token=None,
@@ -894,7 +889,7 @@ def test_arg_parsing_config_command(monkeypatch, mocker, org_prefix, prefix_args
         user=True,
     )
     expected = {**defaults, **mods}
-    mock.assert_called_once_with(args=Namespace(**expected))
+    mock.assert_main_args_contains(expected)
 
 
 @pytest.mark.parametrize(

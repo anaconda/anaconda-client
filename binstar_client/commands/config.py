@@ -263,7 +263,8 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             token=ctx.obj.params.get("token"),
             site=ctx.obj.params.get("site"),
             type=type_,
-            set=set_,
+            # TODO: conversion to list is just to match argparse
+            set=[list(s) for s in set_],
             get=get,
             remove=remove,
             show=show,
