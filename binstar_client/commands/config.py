@@ -233,6 +233,19 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             False,
             help='Display all identified config sources',
         ),
+        user: typing.Optional[bool] = typer.Option(
+            None,
+            "-u",
+            "--user",
+            help='set a variable for this user',
+        ),
+        system: typing.Optional[bool] = typer.Option(
+            False,
+            "-s",
+            "--system",
+            "--site",
+            help='set a variable for all users on this machine'
+        )
     ):
         # There's an existing bug in the type argument for anything but default
         # TODO: Remove the --type option. The below code is what I think was intended, but it's not what happens
@@ -240,6 +253,11 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             type_ = int
         else:
             type_ = safe_load
+
+        if user is None:
+            user = True
+        if system:
+            user = False
 
         args = Namespace(
             token=ctx.obj.params.get("token"),
@@ -251,7 +269,7 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             show=show,
             files=files,
             show_sources=show_sources,
-            user=True,
+            user=user,
         )
 
         main(args=args)

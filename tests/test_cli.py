@@ -849,6 +849,11 @@ def test_auth_mutually_exclusive_options_required(monkeypatch, mocker):
         pytest.param([], ["--show"], dict(show=True), id="show"),
         pytest.param([], ["--files"], dict(files=True), id="files"),
         pytest.param([], ["--show-sources"], dict(show_sources=True), id="show-sources"),
+        pytest.param([], ["--user"], dict(user=True), id="user-long"),
+        pytest.param([], ["-u"], dict(user=True), id="user-short"),
+        pytest.param([], ["--system"], dict(user=False), id="system-long"),
+        pytest.param([], ["-s"], dict(user=False), id="system-short"),
+        pytest.param([], ["--site"], dict(user=False), id="site"),
         pytest.param(["--token", "TOKEN"], ["--type", "int"], dict(token="TOKEN", type=int), id="token"),
         pytest.param(["--site", "my-site.com"], ["--type", "int"], dict(site="my-site.com", type=int), id="site"),
     ]
