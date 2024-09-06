@@ -979,12 +979,13 @@ def test_config_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
     ]
 )
 def test_package_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
-    spec = "some/package"
+    spec = "user/package"
     args = ["package"] + case.args + ["--list-collaborators", spec]
 
     defaults: Dict[str, Any] = dict(
         token=None,
         site=None,
+        spec=parse_specs(spec),
     )
     expected = {**defaults, **case.mods}
 
