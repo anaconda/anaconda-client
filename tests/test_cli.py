@@ -10,7 +10,7 @@ from typing import Any, Generator
 import pytest
 from pytest import LogCaptureFixture
 from pytest import MonkeyPatch
-from typer import rich_utils
+from typer import Typer, rich_utils
 from typer.testing import CliRunner
 
 import anaconda_cli_base.cli
@@ -975,3 +975,89 @@ def test_package_mutually_exclusive_options_required(monkeypatch, mocker):
     assert "one of --add-collaborator, --list-collaborators, or --create must be provided" in result.stdout, result.stdout
 
     mock.assert_not_called()
+
+
+@pytest.fixture(
+    params=[
+        "original",
+        "wrapped",
+        "new",
+    ]
+)
+def invoke_cli(request, monkeypatch: MonkeyPatch) -> Generator[None, None, None]:
+    """Make sure that we get a clean app with plugins loaded"""
+
+    if request.param == "original":
+        monkeypatch.delenv("ANACONDA_CLI_FORCE_NEW", raising=False)
+        monkeypatch.setenv("ANACONDA_CLIENT_FORCE_STANDALONE", "true")
+        monkeypatch.setenv("ANACONDA_CLI_DISABLE_PLUGINS", "true")
+    elif request.param == "wrapped":
+        monkeypatch.setattr(binstar_client.plugins, "SUBCOMMANDS_WITH_NEW_CLI", set())
+        monkeypatch.setenv("ANACONDA_CLI_FORCE_NEW", "true")
+        monkeypatch.delenv("ANACONDA_CLIENT_FORCE_STANDALONE", raising=False)
+    elif request.param == "new":
+        monkeypatch.setenv("ANACONDA_CLI_FORCE_NEW", "true")
+        monkeypatch.delenv("ANACONDA_CLIENT_FORCE_STANDALONE", raising=False)
+    else:
+        raise ValueError(f"Incorrect param: {request.param}")
+
+    reload(anaconda_cli_base.cli)
+    reload(binstar_client.plugins)
+
+    if request.param != "original":
+        def f(args):
+            runner = CliRunner()
+            return runner.invoke(anaconda_cli_base.cli.app, args)
+    else:
+        def f(args):
+            binstar_client.scripts.cli.main(args, allow_plugin_main=False)
+            return Namespace(exit_code=0)
+
+    yield f
+
+    if isinstance(anaconda_cli_base.cli.app, Typer):
+        # Clear out all the groups, commands, and callbacks from the top-level application
+        anaconda_cli_base.cli.app.registered_groups.clear()
+        anaconda_cli_base.cli.app.registered_commands.clear()
+        anaconda_cli_base.cli.app.registered_callback = None
+
+
+def test_all_cli_same_parsing(monkeypatch, mocker, invoke_cli):
+    spec = "user/package"
+    args = ["package", "--create", spec]
+
+    monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
+
+    mock = mocker.patch("binstar_client.commands.package.main")
+
+    # runner = CliRunner()
+    result = invoke_cli(args)
+    assert result.exit_code == 0, result.stdout
+
+    # Make sure we called the main() function
+    mock.assert_called_once()
+
+    # args are either passed positionally, or as kwargs called "args" or "arguments"
+    # This extracts the Namespace for all of those cases
+    args, kwargs = mock.call_args
+    actual = (args[0] if args else None) or kwargs.get("args") or kwargs.get("arguments")
+
+    # Now we can assert that the passed args are a superset of some expected dictionary of values
+    assert vars(actual).items() >= dict(
+        token=None,
+        site=None,
+        spec=parse_specs(spec),
+        add_collaborator=None,
+        list_collaborators=False,
+        create=True,
+        summary=None,
+        license=None,
+        license_url=None,
+        access=None,
+        # main=NotNone,
+        # sub_command_name="package",
+        # json_help=None,
+        # disable_ssl_warnings=False,
+        # show_traceback=False,
+        # log_level=20,
+    ).items()
