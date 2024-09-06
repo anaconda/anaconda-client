@@ -19,17 +19,6 @@ from binstar_client.utils.pprint import pprint_user
 logger = logging.getLogger('binstar.whoami')
 
 
-def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, context_settings: dict):
-    @app.command(
-        name=name,
-        hidden=hidden,
-        help=help_text,
-        context_settings=context_settings,
-    )
-    def whoami(ctx: typer.Context):
-        main(token=ctx.obj.params.get("token"), site=ctx.obj.params.get("site"))
-
-
 def main(args: Optional[argparse.Namespace] = None, *, token: Optional[str] = None, site: Optional[str] = None):  # pylint: disable=inconsistent-return-statements
     if args is not None:
         token = args.token
@@ -53,3 +42,14 @@ def add_parser(subparsers):
                                       description=__doc__)
 
     subparser.set_defaults(main=main)
+
+
+def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, context_settings: dict):
+    @app.command(
+        name=name,
+        hidden=hidden,
+        help=help_text,
+        context_settings=context_settings,
+    )
+    def whoami(ctx: typer.Context):
+        main(token=ctx.obj.params.get("token"), site=ctx.obj.params.get("site"))
