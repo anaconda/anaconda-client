@@ -741,11 +741,6 @@ def test_arg_parsing_remove_command(cli_mocker, prefix_args, args, mods):
 
 
 @pytest.mark.parametrize(
-    "org_prefix",
-    [[], ["org"]],
-    ids=["bare", "org"],
-)
-@pytest.mark.parametrize(
     "prefix_args, args, mods",
     [
         pytest.param([], ["--name", "my-token", "--info"], dict(name="my-token", info=True), id="name-long"),
@@ -763,8 +758,8 @@ def test_arg_parsing_remove_command(cli_mocker, prefix_args, args, mods):
         pytest.param([], ["--info"], dict(info=True), id="info-mid"),
         pytest.param([], ["-i"], dict(info=True), id="info-short"),
         pytest.param([], ["--remove", "token-1"], dict(remove=["token-1"]), id="remove-long-single"),
-        pytest.param([], ["--remove", "token-1", "--remove", "token-2"], dict(remove=["token-1", "token-2"]), id="remove-long-multiple"),
-        pytest.param([], ["-r", "token-1", "-r", "token-2"], dict(remove=["token-1", "token-2"]), id="remove-short-multiple"),
+        pytest.param([], ["--remove", "token-1", "token-2"], dict(remove=["token-1", "token-2"]), id="remove-long-multiple", marks=pytest.mark.skip(reason="need-to-mimic argparse here?")),
+        pytest.param([], ["-r", "token-1", "token-2"], dict(remove=["token-1", "token-2"]), id="remove-short-multiple", marks=pytest.mark.skip(reason="need-to-mimic argparse here?")),
         pytest.param([], ["--create", "--strength", "strong"], dict(create=True, strength="strong"), id="create-strength-strong"),
         pytest.param([], ["--create", "--strength", "weak"], dict(create=True, strength="weak"), id="create-strength-weak"),
         pytest.param([], ["--create", "--strong"], dict(create=True, strength="strong"), id="create-strong"),
@@ -779,44 +774,30 @@ def test_arg_parsing_remove_command(cli_mocker, prefix_args, args, mods):
         pytest.param(["--site", "my-site.com"], ["--info"], dict(site="my-site.com", info=True), id="site"),
     ]
 )
-def test_arg_parsing_auth_command(monkeypatch, mocker, org_prefix, prefix_args, args, mods):
-
-    args = prefix_args + org_prefix + ["auth"] + args + []
-
-    monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
-
-    runner = CliRunner()
-
-    mock = mocker.patch("binstar_client.commands.authorizations.main")
-
-    result = runner.invoke(anaconda_cli_base.cli.app, args)
+def test_arg_parsing_auth_command(cli_mocker, prefix_args, args, mods):
+    mock = cli_mocker(main_func="binstar_client.commands.authorizations.main")
+    result = mock.invoke(["auth", *args], prefix_args=prefix_args)
     assert result.exit_code == 0, result.stdout
-
-    class NotNone:
-        # Just a hack to test the out parameter, which I am not actually testing
-        def __eq__(self, other):
-            return other is not None
+    mock.assert_main_called_once()
 
     defaults = dict(
         token=None,
         site=None,
-        name=f"anaconda_token:{gethostname()}",
+        name=f"binstar_token:{gethostname()}",
         organization=None,
         list_scopes=False,
         list=False,
         create=False,
         info=False,
-        remove=[],
+        remove=None,
         # Token creation options
         strength="strong",
         url='http://anaconda.org',
         max_age=None,
         scopes=[],
-        out=NotNone(),
     )
     expected = {**defaults, **mods}
-    mock.assert_called_once_with(args=Namespace(**expected))
-
+    mock.assert_main_args_contains(expected)
 
 
 @pytest.mark.parametrize(

@@ -311,7 +311,7 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             ...,
             "-n",
             "--name",
-            default_factory=lambda: f'anaconda_token:{socket.gethostname()}',
+            default_factory=lambda: f'binstar_token:{socket.gethostname()}',
             help='A unique name so you can identify this token later. View your tokens at anaconda.org/settings/access'
         ),
         organization: typing.Optional[str] = typer.Option(
@@ -413,7 +413,8 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             list=list_,
             create=create,
             info=info,
-            remove=remove,
+            # TODO: The default of None here is to match existing argparse behavior
+            remove=remove or None,
             url=url,
             max_age=max_age,
             scopes=scopes,
