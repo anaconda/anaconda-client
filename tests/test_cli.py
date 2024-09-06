@@ -408,11 +408,6 @@ def test_upload_mutually_exclusive_options(monkeypatch, mocker, opts, error_opt,
 
 
 @pytest.mark.parametrize(
-    "org_prefix",
-    [[], ["org"]],
-    ids=["bare", "org"],
-)
-@pytest.mark.parametrize(
     "prefix_args, args, mods",
     [
         pytest.param([], [], dict(), id="defaults"),
@@ -425,16 +420,14 @@ def test_upload_mutually_exclusive_options(monkeypatch, mocker, opts, error_opt,
         pytest.param(["--site", "site.com"], [], dict(site="site.com"), id="site"),
     ]
 )
-def test_arg_parsing_copy_command(monkeypatch, mocker, org_prefix, prefix_args, args, mods):
-    args = prefix_args + org_prefix + ["copy"] + args + ["some-spec"]
+def test_arg_parsing_copy_command(cli_mocker, prefix_args, args, mods):
+    args = ["copy"] + args + ["some-spec"]
 
-    monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
+    mock = cli_mocker(main_func="binstar_client.commands.copy.main")
 
-    runner = CliRunner()
-
-    mock = mocker.patch("binstar_client.commands.copy.main")
-    result = runner.invoke(anaconda_cli_base.cli.app, args)
+    result = mock.invoke(args, prefix_args=prefix_args)
     assert result.exit_code == 0, result.stdout
+    mock.assert_main_called_once()
 
     defaults = dict(
         token=None,
@@ -447,14 +440,9 @@ def test_arg_parsing_copy_command(monkeypatch, mocker, org_prefix, prefix_args, 
         update=False,
     )
     expected = {**defaults, **mods}
-    mock.assert_called_once_with(args=Namespace(**expected))
+    mock.assert_main_args_contains(expected)
 
 
-@pytest.mark.parametrize(
-    "org_prefix",
-    [[], ["org"]],
-    ids=["bare", "org"],
-)
 @pytest.mark.parametrize(
     "prefix_args, args, mods",
     [
@@ -465,16 +453,14 @@ def test_arg_parsing_copy_command(monkeypatch, mocker, org_prefix, prefix_args, 
         pytest.param(["--site", "site.com"], [], dict(site="site.com"), id="site"),
     ]
 )
-def test_arg_parsing_move_command(monkeypatch, mocker, org_prefix, prefix_args, args, mods):
-    args = prefix_args + org_prefix + ["move"] + args + ["some-spec"]
+def test_arg_parsing_move_command(cli_mocker, prefix_args, args, mods):
+    args = ["move"] + args + ["some-spec"]
 
-    monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
+    mock = cli_mocker(main_func="binstar_client.commands.move.main")
 
-    runner = CliRunner()
-
-    mock = mocker.patch("binstar_client.commands.move.main")
-    result = runner.invoke(anaconda_cli_base.cli.app, args)
+    result = mock.invoke(args, prefix_args=prefix_args)
     assert result.exit_code == 0, result.stdout
+    mock.assert_main_called_once()
 
     defaults = dict(
         token=None,
@@ -484,7 +470,7 @@ def test_arg_parsing_move_command(monkeypatch, mocker, org_prefix, prefix_args, 
         to_label="main",
     )
     expected = {**defaults, **mods}
-    mock.assert_called_once_with(args=Namespace(**expected))
+    mock.assert_main_args_contains(expected)
 
 
 @pytest.mark.parametrize(
