@@ -918,6 +918,13 @@ def test_arg_parsing_package_command(monkeypatch, mocker, org_prefix, prefix_arg
         token=None,
         site=None,
         spec=parse_specs(spec),
+        add_collaborator=None,
+        list_collaborators=False,
+        create=False,
+        summary=None,
+        license=None,
+        license_url=None,
+        access=None,
     )
     expected = {**defaults, **mods}
     mock.assert_called_once_with(args=Namespace(**expected))
