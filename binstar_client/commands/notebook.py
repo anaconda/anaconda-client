@@ -14,7 +14,7 @@ from binstar_client.deprecations import DEPRECATION_MESSAGE_NOTEBOOKS_PROJECTS_E
 logger = logging.getLogger('binstar.notebook')
 
 
-def main(args):
+def main(args):  # pylint: disable=unused-argument
     logger.error(DEPRECATION_MESSAGE_NOTEBOOKS_PROJECTS_ENVIRONMENTS_REMOVED)
     return sys.exit(1)
 
