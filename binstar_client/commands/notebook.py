@@ -27,7 +27,7 @@ def add_parser(subparsers):
                                    description=description,
                                    epilog=__doc__)
     parser.add_argument(
-        'args', 
+        'args',
         nargs='+',
         help='Catch-all for args',
         action='store'
