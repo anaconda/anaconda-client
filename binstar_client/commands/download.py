@@ -2,8 +2,8 @@
 
 """
 Usage:
-    anaconda download notebook
-    anaconda download user/notebook
+    anaconda download <package_name>
+    anaconda download <channel_name>/<package_name>
 """
 
 from __future__ import unicode_literals
@@ -21,7 +21,7 @@ logger = logging.getLogger('binstar.download')
 
 
 def add_parser(subparsers):
-    description = 'Download notebooks from your Anaconda repository'
+    description = 'Download packages from your Anaconda repository'
     parser = subparsers.add_parser(
         'download',
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -32,7 +32,7 @@ def add_parser(subparsers):
 
     parser.add_argument(
         'handle',
-        help='user/notebook',
+        help='user/package_name',
         action='store'
     )
 
@@ -58,9 +58,9 @@ def add_parser(subparsers):
 
 def main(args):
     aserver_api = get_server_api(args.token, args.site)
-    username, notebook = parse(args.handle)
+    username, package_name = parse(args.handle)
     username = username or aserver_api.user()['login']
-    downloader = Downloader(aserver_api, username, notebook)
+    downloader = Downloader(aserver_api, username, package_name)
     packages_types = list(map(PackageType, args.package_type) if args.package_type else PackageType)
 
     try:
