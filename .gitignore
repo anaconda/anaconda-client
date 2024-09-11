@@ -48,3 +48,6 @@ __conda_*__.txt
 
 # Additional files
 /.artifacts/
+
+# Local dev environment
+env/
