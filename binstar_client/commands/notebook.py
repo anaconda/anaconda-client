@@ -9,13 +9,20 @@ use `anaconda upload/download` instead
 from __future__ import unicode_literals
 import argparse
 import logging
+import sys
 from binstar_client import errors
+from binstar_client.deprecations import DEPRECATION_MESSAGE_NOTEBOOKS_PROJECTS_ENVIRONMENTS_REMOVED
 from binstar_client.utils import get_server_api
 from binstar_client.utils.notebook import parse, notebook_url, has_environment
 from binstar_client.utils.notebook.uploader import Uploader
 from binstar_client.utils.notebook.downloader import Downloader
 
 logger = logging.getLogger('binstar.notebook')
+
+
+def main(args):
+    logger.error(DEPRECATION_MESSAGE_NOTEBOOKS_PROJECTS_ENVIRONMENTS_REMOVED)
+    return sys.exit(1)
 
 
 def add_parser(subparsers):
@@ -25,10 +32,14 @@ def add_parser(subparsers):
                                    help=description,
                                    description=description,
                                    epilog=__doc__)
+    parser.add_argument(
+        'args', 
+        nargs='+',
+        help='Catch-all for args',
+        action='store'
+    )
 
-    nb_subparsers = parser.add_subparsers()
-    add_upload_parser(nb_subparsers)
-    add_download_parser(nb_subparsers)
+    parser.set_defaults(main=main)
 
 
 def add_upload_parser(subparsers):
