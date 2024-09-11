@@ -28,3 +28,13 @@ def test_version(command):
     result = subprocess.run([command, "--version"], capture_output=True, text=True)
     assert result.returncode == 0
     assert f"anaconda Command line client (version {__version__})" in result.stdout
+
+
+def test_config_files(command):
+    result = subprocess.run([command, "config", "--files"], capture_output=True, text=True)
+    assert result.returncode == 0, "Listing of configuration files test failed."
+
+
+def test_config_show(command):
+    result = subprocess.run([command, "config", "--show"], capture_output=True, text=True)
+    assert result.returncode == 0, "Showing of configuration files test failed."
