@@ -80,7 +80,7 @@ jobs:
 
       - name: Export reports
         if: ${{ always() && steps.conda_environment_information.outputs.exit_status == 'success' }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: report-lint-${{ matrix.python-version }}-${{ matrix.os }}
           path: .artifacts/reports
@@ -134,7 +134,7 @@ jobs:
 
       - name: Export reports
         if: ${{ always() }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: report-test-${{ matrix.python-version }}-${{ matrix.os }}
           path: .artifacts/reports
