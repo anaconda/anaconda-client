@@ -4,7 +4,13 @@
 
 from __future__ import annotations
 
-__all__ = ['detect_package_meta', 'detect_package_extension', 'detect_package_type', 'get_attrs']
+__all__ = [
+    'detect_package_meta',
+    'detect_package_extension',
+    'detect_package_type',
+    'get_attrs',
+    'Meta',
+]
 
 import collections
 
