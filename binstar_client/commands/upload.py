@@ -3,8 +3,6 @@
 """
 
     anaconda upload CONDA_PACKAGE_1.tar.bz2
-    anaconda upload notebook.ipynb
-    anaconda upload environment.yml
 
 See Also:
 
@@ -24,10 +22,9 @@ import logging
 import os
 import typing
 
-import nbformat
-
 import binstar_client
 from binstar_client import errors
+from binstar_client.deprecations import DEPRECATION_MESSAGE_NOTEBOOKS_PROJECTS_ENVIRONMENTS_REMOVED
 from binstar_client.utils import bool_input, DEFAULT_CONFIG, get_config, get_server_api
 from binstar_client.utils.config import PackageType
 from binstar_client.utils import detect
@@ -503,11 +500,8 @@ class Uploader:  # pylint: disable=too-many-instance-attributes
 
     def upload_package(self, filename: str, package_meta: detect.Meta) -> bool:
         """Upload a package to the server."""
-        if (
-                package_meta.package_type is PackageType.NOTEBOOK and
-                self.arguments.mode != 'force' and
-                not self.validate_notebook(filename)
-        ):
+        if package_meta.package_type is PackageType.NOTEBOOK:
+            logger.error(DEPRECATION_MESSAGE_NOTEBOOKS_PROJECTS_ENVIRONMENTS_REMOVED)
             return False
 
         meta: PackageMeta = PackageMeta(filename=filename, meta=package_meta)
@@ -628,19 +622,6 @@ class Uploader:  # pylint: disable=too-many-instance-attributes
             if result is None:
                 result = detect.Meta(package_type=package_type, extension=os.path.splitext(filename)[1])
         return result
-
-    @staticmethod
-    def validate_notebook(filename: str) -> bool:
-        """Check if file is a valid notebook."""
-        try:
-            stream: typing.TextIO
-            with open(filename, 'rt', encoding='utf8') as stream:
-                nbformat.read(stream, nbformat.NO_CONVERT)
-        except Exception as error:  # pylint: disable=broad-except
-            logger.error('Invalid notebook file "%s": %s', filename, error)
-            logger.info('Use --force to upload the file anyways')
-            return False
-        return True
 
     @staticmethod
     def validate_package_type(package: PackageCacheRecord, package_type: PackageType) -> bool:

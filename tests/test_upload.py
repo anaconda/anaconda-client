@@ -3,7 +3,6 @@
 
 """Tests for package upload commands."""
 
-import datetime
 import json
 import unittest.mock
 
@@ -262,36 +261,6 @@ class Test(CLITestCase):
         main(['--show-traceback', 'upload', '--package-type', 'project', data_dir('foo.ipynb')])
 
         registry.assertAllCalled()
-
-    @urlpatch
-    def test_upload_notebook_as_package(self, registry):
-        test_datetime = datetime.datetime(2022, 5, 19, 15, 29)
-        mock_version = test_datetime.strftime('%Y.%m.%d.%H%M')
-
-        registry.register(method='HEAD', path='/', status=200)
-        registry.register(method='GET', path='/user', content='{"login": "eggs"}')
-        registry.register(method='GET', path='/dist/eggs/foo/2022.05.19.1529/foo.ipynb', status=404)
-        registry.register(method='GET', path='/package/eggs/foo', content={'package_types': ['ipynb']})
-        registry.register(method='GET', path='/release/eggs/foo/{}'.format(mock_version), content='{}')
-        staging_response = registry.register(
-            method='POST',
-            path='/stage/eggs/foo/{}/foo.ipynb'.format(mock_version),
-            content={'post_url': 'http://s3url.com/s3_url', 'form_data': {}, 'dist_id': 'dist_id'},
-        )
-        registry.register(method='POST', path='/s3_url', status=201)
-        registry.register(
-            method='POST',
-            path='/commit/eggs/foo/{}/foo.ipynb'.format(mock_version),
-            status=200,
-            content={},
-        )
-
-        with unittest.mock.patch('binstar_client.inspect_package.ipynb.datetime') as mock_datetime:
-            mock_datetime.now.return_value = test_datetime
-            main(['--show-traceback', 'upload', data_dir('foo.ipynb')])
-
-        registry.assertAllCalled()
-        self.assertIsNotNone(json.loads(staging_response.req.body).get('sha256'))
 
     @pytest.mark.xfail(reason='anaconda-project removed')
     @urlpatch
