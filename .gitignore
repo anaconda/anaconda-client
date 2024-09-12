@@ -52,3 +52,4 @@ __conda_*__.txt
 
 # Local dev environment
 env/
+.env
