@@ -3,7 +3,6 @@
 
 """Tests for package upload commands."""
 
-import datetime
 import json
 import unittest.mock
 
