@@ -249,14 +249,27 @@ def test_remove_package(command, package_name):
 
     assert program.returncode == 0
 
+
+def test_copy_package(command):
+    package_names = ["pip/21.2.4", "git-lfs/2.13.3"]
+    for package_name in package_names:
+        result = subprocess.run(
+            [
+                command,
+                "copy",
+                "--from-label",
+                "main",
+                "--to-label",
+                "test",
+                f"anaconda/{package_name}",
+            ],
+            capture_output=True,
+            text=True,
+        )
+
+    assert result.returncode == 0, result.stderr
+
     """
-    # Copy package:\\n"
-    ${TST_CMD} copy --from-label main --to-label test anaconda/pip/21.2.4 || (echo -e "\\n\\n/!\\\\ Copy package test failed.\\n" && exit 1)
-    echo
-
-    ${TST_CMD} copy --from-label main --to-label test anaconda/git-lfs/2.13.3 || (echo -e "\\n\\n/!\\\\ Copy package test failed.\\n" && exit 1)
-    echo
-
     # Move package:\\n"
     ${TST_CMD} move --from-label test --to-label demo "${TST_LOGIN}/pip/21.2.4" || (echo -e "\\n\\n/!\\\\ Move package test failed.\\n" && exit 1)
     echo
