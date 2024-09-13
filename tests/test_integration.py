@@ -250,38 +250,6 @@ def test_remove_package(command, package_name):
     assert program.returncode == 0
 
     """
-    # Upload notebook:\\n"
-    ${TST_CMD} upload ./data/hello_binstar.ipynb || (echo -e "\\n\\n/!\\\\ Upload notebook test failed.\\n" && exit 1)
-    echo
-
-    # Download notebook:\\n"
-    rm -rf nbk_tmp
-    mkdir -p nbk_tmp
-    ${TST_CMD} download "${TST_LOGIN}/hello_binstar" -o nbk_tmp || (echo -e "\\n\\n/!\\\\ Download notebook test failed.\\n" && exit 1)
-    [ $(find nbk_tmp -name hello_binstar.ipynb | wc -l) = 1 ] || (echo -e "\\n\\n/!\\\\ Download notebook test failed.\\n" && exit 1)
-    rm -rf nbk_tmp
-    echo
-
-    # Remove notebook:\\n"
-    echo -e "spawn ${TST_CMD} remove \"${TST_LOGIN}/hello_binstar\"\\nexpect {\\n  \"Are you sure you want to remove the package \" {\\n    send -- \"y\\\\r\"\\n  }\\n  timeout {\\n    send_user \"\\\\n\\\\nUnexpected application state.\\\\n\"\\n    exit 67\\n  }\\n  eof {\\n    send_user \"\\\\n\\\\nUnexpected application state.\\\\n\"\\n    exit 67\\n  }\\n}\\nexpect {\\n  timeout {\\n    send_user \"\\\\n\\\\nUnexpected application state.\\\\n\"\\n    exit 67\\n  }\\n  eof {\\n    exit 0\\n  }\\n}\\n" | expect || (echo -e "\\n\\n/!\\\\ Remove notebook test failed.\\n" && exit 1)
-    echo
-
-    # Upload environment:\\n"
-    ${TST_CMD} upload ./data/test_env.yml || (echo -e "\\n\\n/!\\\\ Upload environment test failed.\\n" && exit 1)
-    echo
-
-    # Download environment:\\n"
-    rm -rf env_tmp
-    mkdir -p env_tmp
-    ${TST_CMD} download "${TST_LOGIN}/test_env" -o env_tmp || (echo -e "\\n\\n/!\\\\ Download environment test failed.\\n" && exit 1)
-    [ $(find env_tmp -name test_env.yml | wc -l) = 1 ] || (echo -e "\\n\\n/!\\\\ Download environment test failed.\\n" && exit 1)
-    rm -rf env_tmp
-    echo
-
-    # Remove environment:\\n"
-    echo -e "spawn ${TST_CMD} remove \"${TST_LOGIN}/test_env\"\\nexpect {\\n  \"Are you sure you want to remove the package \" {\\n    send -- \"y\\\\r\"\\n  }\\n  timeout {\\n    send_user \"\\\\n\\\\nUnexpected application state.\\\\n\"\\n    exit 67\\n  }\\n  eof {\\n    send_user \"\\\\n\\\\nUnexpected application state.\\\\n\"\\n    exit 67\\n  }\\n}\\nexpect {\\n  timeout {\\n    send_user \"\\\\n\\\\nUnexpected application state.\\\\n\"\\n    exit 67\\n  }\\n  eof {\\n    exit 0\\n  }\\n}\\n" | expect || (echo -e "\\n\\n/!\\\\ Remove environment test failed.\\n" && exit 1)
-    echo
-
     # Copy package:\\n"
     ${TST_CMD} copy --from-label main --to-label test anaconda/pip/21.2.4 || (echo -e "\\n\\n/!\\\\ Copy package test failed.\\n" && exit 1)
     echo
