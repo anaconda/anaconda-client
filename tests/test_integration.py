@@ -197,10 +197,24 @@ def test_update_packages(command, data_dir, package_name):
 def tmp_pkg_dir(base_dir):
     p = base_dir / "pkg_tmp"
     (p / "linux-64").mkdir(exist_ok=True, parents=True)
+    (p / "linux-aarch64").mkdir(exist_ok=True, parents=True)
+    (p / "linux-ppc64le").mkdir(exist_ok=True, parents=True)
+    (p / "linux-s390x").mkdir(exist_ok=True, parents=True)
+    (p / "osx-64").mkdir(exist_ok=True, parents=True)
+    (p / "osx-arm64").mkdir(exist_ok=True, parents=True)
+    (p / "win-32").mkdir(exist_ok=True, parents=True)
+    (p / "win-64").mkdir(exist_ok=True, parents=True)
     yield p
     shutil.rmtree(p)
     # TODO: There's a bug where this stranded empty directory iscreated in CWD 
-    shutil.rmtree(p / "linux-64")
+    shutil.rmtree(base_dir / "linux-64")
+    shutil.rmtree(base_dir / "linux-aarch64")
+    shutil.rmtree(base_dir / "linux-ppc64le")
+    shutil.rmtree(base_dir / "linux-s390x")
+    shutil.rmtree(base_dir / "osx-64")
+    shutil.rmtree(base_dir / "osx-arm64")
+    shutil.rmtree(base_dir / "win-32")
+    shutil.rmtree(base_dir / "win-64")
 
 
 def test_download_packages(command, tmp_pkg_dir):
@@ -289,22 +303,33 @@ def test_move_package(command):
 
     assert result.returncode == 0, result.stderr
 
+
+
+
+def test_download_copied_packages(command, tmp_pkg_dir):
+    package_names = ["pip", "git-lfs"]
+    for package_name in package_names:
+        result = subprocess.run(
+            [
+                command,
+                "download",
+                f"{USERNAME}/{package_name}",
+                "-o",
+                str(tmp_pkg_dir),
+            ],
+            capture_output=True,
+            text=True,
+        )
+
+    assert result.returncode == 0, result.stderr
+
+    files = list((tmp_pkg_dir).glob("*/pip-21.2.4-*.tar.bz2"))
+    assert len(files) > 0
+
+    files = list((tmp_pkg_dir).glob("*/git-lfs-2.13.3-*.tar.bz2"))
+    assert len(files) > 0
+
     """
-    # Download copied package:\\n"
-    rm -rf pkg_tmp
-    mkdir -p pkg_tmp/linux-32 pkg_tmp/linux-64 pkg_tmp/linux-aarch64 pkg_tmp/linux-ppc64le pkg_tmp/linux-s390x pkg_tmp/noarch pkg_tmp/osx-64 pkg_tmp/osx-arm64 pkg_tmp/win-32 pkg_tmp/win-64
-    ${TST_CMD} download "${TST_LOGIN}/pip" -o pkg_tmp || (echo -e "\\n\\n/!\\\\ Download copied package test failed.\\n" && exit 1)
-    [ $(find pkg_tmp -name 'pip-21.2.4-*.tar.bz2' | wc -l) ">" 0 ] || (echo -e "\\n\\n/!\\\\ Download copied package test failed.\\n" && exit 1)
-    rm -rf pkg_tmp
-    echo
-
-    rm -rf pkg_tmp
-    mkdir -p pkg_tmp/linux-32 pkg_tmp/linux-64 pkg_tmp/linux-aarch64 pkg_tmp/linux-ppc64le pkg_tmp/linux-s390x pkg_tmp/noarch pkg_tmp/osx-64 pkg_tmp/osx-arm64 pkg_tmp/win-32 pkg_tmp/win-64
-    ${TST_CMD} download "${TST_LOGIN}/git-lfs" -o pkg_tmp || (echo -e "\\n\\n/!\\\\ Download copied package test failed.\\n" && exit 1)
-    [ $(find pkg_tmp -name 'git-lfs-2.13.3-*.tar.bz2' | wc -l) ">" 0 ] || (echo -e "\\n\\n/!\\\\ Download copied package test failed.\\n" && exit 1)
-    rm -rf pkg_tmp
-    echo
-
     # Remove copied package:\\n"
     echo -e "spawn ${TST_CMD} remove ${TST_LOGIN}/pip\\nexpect {\\n  \"Are you sure you want to remove the package \" {\\n    send -- \"y\\\\r\"\\n  }\\n  timeout {\\n    send_user \"\\\\n\\\\nUnexpected application state.\\\\n\"\\n    exit 67\\n  }\\n  eof {\\n    send_user \"\\\\n\\\\nUnexpected application state.\\\\n\"\\n    exit 67\\n  }\\n}\\nexpect {\\n  timeout {\\n    send_user \"\\\\n\\\\nUnexpected application state.\\\\n\"\\n    exit 67\\n  }\\n  eof {\\n    exit 0\\n  }\\n}\\n" | expect || (echo -e "\\n\\n/!\\\\ Remove copied package test failed.\\n" && exit 1)
     echo
