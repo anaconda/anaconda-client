@@ -329,20 +329,32 @@ def test_download_copied_packages(command, tmp_pkg_dir):
     files = list((tmp_pkg_dir).glob("*/git-lfs-2.13.3-*.tar.bz2"))
     assert len(files) > 0
 
-    """
-    # Remove copied package:\\n"
-    echo -e "spawn ${TST_CMD} remove ${TST_LOGIN}/pip\\nexpect {\\n  \"Are you sure you want to remove the package \" {\\n    send -- \"y\\\\r\"\\n  }\\n  timeout {\\n    send_user \"\\\\n\\\\nUnexpected application state.\\\\n\"\\n    exit 67\\n  }\\n  eof {\\n    send_user \"\\\\n\\\\nUnexpected application state.\\\\n\"\\n    exit 67\\n  }\\n}\\nexpect {\\n  timeout {\\n    send_user \"\\\\n\\\\nUnexpected application state.\\\\n\"\\n    exit 67\\n  }\\n  eof {\\n    exit 0\\n  }\\n}\\n" | expect || (echo -e "\\n\\n/!\\\\ Remove copied package test failed.\\n" && exit 1)
-    echo
 
-    echo -e "spawn ${TST_CMD} remove ${TST_LOGIN}/git-lfs\\nexpect {\\n  \"Are you sure you want to remove the package \" {\\n    send -- \"y\\\\r\"\\n  }\\n  timeout {\\n    send_user \"\\\\n\\\\nUnexpected application state.\\\\n\"\\n    exit 67\\n  }\\n  eof {\\n    send_user \"\\\\n\\\\nUnexpected application state.\\\\n\"\\n    exit 67\\n  }\\n}\\nexpect {\\n  timeout {\\n    send_user \"\\\\n\\\\nUnexpected application state.\\\\n\"\\n    exit 67\\n  }\\n  eof {\\n    exit 0\\n  }\\n}\\n" | expect || (echo -e "\\n\\n/!\\\\ Remove copied package test failed.\\n" && exit 1)
-    echo
+@pytest.mark.parametrize(
+    "package_name",
+    [
+        "pip",
+        "git-lfs",
+    ],
+)
+def test_remove_copied_package(command, package_name):
+    program = subprocess.Popen(
+        [
+            command,
+            "remove",
+            f"{USERNAME}/{package_name}",
+        ],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
 
-    # Logout:\\n"
-    ${TST_CMD} logout || (echo -e "\\n\\n/!\\\\ Logout test failed.\\n" && exit 1)
-    echo
+    # Here, we confirm that it's okay that we already have a token
+    [out, err] = program.communicate(b"y")
 
-    echo -e "/?\\\\ Success!\\n\\nAll tests have passed!\\n"
+    assert program.returncode == 0
 
-    rm -rf ./linux-32 ./linux-64 ./linux-aarch64 ./linux-ppc64le ./linux-s390x ./noarch ./osx-64 ./osx-arm64 ./win-32 ./win-64
 
-        """
+def test_logout(command):
+    result = subprocess.run([command, "logout"])
+    assert result.returncode == 0
