@@ -269,14 +269,27 @@ def test_copy_package(command):
 
     assert result.returncode == 0, result.stderr
 
+
+def test_move_package(command):
+    package_names = ["pip/21.2.4", "git-lfs/2.13.3"]
+    for package_name in package_names:
+        result = subprocess.run(
+            [
+                command,
+                "move",
+                "--from-label",
+                "test",
+                "--to-label",
+                "demo",
+                f"{USERNAME}/{package_name}",
+            ],
+            capture_output=True,
+            text=True,
+        )
+
+    assert result.returncode == 0, result.stderr
+
     """
-    # Move package:\\n"
-    ${TST_CMD} move --from-label test --to-label demo "${TST_LOGIN}/pip/21.2.4" || (echo -e "\\n\\n/!\\\\ Move package test failed.\\n" && exit 1)
-    echo
-
-    ${TST_CMD} move --from-label test --to-label demo "${TST_LOGIN}/git-lfs/2.13.3" || (echo -e "\\n\\n/!\\\\ Move package test failed.\\n" && exit 1)
-    echo
-
     # Download copied package:\\n"
     rm -rf pkg_tmp
     mkdir -p pkg_tmp/linux-32 pkg_tmp/linux-64 pkg_tmp/linux-aarch64 pkg_tmp/linux-ppc64le pkg_tmp/linux-s390x pkg_tmp/noarch pkg_tmp/osx-64 pkg_tmp/osx-arm64 pkg_tmp/win-32 pkg_tmp/win-64
