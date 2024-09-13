@@ -104,8 +104,6 @@ def test_config_show(command):
 
 @pytest.fixture(autouse=True, scope="session")
 def logged_in(command):
-    username = os.environ["TEST_USERNAME"]
-    password = os.environ["TEST_PASSWORD"]
 
     # Now that we're authenticated, we can run commands!
     result = subprocess.run(
@@ -123,9 +121,9 @@ def logged_in(command):
                 command,
                 "login",
                 "--username",
-                username,
+                USERNAME,
                 "--password",
-                password,
+                PASSWORD,
             ],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
@@ -139,8 +137,6 @@ def logged_in(command):
 
 
 def test_whoami_logged_in(command):
-    username = "mattkram"
-
     # Now that we're authenticated, we can run commands!
     result = subprocess.run(
         [command, "whoami"],
@@ -149,7 +145,7 @@ def test_whoami_logged_in(command):
     )
 
     assert result.returncode == 0
-    assert f"Username: {username}" in result.stderr
+    assert f"Username: {USERNAME}" in result.stderr
 
 
 @pytest.mark.parametrize(
@@ -178,12 +174,11 @@ def test_upload_package(command, data_dir, package_filename):
     ],
 )
 def test_update_packages(command, data_dir, package_name):
-    username = "mattkram"
     result = subprocess.run(
         [
             command,
             "update",
-            f"{username}/{package_name}",
+            f"{USERNAME}/{package_name}",
             str(data_dir / "conda_gc_test_metadata.json"),
         ],
         capture_output=True,
@@ -218,14 +213,13 @@ def tmp_pkg_dir(base_dir):
 
 
 def test_download_packages(command, tmp_pkg_dir):
-    username = "mattkram"
     package_names = ["conda_gc_test", "bcj-cffi"]
     for package_name in package_names:
         result = subprocess.run(
             [
                 command,
                 "download",
-                f"{username}/{package_name}",
+                f"{USERNAME}/{package_name}",
                 "-o",
                 str(tmp_pkg_dir),
             ],
