@@ -223,14 +223,33 @@ def test_download_packages(command, tmp_pkg_dir):
 
     assert (tmp_pkg_dir / "linux-64" / "conda_gc_test-1.2.1-3.tar.bz2").exists()
     assert (tmp_pkg_dir / "linux-64" / "bcj-cffi-0.5.1-py310h295c915_0.tar.bz2").exists()
+
+
+@pytest.mark.parametrize(
+    "package_name",
+    [
+        "conda_gc_test",
+        "bcj-cffi",
+    ],
+)
+def test_remove_package(command, package_name):
+    program = subprocess.Popen(
+        [
+            command,
+            "remove",
+            f"mattkram/{package_name}",
+        ],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    # Here, we confirm that it's okay that we already have a token
+    [out, err] = program.communicate(b"y")
+
+    assert program.returncode == 0
+
     """
-    # Remove package:\\n"
-    echo -e "spawn ${TST_CMD} remove \"${TST_LOGIN}/conda_gc_test\"\\nexpect {\\n  \"Are you sure you want to remove the package \" {\\n    send -- \"y\\\\r\"\\n  }\\n  timeout {\\n    send_user \"\\\\n\\\\nUnexpected application state.\\\\n\"\\n    exit 67\\n  }\\n  eof {\\n    send_user \"\\\\n\\\\nUnexpected application state.\\\\n\"\\n    exit 67\\n  }\\n}\\nexpect {\\n  timeout {\\n    send_user \"\\\\n\\\\nUnexpected application state.\\\\n\"\\n    exit 67\\n  }\\n  eof {\\n    exit 0\\n  }\\n}\\n" | expect || (echo -e "\\n\\n/!\\\\ Remove package test failed.\\n" && exit 1)
-    echo
-
-    echo -e "spawn ${TST_CMD} remove \"${TST_LOGIN}/bcj-cffi\"\\nexpect {\\n  \"Are you sure you want to remove the package \" {\\n    send -- \"y\\\\r\"\\n  }\\n  timeout {\\n    send_user \"\\\\n\\\\nUnexpected application state.\\\\n\"\\n    exit 67\\n  }\\n  eof {\\n    send_user \"\\\\n\\\\nUnexpected application state.\\\\n\"\\n    exit 67\\n  }\\n}\\nexpect {\\n  timeout {\\n    send_user \"\\\\n\\\\nUnexpected application state.\\\\n\"\\n    exit 67\\n  }\\n  eof {\\n    exit 0\\n  }\\n}\\n" | expect || (echo -e "\\n\\n/!\\\\ Remove package test failed.\\n" && exit 1)
-    echo
-
     # Upload notebook:\\n"
     ${TST_CMD} upload ./data/hello_binstar.ipynb || (echo -e "\\n\\n/!\\\\ Upload notebook test failed.\\n" && exit 1)
     echo
