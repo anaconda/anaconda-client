@@ -1,8 +1,10 @@
 import os
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
+import pexpect
 import pytest
 from dotenv import load_dotenv
 
@@ -10,6 +12,39 @@ from binstar_client.__about__ import __version__
 
 
 load_dotenv()
+
+USERNAME = os.environ["TEST_USERNAME"]
+PASSWORD = os.environ["TEST_PASSWORD"]
+
+
+def login():
+    child = pexpect.spawn(["anaconda", "login"])
+    child.logfile_read = sys.stdout.buffer
+
+    child.expect('Username:')
+    child.sendline(USERNAME)
+
+    child.expect('Password:')
+    child.sendline(PASSWORD)
+
+    index = child.expect(
+        [
+            "Would you like to continue .*:",
+            pexpect.EOF,
+            pexpect.TIMEOUT,
+        ]
+    )
+    if index == 0:
+        child.sendline("Y")
+    elif index == 1:
+        print("No re-login prompt sent")
+    elif index == 2:
+        print("Timed out")
+    else:
+        raise ValueError("This should be unreachable")
+
+    child.expect("login successful")
+    child.close()
 
 
 @pytest.fixture()
