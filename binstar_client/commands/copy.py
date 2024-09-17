@@ -82,16 +82,16 @@ def _exclusive_method(ctx: typer.Context, param: typer.CallbackParam, value: str
 
     """
     if getattr(ctx, "_methods", None) is None:
-        ctx._methods = set()
+        ctx._methods = set()  # type: ignore
     if value:
-        if ctx._methods:
-            used_mode, = ctx._methods
+        if ctx._methods:  # type: ignore
+            used_mode, = ctx._methods  # type: ignore
             raise typer.BadParameter(f"mutually exclusive with {used_mode}")
-        ctx._methods.add(" / ".join(f"'{o}'" for o in param.opts))
+        ctx._methods.add(" / ".join(f"'{o}'" for o in param.opts))  # type: ignore
     return value
 
 
-def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, context_settings: dict):
+def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, context_settings: dict) -> None:
     @app.command(
         name=name,
         hidden=hidden,
@@ -130,7 +130,7 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             help="Update missing data in destination package metadata",
             callback=_exclusive_method,
         ),
-    ):
+    ) -> None:
         args = argparse.Namespace(
             token=ctx.obj.params.get("token"),
             site=ctx.obj.params.get("site"),

@@ -799,16 +799,16 @@ def _exclusive_mode(ctx: typer.Context, param: typer.CallbackParam, value: str) 
 
     """
     if getattr(ctx, "_modes", None) is None:
-        ctx._modes = set()
+        ctx._modes = set()  # type: ignore
     if value:
-        if ctx._modes:
-            used_mode, = ctx._modes
+        if ctx._modes:  # type: ignore
+            used_mode, = ctx._modes  # type: ignore
             raise typer.BadParameter(f"mutually exclusive with {used_mode}")
-        ctx._modes.add(" / ".join(f"'{o}'" for o in param.opts))
+        ctx._modes.add(" / ".join(f"'{o}'" for o in param.opts))  # type: ignore
     return value
 
 
-def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, context_settings: dict):
+def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, context_settings: dict) -> None:
     label_help: str = (
         '{deprecation}Add this file to a specific {label}. '
         'Warning: if the file {label}s do not include "main", '
@@ -924,7 +924,7 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             help="Overwrite existing release metadata with the metadata from the package.",
             callback=_exclusive_mode,
         ),
-    ):
+    ) -> None:
         files = files or []
         labels = channels + labels
 

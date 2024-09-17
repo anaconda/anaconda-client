@@ -283,12 +283,12 @@ def _exclusive_action(ctx: typer.Context, param: typer.CallbackParam, value: str
 
     """
     if getattr(ctx, "_actions", None) is None:
-        ctx._actions = set()
+        ctx._actions = set()  # type: ignore
     if value:
-        if ctx._actions:
-            used_action, = ctx._actions
+        if ctx._actions:  # type: ignore
+            used_action, = ctx._actions  # type: ignore
             raise typer.BadParameter(f"mutually exclusive with {used_action}")
-        ctx._actions.add(" / ".join(f"'{o}'" for o in param.opts))
+        ctx._actions.add(" / ".join(f"'{o}'" for o in param.opts))  # type: ignore
     return value
 
 
@@ -297,7 +297,7 @@ class TokenStrength(Enum):
     WEAK = 'weak'
 
 
-def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, context_settings: dict):
+def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, context_settings: dict) -> None:
     @app.command(
         name=name,
         hidden=hidden,
@@ -393,7 +393,7 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             help="Remove authentication tokens. Multiple token names can be provided",
             callback=_exclusive_action,
         ),
-    ):
+    ) -> None:
         if not any([list_scopes, list_, create, info, remove]):
             raise typer.BadParameter("one of --list-scopes, --list, --list, --info, or --remove must be provided")
 

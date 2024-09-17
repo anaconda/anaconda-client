@@ -84,7 +84,7 @@ def add_parser(subparsers):
     parser.set_defaults(main=main)
 
 
-def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, context_settings: dict):
+def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, context_settings: dict) -> None:
     @app.command(
         name=name,
         hidden=hidden,
@@ -105,7 +105,7 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             '--force',
             help='Do not prompt removal',
         )
-    ):
+    ) -> None:
         args = Namespace(
             token=ctx.obj.params.get("token"),
             site=ctx.obj.params.get("site"),

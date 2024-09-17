@@ -100,7 +100,7 @@ def main_callback(
         help="Authentication token to use. A token string or path to a file containing a token",
         hidden=True,
     )] = None,
-):
+) -> None:
     if token:
         ctx.obj["token"] = token
 

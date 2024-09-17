@@ -80,16 +80,16 @@ def _exclusive_action(ctx: typer.Context, param: typer.CallbackParam, value: str
 
     """
     if getattr(ctx, "_actions", None) is None:
-        ctx._actions = set()
+        ctx._actions = set()  # type: ignore
     if value:
-        if ctx._actions:
-            used_action, = ctx._actions
+        if ctx._actions:  # type: ignore
+            used_action, = ctx._actions  # type: ignore
             raise typer.BadParameter(f"mutually exclusive with {used_action}")
-        ctx._actions.add(" / ".join(f"'{o}'" for o in param.opts))
+        ctx._actions.add(" / ".join(f"'{o}'" for o in param.opts))  # type: ignore
     return value
 
 
-def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, context_settings: dict):
+def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, context_settings: dict) -> None:
 
     @app.command(
         name=name,
@@ -147,7 +147,7 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
                 'This package will require authorized and authenticated access to install'
             )
         ),
-    ):
+    ) -> None:
 
         if not any([add_collaborator, list_collaborators, create]):
             raise typer.BadParameter("one of --add-collaborator, --list-collaborators, or --create must be provided")

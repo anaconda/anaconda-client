@@ -130,16 +130,16 @@ def _exclusive_action(ctx: typer.Context, param: typer.CallbackParam, value: str
         parsed_value = value
 
     if getattr(ctx, "_actions", None) is None:
-        ctx._actions = set()
+        ctx._actions = set()  # type: ignore
     if parsed_value:
-        if ctx._actions:
-            used_action, = ctx._actions
+        if ctx._actions:  # type: ignore
+            used_action, = ctx._actions  # type: ignore
             raise typer.BadParameter(f"mutually exclusive with {used_action}")
-        ctx._actions.add(" / ".join(f"'{o}'" for o in param.opts))
+        ctx._actions.add(" / ".join(f"'{o}'" for o in param.opts))  # type: ignore
     return value
 
 
-def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, context_settings: dict):
+def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, context_settings: dict) -> None:
 
     @app.command(
         name=name,
@@ -189,7 +189,7 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             help=f"Remove a {name}",
             callback=_exclusive_action,
         ),
-    ):
+    ) -> None:
         copy = _parse_optional_tuple(copy)
         if not any([copy, list_, show, lock, unlock, remove]):
             raise typer.BadParameter("one of --copy, --list, --show, --lock, --unlock, or --remove must be provided")

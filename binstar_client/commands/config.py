@@ -189,7 +189,7 @@ def add_parser(subparsers):
     parser.set_defaults(main=main, sub_parser=parser)
 
 
-def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, context_settings: dict):
+def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, context_settings: dict) -> None:
 
     @app.command(
         name=name,
@@ -246,7 +246,7 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             "--site",
             help='set a variable for all users on this machine'
         )
-    ):
+    ) -> None:
         # There's an existing bug in the type argument for anything but default
         # TODO: Remove the --type option. The below code is what I think was intended, but it's not what happens
         if type_ == "int":

@@ -24,7 +24,7 @@ def main(
     *,
     token: Optional[str] = None,
     site: Optional[str] = None,
-):  # pylint: disable=inconsistent-return-statements
+) -> Optional[int]:
     if args is not None:
         token = args.token
         site = args.site
@@ -40,6 +40,8 @@ def main(
 
     pprint_user(user)
 
+    return None
+
 
 def add_parser(subparsers):
     subparser = subparsers.add_parser('whoami',
@@ -49,12 +51,12 @@ def add_parser(subparsers):
     subparser.set_defaults(main=main)
 
 
-def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, context_settings: dict):
+def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, context_settings: dict) -> None:
     @app.command(
         name=name,
         hidden=hidden,
         help=help_text,
         context_settings=context_settings,
     )
-    def whoami(ctx: typer.Context):
+    def whoami(ctx: typer.Context) -> None:
         main(token=ctx.obj.params.get("token"), site=ctx.obj.params.get("site"))

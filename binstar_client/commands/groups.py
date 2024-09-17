@@ -88,7 +88,7 @@ class Permission(Enum):
     ADMIN = 'admin'
 
 
-def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, context_settings: dict):
+def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, context_settings: dict) -> None:
     @app.command(
         name=name,
         hidden=hidden,
@@ -107,7 +107,7 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
             'read',
             help='The permission the group should provide',
         )
-    ):
+    ) -> None:
         args = argparse.Namespace(
             token=ctx.obj.params.get("token"),
             site=ctx.obj.params.get("site"),

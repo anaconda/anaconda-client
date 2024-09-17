@@ -5,9 +5,10 @@ import sys
 from argparse import Namespace
 from importlib import reload
 from socket import gethostname
-from typing import Any, Generator, Optional
+from typing import Any, Callable, Dict, List, Generator, Optional
 
 import pytest
+from pytest import FixtureRequest
 from pytest import LogCaptureFixture
 from pytest import MonkeyPatch
 from typer import Typer, rich_utils
@@ -51,7 +52,7 @@ def enable_base_cli_plugin(monkeypatch: MonkeyPatch) -> Generator[None, None, No
         pytest.param(("new", "org"), id="new-prefix"),
     ]
 )
-def cli_mocker(request, monkeypatch: MonkeyPatch, mocker) -> Generator[None, None, None]:
+def cli_mocker(request: FixtureRequest, monkeypatch: MonkeyPatch, mocker: Any) -> Generator[Callable[[str], MockedCliInvoker], None, None]:
     """Fixture returns a function that can be used to invoke the CLI via different methods.
 
     The different methods are various levels of gradual migration:
@@ -100,7 +101,7 @@ def cli_mocker(request, monkeypatch: MonkeyPatch, mocker) -> Generator[None, Non
             runner = CliRunner()
             return runner.invoke(anaconda_cli_base.cli.app, args)
 
-    def closure(main_func: str):
+    def closure(main_func: str) -> MockedCliInvoker:
         return MockedCliInvoker(func=f, main_func=main_func, mocker=mocker, parser=parser)
 
     yield closure
@@ -113,13 +114,13 @@ def cli_mocker(request, monkeypatch: MonkeyPatch, mocker) -> Generator[None, Non
 
 
 class MockedCliInvoker:
-    def __init__(self, func, main_func: str, mocker, parser):
+    def __init__(self, func: Callable, main_func: str, mocker: Any, parser: Any):
         self._func = func
         self._main_mock = mocker.patch(main_func)
         self._invoked = False
         self.parser = parser
 
-    def invoke(self, args: list[str], prefix_args: Optional[list[str]] = None):
+    def invoke(self, args: List[str], prefix_args: Optional[List[str]] = None) -> Any:
         """Invoke the CLI with a list of arguments.
 
         The optional prefix_args are passed after the `anaconda` entrypoint.
@@ -133,7 +134,7 @@ class MockedCliInvoker:
         """Assert that the mocked main function was called once."""
         self._main_mock.assert_called_once()
 
-    def assert_main_args_contains(self, d=None, /, **expected: Any) -> None:
+    def assert_main_args_contains(self, d: Optional[Dict] = None, /, **expected: Any) -> None:
         """Return True if the args passed to the main function is a superset of the kwargs provided."""
         assert self._invoked, "cli_mocker was never invoked"
 
