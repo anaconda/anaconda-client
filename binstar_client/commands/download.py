@@ -10,6 +10,7 @@ from __future__ import unicode_literals
 
 import argparse
 import logging
+from typing import List
 
 import typer
 
@@ -75,6 +76,8 @@ def main(args):
 
 
 def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, context_settings: dict) -> None:
+    pkg_types = ', '.join(pkg_type.value for pkg_type in PackageType)
+
     @app.command(
         name=name,
         hidden=hidden,
@@ -91,6 +94,10 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         output: str = typer.Option(
             '.', '-o', '--output', help='Download as',
         ),
+        package_type: List[str] = typer.Option(
+            None, '-t', '--package-type',
+            help='Set the package type [{0}]. Defaults to downloading all package types available'.format(pkg_types),
+        ),
     ) -> None:
         args = argparse.Namespace(
             token=ctx.obj.params.get('token'),
@@ -98,6 +105,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             handle=handle,
             force=force,
             output=output,
+            package_type=package_type or None,
         )
 
         main(args)

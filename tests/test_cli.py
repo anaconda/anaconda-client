@@ -1057,6 +1057,9 @@ def test_package_mutually_exclusive_options_required(mocker):
         CLICase("-f", dict(force=True), id="force-short"),
         CLICase("--output somewhere", dict(output="somewhere"), id="output-long"),
         CLICase("-o somewhere", dict(output="somewhere"), id="output-short"),
+        CLICase("--package-type conda", dict(package_type=["conda"]), id="package-type-long"),
+        CLICase("-t conda", dict(package_type=["conda"]), id="package-type-short"),
+        CLICase("-t conda -t pypi", dict(package_type=["conda", "pypi"]), id="package-type-multiple"),
         CLICase("--token TOKEN", dict(token="TOKEN"), id="token", prefix=True),  # nosec
         CLICase("--site my-site.com", dict(site="my-site.com"), id="site", prefix=True),
     ]
@@ -1070,6 +1073,7 @@ def test_download_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None
         handle="handle",
         force=False,
         output=".",
+        package_type=None,
     )
     expected = {**defaults, **case.mods}
 
