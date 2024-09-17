@@ -247,7 +247,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             help='set a variable for all users on this machine'
         )
     ) -> None:
-        # pylint: disable=too-many-arguments,fixme
+        # pylint: disable=too-many-arguments,invalid-name,fixme
         # There's an existing bug in the type argument for anything but default
         # TODO: Remove the --type option. The below code is what I think was intended, but it's not what happens
         type_func: Callable
@@ -266,7 +266,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             site=ctx.obj.params.get('site'),
             type=type_func,
             # TODO: conversion to list is just to match argparse
-            set=[list(s) for s in set_],  # type: ignore, pylint: disable=invalid-name
+            set=[list(s) for s in set_],  # type: ignore
             get=get,
             remove=remove,
             show=show,
