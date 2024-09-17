@@ -9,7 +9,7 @@ from __future__ import unicode_literals, print_function
 import argparse
 import functools
 import logging
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 import typer
 
@@ -108,21 +108,26 @@ def add_parser(subparsers):
     _add_parser(subparsers, name='channel', deprecated=True)
 
 
-def _parse_optional_tuple(value: Tuple[str, str]) -> Optional[Tuple[str, str]]:
+def _parse_optional_tuple(value: Optional[Tuple[str, str]]) -> Optional[List[str]]:
     # Convert a sentinel tuple of empty strings to None, since it is not possible with typer parser or callback
-    if value == ("", ""):
+    if value == ("", "") or value is None:
         return None
     # TODO: We only return a list because argparse does. Should really be a tuple.
     return list(value)
 
 
-def _exclusive_action(ctx: typer.Context, param: typer.CallbackParam, value: str) -> str:
+def _exclusive_action(
+    ctx: typer.Context,
+    param: typer.CallbackParam,
+    value: Union[str, Tuple[str, str]],
+) -> Union[str, Tuple[str, str]]:
     """Check for exclusivity of action options.
 
     To do this, we attach a new special attribute onto the typer Context the first time
     one of the options in the group is used.
 
     """
+    parsed_value: Union[List[str], str, None]
     if isinstance(value, tuple):
         # This is here so we can treat the empty tuple as falsy, but I don't like it
         parsed_value = _parse_optional_tuple(value)
@@ -190,15 +195,15 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             callback=_exclusive_action,
         ),
     ) -> None:
-        copy = _parse_optional_tuple(copy)
-        if not any([copy, list_, show, lock, unlock, remove]):
+        parsed_copy = _parse_optional_tuple(copy)
+        if not any([parsed_copy, list_, show, lock, unlock, remove]):
             raise typer.BadParameter("one of --copy, --list, --show, --lock, --unlock, or --remove must be provided")
 
         args = argparse.Namespace(
             token=ctx.obj.params.get("token"),
             site=ctx.obj.params.get("site"),
             organization=organization,
-            copy=copy,
+            copy=parsed_copy,
             list=list_,
             show=show,
             lock=lock,
