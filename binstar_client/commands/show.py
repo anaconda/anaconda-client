@@ -129,8 +129,8 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         ),
     ) -> None:
         args = Namespace(
-            token=ctx.obj.params.get("token"),
-            site=ctx.obj.params.get("site"),
+            token=ctx.obj.params.get('token'),
+            site=ctx.obj.params.get('site'),
             spec=spec,
         )
 

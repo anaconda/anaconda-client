@@ -177,7 +177,7 @@ def _mount_subcommand(
 
     """
 
-    force_use_new_cli = bool(os.getenv("ANACONDA_CLI_FORCE_NEW", False))
+    force_use_new_cli = bool(os.getenv("ANACONDA_CLI_FORCE_NEW"))
 
     main_help_text = f"anaconda.org: {help_text + ' ' if help_text else ''}(alias for 'anaconda org {name}')"
 
@@ -224,6 +224,7 @@ def _load_new_subcommand(app: typer.Typer, name: str, help_text: str, hidden: bo
         name: The name of the module, within the binstar_client.commands subpackage.
 
     """
+    # pylint: disable=redefined-outer-name
     # This hack is here to handle the existing deprecation of the channel subcommand
     if name == "label":
         mod_name = "channel"
@@ -251,8 +252,9 @@ def load_legacy_subcommands() -> None:
     This allows them to be called from the new CLI, without having to manually migrate.
 
     """
+    # pylint: disable=fixme
     # TODO: We should use a config parameter
-    if bool(os.getenv("ANACONDA_CLIENT_FORCE_STANDALONE", False)):
+    if bool(os.getenv("ANACONDA_CLIENT_FORCE_STANDALONE")):
         return
 
     parser = ArgumentParser()

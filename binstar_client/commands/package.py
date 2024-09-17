@@ -79,13 +79,14 @@ def _exclusive_action(ctx: typer.Context, param: typer.CallbackParam, value: str
     one of the options in the group is used.
 
     """
-    if getattr(ctx, "_actions", None) is None:
+    # pylint: disable=protected-access,invalid-name
+    if getattr(ctx, '_actions', None) is None:
         ctx._actions = set()  # type: ignore
     if value:
         if ctx._actions:  # type: ignore
             used_action, = ctx._actions  # type: ignore
-            raise typer.BadParameter(f"mutually exclusive with {used_action}")
-        ctx._actions.add(" / ".join(f"'{o}'" for o in param.opts))  # type: ignore
+            raise typer.BadParameter(f'mutually exclusive with {used_action}')
+        ctx._actions.add(' / '.join(f'\'{o}\'' for o in param.opts))  # type: ignore
     return value
 
 
@@ -126,12 +127,12 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         ),
         license_: Optional[str] = typer.Option(
             None,
-            "--license",
+            '--license',
             help='Set the package license',
         ),
         license_url: Optional[str] = typer.Option(
             None,
-            help="Set the package license url",
+            help='Set the package license url',
         ),
         personal: Optional[bool] = typer.Option(
             False,
@@ -148,22 +149,24 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             )
         ),
     ) -> None:
+        # pylint: disable=too-many-arguments
 
         if not any([add_collaborator, list_collaborators, create]):
-            raise typer.BadParameter("one of --add-collaborator, --list-collaborators, or --create must be provided")
+            raise typer.BadParameter('one of --add-collaborator, --list-collaborators, or --create must be provided')
 
         if private and personal:
-            raise typer.BadParameter("Cannot set both --private and --personal")
-        elif private:
-            access = "private"
+            raise typer.BadParameter('Cannot set both --private and --personal')
+
+        if private:
+            access = 'private'
         elif personal:
-            access = "personal"
+            access = 'personal'
         else:
             access = None
 
         args = Namespace(
-            token=ctx.obj.params.get("token"),
-            site=ctx.obj.params.get("site"),
+            token=ctx.obj.params.get('token'),
+            site=ctx.obj.params.get('site'),
             spec=spec,
             add_collaborator=add_collaborator,
             list_collaborators=list_collaborators,

@@ -81,13 +81,14 @@ def _exclusive_method(ctx: typer.Context, param: typer.CallbackParam, value: str
     one of the options in the group is used.
 
     """
-    if getattr(ctx, "_methods", None) is None:
+    # pylint: disable=protected-access,invalid-name
+    if getattr(ctx, '_methods', None) is None:
         ctx._methods = set()  # type: ignore
     if value:
         if ctx._methods:  # type: ignore
             used_mode, = ctx._methods  # type: ignore
-            raise typer.BadParameter(f"mutually exclusive with {used_mode}")
-        ctx._methods.add(" / ".join(f"'{o}'" for o in param.opts))  # type: ignore
+            raise typer.BadParameter(f'mutually exclusive with {used_mode}')
+        ctx._methods.add(' / '.join(f'\'{o}\'' for o in param.opts))  # type: ignore
     return value
 
 
@@ -113,27 +114,28 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             help='User account to copy package to (default: your account)',
         ),
         from_label: str = typer.Option(
-            "main",
+            'main',
             help='Label to copy packages from',
         ),
         to_label: str = typer.Option(
-            "main",
+            'main',
             help='Label to put all packages into',
         ),
         replace: bool = typer.Option(
             False,
-            help="Overwrite destination package metadata",
+            help='Overwrite destination package metadata',
             callback=_exclusive_method,
         ),
         update: bool = typer.Option(
             False,
-            help="Update missing data in destination package metadata",
+            help='Update missing data in destination package metadata',
             callback=_exclusive_method,
         ),
     ) -> None:
+        # pylint: disable=too-many-arguments
         args = argparse.Namespace(
-            token=ctx.obj.params.get("token"),
-            site=ctx.obj.params.get("site"),
+            token=ctx.obj.params.get('token'),
+            site=ctx.obj.params.get('site'),
             spec=spec,
             to_owner=to_owner,
             from_label=from_label,

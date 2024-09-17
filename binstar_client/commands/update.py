@@ -131,6 +131,7 @@ def add_parser(subparsers: typing.Any) -> None:
 
 
 def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, context_settings: dict) -> None:
+    """Mount the subcommand to the typer app."""
     @app.command(
         name=name,
         hidden=hidden,
@@ -158,9 +159,9 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         ),
         package_type: typing.Optional[str] = typer.Option(
             None,
-            "-t",
-            "--package-type",
-            help="Set the package type. Defaults to autodetect.",
+            '-t',
+            '--package-type',
+            help='Set the package type. Defaults to autodetect.',
         ),
         release: typing.Optional[bool] = typer.Option(
             False,
@@ -168,8 +169,8 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         ),
     ) -> None:
         args = argparse.Namespace(
-            token=ctx.obj.params.get("token"),
-            site=ctx.obj.params.get("site"),
+            token=ctx.obj.params.get('token'),
+            site=ctx.obj.params.get('site'),
             spec=spec,
             source=source,
             package_type=package_type,

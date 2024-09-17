@@ -129,17 +129,17 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             callback=parse_specs,
         ),
         from_label: str = typer.Option(
-            "main",
+            'main',
             help='Label to move packages from',
         ),
         to_label: str = typer.Option(
-            "main",
+            'main',
             help='Label to move packages to',
         ),
     ) -> None:
         args = argparse.Namespace(
-            token=ctx.obj.params.get("token"),
-            site=ctx.obj.params.get("site"),
+            token=ctx.obj.params.get('token'),
+            site=ctx.obj.params.get('site'),
             spec=spec,
             from_label=from_label,
             to_label=to_label,

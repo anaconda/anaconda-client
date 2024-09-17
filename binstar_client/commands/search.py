@@ -60,6 +60,7 @@ def add_parser(subparsers):
 
 
 class Platform(Enum):
+    """An enum representing platforms that can be passed as options."""
     OSX_32 = 'osx-32'
     OSX_64 = 'osx-64'
     WIN_32 = 'win-32'
@@ -90,21 +91,21 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         ),
         package_type: Optional[str] = typer.Option(
             None,
-            "-t",
-            "--package-type",
+            '-t',
+            '--package-type',
             help='Only search for packages of this type',
         ),
         platform: Optional[Platform] = typer.Option(
             None,
-            "-p",
-            "--platform",
+            '-p',
+            '--platform',
             help='Only search for packages of the chosen platform',
         ),
     ) -> None:
         args = argparse.Namespace(
-            token=ctx.obj.params.get("token"),
-            site=ctx.obj.params.get("site"),
-            # TODO: This is only a list to ensure parity with argparse
+            token=ctx.obj.params.get('token'),
+            site=ctx.obj.params.get('site'),
+            # TODO: This is only a list to ensure parity with argparse  # pylint: disable=fixme
             name=[name],
             package_type=package_type,
             platform=platform.value if platform is not None else None,

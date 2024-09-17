@@ -798,17 +798,19 @@ def _exclusive_mode(ctx: typer.Context, param: typer.CallbackParam, value: str) 
     one of the options in the group is used.
 
     """
-    if getattr(ctx, "_modes", None) is None:
+    # pylint: disable=protected-access,invalid-name
+    if getattr(ctx, '_modes', None) is None:
         ctx._modes = set()  # type: ignore
     if value:
         if ctx._modes:  # type: ignore
             used_mode, = ctx._modes  # type: ignore
-            raise typer.BadParameter(f"mutually exclusive with {used_mode}")
-        ctx._modes.add(" / ".join(f"'{o}'" for o in param.opts))  # type: ignore
+            raise typer.BadParameter(f'mutually exclusive with {used_mode}')
+        ctx._modes.add(' / '.join(f'\'{o}\'' for o in param.opts))  # type: ignore
     return value
 
 
 def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, context_settings: dict) -> None:
+    """Mount the subcommand to the typer app."""
     label_help: str = (
         '{deprecation}Add this file to a specific {label}. '
         'Warning: if the file {label}s do not include "main", '
@@ -827,27 +829,27 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         files: typing.List[str] = typer.Argument(),
         channels: list[str] = typer.Option(
             [],
-            "-c",
-            "--channel",
+            '-c',
+            '--channel',
             help=label_help.format(
-                deprecation=typer.style("(deprecated) ", fg=typer.colors.RED, bold=True),
+                deprecation=typer.style('(deprecated) ', fg=typer.colors.RED, bold=True),
                 label='channel',
             ),
         ),
         labels: list[str] = typer.Option(
             [],
-            "-l",
-            "--label",
+            '-l',
+            '--label',
             help=label_help.format(deprecation='', label='label')
         ),
-        progress: bool = typer.Option(True, is_flag=True, help="Show upload progress"),
+        progress: bool = typer.Option(True, is_flag=True, help='Show upload progress'),
         user: typing.Optional[str] = typer.Option(
-            None, "-u", "--user",
+            None, '-u', '--user',
             help='User account or Organization, defaults to the current user'
         ),
         keep_basename: bool = typer.Option(
             False,
-            help="Do not normalize a basename when uploading a conda package.",
+            help='Do not normalize a basename when uploading a conda package.',
         ),
         package: typing.Optional[str] = typer.Option(
             None,
@@ -867,9 +869,9 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         ),
         package_type: typing.Optional[str] = typer.Option(
             None,
-            "-t",
-            "--package-type",
-            help="Set the package type. Defaults to autodetect.",
+            '-t',
+            '--package-type',
+            help='Set the package type. Defaults to autodetect.',
         ),
         description: typing.Optional[str] = typer.Option(
             None,
@@ -878,7 +880,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         ),
         thumbnail: typing.Optional[str] = typer.Option(
             None,
-            help="Notebook's thumbnail image",
+            help='Notebook\'s thumbnail image',
         ),
         private: bool = typer.Option(
             False,
@@ -887,62 +889,63 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         ),
         register: bool = typer.Option(
             DEFAULT_CONFIG.get('auto_register', True),
-            help="Register new package namespace if it does not exist",
+            help='Register new package namespace if it does not exist',
         ),
         build_id: typing.Optional[str] = typer.Option(
             None,
-            help="Anaconda repository Build ID (internal only)",
+            help='Anaconda repository Build ID (internal only)',
         ),
         interactive: bool = typer.Option(
             False,
-            "-i",
-            "--interactive/--no-interactive",
+            '-i',
+            '--interactive/--no-interactive',
             help='Run an interactive prompt if any packages are missing',
             callback=_exclusive_mode,
         ),
         fail: bool = typer.Option(
             False,
-            "-f",
-            "--fail/--no-fail",
-            help="Fail if a package or release does not exist (default)",
+            '-f',
+            '--fail/--no-fail',
+            help='Fail if a package or release does not exist (default)',
             callback=_exclusive_mode,
         ),
         force: bool = typer.Option(
             False,
-            help="Force a package upload regardless of errors",
+            help='Force a package upload regardless of errors',
             callback=_exclusive_mode,
         ),
         skip_existing: bool = typer.Option(
             False,
-            help="Skip errors on package batch upload if it already exists",
+            help='Skip errors on package batch upload if it already exists',
             callback=_exclusive_mode,
         ),
         force_metadata_update: bool = typer.Option(
             False,
-            "-m",
-            "--force-metadata-update",
-            help="Overwrite existing release metadata with the metadata from the package.",
+            '-m',
+            '--force-metadata-update',
+            help='Overwrite existing release metadata with the metadata from the package.',
             callback=_exclusive_mode,
         ),
     ) -> None:
+        # pylint: disable=too-many-arguments,too-many-locals,fixme
         files = files or []
         labels = channels + labels
 
         # These are mutually exclusive, enforced by a callback
         if interactive:
-            mode = "interactive"
+            mode = 'interactive'
         elif fail:
-            mode = "fail"
+            mode = 'fail'
         elif force:
-            mode = "force"
+            mode = 'force'
         elif skip_existing:
-            mode = "skip"
+            mode = 'skip'
         else:
             mode = None
 
-        if ctx.obj.params.get("verbose"):
+        if ctx.obj.params.get('verbose'):
             log_level = logging.DEBUG
-        elif ctx.obj.params.get("quiet"):
+        elif ctx.obj.params.get('quiet'):
             log_level = logging.WARNING
         else:
             log_level = logging.INFO
@@ -952,12 +955,12 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         arguments = argparse.Namespace(
             # TODO: argparse handles this as a list of lists, with one filename in each.
             #       We should probably fix that one.
-            files=[[f] for f in files],
-            token=ctx.obj.params.get("token"),
-            disable_ssl_warnings=ctx.obj.params.get("disable_ssl_warnings"),
-            show_traceback=ctx.obj.params.get("show_traceback"),
+            files=[[f] for f in files],  # pylint: disable=invalid-name
+            token=ctx.obj.params.get('token'),
+            disable_ssl_warnings=ctx.obj.params.get('disable_ssl_warnings'),
+            show_traceback=ctx.obj.params.get('show_traceback'),
             log_level=log_level,
-            site=ctx.obj.params.get("site"),
+            site=ctx.obj.params.get('site'),
             labels=labels,
             no_progress=not progress,
             user=user,

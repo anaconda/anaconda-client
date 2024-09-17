@@ -202,12 +202,12 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         ctx: typer.Context,
         type_: Optional[str] = typer.Option(
             None,
-            "--type",
+            '--type',
             help='The type of the values in the set commands'
         ),
         set_: Optional[typing.List[click.Tuple]] = typer.Option(
             [],
-            "--set",
+            '--set',
             help='sets a new variable: name value',
             click_type=click.Tuple([str, str]),
         ),
@@ -235,22 +235,23 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         ),
         user: typing.Optional[bool] = typer.Option(
             None,
-            "-u",
-            "--user",
+            '-u',
+            '--user',
             help='set a variable for this user',
         ),
         system: typing.Optional[bool] = typer.Option(
             False,
-            "-s",
-            "--system",
-            "--site",
+            '-s',
+            '--system',
+            '--site',
             help='set a variable for all users on this machine'
         )
     ) -> None:
+        # pylint: disable=too-many-arguments,fixme
         # There's an existing bug in the type argument for anything but default
         # TODO: Remove the --type option. The below code is what I think was intended, but it's not what happens
         type_func: Callable
-        if type_ == "int":
+        if type_ == 'int':
             type_func = int
         else:
             type_func = safe_load
@@ -261,11 +262,11 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             user = False
 
         args = Namespace(
-            token=ctx.obj.params.get("token"),
-            site=ctx.obj.params.get("site"),
+            token=ctx.obj.params.get('token'),
+            site=ctx.obj.params.get('site'),
             type=type_func,
             # TODO: conversion to list is just to match argparse
-            set=[list(s) for s in set_],  # type: ignore
+            set=[list(s) for s in set_],  # type: ignore, pylint: disable=invalid-name
             get=get,
             remove=remove,
             show=show,

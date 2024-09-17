@@ -282,17 +282,19 @@ def _exclusive_action(ctx: typer.Context, param: typer.CallbackParam, value: str
     one of the options in the group is used.
 
     """
-    if getattr(ctx, "_actions", None) is None:
+    # pylint: disable=protected-access,invalid-name
+    if getattr(ctx, '_actions', None) is None:
         ctx._actions = set()  # type: ignore
     if value:
         if ctx._actions:  # type: ignore
             used_action, = ctx._actions  # type: ignore
-            raise typer.BadParameter(f"mutually exclusive with {used_action}")
-        ctx._actions.add(" / ".join(f"'{o}'" for o in param.opts))  # type: ignore
+            raise typer.BadParameter(f'mutually exclusive with {used_action}')
+        ctx._actions.add(' / '.join(f'\'{o}\'' for o in param.opts))  # type: ignore
     return value
 
 
 class TokenStrength(Enum):
+    """Available options for strength when creating a token."""
     STRONG = 'strong'
     WEAK = 'weak'
 
@@ -309,8 +311,8 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         ctx: typer.Context,
         name_: str = typer.Option(
             ...,
-            "-n",
-            "--name",
+            '-n',
+            '--name',
             default_factory=lambda: f'binstar_token:{socket.gethostname()}',
             help='A unique name so you can identify this token later. View your tokens at anaconda.org/settings/access'
         ),
@@ -322,18 +324,18 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             help='Set the token owner (must be an organization)',
         ),
         strength: TokenStrength = typer.Option(
-            default="strong",
-            help="Specify the strength of the token",
+            default='strong',
+            help='Specify the strength of the token',
         ),
         strong: typing.Optional[bool] = typer.Option(
             None,
-            help="Create a longer token (default)",
+            help='Create a longer token (default)',
         ),
         weak: typing.Optional[bool] = typer.Option(
             None,
-            "-w",
-            "--weak",
-            help="Create a shorter token",
+            '-w',
+            '--weak',
+            help='Create a shorter token',
         ),
         url: str = typer.Option(
             'http://anaconda.org',
@@ -345,8 +347,8 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         ),
         scopes: typing.Optional[typing.List[str]] = typer.Option(
             [],
-            "-s",
-            "--scopes",
+            '-s',
+            '--scopes',
             help=(
                 'Scopes for token. ' +
                 'For example if you want to limit this token to conda downloads only you would use ' +
@@ -359,43 +361,44 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         ),
         list_scopes: typing.Optional[bool] = typer.Option(
             False,
-            "-x",
-            "--list-scopes",
-            help="List all authentication scopes",
+            '-x',
+            '--list-scopes',
+            help='List all authentication scopes',
             callback=_exclusive_action,
         ),
         list_: typing.Optional[bool] = typer.Option(
             False,
-            "-l",
-            "--list",
-            help="List all user authentication tokens",
+            '-l',
+            '--list',
+            help='List all user authentication tokens',
             callback=_exclusive_action,
         ),
         create: typing.Optional[bool] = typer.Option(
             False,
-            "-c",
-            "--create",
-            help="Create an authentication token",
+            '-c',
+            '--create',
+            help='Create an authentication token',
             callback=_exclusive_action,
         ),
         info: typing.Optional[bool] = typer.Option(
             False,
-            "-i",
-            "--info",
-            "--current-info",
-            help="Show information about the current authentication token",
+            '-i',
+            '--info',
+            '--current-info',
+            help='Show information about the current authentication token',
             callback=_exclusive_action,
         ),
         remove: typing.List[str] = typer.Option(
             [],
-            "-r",
-            "--remove",
-            help="Remove authentication tokens. Multiple token names can be provided",
+            '-r',
+            '--remove',
+            help='Remove authentication tokens. Multiple token names can be provided',
             callback=_exclusive_action,
         ),
     ) -> None:
+        # pylint: disable=too-many-arguments,too-many-locals,fixme
         if not any([list_scopes, list_, create, info, remove]):
-            raise typer.BadParameter("one of --list-scopes, --list, --list, --info, or --remove must be provided")
+            raise typer.BadParameter('one of --list-scopes, --list, --list, --info, or --remove must be provided')
 
         if weak:
             strength = TokenStrength.WEAK
@@ -404,8 +407,8 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             strength = TokenStrength.STRONG
 
         args = argparse.Namespace(
-            token=ctx.obj.params.get("token"),
-            site=ctx.obj.params.get("site"),
+            token=ctx.obj.params.get('token'),
+            site=ctx.obj.params.get('site'),
             name=name_,
             organization=organization,
             strength=strength.value,

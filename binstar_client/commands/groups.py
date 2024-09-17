@@ -3,9 +3,9 @@
 import argparse
 import logging
 from enum import Enum
+from pprint import pformat
 
 import typer
-from pprint import pformat
 
 from binstar_client.pprintb import package_list, user_list
 from binstar_client.utils import get_server_api
@@ -72,6 +72,7 @@ def add_parser(subparsers):
 
 
 class GroupAction(Enum):
+    """Available actions to take on a group."""
     ADD = 'add'
     SHOW = 'show'
     MEMBERS = 'members'
@@ -83,6 +84,7 @@ class GroupAction(Enum):
 
 
 class Permission(Enum):
+    """Available permissions to grant to groups."""
     READ = 'read'
     WRITE = 'write'
     ADMIN = 'admin'
@@ -109,8 +111,8 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         )
     ) -> None:
         args = argparse.Namespace(
-            token=ctx.obj.params.get("token"),
-            site=ctx.obj.params.get("site"),
+            token=ctx.obj.params.get('token'),
+            site=ctx.obj.params.get('site'),
             action=action.value,
             spec=spec,
             perms=perms.value,

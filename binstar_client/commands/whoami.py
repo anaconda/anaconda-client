@@ -59,4 +59,4 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         context_settings=context_settings,
     )
     def whoami(ctx: typer.Context) -> None:
-        main(token=ctx.obj.params.get("token"), site=ctx.obj.params.get("site"))
+        main(token=ctx.obj.params.get('token'), site=ctx.obj.params.get('site'))
