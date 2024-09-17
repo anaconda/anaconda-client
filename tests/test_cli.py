@@ -88,7 +88,11 @@ class MockedCliInvoker:
         pytest.param(("new", "org"), id="new-prefix"),
     ]
 )
-def cli_mocker(request: FixtureRequest, monkeypatch: MonkeyPatch, mocker: Any) -> Generator[Callable[[str], MockedCliInvoker], None, None]:
+def cli_mocker(
+    request: FixtureRequest,
+    monkeypatch: MonkeyPatch,
+    mocker: Any,
+) -> Generator[Callable[[str], MockedCliInvoker], None, None]:
     """Fixture returns a function that can be used to invoke the CLI via different methods.
 
     The different methods are various levels of gradual migration:
