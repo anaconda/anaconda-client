@@ -43,6 +43,42 @@ def enable_base_cli_plugin(monkeypatch: MonkeyPatch) -> Generator[None, None, No
     yield
 
 
+class MockedCliInvoker:
+    def __init__(self, func: Callable, main_func: str, mocker: Any, parser: Any):
+        self._func = func
+        self._main_mock = mocker.patch(main_func)
+        self._invoked = False
+        self.parser = parser
+
+    def invoke(self, args: List[str], prefix_args: Optional[List[str]] = None) -> Any:
+        """Invoke the CLI with a list of arguments.
+
+        The optional prefix_args are passed after the `anaconda` entrypoint.
+
+        """
+        result = self._func(args, prefix_args=prefix_args)
+        self._invoked = True
+        return result
+
+    def assert_main_called_once(self) -> None:
+        """Assert that the mocked main function was called once."""
+        self._main_mock.assert_called_once()
+
+    def assert_main_args_contains(self, d: Optional[Dict] = None, /, **expected: Any) -> None:
+        """Return True if the args passed to the main function is a superset of the kwargs provided."""
+        assert self._invoked, "cli_mocker was never invoked"
+
+        # args are either passed positionally, or as kwargs called "args" or "arguments"
+        # This extracts the Namespace for all of those cases
+        args, call_kwargs = self._main_mock.call_args
+        actual = (args[0] if args else None) or call_kwargs.get("args") or call_kwargs.get("arguments")
+
+        expected = {**(d or {}), **expected}
+
+        # Now we can assert that the passed args are a superset of some expected dictionary of values
+        assert vars(actual).items() >= expected.items()
+
+
 @pytest.fixture(
     params=[
         pytest.param(("original", ""), id="orig-bare"),
@@ -111,42 +147,6 @@ def cli_mocker(request: FixtureRequest, monkeypatch: MonkeyPatch, mocker: Any) -
         anaconda_cli_base.cli.app.registered_groups.clear()
         anaconda_cli_base.cli.app.registered_commands.clear()
         anaconda_cli_base.cli.app.registered_callback = None
-
-
-class MockedCliInvoker:
-    def __init__(self, func: Callable, main_func: str, mocker: Any, parser: Any):
-        self._func = func
-        self._main_mock = mocker.patch(main_func)
-        self._invoked = False
-        self.parser = parser
-
-    def invoke(self, args: List[str], prefix_args: Optional[List[str]] = None) -> Any:
-        """Invoke the CLI with a list of arguments.
-
-        The optional prefix_args are passed after the `anaconda` entrypoint.
-
-        """
-        result = self._func(args, prefix_args=prefix_args)
-        self._invoked = True
-        return result
-
-    def assert_main_called_once(self) -> None:
-        """Assert that the mocked main function was called once."""
-        self._main_mock.assert_called_once()
-
-    def assert_main_args_contains(self, d: Optional[Dict] = None, /, **expected: Any) -> None:
-        """Return True if the args passed to the main function is a superset of the kwargs provided."""
-        assert self._invoked, "cli_mocker was never invoked"
-
-        # args are either passed positionally, or as kwargs called "args" or "arguments"
-        # This extracts the Namespace for all of those cases
-        args, call_kwargs = self._main_mock.call_args
-        actual = (args[0] if args else None) or call_kwargs.get("args") or call_kwargs.get("arguments")
-
-        expected = {**(d or {}), **expected}
-
-        # Now we can assert that the passed args are a superset of some expected dictionary of values
-        assert vars(actual).items() >= expected.items()
 
 
 def test_entrypoint() -> None:
