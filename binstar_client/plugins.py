@@ -19,8 +19,8 @@ import os
 import sys
 import warnings
 from argparse import ArgumentParser
-from typing import Annotated, Any, Optional
-from typing import Callable
+from typing import Any, Callable, Optional
+from typing_extensions import Annotated
 
 import typer
 import typer.colors
