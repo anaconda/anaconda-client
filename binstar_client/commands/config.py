@@ -68,7 +68,7 @@ from __future__ import print_function
 import logging
 import typing
 from argparse import Namespace, RawDescriptionHelpFormatter
-from typing import Optional
+from typing import Callable, Optional
 
 import click
 import typer
@@ -249,10 +249,11 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
     ) -> None:
         # There's an existing bug in the type argument for anything but default
         # TODO: Remove the --type option. The below code is what I think was intended, but it's not what happens
+        type_func: Callable
         if type_ == "int":
-            type_ = int
+            type_func = int
         else:
-            type_ = safe_load
+            type_func = safe_load
 
         if user is None:
             user = True
@@ -262,9 +263,9 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         args = Namespace(
             token=ctx.obj.params.get("token"),
             site=ctx.obj.params.get("site"),
-            type=type_,
+            type=type_func,
             # TODO: conversion to list is just to match argparse
-            set=[list(s) for s in set_],
+            set=[list(s) for s in set_],  # type: ignore
             get=get,
             remove=remove,
             show=show,
