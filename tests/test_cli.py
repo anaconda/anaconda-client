@@ -1,5 +1,9 @@
 """Test entrypoint to anaconda-cli-base"""
 # pylint: disable=redefined-outer-name
+# pylint: disable=line-too-long
+# pylint: disable=missing-function-docstring
+# pylint: disable=use-dict-literal
+# pylint: disable=missing-class-docstring
 import logging
 import sys
 from argparse import Namespace
@@ -127,7 +131,7 @@ def cli_mocker(
     reload(anaconda_cli_base.cli)
     reload(binstar_client.plugins)
 
-    def f(args, prefix_args=None):
+    def func(args, prefix_args=None):
         if org_prefix:
             args = [org_prefix] + args
         if prefix_args:
@@ -137,12 +141,11 @@ def cli_mocker(
         if parser == "original":
             binstar_client.scripts.cli.main(args, allow_plugin_main=False)
             return Namespace(exit_code=0)
-        else:
-            runner = CliRunner()
-            return runner.invoke(anaconda_cli_base.cli.app, args)
+        runner = CliRunner()
+        return runner.invoke(anaconda_cli_base.cli.app, args)
 
     def closure(main_func: str) -> MockedCliInvoker:
-        return MockedCliInvoker(func=f, main_func=main_func, mocker=mocker, parser=parser)
+        return MockedCliInvoker(func=func, main_func=main_func, mocker=mocker, parser=parser)
 
     yield closure
 
@@ -492,8 +495,8 @@ def test_arg_parsing_move_command(cli_mocker, prefix_args, args, mods):
 )
 def test_arg_parsing_update_command(cli_mocker, tmp_path, prefix_args, args, mods):
     source_path = str(tmp_path / "metadata.json")
-    with open(source_path, "w") as fp:
-        fp.write("Hi")
+    with open(source_path, "w", encoding="utf-8") as handle:
+        handle.write("Hi")
 
     args = ["update"] + args + ["some-spec", source_path]
 
@@ -797,7 +800,7 @@ def test_arg_parsing_auth_command(cli_mocker, prefix_args, args, mods):
         remove=None,
         # Token creation options
         strength="strong",
-        url='http://anaconda.org',
+        url="http://anaconda.org",
         max_age=None,
         scopes=[],
     )
@@ -873,7 +876,7 @@ def test_arg_parsing_config_command(cli_mocker, prefix_args, args, mods):
     mock = cli_mocker(main_func="binstar_client.commands.config.main")
 
     if "--type" in args and mock.parser == "original":
-        # TODO: This is actual a bug in the original argparse implementation
+        # Note: This is actual a bug in the original argparse implementation
         mods = dict(mods)
         mods["type"] = "int"
 
