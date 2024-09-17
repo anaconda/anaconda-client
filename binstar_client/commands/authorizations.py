@@ -321,7 +321,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             '--organization',
             help='Set the token owner (must be an organization)',
         ),
-        strength: typing.Optional[TokenStrength] = typer.Option(
+        strength: TokenStrength = typer.Option(
             default="strong",
             help="Specify the strength of the token",
         ),
