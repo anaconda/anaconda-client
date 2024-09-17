@@ -308,7 +308,7 @@ def test_top_level_options_passed_through(cmd: str, monkeypatch: MonkeyPatch, as
         pytest.param([], ["--skip-existing"], dict(mode="skip"), id="skip-existing-long"),
         pytest.param([], ["-m"], dict(force_metadata_update=True), id="force-metadata-update-short"),
         pytest.param([], ["--force-metadata-update"], dict(force_metadata_update=True), id="force-metadata-update-long"),  # noqa: E501
-        pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),
+        pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),  # nosec
         pytest.param(["--site", "site.com"], [], dict(site="site.com"), id="site"),
         pytest.param(["--disable-ssl-warnings"], [], dict(disable_ssl_warnings=True), id="disable-ssl-warnings"),  # noqa: E501
         pytest.param(["--show-traceback"], [], dict(show_traceback=True), id="show-traceback"),
@@ -416,7 +416,7 @@ def test_upload_mutually_exclusive_options(monkeypatch, mocker, opts, error_opt,
         pytest.param([], ["--to-label", "destination-label"], dict(to_label="destination-label"), id="to-label"),
         pytest.param([], ["--replace"], dict(replace=True), id="replace"),
         pytest.param([], ["--update"], dict(update=True), id="update"),
-        pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),
+        pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),  # nosec
         pytest.param(["--site", "site.com"], [], dict(site="site.com"), id="site"),
     ]
 )
@@ -449,7 +449,7 @@ def test_arg_parsing_copy_command(cli_mocker, prefix_args, args, mods):
         pytest.param([], [], dict(), id="defaults"),
         pytest.param([], ["--from-label", "source-label"], dict(from_label="source-label"), id="from-label"),
         pytest.param([], ["--to-label", "destination-label"], dict(to_label="destination-label"), id="to-label"),
-        pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),
+        pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),  # nosec
         pytest.param(["--site", "site.com"], [], dict(site="site.com"), id="site"),
     ]
 )
@@ -481,7 +481,7 @@ def test_arg_parsing_move_command(cli_mocker, prefix_args, args, mods):
         pytest.param([], ["-t", "conda"], dict(package_type="conda"), id="package-type-short"),
         pytest.param([], ["--release"], dict(release=True), id="release"),
         pytest.param([], ["--no-release"], dict(release=False), id="no-release"),
-        pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),
+        pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),  # nosec
         pytest.param(["--site", "my-site.com"], [], dict(site="my-site.com"), id="site"),
     ]
 )
@@ -521,7 +521,7 @@ def test_arg_parsing_update_command(cli_mocker, tmp_path, prefix_args, args, mod
         pytest.param([], ["-t", "conda"], dict(package_type="conda"), id="package-type-short"),
         pytest.param([], ["--platform", "osx-64"], dict(platform="osx-64"), id="platform-long"),
         pytest.param([], ["-p", "osx-64"], dict(platform="osx-64"), id="platform-short"),
-        pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),
+        pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),  # nosec
         pytest.param(["--site", "my-site.com"], [], dict(site="my-site.com"), id="site"),
     ]
 )
@@ -580,7 +580,7 @@ def test_arg_parsing_search_command_platform_choice(monkeypatch, mocker, org_pre
         pytest.param([], ["--lock", "label-name"], dict(lock="label-name"), id="lock"),
         pytest.param([], ["--unlock", "label-name"], dict(unlock="label-name"), id="unlock"),
         pytest.param([], ["--remove", "label-name"], dict(remove="label-name"), id="remove"),
-        pytest.param(["--token", "TOKEN"], ["--list"], dict(token="TOKEN", list=True), id="token"),
+        pytest.param(["--token", "TOKEN"], ["--list"], dict(token="TOKEN", list=True), id="token"),  # nosec
         pytest.param(["--site", "site.com"], ["--list"], dict(site="site.com", list=True), id="site"),
     ]
 )
@@ -663,7 +663,7 @@ def test_channel_mutually_exclusive_options_required(monkeypatch, mocker):
         pytest.param([], ["--perms", "read", "add"], dict(perms="read", action="add"), id="perms-read"),
         pytest.param([], ["--perms", "write", "add"], dict(perms="write", action="add"), id="perms-write"),
         pytest.param([], ["--perms", "admin", "add"], dict(perms="admin", action="add"), id="perms-admin"),
-        pytest.param(["--token", "TOKEN"], ["add"], dict(token="TOKEN", action="add"), id="token"),
+        pytest.param(["--token", "TOKEN"], ["add"], dict(token="TOKEN", action="add"), id="token"),  # nosec
         pytest.param(["--site", "my-site.com"], ["add"], dict(site="my-site.com", action="add"), id="site"),
     ]
 )
@@ -690,7 +690,7 @@ def test_arg_parsing_groups_command(cli_mocker, prefix_args, args, mods):
     "prefix_args, args, mods",
     [
         pytest.param([], [], dict(), id="defaults"),
-        pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),
+        pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),  # nosec
         pytest.param(["--site", "my-site.com"], [], dict(site="my-site.com"), id="site"),
     ]
 )
@@ -717,7 +717,7 @@ def test_arg_parsing_show_command(cli_mocker, prefix_args, args, mods):
         pytest.param([], [], dict(), id="defaults"),
         pytest.param([], ["--force"], dict(force=True), id="force-long"),
         pytest.param([], ["-f"], dict(force=True), id="force-short"),
-        pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),
+        pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),  # nosec
         pytest.param(["--site", "my-site.com"], [], dict(site="my-site.com"), id="site"),
     ]
 )
@@ -770,7 +770,7 @@ def test_arg_parsing_remove_command(cli_mocker, prefix_args, args, mods):
         pytest.param([], ["--create", "--scopes", "repo"], dict(create=True, scopes=["repo"]), id="scopes-single-long"),
         pytest.param([], ["--create", "--scopes", "repo", "--scopes", "conda:download"], dict(create=True, scopes=["repo", "conda:download"]), id="scopes-multiple-long"),  # noqa: E501
         pytest.param([], ["--create", "-s", "repo", "-s", "conda:download"], dict(create=True, scopes=["repo", "conda:download"]), id="scopes-multiple-short"),  # noqa: E501
-        pytest.param(["--token", "TOKEN"], ["--info"], dict(token="TOKEN", info=True), id="token"),
+        pytest.param(["--token", "TOKEN"], ["--info"], dict(token="TOKEN", info=True), id="token"),  # nosec
         pytest.param(["--site", "my-site.com"], ["--info"], dict(site="my-site.com", info=True), id="site"),
     ]
 )
@@ -859,7 +859,7 @@ def test_auth_mutually_exclusive_options_required(monkeypatch, mocker):
         pytest.param([], ["--system"], dict(user=False), id="system-long"),
         pytest.param([], ["-s"], dict(user=False), id="system-short"),
         pytest.param([], ["--site"], dict(user=False), id="site"),
-        pytest.param(["--token", "TOKEN"], ["--type", "int"], dict(token="TOKEN", type=int), id="token"),
+        pytest.param(["--token", "TOKEN"], ["--type", "int"], dict(token="TOKEN", type=int), id="token"),  # nosec
         pytest.param(["--site", "my-site.com"], ["--type", "int"], dict(site="my-site.com", type=int), id="site"),  # noqa: E501
     ]
 )
@@ -903,7 +903,7 @@ def test_arg_parsing_config_command(cli_mocker, prefix_args, args, mods):
         pytest.param([], ["--license-url", "license.com", "--create"], dict(license_url="license.com", create=True), id="license-url"),  # noqa: E501
         pytest.param([], ["--personal", "--create"], dict(access="personal", create=True), id="personal"),
         pytest.param([], ["--private", "--create"], dict(access="private", create=True), id="private"),
-        pytest.param(["--token", "TOKEN"], ["--create"], dict(token="TOKEN", create=True), id="token"),
+        pytest.param(["--token", "TOKEN"], ["--create"], dict(token="TOKEN", create=True), id="token"),  # nosec
         pytest.param(["--site", "my-site.com"], ["--create"], dict(site="my-site.com", create=True), id="site"),
     ]
 )
