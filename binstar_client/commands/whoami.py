@@ -19,7 +19,12 @@ from binstar_client.utils.pprint import pprint_user
 logger = logging.getLogger('binstar.whoami')
 
 
-def main(args: Optional[argparse.Namespace] = None, *, token: Optional[str] = None, site: Optional[str] = None):  # pylint: disable=inconsistent-return-statements
+def main(
+    args: Optional[argparse.Namespace] = None,
+    *,
+    token: Optional[str] = None,
+    site: Optional[str] = None,
+):  # pylint: disable=inconsistent-return-statements
     if args is not None:
         token = args.token
         site = args.site

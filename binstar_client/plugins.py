@@ -99,11 +99,10 @@ def main_callback(
         "--token",
         help="Authentication token to use. A token string or path to a file containing a token",
         hidden=True,
-    )] =None,
+    )] = None,
 ):
     if token:
         ctx.obj["token"] = token
-
 
 
 def _get_help_text(parser: ArgumentParser, name: str) -> str:
@@ -244,7 +243,6 @@ def _load_new_subcommand(app: typer.Typer, name: str, help_text: str, hidden: bo
             "help_option_names": ["-h", "--help"],
         },
     )
-
 
 
 def load_legacy_subcommands() -> None:

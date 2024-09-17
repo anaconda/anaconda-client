@@ -814,6 +814,7 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
         'Warning: if the file {label}s do not include "main", '
         'the file will not show up in your user {label}'
     )
+
     @app.command(
         name=name,
         hidden=hidden,
@@ -949,7 +950,8 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
         # TODO: Explicitly ignoring the --json-help option since it would be very hard to
         #       support and I'd bet is never used.
         arguments = argparse.Namespace(
-            # TODO: argparse handles this as a list of lists, with one filename in each. We should probably fix that one.
+            # TODO: argparse handles this as a list of lists, with one filename in each.
+            #       We should probably fix that one.
             files=[[f] for f in files],
             token=ctx.obj.params.get("token"),
             disable_ssl_warnings=ctx.obj.params.get("disable_ssl_warnings"),

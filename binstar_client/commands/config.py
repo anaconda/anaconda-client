@@ -217,7 +217,7 @@ def mount_subcommand(app: typer.Typer, name, hidden: bool, help_text: str, conte
         ),
         remove: typing.List[str] = typer.Option(
             [],
-            help = 'removes a variable',
+            help='removes a variable',
         ),
         show: typing.Optional[bool] = typer.Option(
             False,

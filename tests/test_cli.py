@@ -86,7 +86,7 @@ def cli_mocker(request, monkeypatch: MonkeyPatch, mocker) -> Generator[None, Non
     reload(anaconda_cli_base.cli)
     reload(binstar_client.plugins)
 
-    def f(args, prefix_args = None):
+    def f(args, prefix_args=None):
         if org_prefix:
             args = [org_prefix] + args
         if prefix_args:
@@ -133,7 +133,7 @@ class MockedCliInvoker:
         """Assert that the mocked main function was called once."""
         self._main_mock.assert_called_once()
 
-    def assert_main_args_contains(self, d = None, /, **expected: Any) -> None:
+    def assert_main_args_contains(self, d=None, /, **expected: Any) -> None:
         """Return True if the args passed to the main function is a superset of the kwargs provided."""
         assert self._invoked, "cli_mocker was never invoked"
 
@@ -277,9 +277,9 @@ def test_top_level_options_passed_through(cmd: str, monkeypatch: MonkeyPatch, as
         pytest.param([], ["first-file"], dict(files=[["first-file"], ["some-file"]]), id="multiple-files"),
         pytest.param([], ["-l", "some-label"], dict(labels=["some-label"]), id="labels-short-single"),
         pytest.param([], ["--label", "some-label"], dict(labels=["some-label"]), id="labels-long-single"),
-        pytest.param([], ["-l", "some-label", "-l", "another"], dict(labels=["some-label", "another"]), id="labels-short-multiple"),
-        pytest.param([], ["--label", "some-label", "--label", "another"], dict(labels=["some-label", "another"]), id="labels-long-multiple"),
-        pytest.param([], ["-c", "some-label", "--channel", "another"], dict(labels=["some-label", "another"]), id="channels-mixed-multiple"),
+        pytest.param([], ["-l", "some-label", "-l", "another"], dict(labels=["some-label", "another"]), id="labels-short-multiple"),  # noqa: E501
+        pytest.param([], ["--label", "some-label", "--label", "another"], dict(labels=["some-label", "another"]), id="labels-long-multiple"),  # noqa: E501
+        pytest.param([], ["-c", "some-label", "--channel", "another"], dict(labels=["some-label", "another"]), id="channels-mixed-multiple"),  # noqa: E501
         pytest.param([], ["--progress"], dict(no_progress=False), id="progress"),
         pytest.param([], ["--no-progress"], dict(no_progress=True), id="no-progress"),
         pytest.param([], ["-u", "username"], dict(user="username"), id="username-short"),
@@ -289,13 +289,13 @@ def test_top_level_options_passed_through(cmd: str, monkeypatch: MonkeyPatch, as
         pytest.param([], ["--package", "my_package"], dict(package="my_package"), id="package-long"),
         pytest.param([], ["--version", "1.2.3"], dict(version="1.2.3"), id="version-long"),
         pytest.param([], ["-v", "1.2.3"], dict(version="1.2.3"), id="version-short"),
-        pytest.param([], ["--summary", "Some package summary"], dict(summary="Some package summary"), id="summary-long"),
+        pytest.param([], ["--summary", "Some package summary"], dict(summary="Some package summary"), id="summary-long"),  # noqa: E501
         pytest.param([], ["-s", "Some package summary"], dict(summary="Some package summary"), id="summary-short"),
         pytest.param([], ["--package-type", "conda"], dict(package_type="conda"), id="package-type-long"),
         pytest.param([], ["-t", "conda"], dict(package_type="conda"), id="package-type-short"),
-        pytest.param([], ["--description", "Some package description"], dict(description="Some package description"), id="description-long"),
-        pytest.param([], ["-d", "Some package description"], dict(description="Some package description"), id="description-short"),
-        pytest.param([], ["--thumbnail", "/path/to/thumbnail"], dict(thumbnail="/path/to/thumbnail"), id="thumbnail-long"),
+        pytest.param([], ["--description", "Some package description"], dict(description="Some package description"), id="description-long"),  # noqa: E501
+        pytest.param([], ["-d", "Some package description"], dict(description="Some package description"), id="description-short"),  # noqa: E501
+        pytest.param([], ["--thumbnail", "/path/to/thumbnail"], dict(thumbnail="/path/to/thumbnail"), id="thumbnail-long"),  # noqa: E501
         pytest.param([], ["--private"], dict(private=True), id="private-long"),
         pytest.param([], ["--register"], dict(auto_register=True), id="register-long"),
         pytest.param([], ["--no-register"], dict(auto_register=False), id="no-register-long"),
@@ -307,10 +307,10 @@ def test_top_level_options_passed_through(cmd: str, monkeypatch: MonkeyPatch, as
         pytest.param([], ["--force"], dict(mode="force"), id="force-long"),
         pytest.param([], ["--skip-existing"], dict(mode="skip"), id="skip-existing-long"),
         pytest.param([], ["-m"], dict(force_metadata_update=True), id="force-metadata-update-short"),
-        pytest.param([], ["--force-metadata-update"], dict(force_metadata_update=True), id="force-metadata-update-long"),
+        pytest.param([], ["--force-metadata-update"], dict(force_metadata_update=True), id="force-metadata-update-long"),  # noqa: E501
         pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),
         pytest.param(["--site", "site.com"], [], dict(site="site.com"), id="site"),
-        pytest.param(["--disable-ssl-warnings"], [], dict(disable_ssl_warnings=True), id="disable-ssl-warnings"),
+        pytest.param(["--disable-ssl-warnings"], [], dict(disable_ssl_warnings=True), id="disable-ssl-warnings"),  # noqa: E501
         pytest.param(["--show-traceback"], [], dict(show_traceback=True), id="show-traceback"),
         pytest.param(["--verbose"], [], dict(log_level=logging.DEBUG), id="verbose-long"),
         pytest.param(["-v"], [], dict(log_level=logging.DEBUG), id="verbose-short"),
@@ -572,9 +572,9 @@ def test_arg_parsing_search_command_platform_choice(monkeypatch, mocker, org_pre
 @pytest.mark.parametrize(
     "prefix_args, args, mods",
     [
-        pytest.param([], ["--organization", "some-org", "--list"], dict(organization="some-org", list=True), id="organization-long"),
-        pytest.param([], ["-o", "some-org", "--list"], dict(organization="some-org", list=True), id="organization-short"),
-        pytest.param([], ["--copy", "source-label", "dest-channel"], dict(copy=["source-label", "dest-channel"]), id="copy"),
+        pytest.param([], ["--organization", "some-org", "--list"], dict(organization="some-org", list=True), id="organization-long"),  # noqa: E501
+        pytest.param([], ["-o", "some-org", "--list"], dict(organization="some-org", list=True), id="organization-short"),  # noqa: E501
+        pytest.param([], ["--copy", "source-label", "dest-channel"], dict(copy=["source-label", "dest-channel"]), id="copy"),  # noqa: E501
         pytest.param([], ["--list"], dict(list=True), id="list"),
         pytest.param([], ["--show", "label-name"], dict(show="label-name"), id="show"),
         pytest.param([], ["--lock", "label-name"], dict(lock="label-name"), id="lock"),
@@ -644,7 +644,7 @@ def test_channel_mutually_exclusive_options_required(monkeypatch, mocker):
     result = runner.invoke(anaconda_cli_base.cli.app, args)
 
     assert result.exit_code == 2, result.stdout
-    assert "one of --copy, --list, --show, --lock, --unlock, or --remove must be provided" in result.stdout, result.stdout
+    assert "one of --copy, --list, --show, --lock, --unlock, or --remove must be provided" in result.stdout, result.stdout  # noqa: E501
 
     mock.assert_not_called()
 
@@ -745,7 +745,7 @@ def test_arg_parsing_remove_command(cli_mocker, prefix_args, args, mods):
     [
         pytest.param([], ["--name", "my-token", "--info"], dict(name="my-token", info=True), id="name-long"),
         pytest.param([], ["-n", "my-token", "--info"], dict(name="my-token", info=True), id="name-short"),
-        pytest.param([], ["--organization", "my-org", "--info"], dict(organization="my-org", info=True), id="organization-long"),
+        pytest.param([], ["--organization", "my-org", "--info"], dict(organization="my-org", info=True), id="organization-long"),  # noqa: E501
         pytest.param([], ["--org", "my-org", "--info"], dict(organization="my-org", info=True), id="organization-mid"),
         pytest.param([], ["-o", "my-org", "--info"], dict(organization="my-org", info=True), id="organization-short"),
         pytest.param([], ["--list-scopes"], dict(list_scopes=True), id="list-scopes-long"),
@@ -758,18 +758,18 @@ def test_arg_parsing_remove_command(cli_mocker, prefix_args, args, mods):
         pytest.param([], ["--info"], dict(info=True), id="info-mid"),
         pytest.param([], ["-i"], dict(info=True), id="info-short"),
         pytest.param([], ["--remove", "token-1"], dict(remove=["token-1"]), id="remove-long-single"),
-        pytest.param([], ["--remove", "token-1", "token-2"], dict(remove=["token-1", "token-2"]), id="remove-long-multiple", marks=pytest.mark.skip(reason="need-to-mimic argparse here?")),
-        pytest.param([], ["-r", "token-1", "token-2"], dict(remove=["token-1", "token-2"]), id="remove-short-multiple", marks=pytest.mark.skip(reason="need-to-mimic argparse here?")),
-        pytest.param([], ["--create", "--strength", "strong"], dict(create=True, strength="strong"), id="create-strength-strong"),
-        pytest.param([], ["--create", "--strength", "weak"], dict(create=True, strength="weak"), id="create-strength-weak"),
+        pytest.param([], ["--remove", "token-1", "token-2"], dict(remove=["token-1", "token-2"]), id="remove-long-multiple", marks=pytest.mark.skip(reason="need-to-mimic argparse here?")),  # noqa: E501
+        pytest.param([], ["-r", "token-1", "token-2"], dict(remove=["token-1", "token-2"]), id="remove-short-multiple", marks=pytest.mark.skip(reason="need-to-mimic argparse here?")),  # noqa: E501
+        pytest.param([], ["--create", "--strength", "strong"], dict(create=True, strength="strong"), id="create-strength-strong"),  # noqa: E501
+        pytest.param([], ["--create", "--strength", "weak"], dict(create=True, strength="weak"), id="create-strength-weak"),  # noqa: E501
         pytest.param([], ["--create", "--strong"], dict(create=True, strength="strong"), id="create-strong"),
         pytest.param([], ["--create", "--weak"], dict(create=True, strength="weak"), id="create-weak-long"),
         pytest.param([], ["--create", "-w"], dict(create=True, strength="weak"), id="create-weak-short"),
         pytest.param([], ["--create", "--url", "some-repo.com"], dict(create=True, url="some-repo.com"), id="url"),
         pytest.param([], ["--create", "--max-age", "3600"], dict(create=True, max_age=3600), id="max-age"),
         pytest.param([], ["--create", "--scopes", "repo"], dict(create=True, scopes=["repo"]), id="scopes-single-long"),
-        pytest.param([], ["--create", "--scopes", "repo", "--scopes", "conda:download"], dict(create=True, scopes=["repo", "conda:download"]), id="scopes-multiple-long"),
-        pytest.param([], ["--create", "-s", "repo", "-s", "conda:download"], dict(create=True, scopes=["repo", "conda:download"]), id="scopes-multiple-short"),
+        pytest.param([], ["--create", "--scopes", "repo", "--scopes", "conda:download"], dict(create=True, scopes=["repo", "conda:download"]), id="scopes-multiple-long"),  # noqa: E501
+        pytest.param([], ["--create", "-s", "repo", "-s", "conda:download"], dict(create=True, scopes=["repo", "conda:download"]), id="scopes-multiple-short"),  # noqa: E501
         pytest.param(["--token", "TOKEN"], ["--info"], dict(token="TOKEN", info=True), id="token"),
         pytest.param(["--site", "my-site.com"], ["--info"], dict(site="my-site.com", info=True), id="site"),
     ]
@@ -847,10 +847,10 @@ def test_auth_mutually_exclusive_options_required(monkeypatch, mocker):
     "prefix_args, args, mods",
     [
         pytest.param([], ["--set", "key", "value"], dict(set=[["key", "value"]]), id="set-single"),
-        pytest.param([], ["--set", "key", "value", "--set", "key2", "val2"], dict(set=[["key", "value"], ["key2", "val2"]]), id="set-multiple"),
+        pytest.param([], ["--set", "key", "value", "--set", "key2", "val2"], dict(set=[["key", "value"], ["key2", "val2"]]), id="set-multiple"),  # noqa: E501
         pytest.param([], ["--get", "key"], dict(get="key"), id="get"),
         pytest.param([], ["--remove", "key"], dict(remove=["key"]), id="remove-single"),
-        pytest.param([], ["--remove", "key1", "--remove", "key2"], dict(remove=["key1", "key2"]), id="remove-multiple"),
+        pytest.param([], ["--remove", "key1", "--remove", "key2"], dict(remove=["key1", "key2"]), id="remove-multiple"),  # noqa: E501
         pytest.param([], ["--show"], dict(show=True), id="show"),
         pytest.param([], ["--files"], dict(files=True), id="files"),
         pytest.param([], ["--show-sources"], dict(show_sources=True), id="show-sources"),
@@ -860,7 +860,7 @@ def test_auth_mutually_exclusive_options_required(monkeypatch, mocker):
         pytest.param([], ["-s"], dict(user=False), id="system-short"),
         pytest.param([], ["--site"], dict(user=False), id="site"),
         pytest.param(["--token", "TOKEN"], ["--type", "int"], dict(token="TOKEN", type=int), id="token"),
-        pytest.param(["--site", "my-site.com"], ["--type", "int"], dict(site="my-site.com", type=int), id="site"),
+        pytest.param(["--site", "my-site.com"], ["--type", "int"], dict(site="my-site.com", type=int), id="site"),  # noqa: E501
     ]
 )
 def test_arg_parsing_config_command(cli_mocker, prefix_args, args, mods):
@@ -900,7 +900,7 @@ def test_arg_parsing_config_command(cli_mocker, prefix_args, args, mods):
         pytest.param([], ["--create"], dict(create=True), id="create"),
         pytest.param([], ["--summary", "SUMMARY", "--create"], dict(summary="SUMMARY", create=True), id="summary"),
         pytest.param([], ["--license", "MIT", "--create"], dict(license="MIT", create=True), id="license"),
-        pytest.param([], ["--license-url", "license.com", "--create"], dict(license_url="license.com", create=True), id="license-url"),
+        pytest.param([], ["--license-url", "license.com", "--create"], dict(license_url="license.com", create=True), id="license-url"),  # noqa: E501
         pytest.param([], ["--personal", "--create"], dict(access="personal", create=True), id="personal"),
         pytest.param([], ["--private", "--create"], dict(access="private", create=True), id="private"),
         pytest.param(["--token", "TOKEN"], ["--create"], dict(token="TOKEN", create=True), id="token"),
@@ -935,7 +935,7 @@ def test_arg_parsing_package_command(cli_mocker, prefix_args, args, mods):
 @pytest.mark.parametrize(
     "opts, error_opt, conflict_opt",
     [
-        pytest.param(["--add-collaborator", "joe", "--list-collaborators"], "'--list-collaborators'", "'--add-collaborator'"),
+        pytest.param(["--add-collaborator", "joe", "--list-collaborators"], "'--list-collaborators'", "'--add-collaborator'"),  # noqa: E501
         pytest.param(["--add-collaborator", "joe", "--create"], "'--create'", "'--add-collaborator'"),
     ]
 )
@@ -968,6 +968,6 @@ def test_package_mutually_exclusive_options_required(monkeypatch, mocker):
     result = runner.invoke(anaconda_cli_base.cli.app, args)
 
     assert result.exit_code == 2, result.stdout
-    assert "one of --add-collaborator, --list-collaborators, or --create must be provided" in result.stdout, result.stdout
+    assert "one of --add-collaborator, --list-collaborators, or --create must be provided" in result.stdout, result.stdout  # noqa: E501
 
     mock.assert_not_called()
