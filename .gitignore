@@ -20,9 +20,6 @@ lib
 lib64
 record.txt
 
-# Local conda environment
-/env
-
 # Installer logs
 pip-log.txt
 
@@ -52,3 +49,6 @@ __conda_*__.txt
 
 # Additional files
 /.artifacts/
+
+# Local dev environment
+env/
