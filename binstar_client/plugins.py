@@ -91,20 +91,6 @@ app = Typer(
 )
 
 
-@app.callback()
-def main_callback(
-    ctx: typer.Context,
-    token: Annotated[Optional[str], typer.Option(
-        "-t",
-        "--token",
-        help="Authentication token to use. A token string or path to a file containing a token",
-        hidden=True,
-    )] = None,
-) -> None:
-    if token:
-        ctx.obj["token"] = token
-
-
 def _get_help_text(parser: ArgumentParser, name: str) -> str:
     """Extract the help text from the anaconda-client CLI Argument Parser."""
     if parser._subparsers is None:  # pylint: disable=protected-access
