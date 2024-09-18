@@ -19,16 +19,20 @@ THUMB_SIZE = (340, 210)
 
 
 class DataURIConverter:
-    def __init__(self, location):
+    def __init__(self, location, bytes=None):
         self.check_pillow_installed()
         self.location = location
+        self.bytes = bytes
 
     def check_pillow_installed(self):
         if Image is None:
             raise PillowNotInstalled()
 
     def __call__(self):
-        if os.path.exists(self.location):
+        if self.bytes:
+            fp = io.BytesIO(self.bytes)
+            return self._encode(self.resize_and_convert(fp).read())
+        elif os.path.exists(self.location):
             with open(self.location, 'rb') as file:
                 return self._encode(self.resize_and_convert(file).read())
         elif self.is_url():
@@ -41,6 +45,7 @@ class DataURIConverter:
             raise IOError('{} not found'.format(self.location))
 
     def resize_and_convert(self, file):
+        assert Image  # typing
         image = Image.open(file)
         image.thumbnail(THUMB_SIZE)
         out = io.BytesIO()
@@ -64,3 +69,7 @@ class DataURIConverter:
 
 def data_uri_from(location):
     return DataURIConverter(location)()
+
+
+def data_uri_from_bytes(bytes):
+    return DataURIConverter(location=None, bytes=bytes)()

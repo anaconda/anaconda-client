@@ -6,12 +6,13 @@ import os.path
 import json
 import re
 import sys
-import tempfile
 from pprint import pprint
-from shutil import rmtree
-from conda_package_handling.api import extract
+from conda_package_streaming.package_streaming import (
+    stream_conda_component,
+    CondaComponent,
+)
 
-from ..utils.notebook.data_uri import data_uri_from
+from ..utils.notebook.data_uri import data_uri_from_bytes
 
 
 os_map = {'osx': 'darwin', 'win': 'win32'}
@@ -78,12 +79,11 @@ def get_subdir(index):
         return '%s-%s' % (index.get('platform'), intel_map.get(arch, arch))
 
 
-def inspect_conda_info_dir(info_path, basename):  # pylint: disable=too-many-locals
+def inspect_conda_info_dir(info_contents: dict[str, str | bytes], basename):  # pylint: disable=too-many-locals
     def _load(filename, default=None):
-        file_path = os.path.join(info_path, filename)
-        if os.path.exists(file_path):
-            with open(file_path, encoding='utf-8') as file:
-                return json.load(file)
+        info_path = f'info/{filename}'
+        if info_path in info_contents:
+            return json.loads(info_contents[info_path])
         return default
 
     index = _load('index.json', None)
@@ -92,13 +92,12 @@ def inspect_conda_info_dir(info_path, basename):  # pylint: disable=too-many-loc
 
     recipe = _load('recipe.json')
     about = recipe.get('about', {}) if recipe else _load('about.json', {})
-    has_prefix = os.path.exists(os.path.join(info_path, 'has_prefix'))
+    has_prefix = 'info/has_prefix' in info_contents
 
     # Load icon defined in the index.json and file exists inside info folder
     icon_b64 = index.get('icon', None)
-    icon_path = os.path.join(info_path, icon_b64) if icon_b64 else None
-    if icon_path and os.path.exists(icon_path):
-        icon_b64 = data_uri_from(icon_path)
+    if index.get('icon') and 'info/icon.png' in info_contents:
+        icon_b64 = data_uri_from_bytes(info_contents['info/icon.png'])
 
     subdir = get_subdir(index)
     machine = index.get('arch', None)
@@ -152,15 +151,41 @@ def inspect_conda_info_dir(info_path, basename):  # pylint: disable=too-many-loc
     return package_data, release_data, file_data
 
 
+def gather_info_dir(
+    fn,
+    wanted=set(
+        ('info/index.json', 'info/recipe.json', 'info/about.json', 'info/has_prefix')
+    ),
+):
+    """Use conda-package-streaming to gather files without extracting to disk."""
+    # based on code from conda-index
+    have = {}
+    with open(fn) as fileobj:
+        package_stream = stream_conda_component(fn, fileobj, CondaComponent.info)
+        for tar, member in package_stream:
+            if member.name in wanted:
+                wanted.remove(member.name)
+                reader = tar.extractfile(member)
+                if reader is None:
+                    continue
+                have[member.name] = reader.read()
+
+            if not wanted:  # we got what we wanted
+                package_stream.close()
+
+    # extremely rare icon case. index.json lists a <hash>.png but the icon
+    # appears to always be info/icon.png.
+    if '"icon"' in have.get('info/index.json', ''):
+        have.update(gather_info_dir(fn, wanted=set('info/icon.png')))
+
+    return have
+
+
 def inspect_conda_package(filename, *args, **kwargs):  # pylint: disable=unused-argument
-    tmpdir = tempfile.mkdtemp()
-    extract(filename, tmpdir, components='info')
-
-    info_dir = os.path.join(tmpdir, 'info')
-    package_data, release_data, file_data = inspect_conda_info_dir(info_dir, os.path.basename(filename))
-
-    rmtree(tmpdir)
-
+    info_contents = gather_info_dir(filename)
+    package_data, release_data, file_data = inspect_conda_info_dir(
+        info_contents, os.path.basename(filename)
+    )
     return package_data, release_data, file_data
 
 

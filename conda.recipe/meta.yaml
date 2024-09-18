@@ -23,6 +23,7 @@ requirements:
     - python
     - anaconda-anon-usage >=0.4.0
     - conda-package-handling >=1.7.3
+    - conda-package-streaming
     - defusedxml >=0.7.1
     - nbformat >=4.4.0
     - python-dateutil >=2.6.1
