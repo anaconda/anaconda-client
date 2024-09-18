@@ -4,11 +4,18 @@ from __future__ import print_function, unicode_literals
 
 # Standard libary imports
 import unittest
+from pathlib import Path
 
 # Local imports
 from binstar_client.inspect_package import conda
 from binstar_client.utils.notebook.data_uri import data_uri_from
-from tests.utils.utils import data_dir
+
+
+HERE = Path(__file__).parent
+
+
+def data_dir(path):
+    return str(HERE / "data" / path)
 
 
 expected_package_data = {

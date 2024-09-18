@@ -11,12 +11,15 @@ from conda_package_streaming.package_streaming import (
     stream_conda_component,
     CondaComponent,
 )
+from pathlib import Path
 
 from ..utils.notebook.data_uri import data_uri_from_bytes
 
 
 os_map = {'osx': 'darwin', 'win': 'win32'}
 specs_re = re.compile('^([=><]+)(.*)$')
+
+HERE = Path(__file__).parent
 
 
 def transform_conda_deps(deps):
@@ -88,7 +91,7 @@ def inspect_conda_info_dir(info_contents: dict[str, bytes], basename):  # pylint
 
     index = _load('index.json', None)
     if index is None:
-        raise TypeError('info/index.json required in conda package')
+        raise TypeError('info/index.json required in conda package %r %r' % (basename, sorted(info_contents)))
 
     recipe = _load('recipe.json')
     about = recipe.get('about', {}) if recipe else _load('about.json', {})
@@ -191,8 +194,7 @@ def inspect_conda_package(filename, *args, **kwargs):  # pylint: disable=unused-
 
 def main():
     filename = sys.argv[1]
-    with open(filename) as fileobj:  # pylint: disable=unspecified-encoding
-        package_data, release_data, file_data = inspect_conda_package(filename, fileobj)
+    package_data, release_data, file_data = inspect_conda_package(filename)
     pprint(package_data)
     print('--')
     pprint(release_data)
