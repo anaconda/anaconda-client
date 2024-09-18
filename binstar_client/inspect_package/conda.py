@@ -79,7 +79,7 @@ def get_subdir(index):
         return '%s-%s' % (index.get('platform'), intel_map.get(arch, arch))
 
 
-def inspect_conda_info_dir(info_contents: dict[str, str | bytes], basename):  # pylint: disable=too-many-locals
+def inspect_conda_info_dir(info_contents: dict[str, bytes], basename):  # pylint: disable=too-many-locals
     def _load(filename, default=None):
         info_path = f'info/{filename}'
         if info_path in info_contents:
@@ -156,11 +156,11 @@ def gather_info_dir(
     wanted=set(
         ('info/index.json', 'info/recipe.json', 'info/about.json', 'info/has_prefix')
     ),
-):
+) -> dict[str, bytes]:
     """Use conda-package-streaming to gather files without extracting to disk."""
     # based on code from conda-index
-    have = {}
-    with open(fn) as fileobj:
+    have: dict[str, bytes] = {}
+    with open(fn, mode="rb") as fileobj:
         package_stream = stream_conda_component(fn, fileobj, CondaComponent.info)
         for tar, member in package_stream:
             if member.name in wanted:
@@ -175,7 +175,7 @@ def gather_info_dir(
 
     # extremely rare icon case. index.json lists a <hash>.png but the icon
     # appears to always be info/icon.png.
-    if '"icon"' in have.get('info/index.json', ''):
+    if b'"icon"' in have.get('info/index.json', b''):
         have.update(gather_info_dir(fn, wanted=set('info/icon.png')))
 
     return have
