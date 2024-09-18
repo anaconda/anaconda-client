@@ -11,15 +11,12 @@ from conda_package_streaming.package_streaming import (
     stream_conda_component,
     CondaComponent,
 )
-from pathlib import Path
 
 from ..utils.notebook.data_uri import data_uri_from_bytes
 
 
 os_map = {'osx': 'darwin', 'win': 'win32'}
 specs_re = re.compile('^([=><]+)(.*)$')
-
-HERE = Path(__file__).parent
 
 
 def transform_conda_deps(deps):
