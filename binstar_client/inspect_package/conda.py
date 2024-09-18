@@ -157,7 +157,7 @@ def inspect_conda_info_dir(info_contents: dict[str, bytes], basename):  # pylint
 
 
 def gather_info_dir(
-    fn,
+    path,
     wanted=frozenset(
         (
             'info/index.json',
@@ -171,9 +171,9 @@ def gather_info_dir(
     # based on code from conda-index
     have: dict[str, bytes] = {}
     seeking = set(wanted)
-    with open(fn, mode='rb') as fileobj:
+    with open(path, mode='rb') as fileobj:
         package_stream = stream_conda_component(
-            fn, fileobj, CondaComponent.info
+            path, fileobj, CondaComponent.info
         )
         for tar, member in package_stream:
             if member.name in wanted:
@@ -192,7 +192,7 @@ def gather_info_dir(
         index_json = json.loads(have['info/index.json'])
         # this case matters for our unit tests
         wanted = frozenset(('info/icon.png', f'info/{index_json["icon"]}'))
-        have.update(gather_info_dir(fn, wanted=wanted))
+        have.update(gather_info_dir(path, wanted=wanted))
 
     return have
 

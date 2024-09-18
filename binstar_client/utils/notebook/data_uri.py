@@ -31,18 +31,19 @@ class DataURIConverter:
     def __call__(self):
         if self.data:
             file = io.BytesIO(self.data)
-            return self._encode(self.resize_and_convert(file).read())
+            b64 = self._encode(self.resize_and_convert(file).read())
         elif os.path.exists(self.location):
             with open(self.location, 'rb') as file:
-                return self._encode(self.resize_and_convert(file).read())
+                b64 = self._encode(self.resize_and_convert(file).read())
         elif self.is_url():
             content = requests.get(self.location, timeout=10 * 60 * 60).content
             file = io.BytesIO()
             file.write(content)
             file.seek(0)
-            return self._encode(self.resize_and_convert(file).read())
+            b64 = self._encode(self.resize_and_convert(file).read())
         else:
             raise IOError('{} not found'.format(self.location))
+        return b64
 
     def resize_and_convert(self, file):
         assert Image  # typing
