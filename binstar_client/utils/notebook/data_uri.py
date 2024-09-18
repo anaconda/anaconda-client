@@ -19,19 +19,19 @@ THUMB_SIZE = (340, 210)
 
 
 class DataURIConverter:
-    def __init__(self, location, bytes=None):
+    def __init__(self, location, data=None):
         self.check_pillow_installed()
         self.location = location
-        self.bytes = bytes
+        self.data = data
 
     def check_pillow_installed(self):
         if Image is None:
             raise PillowNotInstalled()
 
     def __call__(self):
-        if self.bytes:
-            fp = io.BytesIO(self.bytes)
-            return self._encode(self.resize_and_convert(fp).read())
+        if self.data:
+            file = io.BytesIO(self.data)
+            return self._encode(self.resize_and_convert(file).read())
         elif os.path.exists(self.location):
             with open(self.location, 'rb') as file:
                 return self._encode(self.resize_and_convert(file).read())
@@ -71,5 +71,5 @@ def data_uri_from(location):
     return DataURIConverter(location)()
 
 
-def data_uri_from_bytes(bytes):
-    return DataURIConverter(location=None, bytes=bytes)()
+def data_uri_from_bytes(data):
+    return DataURIConverter(location=None, data=data)()
