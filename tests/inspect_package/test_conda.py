@@ -156,8 +156,7 @@ class Test(unittest.TestCase):
 
     def test_conda_old(self):
         filename = data_dir('conda_gc_test-1.2.1-py27_3.tar.bz2')
-        with open(filename, 'rb') as file:
-            package_data, version_data, file_data = conda.inspect_conda_package(filename, file)
+        package_data, version_data, file_data = conda.inspect_conda_package(filename)
 
         self.assertEqual(expected_package_data, package_data)
         self.assertEqual(expected_version_data_121, version_data)
@@ -165,8 +164,7 @@ class Test(unittest.TestCase):
 
     def test_conda(self):
         filename = data_dir('conda_gc_test-2.2.1-py27_3.tar.bz2')
-        with open(filename, 'rb') as file:
-            package_data, version_data, file_data = conda.inspect_conda_package(filename, file)
+        package_data, version_data, file_data = conda.inspect_conda_package(filename)
 
         self.assertEqual(expected_package_data, package_data)
         self.assertEqual(expected_version_data_221, version_data)
@@ -174,8 +172,7 @@ class Test(unittest.TestCase):
 
     def test_conda_app_image(self):
         filename = data_dir('test-app-package-icon-0.1-0.tar.bz2')
-        with open(filename, 'rb') as file:
-            package_data, version_data, _ = conda.inspect_conda_package(filename, file)
+        package_data, version_data, file_data = conda.inspect_conda_package(filename)
 
         self.assertEqual(app_expected_package_data, package_data)
         self.assertEqual(app_expected_version_data.pop('icon'), version_data.pop('icon'))
@@ -183,8 +180,7 @@ class Test(unittest.TestCase):
 
     def test_conda_v2_format(self):
         filename = data_dir('conda_gc_test-2.2.1-py27_3.conda')
-        with open(filename, 'rb') as file:
-            package_data, version_data, file_data = conda.inspect_conda_package(filename, file)
+        package_data, version_data, file_data = conda.inspect_conda_package(filename)
 
         self.assertEqual(expected_package_data, package_data)
         self.assertEqual(expected_version_data_221, version_data)
