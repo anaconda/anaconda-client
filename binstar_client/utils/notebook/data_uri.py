@@ -46,7 +46,8 @@ class DataURIConverter:
         return b64
 
     def resize_and_convert(self, file):
-        assert Image  # typing
+        if Image is None:
+            raise PillowNotInstalled()
         image = Image.open(file)
         image.thumbnail(THUMB_SIZE)
         out = io.BytesIO()
