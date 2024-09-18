@@ -97,6 +97,7 @@ def inspect_conda_info_dir(info_contents: dict[str, bytes], basename):  # pylint
     has_prefix = 'info/has_prefix' in info_contents
 
     # Load icon defined in the index.json and file exists inside info folder
+    icon_b64 = index.get('icon', None)
     if index.get('icon'):
         for icon_key in (f'info/{index.get("icon", None)}', 'info/icon.png'):
             if icon_key in info_contents:
