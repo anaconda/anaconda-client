@@ -15,7 +15,7 @@ HERE = Path(__file__).parent
 
 
 def data_dir(path):
-    return str(HERE / "data" / path)
+    return str(HERE / 'data' / path)
 
 
 expected_package_data = {
@@ -79,8 +79,10 @@ expected_file_data_121 = {
     },
     'basename': 'osx-64/conda_gc_test-1.2.1-py27_3.tar.bz2',
     'dependencies': {
-        'depends': [{'name': 'foo', 'specs': [['==', '3']]},
-                    {'name': 'python', 'specs': [['==', '2.7.8']]}],
+        'depends': [
+            {'name': 'foo', 'specs': [['==', '3']]},
+            {'name': 'python', 'specs': [['==', '2.7.8']]},
+        ],
     },
 }
 
@@ -100,8 +102,10 @@ expected_file_data_221 = {
     },
     'basename': 'linux-64/conda_gc_test-2.2.1-py27_3.tar.bz2',
     'dependencies': {
-        'depends': [{'name': 'foo', 'specs': [['==', '3']]},
-                    {'name': 'python', 'specs': [['==', '2.7.8']]}],
+        'depends': [
+            {'name': 'foo', 'specs': [['==', '3']]},
+            {'name': 'python', 'specs': [['==', '2.7.8']]},
+        ],
     },
 }
 
@@ -121,8 +125,10 @@ expected_file_data_221_conda = {
     },
     'basename': 'linux-64/conda_gc_test-2.2.1-py27_3.conda',
     'dependencies': {
-        'depends': [{'name': 'foo', 'specs': [['==', '3']]},
-                    {'name': 'python', 'specs': [['==', '2.7.8']]}],
+        'depends': [
+            {'name': 'foo', 'specs': [['==', '3']]},
+            {'name': 'python', 'specs': [['==', '2.7.8']]},
+        ],
     },
 }
 
@@ -183,6 +189,9 @@ class Test(unittest.TestCase):
 
         self.assertEqual(app_expected_package_data, package_data)
         self.assertEqual(app_expected_version_data.pop('icon'), version_data.pop('icon'))
+        self.assertEqual(
+            app_expected_version_data.pop('icon'), version_data.pop('icon')
+        )
         self.assertEqual(app_expected_version_data, version_data)
 
     def test_conda_v2_format(self):
