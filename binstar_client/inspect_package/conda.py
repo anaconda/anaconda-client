@@ -28,7 +28,7 @@ def transform_conda_deps(deps):
         dep = dep.strip()
         name_spec = dep.split(' ', 1)
         if len(name_spec) == 1:
-            name, = name_spec
+            (name,) = name_spec
             depends.append({'name': name, 'specs': []})
         elif len(name_spec) == 2:
             name, spec = name_spec
@@ -53,7 +53,9 @@ def transform_conda_deps(deps):
             else:
                 operator = '=='
 
-            depends.append({'name': name, 'specs': [['==', '%s+%s' % (spec, build_str)]]})
+            depends.append(
+                {'name': name, 'specs': [['==', '%s+%s' % (spec, build_str)]]}
+            )
 
     return {'depends': depends}
 
@@ -88,7 +90,7 @@ def inspect_conda_info_dir(info_contents: dict[str, bytes], basename):  # pylint
 
     index = _load('index.json', None)
     if index is None:
-        raise TypeError('info/index.json required in conda package %r %r' % (basename, sorted(info_contents)))
+        raise TypeError('info/index.json required in conda package')
 
     recipe = _load('recipe.json')
     about = recipe.get('about', {}) if recipe else _load('about.json', {})
@@ -154,14 +156,21 @@ def inspect_conda_info_dir(info_contents: dict[str, bytes], basename):  # pylint
 def gather_info_dir(
     fn,
     wanted=set(
-        ('info/index.json', 'info/recipe.json', 'info/about.json', 'info/has_prefix')
+        (
+            'info/index.json',
+            'info/recipe.json',
+            'info/about.json',
+            'info/has_prefix',
+        )
     ),
 ) -> dict[str, bytes]:
     """Use conda-package-streaming to gather files without extracting to disk."""
     # based on code from conda-index
     have: dict[str, bytes] = {}
-    with open(fn, mode="rb") as fileobj:
-        package_stream = stream_conda_component(fn, fileobj, CondaComponent.info)
+    with open(fn, mode='rb') as fileobj:
+        package_stream = stream_conda_component(
+            fn, fileobj, CondaComponent.info
+        )
         for tar, member in package_stream:
             if member.name in wanted:
                 wanted.remove(member.name)
