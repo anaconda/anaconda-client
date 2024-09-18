@@ -2,18 +2,19 @@
 
 from __future__ import annotations, print_function
 
-import os.path
 import json
+import os.path
 import re
 import sys
 from pprint import pprint
+from typing import Any
+
 from conda_package_streaming.package_streaming import (
-    stream_conda_component,
     CondaComponent,
+    stream_conda_component,
 )
 
 from ..utils.notebook.data_uri import data_uri_from_bytes
-
 
 os_map = {'osx': 'darwin', 'win': 'win32'}
 specs_re = re.compile('^([=><]+)(.*)$')
@@ -81,7 +82,8 @@ def get_subdir(index):
         return '%s-%s' % (index.get('platform'), intel_map.get(arch, arch))
 
 
-def inspect_conda_info_dir(info_contents: dict[str, bytes], basename):  # pylint: disable=too-many-locals
+def inspect_conda_info_dir(info_contents: dict[str, bytes], basename: str) -> tuple[dict, dict, dict]:
+    # pylint: disable=too-many-locals
     def _load(filename, default=None):
         info_path = f'info/{filename}'
         if info_path in info_contents:
@@ -138,7 +140,7 @@ def inspect_conda_info_dir(info_contents: dict[str, bytes], basename):  # pylint
         'license_url': about.get('license_url'),
         'license_family': about.get('license_family'),
     }
-    file_data = {
+    file_data: dict[str, Any] = {
         'basename': '%s/%s' % (subdir, basename),
         'attrs': {
             'operatingsystem': operatingsystem,
@@ -157,8 +159,8 @@ def inspect_conda_info_dir(info_contents: dict[str, bytes], basename):  # pylint
 
 
 def gather_info_dir(
-    path,
-    wanted=frozenset(
+    path: os.PathLike,
+    wanted: frozenset[str] = frozenset(
         (
             'info/index.json',
             'info/recipe.json',
