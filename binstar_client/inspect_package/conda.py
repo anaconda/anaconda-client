@@ -1,6 +1,6 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
-from __future__ import print_function
+from __future__ import annotations, print_function
 
 import os.path
 import json
