@@ -155,7 +155,7 @@ def inspect_conda_info_dir(info_contents: dict[str, bytes], basename):  # pylint
 
 def gather_info_dir(
     fn,
-    wanted=set(
+    wanted=frozenset(
         (
             'info/index.json',
             'info/recipe.json',
@@ -167,25 +167,26 @@ def gather_info_dir(
     """Use conda-package-streaming to gather files without extracting to disk."""
     # based on code from conda-index
     have: dict[str, bytes] = {}
+    seeking = set(wanted)
     with open(fn, mode='rb') as fileobj:
         package_stream = stream_conda_component(
             fn, fileobj, CondaComponent.info
         )
         for tar, member in package_stream:
             if member.name in wanted:
-                wanted.remove(member.name)
+                seeking.remove(member.name)
                 reader = tar.extractfile(member)
                 if reader is None:
                     continue
                 have[member.name] = reader.read()
 
-            if not wanted:  # we got what we wanted
+            if not seeking:  # we got what we wanted
                 package_stream.close()
 
     # extremely rare icon case. index.json lists a <hash>.png but the icon
     # appears to always be info/icon.png.
     if b'"icon"' in have.get('info/index.json', b''):
-        have.update(gather_info_dir(fn, wanted=set('info/icon.png')))
+        have.update(gather_info_dir(fn, wanted=frozenset(('info/icon.png',))))
 
     return have
 
