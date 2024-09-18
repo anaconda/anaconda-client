@@ -97,9 +97,11 @@ def inspect_conda_info_dir(info_contents: dict[str, bytes], basename):  # pylint
     has_prefix = 'info/has_prefix' in info_contents
 
     # Load icon defined in the index.json and file exists inside info folder
-    icon_b64 = index.get('icon', None)
-    if index.get('icon') and 'info/icon.png' in info_contents:
-        icon_b64 = data_uri_from_bytes(info_contents['info/icon.png'])
+    if index.get('icon'):
+        for icon_key in (f'info/{index.get("icon", None)}', 'info/icon.png'):
+            if icon_key in info_contents:
+                icon_b64 = data_uri_from_bytes(info_contents[icon_key])
+                break
 
     subdir = get_subdir(index)
     machine = index.get('arch', None)
@@ -186,7 +188,10 @@ def gather_info_dir(
     # extremely rare icon case. index.json lists a <hash>.png but the icon
     # appears to always be info/icon.png.
     if b'"icon"' in have.get('info/index.json', b''):
-        have.update(gather_info_dir(fn, wanted=frozenset(('info/icon.png',))))
+        index_json = json.loads(have['info/index.json'])
+        # this case matters for our unit tests
+        wanted = frozenset(('info/icon.png', f'info/{index_json["icon"]}'))
+        have.update(gather_info_dir(fn, wanted=wanted))
 
     return have
 
