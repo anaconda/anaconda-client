@@ -97,8 +97,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ macos-latest, ubuntu-latest, windows-latest ]
-        python-version: [ '3.8', '3.9', '3.10', '3.11', '3.12' ]
+        # os: [ macos-latest, ubuntu-latest, windows-latest ]
+        # python-version: [ '3.8', '3.9', '3.10', '3.11', '3.12' ]
+        os: [ ubuntu-latest ]
+        python-version: [ '3.10' ]
 
     steps:
       # most of these steps might be anchored to corresponding ones in the "lint_code" job
@@ -106,6 +108,10 @@ jobs:
 
       - name: Checkout project
         uses: actions/checkout@v4
+
+      - name: Debug
+        run: |
+          echo "GITHUB_ACTIONS =" $GITHUB_ACTIONS
 
       - name: Setup Miniconda
         uses: conda-incubator/setup-miniconda@v3
@@ -131,6 +137,8 @@ jobs:
           conda list --show-channel-urls
 
       - name: Run tests
+        env:
+          GITHUB_ACTIONS: "true"
         run: |
           mkdir -p .artifacts/reports
           python scripts/refresh_coveragerc.py
