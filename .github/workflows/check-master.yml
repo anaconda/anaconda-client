@@ -92,7 +92,7 @@ jobs:
 
   test:
     name: Test (Python ${{ matrix.python-version }} on ${{ matrix.os }})
-    # needs: [lint]
+    needs: [lint]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
