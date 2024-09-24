@@ -40,6 +40,10 @@ jobs:
         run: |
           conda update -n base -q conda
 
+      - name: Debug
+        run: |
+          echo "GITHUB_ACTIONS =" $GITHUB_ACTIONS
+
       - name: Install dependencies
         run: |
           conda install -c defaults -c anaconda-cloud python=${{ matrix.python-version }} pip --file requirements.txt --file requirements-extra.txt
