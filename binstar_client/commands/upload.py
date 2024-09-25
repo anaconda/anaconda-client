@@ -827,7 +827,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
     def upload(
         ctx: typer.Context,
         files: typing.List[str] = typer.Argument(),
-        channels: list[str] = typer.Option(
+        channels: typing.List[str] = typer.Option(
             [],
             '-c',
             '--channel',
@@ -836,7 +836,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
                 label='channel',
             ),
         ),
-        labels: list[str] = typer.Option(
+        labels: typing.List[str] = typer.Option(
             [],
             '-l',
             '--label',
