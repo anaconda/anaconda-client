@@ -185,9 +185,7 @@ class Test(unittest.TestCase):
 
     def test_conda_app_image(self):
         filename = data_dir('test-app-package-icon-0.1-0.tar.bz2')
-        package_data, version_data, _ = conda.inspect_conda_package(
-            filename
-        )
+        package_data, version_data, _ = conda.inspect_conda_package(filename)
 
         self.assertEqual(app_expected_package_data, package_data)
         self.assertEqual(app_expected_version_data.pop('icon'), version_data.pop('icon'))
