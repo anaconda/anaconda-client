@@ -189,9 +189,6 @@ class Test(unittest.TestCase):
 
         self.assertEqual(app_expected_package_data, package_data)
         self.assertEqual(app_expected_version_data.pop('icon'), version_data.pop('icon'))
-        self.assertEqual(
-            app_expected_version_data.pop('icon'), version_data.pop('icon')
-        )
         self.assertEqual(app_expected_version_data, version_data)
 
     def test_conda_v2_format(self):
