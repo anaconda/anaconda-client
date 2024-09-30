@@ -23,11 +23,12 @@ In the case that another plugin is installed (like `anaconda-cloud-auth`), the f
 
 ### Pull requests merged
 
-* [PR 714](https://github.com/anaconda/anaconda-client/pull/714) - Updated links in upload help text
-* [PR 711](https://github.com/anaconda/anaconda-client/pull/711) - Remove duplicate import
-* [PR 719](https://github.com/anaconda/anaconda-client/pull/719) - Migrate `anaconda-client` to become a plugin of `anaconda-cli-base`
-* [PR 718](https://github.com/anaconda/anaconda-client/pull/718) - Fix local development setup via `make init`
 * [PR 717](https://github.com/anaconda/anaconda-client/pull/717) - Drop dependency on `six`
+* [PR 718](https://github.com/anaconda/anaconda-client/pull/718) - Fix local development setup via `make init`
+* [PR 719](https://github.com/anaconda/anaconda-client/pull/719) - Migrate `anaconda-client` to become a plugin of `anaconda-cli-base`
+* [PR 711](https://github.com/anaconda/anaconda-client/pull/711) - Remove duplicate import
+* [PR 714](https://github.com/anaconda/anaconda-client/pull/714) - Updated links in upload help text
+* [PR 724](https://github.com/anaconda/anaconda-client/pull/724) - Use conda package streaming to fix bug in upload of packages with bad permissions
 
 ## 1.12.3 - 2024-02-22
 
