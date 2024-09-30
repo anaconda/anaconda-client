@@ -15,15 +15,14 @@ entrypoint in setup.py.
 """
 
 import logging
+import os
+import sys
 import warnings
 from argparse import ArgumentParser
-from typing import Any
-from typing import Callable
+from typing import Any, Callable
 
 import typer
-import typer.colors
 from anaconda_cli_base.cli import app as main_app
-from typer import Context, Typer
 
 from binstar_client import commands as command_module
 from binstar_client.scripts.cli import (
@@ -59,12 +58,29 @@ NON_HIDDEN_SUBCOMMANDS = {
 DEPRECATED_SUBCOMMANDS = {
     "notebook",
 }
+# Subcommands which have typer subcommands defined
+SUBCOMMANDS_WITH_NEW_CLI = {
+    "auth",
+    "channel",
+    "config",
+    "copy",
+    "groups",
+    "label",
+    "move",
+    "package",
+    "remove",
+    "search",
+    "show",
+    "update",
+    "upload",
+    "whoami",
+}
 
 # The logger
 log = logging.getLogger(__name__)
 warnings.simplefilter("always")
 
-app = Typer(
+app = typer.Typer(
     add_completion=False,
     name="org",
     help="Interact with anaconda.org",
@@ -98,19 +114,19 @@ def _deprecate(name: str, func: Callable) -> Callable:
         f: The subcommand callable.
 
     """
-    def new_func(ctx: Context) -> Any:
+    def new_func() -> Any:
         msg = (
             f"The existing anaconda-client commands will be deprecated. To maintain compatibility, "
             f"please either pin `anaconda-client<2` or update your system call with the `org` prefix, "
             f'e.g. "anaconda org {name} ..."'
         )
         log.warning(msg)
-        return func(ctx)
+        return func()
 
     return new_func
 
 
-def _subcommand(ctx: Context) -> None:
+def _subcommand() -> None:
     """A common function to use for all subcommands.
 
     In a proper typer/click app, this is the function that is decorated.
@@ -119,11 +135,7 @@ def _subcommand(ctx: Context) -> None:
     to the binstar_main function.
 
     """
-    args = []
-    # Ensure we capture the subcommand name if there is one
-    if ctx.info_name is not None:
-        args.append(ctx.info_name)
-    args.extend(ctx.args)
+    args = [arg for arg in sys.argv[1:] if arg != "org"]
     binstar_main(args, allow_plugin_main=False)
 
 
@@ -147,6 +159,11 @@ def _mount_subcommand(
             for backwards-compatibility
 
     """
+
+    force_use_new_cli = bool(os.getenv("ANACONDA_CLI_FORCE_NEW"))
+
+    main_help_text = f"anaconda.org: {help_text + ' ' if help_text else ''}(alias for 'anaconda org {name}')"
+
     if is_deprecated:
         deprecated_text = typer.style("(deprecated)", fg=typer.colors.RED, bold=True)
         help_text = f"{deprecated_text} {help_text}"
@@ -155,28 +172,61 @@ def _mount_subcommand(
         func = _subcommand
 
     # Mount the subcommand to the `anaconda org` application.
-    app.command(
+    if force_use_new_cli and name in SUBCOMMANDS_WITH_NEW_CLI:
+        _load_new_subcommand(app, name, help_text=help_text)
+        if mount_to_main:
+            # Mount some CLI subcommands at the top-level, but optionally emit a deprecation warning
+            _load_new_subcommand(main_app, name, help_text=main_help_text, hidden=is_hidden_on_main)
+    else:
+        # Create a legacy passthrough
+        app.command(
+            name=name,
+            help=help_text,
+            context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
+        )(func)
+
+        # Exit early if we are not mounting to the main `anaconda` app
+        if not mount_to_main:
+            return
+
+        main_app.command(
+            name=name,
+            help=main_help_text,
+            hidden=is_hidden_on_main,
+            context_settings={
+                "allow_extra_args": True,
+                "ignore_unknown_options": True,
+            },
+        )(func)
+
+
+def _load_new_subcommand(app: typer.Typer, name: str, help_text: str, hidden: bool = False) -> None:
+    """Load the new typer version of a subcommand from a commands module.
+
+    Args:
+        name: The name of the module, within the binstar_client.commands subpackage.
+
+    """
+    # pylint: disable=redefined-outer-name
+    # This hack is here to handle the existing deprecation of the channel subcommand
+    if name == "label":
+        mod_name = "channel"
+    elif name == "auth":
+        mod_name = "authorizations"
+    else:
+        mod_name = name
+    subcommand_module = getattr(command_module, mod_name)
+    subcommand_module.mount_subcommand(
+        app=app,
         name=name,
-        help=help_text,
-        context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
-    )(func)
-
-    # Exit early if we are not mounting to the main `anaconda` app
-    if not mount_to_main:
-        return
-
-    # Mount some CLI subcommands at the top-level, but optionally emit a deprecation warning
-    help_text = f"anaconda.org: {help_text + ' ' if help_text else ''}(alias for 'anaconda org {name}')"
-
-    main_app.command(
-        name=name,
-        help=help_text,
-        hidden=is_hidden_on_main,
+        hidden=hidden,
+        help_text=help_text,
         context_settings={
             "allow_extra_args": True,
             "ignore_unknown_options": True,
+            "help_option_names": ["-h", "--help"],
         },
-    )(func)
+    )
 
 
 def load_legacy_subcommands() -> None:
@@ -185,6 +235,11 @@ def load_legacy_subcommands() -> None:
     This allows them to be called from the new CLI, without having to manually migrate.
 
     """
+    # pylint: disable=fixme
+    # TODO: We should use a config parameter
+    if bool(os.getenv("ANACONDA_CLIENT_FORCE_STANDALONE")):
+        return
+
     parser = ArgumentParser()
     add_subparser_modules(parser, command_module)
 

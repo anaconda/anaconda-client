@@ -39,6 +39,9 @@ class PackageSpec:
     def __repr__(self):
         return f'<PackageSpec {self.spec_str!r}>'
 
+    def __eq__(self, other):
+        return self.spec_str == other.spec_str
+
     @property
     def user(self):
         if self._user is None:
@@ -124,6 +127,9 @@ class GroupSpec:
 
     def __repr__(self):
         return f'<GroupSpec {self.spec_str!r}>'
+
+    def __eq__(self, other):
+        return self.spec_str == other.spec_str
 
     @property
     def org(self):

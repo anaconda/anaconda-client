@@ -9,6 +9,9 @@ from __future__ import unicode_literals, print_function
 import argparse
 import functools
 import logging
+from typing import List, Optional, Tuple, Union
+
+import typer
 
 from binstar_client.utils import get_server_api
 
@@ -103,3 +106,112 @@ def _add_parser(subparsers, name, deprecated=False):
 def add_parser(subparsers):
     _add_parser(subparsers, name='label')
     _add_parser(subparsers, name='channel', deprecated=True)
+
+
+def _parse_optional_tuple(value: Optional[Tuple[str, str]]) -> Optional[List[str]]:
+    # pylint: disable=fixme
+    # Convert a sentinel tuple of empty strings to None, since it is not possible with typer parser or callback
+    if value == ('', '') or value is None:
+        return None
+    # TODO: We only return a list because argparse does. Should really be a tuple.
+    return list(value)
+
+
+def _exclusive_action(
+    ctx: typer.Context,
+    param: typer.CallbackParam,
+    value: Union[str, Tuple[str, str]],
+) -> Union[str, Tuple[str, str]]:
+    """Check for exclusivity of action options.
+
+    To do this, we attach a new special attribute onto the typer Context the first time
+    one of the options in the group is used.
+
+    """
+    # pylint: disable=protected-access,invalid-name
+    parsed_value: Union[List[str], str, None]
+    if isinstance(value, tuple):
+        # This is here so we can treat the empty tuple as falsy, but I don't like it
+        parsed_value = _parse_optional_tuple(value)
+    else:
+        parsed_value = value
+
+    if getattr(ctx, '_actions', None) is None:
+        ctx._actions = set()  # type: ignore
+    if parsed_value:
+        if ctx._actions:  # type: ignore
+            used_action, = ctx._actions  # type: ignore
+            raise typer.BadParameter(f'mutually exclusive with {used_action}')
+        ctx._actions.add(' / '.join(f'\'{o}\'' for o in param.opts))  # type: ignore
+    return value
+
+
+def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, context_settings: dict) -> None:
+
+    @app.command(
+        name=name,
+        hidden=hidden,
+        help=help_text,
+        context_settings=context_settings,
+        # no_args_is_help=True,
+    )
+    def channel(
+        ctx: typer.Context,
+        organization: Optional[str] = typer.Option(
+            None,
+            '-o',
+            '--organization',
+            help='Manage an organizations {}s'.format(name),
+        ),
+        copy: Optional[Tuple[str, str]] = typer.Option(
+            ('', ''),
+            help=f'Copy a package from one {name} to another',
+            show_default=False,
+            callback=_exclusive_action,
+        ),
+        list_: Optional[bool] = typer.Option(
+            False,
+            '--list',
+            is_flag=True,
+            help=f'List all {name}s for a user',
+            callback=_exclusive_action,
+        ),
+        show: Optional[str] = typer.Option(
+            None,
+            help=f'Show all of the files in a {name}',
+            callback=_exclusive_action,
+        ),
+        lock: Optional[str] = typer.Option(
+            None,
+            help=f'Lock a {name}',
+            callback=_exclusive_action,
+        ),
+        unlock: Optional[str] = typer.Option(
+            None,
+            help=f'Unlock a {name}',
+            callback=_exclusive_action,
+        ),
+        remove: Optional[str] = typer.Option(
+            None,
+            help=f'Remove a {name}',
+            callback=_exclusive_action,
+        ),
+    ) -> None:
+        # pylint: disable=too-many-arguments
+        parsed_copy = _parse_optional_tuple(copy)
+        if not any([parsed_copy, list_, show, lock, unlock, remove]):
+            raise typer.BadParameter('one of --copy, --list, --show, --lock, --unlock, or --remove must be provided')
+
+        args = argparse.Namespace(
+            token=ctx.obj.params.get('token'),
+            site=ctx.obj.params.get('site'),
+            organization=organization,
+            copy=parsed_copy,
+            list=list_,
+            show=show,
+            lock=lock,
+            unlock=unlock,
+            remove=remove,
+        )
+
+        main(args=args, name='channel', deprecated=True)
