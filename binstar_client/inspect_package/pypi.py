@@ -146,7 +146,6 @@ def python_version_check(filedata):
 
 def parse_requirement(line, deps, extras, extra):
     parsed_req = Requirement(line)
-
     name = parsed_req.name.lower()
     specs = sorted(
         (
