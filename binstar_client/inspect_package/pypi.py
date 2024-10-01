@@ -11,7 +11,7 @@ import zipfile
 from email.parser import Parser
 from os import path
 
-import pkg_resources
+from packaging.requirements import Requirement
 
 from binstar_client import errors
 from binstar_client.inspect_package.uitls import extract_first, pop_key
@@ -145,12 +145,20 @@ def python_version_check(filedata):
 
 
 def parse_requirement(line, deps, extras, extra):
-    req = pkg_resources.Requirement.parse(line)
-    req.specs.sort(key=sort_ver)
+    parsed_req = Requirement(line)
+
+    name = parsed_req.name.lower()
+    specs = sorted(
+        (
+            (spec.operator, spec.version) for spec in parsed_req.specifier
+        ),
+        key=sort_ver,
+    )
+
     if extra:
-        extras[extra].append({'name': req.key, 'specs': req.specs or []})
+        extras[extra].append({'name': name, 'specs': specs})
     else:
-        deps.append({'name': req.key, 'specs': req.specs or []})
+        deps.append({'name': name, 'specs': specs})
 
     deps.sort(key=sort_key)
     for extra_item in extras.values():
@@ -197,37 +205,18 @@ def parse_requires_txt(requires_txt):
 def format_requirements(requires):
     obj = []
     for req in requires:
-        req = req.strip()
-
-        # Get environment marker
-        marker = None
-        if ';' in req:
-            req, marker = req.split(';', 1)
-            marker = marker.strip()
-        else:
-            marker = None
-
-        req_spec = req.split(' ', 1)
-        if len(req_spec) == 1:
-            # Note: req.lower() was introduced here to enforce the same parsing
-            # using metadata.json and METADATA
-            obj.append({'name': req.lower(), 'specs': []})
-        else:
-            req, spec = req_spec
-            spec = spec.strip()
-
-            if spec[0] == '(':
-                spec = spec[1:]
-
-            if spec[-1] == ')':
-                spec = spec[:-1]
-
-            req = pkg_resources.Requirement.parse('%s %s' % (req, spec))
-            req.specs.sort(key=sort_ver)
-            obj.append({
-                'name': req.key,
-                'specs': req.specs or [],
-            })
+        parsed_req = Requirement(req)
+        name = parsed_req.name.lower()
+        specs = sorted(
+            (
+                (spec.operator, spec.version) for spec in parsed_req.specifier
+            ),
+            key=sort_ver,
+        )
+        obj.append({
+            'name': name,
+            'specs': specs,
+        })
     return obj
 
 
