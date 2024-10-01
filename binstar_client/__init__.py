@@ -13,7 +13,6 @@ from urllib.parse import quote
 
 import defusedxml.ElementTree as ET
 import requests
-from pkg_resources import parse_version as pv
 from tqdm import tqdm
 
 from . import errors
@@ -186,15 +185,6 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
 
     def _check_response(self, res, allowed=None):
         allowed = [200] if allowed is None else allowed
-        api_version = res.headers.get('x-binstar-api-version', '0.2.1')
-        if pv(api_version) > pv(__version__):
-            # pylint: disable=implicit-str-concat
-            logger.warning(
-                'The api server is running the binstar-api version %s. you are using %s\n'
-                'Please update your client with pip install -U binstar or conda update binstar',
-                api_version,
-                __version__,
-            )
 
         if not self._token_warning_sent and 'Conda-Token-Warning' in res.headers:
             logger.warning('Token warning: %s', res.headers['Conda-Token-Warning'])
