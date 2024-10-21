@@ -696,7 +696,10 @@ def add_parser(subparsers: typing.Any) -> None:
     parser.add_argument(
         '--keep-basename',
         dest='keep_basename',
-        help='Do not normalize a basename when uploading a conda package.',
+        help=(
+            'Do not normalize a basename when uploading a conda package. '
+            'Note: this parameter only applies to conda, and not standard Python packages.'
+        ),
         action='store_true'
     )
 
