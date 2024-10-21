@@ -16,7 +16,7 @@ build:
     - conda-server = binstar_client.scripts.cli:main
 
 requirements:
-  host: 
+  host:
     - pip
     - python
     - setuptools
