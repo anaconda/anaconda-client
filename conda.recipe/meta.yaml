@@ -10,12 +10,13 @@ source:
 build:
   number: 0
   script: {{ PYTHON }} -m pip install --no-build-isolation --no-deps .
+  noarch: python
   entry_points:
     - binstar = binstar_client.scripts.cli:main
     - conda-server = binstar_client.scripts.cli:main
 
 requirements:
-  host:
+  host: 
     - pip
     - python
     - setuptools
