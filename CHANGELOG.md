@@ -29,7 +29,6 @@ In the case that another plugin is installed (like `anaconda-cloud-auth`), the f
 * [PR 711](https://github.com/anaconda/anaconda-client/pull/711) - Remove duplicate import
 * [PR 714](https://github.com/anaconda/anaconda-client/pull/714) - Updated links in upload help text
 * [PR 724](https://github.com/anaconda/anaconda-client/pull/724) - Use conda package streaming to fix bug in upload of packages with bad permissions
-* [PR 723](https://github.com/anaconda/anaconda-client/pull/723) - Add optional typer subcommands, which are opt-in
 
 ## 1.12.3 - 2024-02-22
 
