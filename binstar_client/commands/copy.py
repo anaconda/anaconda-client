@@ -6,11 +6,7 @@ Copy packages from one account to another
 
 from __future__ import unicode_literals, print_function
 
-import argparse
 import logging
-from typing import Optional
-
-import typer
 
 from binstar_client.utils import get_server_api, parse_specs
 from binstar_client import errors
@@ -72,76 +68,3 @@ def add_parser(subparsers):
     method_group.add_argument('--update',
                               help='Update missing data in destination package metadata', action='store_true')
     parser.set_defaults(main=main)
-
-
-def _exclusive_method(ctx: typer.Context, param: typer.CallbackParam, value: str) -> str:
-    """Check for exclusivity of method arguments.
-
-    To do this, we attach a new special attribute onto the typer Context the first time
-    one of the options in the group is used.
-
-    """
-    # pylint: disable=protected-access,invalid-name
-    if getattr(ctx, '_methods', None) is None:
-        ctx._methods = set()  # type: ignore
-    if value:
-        if ctx._methods:  # type: ignore
-            used_mode, = ctx._methods  # type: ignore
-            raise typer.BadParameter(f'mutually exclusive with {used_mode}')
-        ctx._methods.add(' / '.join(f'\'{o}\'' for o in param.opts))  # type: ignore
-    return value
-
-
-def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, context_settings: dict) -> None:
-    @app.command(
-        name=name,
-        hidden=hidden,
-        help=help_text,
-        context_settings=context_settings,
-        no_args_is_help=True,
-    )
-    def copy(
-        ctx: typer.Context,
-        spec: str = typer.Argument(
-            help=(
-                'Package - written as user/package/version[/filename]. '
-                'If filename is not given, copy all files in the version'
-            ),
-            callback=parse_specs,
-        ),
-        to_owner: Optional[str] = typer.Option(
-            None,
-            help='User account to copy package to (default: your account)',
-        ),
-        from_label: str = typer.Option(
-            'main',
-            help='Label to copy packages from',
-        ),
-        to_label: str = typer.Option(
-            'main',
-            help='Label to put all packages into',
-        ),
-        replace: bool = typer.Option(
-            False,
-            help='Overwrite destination package metadata',
-            callback=_exclusive_method,
-        ),
-        update: bool = typer.Option(
-            False,
-            help='Update missing data in destination package metadata',
-            callback=_exclusive_method,
-        ),
-    ) -> None:
-        # pylint: disable=too-many-arguments
-        args = argparse.Namespace(
-            token=ctx.obj.params.get('token'),
-            site=ctx.obj.params.get('site'),
-            spec=spec,
-            to_owner=to_owner,
-            from_label=from_label,
-            to_label=to_label,
-            replace=replace,
-            update=update,
-        )
-
-        main(args=args)

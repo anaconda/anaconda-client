@@ -8,10 +8,7 @@ Move packages between labels.
 
 # Standard library imports
 from __future__ import unicode_literals, print_function
-import argparse
 import logging
-
-import typer
 
 # Local imports
 from binstar_client import errors
@@ -109,40 +106,3 @@ def add_parser(subparsers):
     )
 
     parser.set_defaults(main=main)
-
-
-def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, context_settings: dict) -> None:
-    @app.command(
-        name=name,
-        hidden=hidden,
-        help=help_text,
-        context_settings=context_settings,
-        no_args_is_help=True,
-    )
-    def move(
-        ctx: typer.Context,
-        spec: str = typer.Argument(
-            help=(
-                'Package - written as user/package/version[/filename]. '
-                'If filename is not given, move all files in the version'
-            ),
-            callback=parse_specs,
-        ),
-        from_label: str = typer.Option(
-            'main',
-            help='Label to move packages from',
-        ),
-        to_label: str = typer.Option(
-            'main',
-            help='Label to move packages to',
-        ),
-    ) -> None:
-        args = argparse.Namespace(
-            token=ctx.obj.params.get('token'),
-            site=ctx.obj.params.get('site'),
-            spec=spec,
-            from_label=from_label,
-            to_label=to_label,
-        )
-
-        main(args=args)

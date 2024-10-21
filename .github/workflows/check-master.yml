@@ -127,8 +127,6 @@ jobs:
           conda list --show-channel-urls
 
       - name: Run tests
-        env:
-          _TYPER_FORCE_DISABLE_TERMINAL: 1
         run: |
           mkdir -p .artifacts/reports
           python scripts/refresh_coveragerc.py

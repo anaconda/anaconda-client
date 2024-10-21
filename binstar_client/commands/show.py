@@ -12,9 +12,8 @@ Examples:
 """
 
 import logging
-from argparse import Namespace, RawTextHelpFormatter
 
-import typer
+from argparse import RawTextHelpFormatter
 
 from binstar_client.utils import get_server_api, parse_specs
 from binstar_client.utils.config import PackageType
@@ -110,28 +109,3 @@ def add_parser(subparsers):
                         help='Package written as USER[/PACKAGE[/VERSION[/FILE]]]')
 
     parser.set_defaults(main=main)
-
-
-def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, context_settings: dict) -> None:
-    @app.command(
-        name=name,
-        hidden=hidden,
-        help=help_text,
-        context_settings=context_settings,
-        no_args_is_help=True,
-    )
-    def show_subcommand(
-        ctx: typer.Context,
-        spec: str = typer.Argument(
-            show_default=False,
-            callback=parse_specs,
-            help='Package written as USER[/PACKAGE[/VERSION[/FILE]]]'
-        ),
-    ) -> None:
-        args = Namespace(
-            token=ctx.obj.params.get('token'),
-            site=ctx.obj.params.get('site'),
-            spec=spec,
-        )
-
-        main(args=args)

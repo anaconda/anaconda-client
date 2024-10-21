@@ -12,7 +12,6 @@ import logging
 import os
 import typing
 
-import typer
 import yaml
 
 from binstar_client import errors
@@ -128,53 +127,3 @@ def add_parser(subparsers: typing.Any) -> None:
     )
 
     parser.set_defaults(main=main)
-
-
-def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, context_settings: dict) -> None:
-    """Mount the subcommand to the typer app."""
-    @app.command(
-        name=name,
-        hidden=hidden,
-        help=help_text,
-        context_settings=context_settings,
-        no_args_is_help=True,
-    )
-    def update(
-        ctx: typer.Context,
-        spec: str = typer.Argument(
-            help=(
-                'Package - written as user/package/version[/filename]. '
-                'If filename is not given, copy all files in the version'
-            ),
-            show_default=False,
-            callback=parse_specs,
-        ),
-        source: str = typer.Argument(
-            help=(
-                'Path to the file that consists of metadata that will be updated in the destination package. '
-                'It may be a valid package file or `.json` file with described attributes to update'
-            ),
-            show_default=False,
-            callback=file_type,
-        ),
-        package_type: typing.Optional[str] = typer.Option(
-            None,
-            '-t',
-            '--package-type',
-            help='Set the package type. Defaults to autodetect.',
-        ),
-        release: typing.Optional[bool] = typer.Option(
-            False,
-            help='Use `source` file to update public attributes of the release specified in `spec`',
-        ),
-    ) -> None:
-        args = argparse.Namespace(
-            token=ctx.obj.params.get('token'),
-            site=ctx.obj.params.get('site'),
-            spec=spec,
-            source=source,
-            package_type=package_type,
-            release=release,
-        )
-
-        main(args=args)

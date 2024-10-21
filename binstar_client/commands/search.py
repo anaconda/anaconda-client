@@ -4,12 +4,7 @@
 Search your Anaconda repository for packages.
 """
 
-import argparse
 import logging
-from enum import Enum
-from typing import Optional
-
-import typer
 
 from binstar_client.utils import config
 from binstar_client.utils import get_server_api
@@ -57,58 +52,3 @@ def add_parser(subparsers):
         help='only search for packages of the chosen platform'
     )
     parser.set_defaults(main=search)
-
-
-class Platform(Enum):
-    """An enum representing platforms that can be passed as options."""
-    OSX_32 = 'osx-32'
-    OSX_64 = 'osx-64'
-    WIN_32 = 'win-32'
-    WIN_64 = 'win-64'
-    LINUX_32 = 'linux-32'
-    LINUX_64 = 'linux-64'
-    LINUX_AARCH64 = 'linux-aarch64'
-    LINUX_ARMV6L = 'linux-armv6l'
-    LINUX_ARMV7L = 'linux-armv7l'
-    LINUX_PPC64LE = 'linux-ppc64le'
-    LINUX_S390X = 'linux-s390x'
-    NOARCH = 'noarch'
-
-
-def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, context_settings: dict) -> None:
-    @app.command(
-        name=name,
-        hidden=hidden,
-        help=help_text,
-        context_settings=context_settings,
-        no_args_is_help=True,
-    )
-    def search_subcommand(
-        ctx: typer.Context,
-        name: str = typer.Argument(
-            help='Search string',
-            show_default=False,
-        ),
-        package_type: Optional[str] = typer.Option(
-            None,
-            '-t',
-            '--package-type',
-            help='Only search for packages of this type',
-        ),
-        platform: Optional[Platform] = typer.Option(
-            None,
-            '-p',
-            '--platform',
-            help='Only search for packages of the chosen platform',
-        ),
-    ) -> None:
-        args = argparse.Namespace(
-            token=ctx.obj.params.get('token'),
-            site=ctx.obj.params.get('site'),
-            # TODO: This is only a list to ensure parity with argparse  # pylint: disable=fixme
-            name=[name],
-            package_type=package_type,
-            platform=platform.value if platform is not None else None,
-        )
-
-        search(args=args)
