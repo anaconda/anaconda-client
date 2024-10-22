@@ -3,6 +3,7 @@ import binstar_client.utils.spec
 
 
 def test_parse_specs():
+    # Reproducing for https://github.com/anaconda/anaconda-client/issues/642
     spec = binstar_client.utils.spec.parse_specs("bkreider/foo/1.2.3/blah-1.2.3.tar.bz2?x=1")
     assert spec.user == "bkreider"
     assert spec.name == "foo"
