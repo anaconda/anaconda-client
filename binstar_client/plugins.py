@@ -19,9 +19,11 @@ import warnings
 from argparse import ArgumentParser
 from typing import Any
 from typing import Callable
+from typing import Optional
 
 import typer
 import typer.colors
+from anaconda_cli_base import console
 from anaconda_cli_base.cli import app as main_app
 from typer import Context, Typer
 
@@ -69,8 +71,26 @@ app = Typer(
     name="org",
     help="Interact with anaconda.org",
     no_args_is_help=True,
-    context_settings={"help_option_names": ["-h", "--help"]},
 )
+
+
+@app.callback(invoke_without_command=True, no_args_is_help=True)
+def main(
+    ctx: typer.Context,
+    show_help: Optional[bool] = typer.Option(
+        False,
+        "-h",
+        "--help",
+        help="Show this message and exit.",
+    ),
+) -> None:
+    """Add -h and --help options to anaconda org base subcommand."""
+    # We do this instead of using context_settings for now so we can fallback
+    # on the existing help for all subcommands. This callback can go away once
+    # we are okay with typer recursively adding -h and --help to every subcommand.
+    if show_help:
+        console.print(ctx.get_help())
+        raise typer.Exit()
 
 
 def _get_help_text(parser: ArgumentParser, name: str) -> str:
