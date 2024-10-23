@@ -1,7 +1,7 @@
 """Test entrypoint to anaconda-cli-base"""
 
 from importlib import reload
-import logging
+import logging 
 from typing import Generator
 
 import pytest
@@ -32,6 +32,15 @@ def test_entrypoint() -> None:
 
     groups = [grp.name for grp in anaconda_cli_base.cli.app.registered_groups]
     assert "org" in groups
+
+
+@pytest.mark.parametrize("flag", ["--help", "-h"])
+def test_org_subcommand_help(flag: str) -> None:
+    """anaconda org -h and anaconda --help are both available"""
+
+    runner = CliRunner()
+    result = runner.invoke(anaconda_cli_base.cli.app, ["org", flag])
+    assert result.exit_code == 0
 
 
 @pytest.mark.parametrize("cmd", ALL_SUBCOMMANDS)
