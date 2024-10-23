@@ -1,7 +1,7 @@
 """Test entrypoint to anaconda-cli-base"""
 
 from importlib import reload
-import logging 
+import logging
 from typing import Generator
 
 import pytest
