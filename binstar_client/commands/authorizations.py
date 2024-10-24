@@ -22,7 +22,6 @@ import typing
 
 import pytz
 from dateutil.parser import parse as parse_date
-from six.moves import input
 
 from binstar_client import errors
 from binstar_client.utils import get_server_api

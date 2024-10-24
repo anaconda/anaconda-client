@@ -9,9 +9,7 @@ import logging
 import platform
 import socket
 import sys
-
-from six.moves import input
-from six.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
 
 from binstar_client import errors
 from binstar_client.utils import get_config, get_server_api, store_token, bool_input

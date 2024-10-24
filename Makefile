@@ -15,6 +15,13 @@ Commands:
 endef
 export HELP
 
+# Conda-related paths
+conda_env_dir ?= ./env
+
+# Command aliases
+CONDA_EXE ?= conda
+CONDA_RUN := $(CONDA_EXE) run --prefix $(conda_env_dir) --no-capture-output
+
 .PHONY: help init lint lint-bandit lint-mypy lint-pycodestyle lint-pylint test test-pytest
 
 help:
@@ -22,9 +29,22 @@ help:
 
 init:
 	@if [ -z "$${CONDA_SHLVL:+x}" ]; then echo "Conda is not installed." && exit 1; fi
-	@conda create -y -n anaconda_client python=3.12 --file requirements.txt --file requirements-extra.txt
-	@conda run -n anaconda_client pip install -r requirements-dev.txt
-	@echo "\n\nConda environment has been created. To activate run \"conda activate anaconda_client\"."
+	@conda create \
+		--channel defaults \
+		--channel anaconda-cloud \
+		--yes \
+		--prefix $(conda_env_dir) \
+		python=3.11 \
+		pip \
+		--file requirements.txt \
+		--file requirements-extra.txt
+	@conda run \
+		--prefix $(conda_env_dir) \
+		pip install -r requirements-dev.txt
+	@conda run \
+		--prefix $(conda_env_dir) \
+		pip install -e . --no-deps
+	@echo "\n\nConda environment has been created. To activate run \"conda activate $(conda_env_dir)\"."
 
 check: lint test
 

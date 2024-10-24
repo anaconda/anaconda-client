@@ -18,6 +18,5 @@ types-pytz~=2023.3.0.0
 types-pyyaml~=6.0.12.9
 types-requests~=2.30.0.0
 types-setuptools~=67.8.0.0
-types-six~=1.16.21.8
 types-tqdm~=4.65.0.1
 typing-extensions~=4.6.0

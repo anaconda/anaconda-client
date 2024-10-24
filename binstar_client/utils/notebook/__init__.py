@@ -1,7 +1,7 @@
 # pylint: disable=missing-module-docstring,missing-function-docstring
+from urllib.parse import urlparse
 
 import nbformat
-from six.moves.urllib.parse import urlparse
 
 from ...errors import BinstarError
 
