@@ -55,10 +55,22 @@ ALL_SUBCOMMANDS = {
 }
 # These subcommands will be shown in the top-level help
 NON_HIDDEN_SUBCOMMANDS = {
+    "auth",
+    "config",
+    "copy",
+    "download",
+    "label",
+    "move",
+    "package",
+    "remove",
+    "search",
+    "show",
+    "update",
     "upload",
 }
 # Any subcommands that should emit deprecation warnings, and show as deprecated in the help
 DEPRECATED_SUBCOMMANDS = {
+    "channel",
     "notebook",
 }
 
@@ -187,7 +199,7 @@ def _mount_subcommand(
         return
 
     # Mount some CLI subcommands at the top-level, but optionally emit a deprecation warning
-    help_text = f"anaconda.org: {help_text + ' ' if help_text else ''}(alias for 'anaconda org {name}')"
+    help_text = f"{help_text + ' ' if help_text else ''}(alias for 'anaconda org {name}')"
 
     main_app.command(
         name=name,
