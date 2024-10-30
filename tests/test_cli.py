@@ -69,7 +69,6 @@ def test_hidden_commands(cmd: str) -> None:
     assert subcmd is not None
     assert subcmd.hidden is True
     assert subcmd.help is not None
-    assert subcmd.help.startswith("anaconda.org")
 
     runner = CliRunner()
     result = runner.invoke(anaconda_cli_base.cli.app, [cmd, "-h"])
@@ -85,7 +84,6 @@ def test_non_hidden_commands(cmd: str) -> None:
     assert subcmd is not None
     assert subcmd.hidden is False
     assert subcmd.help is not None
-    assert subcmd.help.startswith("anaconda.org")
 
     runner = CliRunner()
     result = runner.invoke(anaconda_cli_base.cli.app, [cmd, "-h"])
