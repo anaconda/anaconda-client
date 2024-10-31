@@ -32,7 +32,7 @@ def add_parser(subparsers):
 
     parser.add_argument(
         'handle',
-        help='user/package_name',
+        help='<channel_name>/<package_name>',
         action='store'
     )
 
