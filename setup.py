@@ -18,6 +18,11 @@ with open(os.path.join(root, 'requirements-extra.txt'), 'rt', encoding='utf-8') 
         requirement.split('#', 1)[0].strip() for requirement in stream
     )))
 
+# This is temporarily here so we don't pull in the incompatible dependency in CI
+# and during local development as we move to 1.13.0. But to not change the behavior
+# around the "full" extra at all. We will soon explicitly drop this dependency.
+extras_require.append("anaconda-project>=0.9.1")
+
 __about__ = {}
 with open(os.path.join(root, 'binstar_client', '__about__.py'), 'rt', encoding='utf-8') as stream:
     exec(stream.read(), __about__)
@@ -46,9 +51,11 @@ setuptools.setup(
     packages=setuptools.find_packages(include=['binstar_client', 'binstar_client.*']),
     entry_points={
         'console_scripts': [
-            'anaconda = binstar_client.scripts.cli:main',
             'binstar = binstar_client.scripts.cli:main',
             'conda-server = binstar_client.scripts.cli:main',
         ],
+        'anaconda_cli.subcommand': [
+            'org = binstar_client.plugins:app',
+        ]
     },
 )

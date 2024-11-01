@@ -5,13 +5,13 @@ package:
   version: {{ data.get('version') }}
 
 source:
-  git_url: ../
+  path: ..
 
 build:
   number: 0
   script: {{ PYTHON }} -m pip install --no-build-isolation --no-deps .
+  noarch: python
   entry_points:
-    - anaconda = binstar_client.scripts.cli:main
     - binstar = binstar_client.scripts.cli:main
     - conda-server = binstar_client.scripts.cli:main
 
@@ -24,6 +24,7 @@ requirements:
     - python
     - anaconda-anon-usage >=0.4.0
     - conda-package-handling >=1.7.3
+    - conda-package-streaming >=0.9.0
     - defusedxml >=0.7.1
     - nbformat >=4.4.0
     - python-dateutil >=2.6.1
@@ -33,9 +34,9 @@ requirements:
     - requests >=2.20.0
     - requests-toolbelt >=0.9.1
     - setuptools >=58.0.4
-    - six >=1.15.0
     - tqdm >=4.56.0
     - urllib3 >=1.26.4
+    - anaconda-cli-base >=0.4.0
 
 test:
   requires:

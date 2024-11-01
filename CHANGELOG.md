@@ -2,6 +2,41 @@
 
 We [keep a changelog.](http://keepachangelog.com/)
 
+## 1.13.0
+
+As part of extending our CLI, we have been migrating to a plugin-based system. 
+This release removes the `anaconda` entrypoint from `anaconda-client`, which is now located instead in `anaconda-cli-base`.
+When these changes are installed, we don't intend any breaking behavior for the user. 
+
+Any changes are generally dependent on the presence of other Anaconda CLI plugins.
+In the case that another plugin is installed (like `anaconda-cloud-auth`), the following changes may be observed:
+
+* All existing `anaconda-client` subcommands are available
+* All existing `anaconda-client` subcommands are ALSO available with the `org` prefix, e.g. `anaconda org upload`. 
+  It is recommended to adopt this format, as it is more explicit.
+* The help text will be modified (i.e. type `anaconda`). 
+  Not all `anaconda-client` subcommands will be shown.
+* The `anaconda notebooks` subcommand will explicitly be listed as deprecated in the CLI help.
+
+In order to maintain backwards compatibility for all subcommands, we include logic to mount all existing subcommands from `anaconda-client` as top-level subcommands.
+`anaconda-client` subcommands continue to work until overridden by new plugins, but may not be displayed in the global help output.
+We also include all subcommands under the namespace `anaconda org`, e.g. `anaconda org upload`.
+The help for all nested subcommands can be accessed with `anaconda org --help`.
+
+Users may disable the new plugin system by setting the environment variable `ANACONDA_CLIENT_FORCE_STANDALONE=1`.
+
+In addition to automated testing, this release has undergone an extensive internal QA process.
+However, if any unintended regressions do occur, please file a bug in our issue tracker.
+
+### Pull requests merged
+
+* [PR 717](https://github.com/anaconda/anaconda-client/pull/717) - Drop dependency on `six`
+* [PR 718](https://github.com/anaconda/anaconda-client/pull/718) - Fix local development setup via `make init`
+* [PR 719](https://github.com/anaconda/anaconda-client/pull/719) - Migrate `anaconda-client` to become a plugin of `anaconda-cli-base`
+* [PR 711](https://github.com/anaconda/anaconda-client/pull/711) - Remove duplicate import
+* [PR 714](https://github.com/anaconda/anaconda-client/pull/714) - Updated links in upload help text
+* [PR 724](https://github.com/anaconda/anaconda-client/pull/724) - Use conda package streaming to fix bug in upload of packages with bad permissions
+
 ## 1.12.3 - 2024-02-22
 
 ### Tickets closed

@@ -34,6 +34,7 @@ jobs:
         with:
           auto-update-conda: true
           python-version: ${{ matrix.python-version }}
+          miniconda-version: "latest"
 
       - name: Install latest conda
         run: |
@@ -41,7 +42,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          conda install python=${{ matrix.python-version }} pip --file requirements.txt --file requirements-extra.txt
+          conda install -c defaults -c anaconda-cloud python=${{ matrix.python-version }} pip --file requirements.txt --file requirements-extra.txt
           pip install -r requirements-dev.txt
           python setup.py develop --no-deps
 
@@ -79,7 +80,7 @@ jobs:
 
       - name: Export reports
         if: ${{ always() && steps.conda_environment_information.outputs.exit_status == 'success' }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: report-lint-${{ matrix.python-version }}-${{ matrix.os }}
           path: .artifacts/reports
@@ -100,13 +101,14 @@ jobs:
       # unfortunately, as of June 2021 - GitHub doesn't support anchors for action scripts
 
       - name: Checkout project
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Setup Miniconda
-        uses: conda-incubator/setup-miniconda@v2
+        uses: conda-incubator/setup-miniconda@v3
         with:
           auto-update-conda: true
           python-version: ${{ matrix.python-version }}
+          miniconda-version: "latest"
 
       - name: Install latest conda
         run: |
@@ -114,7 +116,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          conda install python=${{ matrix.python-version }} pip --file requirements.txt --file requirements-extra.txt
+          conda install -c defaults -c anaconda-cloud python=${{ matrix.python-version }} pip --file requirements.txt --file requirements-extra.txt
           pip install -r requirements-dev.txt
           python setup.py develop --no-deps
 
@@ -132,7 +134,7 @@ jobs:
 
       - name: Export reports
         if: ${{ always() }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: report-test-${{ matrix.python-version }}-${{ matrix.os }}
           path: .artifacts/reports
