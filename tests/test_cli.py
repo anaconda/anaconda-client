@@ -1,4 +1,5 @@
 """Test entrypoint to anaconda-cli-base"""
+# pylint: disable=missing-function-docstring
 # pylint: disable=redefined-outer-name
 
 import sys
@@ -151,7 +152,7 @@ def test_deprecated_message(
 def test_top_level_options_passed_through(cmd: str, monkeypatch: MonkeyPatch, assert_binstar_args: Any) -> None:
     """Ensure top-level CLI options are passed through to binstar_main."""
 
-    args = ["-t", "TOKEN", "-s", "some-site.com", cmd, "-h"]
+    args = ["-t", "TOKEN", "-s", "some-site.com", cmd, "-h"]  # nosec
     monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
 
     runner = CliRunner()
@@ -159,4 +160,18 @@ def test_top_level_options_passed_through(cmd: str, monkeypatch: MonkeyPatch, as
     assert result.exit_code == 0
     assert result.stdout.startswith("usage")
 
-    assert_binstar_args(["-t", "TOKEN", "-s", "some-site.com", cmd, "-h"])
+    assert_binstar_args(["-t", "TOKEN", "-s", "some-site.com", cmd, "-h"])  # nosec
+
+
+def test_whoami_arg_parsing(monkeypatch, mocker):
+    args = ["--token", "TOKEN", "--site", "some-site.com", "org", "whoami"]  # nosec
+
+    monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
+
+    runner = CliRunner()
+
+    mock = mocker.patch("binstar_client.commands.whoami.main")
+    result = runner.invoke(anaconda_cli_base.cli.app, args)
+    assert result.exit_code == 0, result.stdout
+
+    mock.assert_called_once_with(token="TOKEN", site="some-site.com")  # nosec
