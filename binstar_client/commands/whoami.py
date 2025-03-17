@@ -8,7 +8,7 @@ from __future__ import unicode_literals
 
 import argparse
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 import typer
 
@@ -19,14 +19,8 @@ from binstar_client.utils.pprint import pprint_user
 logger = logging.getLogger('binstar.whoami')
 
 
-def main(  # pylint: disable=inconsistent-return-statements
-    args: Optional[argparse.Namespace] = None, *, token: Optional[str] = None, site: Optional[str] = None
-) -> Optional[int]:
-    if args is not None:
-        token = args.token
-        site = args.site
-
-    aserver_api = get_server_api(token, site)
+def main(args):  # pylint: disable=inconsistent-return-statements
+    aserver_api = get_server_api(args.token, args.site)
 
     try:
         user = aserver_api.user()
@@ -48,7 +42,11 @@ def add_parser(subparsers):
 
 
 def mount_subcommand(
-    app: typer.Typer, name: str, hidden: bool, help_text: str, context_settings: Dict[str, Any],
+    app: typer.Typer,
+    name: str,
+    hidden: bool,
+    help_text: str,
+    context_settings: Dict[str, Any],
 ) -> None:
     @app.command(
         name=name,
@@ -57,4 +55,8 @@ def mount_subcommand(
         context_settings=context_settings,
     )
     def whoami(ctx: typer.Context) -> None:
-        main(token=ctx.obj.params.get('token'), site=ctx.obj.params.get('site'))
+        args = argparse.Namespace(
+            token=ctx.obj.params.get('token'),
+            site=ctx.obj.params.get('site'),
+        )
+        main(args)

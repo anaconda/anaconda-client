@@ -1,15 +1,21 @@
 """Test entrypoint to anaconda-cli-base"""
 # pylint: disable=missing-function-docstring
 # pylint: disable=redefined-outer-name
+# pylint: disable=missing-class-docstring
+# pylint: disable=missing-function-docstring
+# pylint: disable=use-dict-literal
 
 import sys
-from importlib import reload
 import logging
-from typing import Any, Generator
+from argparse import Namespace
+from importlib import reload
+from typing import Any, Callable, Dict, Generator, List, Optional
 
 import pytest
+from pytest import FixtureRequest
 from pytest import LogCaptureFixture
 from pytest import MonkeyPatch
+from typer import Typer
 from typer.testing import CliRunner
 import anaconda_cli_base.cli
 import binstar_client.plugins
@@ -35,6 +41,116 @@ def enable_base_cli_plugin(monkeypatch: MonkeyPatch) -> Generator[None, None, No
     reload(anaconda_cli_base.cli)
     reload(binstar_client.plugins)
     yield
+
+
+class MockedCliInvoker:
+    def __init__(self, func: Callable, main_func: str, mocker: Any, parser: Any):
+        self._func = func
+        self._main_mock = mocker.patch(main_func)
+        self._invoked = False
+        self.parser = parser
+
+    def invoke(self, args: List[str], prefix_args: Optional[List[str]] = None) -> Any:
+        """Invoke the CLI with a list of arguments.
+
+        The optional prefix_args are passed after the `anaconda` entrypoint.
+
+        """
+        result = self._func(args, prefix_args=prefix_args)
+        self._invoked = True
+        return result
+
+    def assert_main_called_once(self) -> None:
+        """Assert that the mocked main function was called once."""
+        self._main_mock.assert_called_once()
+
+    def assert_main_args_contains(self, expected: Dict) -> None:
+        """Return True if the args passed to the main function is a superset of the kwargs provided."""
+        assert self._invoked, "cli_mocker was never invoked"
+
+        # This extracts the Namespace for all of those cases
+        args, _ = self._main_mock.call_args
+        namespace = args[0]
+        actual = vars(namespace)
+
+        # Now we can assert that the passed args are a superset of some expected dictionary of values
+        assert actual.items() >= expected.items()
+
+
+InvokerFactory = Callable[[str], MockedCliInvoker]
+
+
+@pytest.fixture(
+    params=[
+        pytest.param(("original", ""), id="orig-bare"),
+        pytest.param(("wrapped", ""), id="wrapped-bare"),
+        pytest.param(("wrapped", "org"), id="wrapped-prefix"),
+        pytest.param(("new", ""), id="new-bare"),
+        pytest.param(("new", "org"), id="new-prefix"),
+    ]
+)
+def cli_mocker(
+    request: FixtureRequest,
+    monkeypatch: MonkeyPatch,
+    mocker: Any,
+) -> Generator[InvokerFactory, None, None]:
+    """Fixture returns a function that can be used to invoke the CLI via different methods.
+
+    The different methods are various levels of gradual migration:
+        * original: Uses the original argparse-based CLI parsing and direct call of main entrypoint function.
+        * wrapped: Uses a common wrapper typer subcommand, that delegates to the main entrypoint function.
+        * new: Uses the new typer subcommands if available.
+
+    For the "wrapped" and "new" options, tests will be run both with and without the "org" prefix.
+
+    Usage:
+        mock = cli_mocker("path.to.mocked.main")
+        mock.invoke(["upload", "some-file"], prefix_args=["--token", "TOKEN"])
+
+    """
+
+    parser, org_prefix = request.param
+
+    if parser == "original":
+        monkeypatch.delenv("ANACONDA_CLI_FORCE_NEW", raising=False)
+        monkeypatch.setenv("ANACONDA_CLIENT_FORCE_STANDALONE", "true")
+        monkeypatch.setenv("ANACONDA_CLI_DISABLE_PLUGINS", "true")
+    elif parser == "wrapped":
+        monkeypatch.setattr(binstar_client.plugins, "SUBCOMMANDS_WITH_NEW_CLI", set())
+        monkeypatch.setenv("ANACONDA_CLI_FORCE_NEW", "true")
+        monkeypatch.delenv("ANACONDA_CLIENT_FORCE_STANDALONE", raising=False)
+    elif parser == "new":
+        monkeypatch.setenv("ANACONDA_CLI_FORCE_NEW", "true")
+        monkeypatch.delenv("ANACONDA_CLIENT_FORCE_STANDALONE", raising=False)
+    else:
+        raise ValueError(f"Incorrect param: {request.param}")
+
+    reload(anaconda_cli_base.cli)
+    reload(binstar_client.plugins)
+
+    def func(args, prefix_args=None):
+        if org_prefix:
+            args = [org_prefix] + args
+        if prefix_args:
+            args = prefix_args + args
+
+        monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
+        if parser == "original":
+            binstar_client.scripts.cli.main(args, allow_plugin_main=False)
+            return Namespace(exit_code=0)
+        runner = CliRunner()
+        return runner.invoke(anaconda_cli_base.cli.app, args)
+
+    def closure(main_func: str) -> MockedCliInvoker:
+        return MockedCliInvoker(func=func, main_func=main_func, mocker=mocker, parser=parser)
+
+    yield closure
+
+    if isinstance(anaconda_cli_base.cli.app, Typer):
+        # Clear out all the groups, commands, and callbacks from the top-level application
+        anaconda_cli_base.cli.app.registered_groups.clear()
+        anaconda_cli_base.cli.app.registered_commands.clear()
+        anaconda_cli_base.cli.app.registered_callback = None
 
 
 def test_entrypoint() -> None:
@@ -163,15 +279,26 @@ def test_top_level_options_passed_through(cmd: str, monkeypatch: MonkeyPatch, as
     assert_binstar_args(["-t", "TOKEN", "-s", "some-site.com", cmd, "-h"])  # nosec
 
 
-def test_whoami_arg_parsing(monkeypatch, mocker):
-    args = ["--token", "TOKEN", "--site", "some-site.com", "org", "whoami"]  # nosec
+@pytest.mark.parametrize(
+    "prefix_args, args, mods",
+    [
+        pytest.param([], [], dict(), id="defaults"),
+        pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),  # nosec
+        pytest.param(["--site", "my-site.com"], [], dict(site="my-site.com"), id="site"),
+    ]
+)
+def test_whoami_arg_parsing(
+    prefix_args: List[str], args: List[str], mods: Dict[str, Any], cli_mocker: InvokerFactory
+) -> None:
+    args = ["whoami"] + args
+    defaults = dict(
+        token=None,
+        site=None,
+    )
+    expected = {**defaults, **mods}
 
-    monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
-
-    runner = CliRunner()
-
-    mock = mocker.patch("binstar_client.commands.whoami.main")
-    result = runner.invoke(anaconda_cli_base.cli.app, args)
+    mock = cli_mocker("binstar_client.commands.whoami.main")
+    result = mock.invoke(args, prefix_args=prefix_args)
     assert result.exit_code == 0, result.stdout
-
-    mock.assert_called_once_with(token="TOKEN", site="some-site.com")  # nosec
+    mock.assert_main_called_once()
+    mock.assert_main_args_contains(expected)

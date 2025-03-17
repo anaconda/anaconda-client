@@ -251,6 +251,11 @@ def load_legacy_subcommands() -> None:
     This allows them to be called from the new CLI, without having to manually migrate.
 
     """
+    # TODO: We should use a config parameter  # pylint: disable=fixme
+    if bool(os.getenv("ANACONDA_CLIENT_FORCE_STANDALONE")):
+        # Don't mount the typer subcommands if we've forced standalone mode
+        return
+
     parser = ArgumentParser()
     add_subparser_modules(parser, command_module)
 
