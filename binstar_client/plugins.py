@@ -194,7 +194,7 @@ def _mount_subcommand(
 
     # Mount the subcommand to the `anaconda org` application.
     if force_use_new_cli and name in SUBCOMMANDS_WITH_NEW_CLI:
-        _load_new_subcommand(name)
+        _load_new_subcommand(name, help_text=help_text)
     else:
         # Create a legacy passthrough
         app.command(
@@ -221,11 +221,13 @@ def _mount_subcommand(
     )(func)
 
 
-def _load_new_subcommand(name: str) -> None:
+def _load_new_subcommand(name: str, help_text: str, hidden: bool = False) -> None:
     """Load the new typer version of a subcommand from a commands module.
 
     Args:
         name: The name of the module, within the binstar_client.commands subpackage.
+        help_text: The help text for the subcommand.
+        hidden: If True, the subcommand won't show up in help.
 
     """
     subcommand_module = getattr(command_module, name)
@@ -233,6 +235,8 @@ def _load_new_subcommand(name: str) -> None:
     subcommand_module.mount_subcommand(
         app=app,
         name=name,
+        hidden=hidden,
+        help_text=help_text,
         context_settings={
             "allow_extra_args": True,
             "ignore_unknown_options": True,

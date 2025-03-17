@@ -1,8 +1,8 @@
 # pylint: disable=missing-function-docstring
 
-'''
+"""
 Print the information of the current user
-'''
+"""
 
 from __future__ import unicode_literals
 
@@ -47,7 +47,14 @@ def add_parser(subparsers):
     subparser.set_defaults(main=main)
 
 
-def mount_subcommand(app: typer.Typer, name: str, context_settings: Dict[str, Any]) -> None:
-    @app.command(name=name, context_settings=context_settings)
+def mount_subcommand(
+    app: typer.Typer, name: str, hidden: bool, help_text: str, context_settings: Dict[str, Any],
+) -> None:
+    @app.command(
+        name=name,
+        hidden=hidden,
+        help=help_text,
+        context_settings=context_settings,
+    )
     def whoami(ctx: typer.Context) -> None:
         main(token=ctx.obj.params.get('token'), site=ctx.obj.params.get('site'))
