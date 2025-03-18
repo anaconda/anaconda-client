@@ -9,7 +9,7 @@ from __future__ import unicode_literals, print_function
 import argparse
 import functools
 import logging
-from typing import List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 import typer
 
@@ -115,6 +115,31 @@ def _parse_optional_tuple(value: Tuple[str, str]) -> Optional[List[str]]:
     return list(value)
 
 
+def _exclusive_action(ctx: typer.Context, param: typer.CallbackParam, value: Any) -> Any:
+    """Check for exclusivity of action options.
+
+    To do this, we attach a new special attribute onto the typer Context the first time
+    one of the options in the group is used.
+
+    """
+    # pylint: disable=invalid-name
+    # pylint: disable=protected-access
+    if isinstance(value, tuple):
+        # This is here so we can treat the empty tuple as falsy, but I don't like it
+        parsed_value = _parse_optional_tuple(value)  # type: ignore[arg-type]
+    else:
+        parsed_value = value
+
+    if getattr(ctx, '_actions', None) is None:
+        ctx._actions = set()  # type: ignore[attr-defined]
+    if parsed_value:
+        if ctx._actions:  # type: ignore[attr-defined]
+            used_action, = ctx._actions  # type: ignore[attr-defined]
+            raise typer.BadParameter(f'mutually exclusive with {used_action}')
+        ctx._actions.add(' / '.join(f"'{o}'" for o in param.opts))  # type: ignore[attr-defined]
+    return value
+
+
 def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, context_settings: dict) -> None:
     @app.command(
         name=name,
@@ -135,28 +160,34 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             ('', ''),
             help=f'Copy a package from one {name} to another',
             show_default=False,
+            callback=_exclusive_action,
         ),
         list_: bool = typer.Option(
             False,
             '--list',
             is_flag=True,
             help=f'List all {name}s for a user',
+            callback=_exclusive_action,
         ),
         show: Optional[str] = typer.Option(
             None,
             help=f'Show all of the files in a {name}',
+            callback=_exclusive_action,
         ),
         lock: Optional[str] = typer.Option(
             None,
             help=f'Lock a {name}',
+            callback=_exclusive_action,
         ),
         unlock: Optional[str] = typer.Option(
             None,
             help=f'Unlock a {name}',
+            callback=_exclusive_action,
         ),
         remove: Optional[str] = typer.Option(
             None,
             help=f'Remove a {name}',
+            callback=_exclusive_action,
         ),
     ) -> None:
         # pylint: disable=too-many-arguments

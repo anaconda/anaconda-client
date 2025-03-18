@@ -571,3 +571,26 @@ def test_channel_arg_parsing(subcommand: str, case: CLICase, cli_mocker: Invoker
     assert result.exit_code == 0, result.stdout
     mock.assert_main_called_once()
     mock.assert_main_args_contains(expected)
+
+
+@pytest.mark.parametrize(
+    "opts, error_opt, conflict_opt",
+    [
+        pytest.param(["--list", "--copy", "from", "to"], "'--copy'", "'--list'"),
+        pytest.param(["--list", "--show", "some-label"], "'--show'", "'--list'"),
+        pytest.param(["--list", "--lock", "some-label"], "'--lock'", "'--list'"),
+        pytest.param(["--list", "--unlock", "some-label"], "'--unlock'", "'--list'"),
+        pytest.param(["--list", "--remove", "some-label"], "'--remove'", "'--list'"),
+    ]
+)
+def test_channel_mutually_exclusive_options(opts, error_opt, conflict_opt, mocker):
+    mock = mocker.patch("binstar_client.commands.channel.main")
+
+    runner = CliRunner()
+    args = ["org", "channel"] + opts
+    result = runner.invoke(anaconda_cli_base.cli.app, args)
+
+    assert result.exit_code == 2, result.stdout
+    assert f"Invalid value for {error_opt}: mutually exclusive with {conflict_opt}" in result.stdout, result.stdout
+
+    mock.assert_not_called()
