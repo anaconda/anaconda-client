@@ -812,7 +812,8 @@ def _exclusive_mode(ctx: typer.Context, param: typer.CallbackParam, value: str) 
             used_mode, = ctx._modes  # type: ignore[attr-defined]
             raise typer.BadParameter(f'mutually exclusive with {used_mode}')
         # Store the used one for potential next option
-        ctx._modes.add(' / '.join(f"'{o}'" for o in param.opts))  # type: ignore[attr-defined]
+        # noqa: C0103
+        ctx._modes.add(' / '.join(f'\'{o}\'' for o in param.opts))  # type: ignore[attr-defined]
     return value
 
 
@@ -931,6 +932,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         # pylint: disable=fixme
         # pylint: disable=too-many-arguments
         # pylint: disable=too-many-locals
+
         labels += channels  # Support for deprecated --channels option
 
         # TODO: These should be mutually exclusive

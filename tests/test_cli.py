@@ -1,6 +1,7 @@
 """Test entrypoint to anaconda-cli-base"""
 # pylint: disable=line-too-long
 # pylint: disable=redefined-outer-name
+# pylint: disable=line-too-long
 # pylint: disable=missing-class-docstring
 # pylint: disable=missing-function-docstring
 # pylint: disable=use-dict-literal
