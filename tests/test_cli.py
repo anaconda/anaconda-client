@@ -542,8 +542,13 @@ def test_move_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
     "case",
     [
         CLICase("--copy from to", dict(copy=["from", "to"]), id="copy"),
-        CLICase("--list --organization some-org", dict(organization="some-org"), id="organization-long"),
-        CLICase("--list -o some-org", dict(organization="some-org"), id="organization-short"),
+        CLICase("--list --organization some-org", dict(organization="some-org", list=True), id="organization-long"),
+        CLICase("--list -o some-org", dict(organization="some-org", list=True), id="organization-short"),
+        CLICase("--list", dict(list=True), id="list"),
+        CLICase("--show label-name", dict(show="label-name"), id="show"),
+        CLICase("--lock label-name", dict(lock="label-name"), id="lock"),
+        CLICase("--unlock label-name", dict(unlock="label-name"), id="unlock"),
+        CLICase("--remove label-name", dict(remove="label-name"), id="remove"),
     ]
 )
 def test_channel_arg_parsing(subcommand: str, case: CLICase, cli_mocker: InvokerFactory) -> None:
@@ -553,6 +558,11 @@ def test_channel_arg_parsing(subcommand: str, case: CLICase, cli_mocker: Invoker
         site=None,
         organization=None,
         copy=None,
+        list=False,
+        show=None,
+        lock=None,
+        unlock=None,
+        remove=None,
     )
     expected = {**defaults, **case.mods}
 

@@ -136,13 +136,41 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             help=f'Copy a package from one {name} to another',
             show_default=False,
         ),
+        list_: bool = typer.Option(
+            False,
+            '--list',
+            is_flag=True,
+            help=f'List all {name}s for a user',
+        ),
+        show: Optional[str] = typer.Option(
+            None,
+            help=f'Show all of the files in a {name}',
+        ),
+        lock: Optional[str] = typer.Option(
+            None,
+            help=f'Lock a {name}',
+        ),
+        unlock: Optional[str] = typer.Option(
+            None,
+            help=f'Unlock a {name}',
+        ),
+        remove: Optional[str] = typer.Option(
+            None,
+            help=f'Remove a {name}',
+        ),
     ) -> None:
+        # pylint: disable=too-many-arguments
         parsed_copy = _parse_optional_tuple(copy)
         args = argparse.Namespace(
             token=ctx.obj.params.get('token'),
             site=ctx.obj.params.get('site'),
             organization=organization,
             copy=parsed_copy,
+            list=list_,
+            show=show,
+            lock=lock,
+            unlock=unlock,
+            remove=remove,
         )
 
         main(args, name='channel', deprecated=True)
