@@ -856,6 +856,10 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             is_flag=True,
             help='Create the package with private access',
         ),
+        register: bool = typer.Option(
+            DEFAULT_CONFIG.get('auto_register', True),
+            help='Register new package namespace if it does not exist',
+        ),
     ) -> None:
         """Upload one or more files to anaconda.org."""
         # pylint: disable=too-many-arguments
@@ -888,7 +892,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             description=description,
             thumbnail=thumbnail,
             private=private,
-            auto_register=True,
+            auto_register=register,
             build_id=None,
             mode=mode,
             force_metadata_update=False,
