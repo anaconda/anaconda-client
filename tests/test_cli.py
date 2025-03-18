@@ -446,6 +446,8 @@ def test_upload_mutually_exclusive_options(opts, error_opt, conflict_opt, mocker
         pytest.param([], ["--to-owner", "some-recipient"], dict(to_owner="some-recipient"), id="to-owner"),
         pytest.param([], ["--from-label", "source-label"], dict(from_label="source-label"), id="from-label"),
         pytest.param([], ["--to-label", "destination-label"], dict(to_label="destination-label"), id="to-label"),
+        pytest.param([], ["--replace"], dict(replace=True), id="replace"),
+        pytest.param([], ["--update"], dict(update=True), id="update"),
     ]
 )
 def test_copy_arg_parsing(
@@ -457,6 +459,8 @@ def test_copy_arg_parsing(
         to_owner=None,
         from_label="main",
         to_label="main",
+        replace=False,
+        update=False,
     )
     expected = {**defaults, **mods}
 
