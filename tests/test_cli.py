@@ -321,6 +321,7 @@ def test_whoami_arg_parsing(
         pytest.param([], ["--interactive"], dict(mode="interactive"), id="interactive-long"),
         pytest.param([], ["-u", "username"], dict(user="username"), id="username-short"),
         pytest.param([], ["--user", "username"], dict(user="username"), id="username-long"),
+        pytest.param([], ["--keep-basename"], dict(keep_basename=True), id="keep-basename-long"),
         pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),  # nosec
         pytest.param(["--site", "my-site.com"], [], dict(site="my-site.com"), id="site"),
     ]
