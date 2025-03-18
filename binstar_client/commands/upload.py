@@ -900,6 +900,13 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             help='Skip errors on package batch upload if it already exists',
             callback=_exclusive_mode,
         ),
+        force_metadata_update: bool = typer.Option(
+            False,
+            '-m',
+            '--force-metadata-update',
+            help='Overwrite existing release metadata with the metadata from the package.',
+            callback=_exclusive_mode,
+        ),
     ) -> None:
         """Upload one or more files to anaconda.org."""
         # pylint: disable=fixme
@@ -942,7 +949,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             auto_register=register,
             build_id=None,
             mode=mode,
-            force_metadata_update=False,
+            force_metadata_update=force_metadata_update,
             json_help=None,
         )
 

@@ -347,6 +347,8 @@ def test_whoami_arg_parsing(
         pytest.param([], ["--fail"], dict(mode="fail"), id="fail-long"),
         pytest.param([], ["--force"], dict(mode="force"), id="force-long"),
         pytest.param([], ["--skip-existing"], dict(mode="skip"), id="skip-existing-long"),
+        pytest.param([], ["-m"], dict(force_metadata_update=True), id="force-metadata-update-short"),
+        pytest.param([], ["--force-metadata-update"], dict(force_metadata_update=True), id="force-metadata-update-long"),  # noqa: E501
         pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),  # nosec
         pytest.param(["--site", "my-site.com"], [], dict(site="my-site.com"), id="site"),
     ]
