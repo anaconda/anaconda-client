@@ -102,6 +102,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         no_args_is_help=True,
     )
     def copy(
+        ctx: typer.Context,
         spec: str = typer.Argument(
             help=(
                 'Package - written as user/package/version[/filename]. '
@@ -133,7 +134,19 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         ),
     ) -> None:
         # pylint: disable=too-many-arguments
+        if ctx.obj.params.get('verbose'):
+            log_level = logging.DEBUG
+        elif ctx.obj.params.get('quiet'):
+            log_level = logging.WARNING
+        else:
+            log_level = logging.INFO
+
         args = argparse.Namespace(
+            token=ctx.obj.params.get('token'),
+            site=ctx.obj.params.get('site'),
+            disable_ssl_warnings=ctx.obj.params.get('disable_ssl_warnings'),
+            show_traceback=ctx.obj.params.get('show_traceback'),
+            log_level=log_level,
             spec=spec,
             to_owner=to_owner,
             from_label=from_label,
