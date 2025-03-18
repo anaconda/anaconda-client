@@ -346,6 +346,7 @@ def test_whoami_arg_parsing(
         pytest.param([], ["-f"], dict(mode="fail"), id="fail-short"),
         pytest.param([], ["--fail"], dict(mode="fail"), id="fail-long"),
         pytest.param([], ["--force"], dict(mode="force"), id="force-long"),
+        pytest.param([], ["--skip-existing"], dict(mode="skip"), id="skip-existing-long"),
         pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),  # nosec
         pytest.param(["--site", "my-site.com"], [], dict(site="my-site.com"), id="site"),
     ]
@@ -408,6 +409,9 @@ def test_upload_arg_parsing(
         ),
         pytest.param(
             ["--fail", "--force"], "'--force'", "'-f' / '--fail'"
+        ),
+        pytest.param(
+            ["--interactive", "--skip-existing"], "'--skip-existing'", "'-i' / '--interactive'"
         ),
     ]
 )

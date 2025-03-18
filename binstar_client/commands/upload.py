@@ -895,6 +895,11 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             help='Force a package upload regardless of errors',
             callback=_exclusive_mode,
         ),
+        skip_existing: bool = typer.Option(
+            False,
+            help='Skip errors on package batch upload if it already exists',
+            callback=_exclusive_mode,
+        ),
     ) -> None:
         """Upload one or more files to anaconda.org."""
         # pylint: disable=fixme
@@ -909,6 +914,8 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             mode = 'fail'
         elif force:
             mode = 'force'
+        elif skip_existing:
+            mode = 'skip'
         else:
             mode = None
 
