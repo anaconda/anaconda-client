@@ -466,20 +466,20 @@ def test_upload_mutually_exclusive_options(opts, error_opt, conflict_opt, mocker
 
 
 @pytest.mark.parametrize(
-    "prefix_args, args, mods",
+    "case",
     [
-        pytest.param([], [], dict(), id="defaults"),
-        pytest.param([], ["--to-owner", "some-recipient"], dict(to_owner="some-recipient"), id="to-owner"),
-        pytest.param([], ["--from-label", "source-label"], dict(from_label="source-label"), id="from-label"),
-        pytest.param([], ["--to-label", "destination-label"], dict(to_label="destination-label"), id="to-label"),
-        pytest.param([], ["--replace"], dict(replace=True), id="replace"),
-        pytest.param([], ["--update"], dict(update=True), id="update"),
+        CLICase(id="defaults"),
+        CLICase("--to-owner some-recipient", dict(to_owner="some-recipient"), id="to-owner"),
+        CLICase("--from-label source-label", dict(from_label="source-label"), id="from-label"),
+        CLICase("--to-label destination-label", dict(to_label="destination-label"), id="to-label"),
+        CLICase("--replace", dict(replace=True), id="replace"),
+        CLICase("--update", dict(update=True), id="update"),
     ]
 )
 def test_copy_arg_parsing(
-    prefix_args: List[str], args: List[str], mods: Dict[str, Any], cli_mocker: InvokerFactory
+    case: CLICase, cli_mocker: InvokerFactory
 ) -> None:
-    args = ["copy"] + args + ["some-spec"]
+    args = ["copy"] + case.args + ["some-spec"]
     defaults: Dict[str, Any] = dict(
         spec=parse_specs("some-spec"),
         to_owner=None,
@@ -488,10 +488,10 @@ def test_copy_arg_parsing(
         replace=False,
         update=False,
     )
-    expected = {**defaults, **mods}
+    expected = {**defaults, **case.mods}
 
     mock = cli_mocker("binstar_client.commands.copy.main")
-    result = mock.invoke(args, prefix_args=prefix_args)
+    result = mock.invoke(args, prefix_args=case.prefix_args)
     assert result.exit_code == 0, result.stdout
     mock.assert_main_called_once()
     mock.assert_main_args_contains(expected)
