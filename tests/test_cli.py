@@ -317,8 +317,6 @@ def test_whoami_arg_parsing(
         pytest.param([], ["-l", "some-label", "--label", "another"], dict(labels=["some-label", "another"]), id="labels-mixed-multiple"),  # noqa: E501
         pytest.param([], ["-c", "some-label", "--channel", "another"], dict(labels=["some-label", "another"]), id="channels-mixed-multiple"),  # noqa: E501
         pytest.param([], ["--no-progress"], dict(no_progress=True), id="no-progress"),
-        pytest.param([], ["-i"], dict(mode="interactive"), id="interactive-short"),
-        pytest.param([], ["--interactive"], dict(mode="interactive"), id="interactive-long"),
         pytest.param([], ["-u", "username"], dict(user="username"), id="username-short"),
         pytest.param([], ["--user", "username"], dict(user="username"), id="username-long"),
         pytest.param([], ["--keep-basename"], dict(keep_basename=True), id="keep-basename-long"),
@@ -336,6 +334,8 @@ def test_whoami_arg_parsing(
         pytest.param([], ["--private"], dict(private=True), id="private-long"),
         pytest.param([], ["--register"], dict(auto_register=True), id="register-long"),
         pytest.param([], ["--no-register"], dict(auto_register=False), id="no-register-long"),
+        pytest.param([], ["-i"], dict(mode="interactive"), id="interactive-short"),
+        pytest.param([], ["--interactive"], dict(mode="interactive"), id="interactive-long"),
         pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),  # nosec
         pytest.param(["--site", "my-site.com"], [], dict(site="my-site.com"), id="site"),
     ]

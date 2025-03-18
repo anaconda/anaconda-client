@@ -808,13 +808,6 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         labels: list[str] = typer.Option([], '-l', '--label'),
         channels: list[str] = typer.Option([], '-c', '--channel'),
         progress: bool = typer.Option(True, is_flag=True, help='Show upload progress'),
-        interactive: bool = typer.Option(
-            False,
-            '-i',
-            '--interactive',
-            is_flag=True,
-            help='Run an interactive prompt if any packages are missing',
-        ),
         user: typing.Optional[str] = typer.Option(
             None, '-u', '--user',
             help='User account or Organization, defaults to the current user',
@@ -859,6 +852,13 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         register: bool = typer.Option(
             DEFAULT_CONFIG.get('auto_register', True),
             help='Register new package namespace if it does not exist',
+        ),
+        interactive: bool = typer.Option(
+            False,
+            '-i',
+            '--interactive',
+            is_flag=True,
+            help='Run an interactive prompt if any packages are missing',
         ),
     ) -> None:
         """Upload one or more files to anaconda.org."""
