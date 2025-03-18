@@ -828,6 +828,11 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             '-p', '--package',
             help='Defaults to the package name in the uploaded file',
         ),
+        version: typing.Optional[str] = typer.Option(
+            None,
+            '-v', '--version',
+            help='Defaults to the package version in the uploaded file',
+        ),
     ) -> None:
         """Upload one or more files to anaconda.org."""
         # pylint: disable=too-many-arguments
@@ -853,7 +858,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             user=user,
             keep_basename=keep_basename,
             package=package,
-            version=None,
+            version=version,
             summary=None,
             package_type=None,
             description=None,

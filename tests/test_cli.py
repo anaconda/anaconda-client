@@ -324,6 +324,8 @@ def test_whoami_arg_parsing(
         pytest.param([], ["--keep-basename"], dict(keep_basename=True), id="keep-basename-long"),
         pytest.param([], ["-p", "my_package"], dict(package="my_package"), id="package-short"),
         pytest.param([], ["--package", "my_package"], dict(package="my_package"), id="package-long"),
+        pytest.param([], ["--version", "1.2.3"], dict(version="1.2.3"), id="version-long"),
+        pytest.param([], ["-v", "1.2.3"], dict(version="1.2.3"), id="version-short"),
         pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),  # nosec
         pytest.param(["--site", "my-site.com"], [], dict(site="my-site.com"), id="site"),
     ]
