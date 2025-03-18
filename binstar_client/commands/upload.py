@@ -794,6 +794,28 @@ def add_parser(subparsers: typing.Any) -> None:
     parser.set_defaults(main=main)
 
 
+def _exclusive_mode(ctx: typer.Context, param: typer.CallbackParam, value: str) -> str:
+    """Check for exclusivity of mode arguments.
+
+    To do this, we attach a new special attribute onto the typer Context the first time
+    one of the options in the group is used.
+
+    """
+    # pylint: disable=invalid-name
+    # pylint: disable=protected-access
+    if getattr(ctx, '_modes', None) is None:
+        # Add an empty set on first call
+        ctx._modes = set()  # type: ignore[attr-defined]
+    if value:
+        if ctx._modes:  # type: ignore[attr-defined]
+            # Another option was already used
+            used_mode, = ctx._modes  # type: ignore[attr-defined]
+            raise typer.BadParameter(f'mutually exclusive with {used_mode}')
+        # Store the used one for potential next option
+        ctx._modes.add(' / '.join(f"'{o}'" for o in param.opts))  # type: ignore[attr-defined]
+    return value
+
+
 def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, context_settings: dict) -> None:
     # pylint: disable=missing-function-docstring
     @app.command(
@@ -859,12 +881,19 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             '--interactive',
             is_flag=True,
             help='Run an interactive prompt if any packages are missing',
+            callback=_exclusive_mode,
         ),
         fail: bool = typer.Option(
             False,
             '-f',
             '--fail/--no-fail',
             help='Fail if a package or release does not exist (default)',
+            callback=_exclusive_mode,
+        ),
+        force: bool = typer.Option(
+            False,
+            help='Force a package upload regardless of errors',
+            callback=_exclusive_mode,
         ),
     ) -> None:
         """Upload one or more files to anaconda.org."""
@@ -878,6 +907,8 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             mode = 'interactive'
         elif fail:
             mode = 'fail'
+        elif force:
+            mode = 'force'
         else:
             mode = None
 

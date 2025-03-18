@@ -16,6 +16,7 @@ from pytest import FixtureRequest
 from pytest import LogCaptureFixture
 from pytest import MonkeyPatch
 from typer import Typer
+from typer import rich_utils
 from typer.testing import CliRunner
 import anaconda_cli_base.cli
 import binstar_client.plugins
@@ -30,6 +31,12 @@ from binstar_client.plugins import (
 
 BASE_COMMANDS = {"login", "logout", "whoami"}
 HIDDEN_SUBCOMMANDS = ALL_SUBCOMMANDS - BASE_COMMANDS - NON_HIDDEN_SUBCOMMANDS
+
+
+@pytest.fixture(autouse=True)
+def ensure_wide_terminal(monkeypatch: MonkeyPatch) -> None:
+    """Ensure the terminal is wide enough for long output to stdout to prevent line breaks."""
+    monkeypatch.setattr(rich_utils, "MAX_WIDTH", 10000)
 
 
 @pytest.fixture(autouse=True)
@@ -338,6 +345,7 @@ def test_whoami_arg_parsing(
         pytest.param([], ["--interactive"], dict(mode="interactive"), id="interactive-long"),
         pytest.param([], ["-f"], dict(mode="fail"), id="fail-short"),
         pytest.param([], ["--fail"], dict(mode="fail"), id="fail-long"),
+        pytest.param([], ["--force"], dict(mode="force"), id="force-long"),
         pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),  # nosec
         pytest.param(["--site", "my-site.com"], [], dict(site="my-site.com"), id="site"),
     ]
@@ -378,3 +386,39 @@ def test_upload_arg_parsing(
     assert result.exit_code == 0, result.stdout
     mock.assert_main_called_once()
     mock.assert_main_args_contains(expected)
+
+
+@pytest.mark.parametrize(
+    "opts, error_opt, conflict_opt",
+    [
+        pytest.param(
+            ["--interactive", "--force"], "'--force'", "'-i' / '--interactive'"
+        ),
+        pytest.param(
+            ["--force", "-i"], "'-i' / '--interactive'", "'--force'"
+        ),
+        pytest.param(
+            ["--fail", "-i"], "'-i' / '--interactive'", "'-f' / '--fail'"
+        ),
+        pytest.param(
+            ["--interactive", "--fail"], "'-f' / '--fail'", "'-i' / '--interactive'"
+        ),
+        pytest.param(
+            ["--force", "--fail"], "'-f' / '--fail'", "'--force'"
+        ),
+        pytest.param(
+            ["--fail", "--force"], "'--force'", "'-f' / '--fail'"
+        ),
+    ]
+)
+def test_upload_mutually_exclusive_options(opts, error_opt, conflict_opt, mocker):
+    mock = mocker.patch("binstar_client.commands.upload.main")
+
+    runner = CliRunner()
+    args = ["org", "upload"] + opts + ["./some-file"]
+    result = runner.invoke(anaconda_cli_base.cli.app, args)
+
+    assert result.exit_code == 2, result.stdout
+    assert f"Invalid value for {error_opt}: mutually exclusive with {conflict_opt}" in result.stdout, result.stdout
+
+    mock.assert_not_called()
