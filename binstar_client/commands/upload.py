@@ -850,9 +850,16 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             '-d', '--description',
             help='description of the file(s)',
         ),
+        thumbnail: typing.Optional[str] = typer.Option(None, help="Notebook's thumbnail image"),
+        private: bool = typer.Option(
+            False,
+            is_flag=True,
+            help='Create the package with private access',
+        ),
     ) -> None:
         """Upload one or more files to anaconda.org."""
         # pylint: disable=too-many-arguments
+        # pylint: disable=too-many-locals
         labels += channels  # Support for deprecated --channels option
 
         if interactive:
@@ -879,8 +886,8 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             summary=summary,
             package_type=package_type,
             description=description,
-            thumbnail=None,
-            private=False,
+            thumbnail=thumbnail,
+            private=private,
             auto_register=True,
             build_id=None,
             mode=mode,

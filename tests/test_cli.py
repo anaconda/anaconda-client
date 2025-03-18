@@ -332,6 +332,8 @@ def test_whoami_arg_parsing(
         pytest.param([], ["-t", "conda"], dict(package_type="conda"), id="package-type-short"),
         pytest.param([], ["--description", "Some package description"], dict(description="Some package description"), id="description-long"),  # noqa: E501
         pytest.param([], ["-d", "Some package description"], dict(description="Some package description"), id="description-short"),  # noqa: E501
+        pytest.param([], ["--thumbnail", "/path/to/thumbnail"], dict(thumbnail="/path/to/thumbnail"), id="thumbnail-long"),  # noqa: E501
+        pytest.param([], ["--private"], dict(private=True), id="private-long"),
         pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),  # nosec
         pytest.param(["--site", "my-site.com"], [], dict(site="my-site.com"), id="site"),
     ]
