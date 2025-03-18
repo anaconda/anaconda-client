@@ -125,6 +125,12 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
     )
     def channel(
         ctx: typer.Context,
+        organization: Optional[str] = typer.Option(
+            None,
+            '-o',
+            '--organization',
+            help='Manage an organizations {}s'.format(name),
+        ),
         copy: Tuple[str, str] = typer.Option(
             ('', ''),
             help=f'Copy a package from one {name} to another',
@@ -135,6 +141,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         args = argparse.Namespace(
             token=ctx.obj.params.get('token'),
             site=ctx.obj.params.get('site'),
+            organization=organization,
             copy=parsed_copy,
         )
 
