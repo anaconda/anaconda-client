@@ -930,15 +930,22 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         else:
             mode = None
 
+        if ctx.obj.params.get('verbose'):
+            log_level = logging.DEBUG
+        elif ctx.obj.params.get('quiet'):
+            log_level = logging.WARNING
+        else:
+            log_level = logging.INFO
+
         arguments = argparse.Namespace(
             # TODO: argparse handles this as a list of lists, with one filename in each.
             #       We should probably fix that one.
             files=[[f] for f in files],  # pylint: disable=invalid-name
             token=ctx.obj.params.get('token'),
             site=ctx.obj.params.get('site'),
-            disable_ssl_warnings=False,
-            show_traceback=False,
-            log_level=20,
+            disable_ssl_warnings=ctx.obj.params.get('disable_ssl_warnings'),
+            show_traceback=ctx.obj.params.get('show_traceback'),
+            log_level=log_level,
             labels=labels,
             no_progress=not progress,
             user=user,

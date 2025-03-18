@@ -352,6 +352,12 @@ def test_whoami_arg_parsing(
         pytest.param([], ["--force-metadata-update"], dict(force_metadata_update=True), id="force-metadata-update-long"),  # noqa: E501
         pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),  # nosec
         pytest.param(["--site", "my-site.com"], [], dict(site="my-site.com"), id="site"),
+        pytest.param(["--disable-ssl-warnings"], [], dict(disable_ssl_warnings=True), id="disable-ssl-warnings"),
+        pytest.param(["--show-traceback"], [], dict(show_traceback=True), id="show-traceback"),
+        pytest.param(["--verbose"], [], dict(log_level=logging.DEBUG), id="verbose-long"),
+        pytest.param(["-v"], [], dict(log_level=logging.DEBUG), id="verbose-short"),
+        pytest.param(["--quiet"], [], dict(log_level=logging.WARNING), id="quiet-long"),
+        pytest.param(["-q"], [], dict(log_level=logging.WARNING), id="quiet-short"),
     ]
 )
 def test_upload_arg_parsing(
