@@ -192,6 +192,9 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
     ) -> None:
         # pylint: disable=too-many-arguments
         parsed_copy = _parse_optional_tuple(copy)
+        if not any([parsed_copy, list_, show, lock, unlock, remove]):
+            raise typer.BadParameter('one of --copy, --list, --show, --lock, --unlock, or --remove must be provided')
+
         args = argparse.Namespace(
             token=ctx.obj.params.get('token'),
             site=ctx.obj.params.get('site'),

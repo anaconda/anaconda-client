@@ -594,3 +594,16 @@ def test_channel_mutually_exclusive_options(opts, error_opt, conflict_opt, mocke
     assert f"Invalid value for {error_opt}: mutually exclusive with {conflict_opt}" in result.stdout, result.stdout
 
     mock.assert_not_called()
+
+
+def test_channel_mutually_exclusive_options_required(mocker):
+    mock = mocker.patch("binstar_client.commands.channel.main")
+
+    runner = CliRunner()
+    args = ["org", "channel", "--organization", "need-some-argument-to-prevent-help"]
+    result = runner.invoke(anaconda_cli_base.cli.app, args)
+
+    assert result.exit_code == 2, result.stdout
+    assert "one of --copy, --list, --show, --lock, --unlock, or --remove must be provided" in result.stdout, result.stdout  # noqa: E501
+
+    mock.assert_not_called()
