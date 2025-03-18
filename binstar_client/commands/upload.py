@@ -860,18 +860,27 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             is_flag=True,
             help='Run an interactive prompt if any packages are missing',
         ),
+        fail: bool = typer.Option(
+            False,
+            '-f',
+            '--fail/--no-fail',
+            help='Fail if a package or release does not exist (default)',
+        ),
     ) -> None:
         """Upload one or more files to anaconda.org."""
+        # pylint: disable=fixme
         # pylint: disable=too-many-arguments
         # pylint: disable=too-many-locals
         labels += channels  # Support for deprecated --channels option
 
+        # TODO: These should be mutually exclusive
         if interactive:
             mode = 'interactive'
+        elif fail:
+            mode = 'fail'
         else:
             mode = None
 
-        # pylint: disable=fixme
         arguments = argparse.Namespace(
             # TODO: argparse handles this as a list of lists, with one filename in each.
             #       We should probably fix that one.

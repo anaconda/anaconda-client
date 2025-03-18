@@ -336,6 +336,8 @@ def test_whoami_arg_parsing(
         pytest.param([], ["--no-register"], dict(auto_register=False), id="no-register-long"),
         pytest.param([], ["-i"], dict(mode="interactive"), id="interactive-short"),
         pytest.param([], ["--interactive"], dict(mode="interactive"), id="interactive-long"),
+        pytest.param([], ["-f"], dict(mode="fail"), id="fail-short"),
+        pytest.param([], ["--fail"], dict(mode="fail"), id="fail-long"),
         pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),  # nosec
         pytest.param(["--site", "my-site.com"], [], dict(site="my-site.com"), id="site"),
     ]
