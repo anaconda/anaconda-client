@@ -815,6 +815,10 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             is_flag=True,
             help='Run an interactive prompt if any packages are missing',
         ),
+        user: typing.Optional[str] = typer.Option(
+            None, '-u', '--user',
+            help='User account or Organization, defaults to the current user',
+        ),
     ) -> None:
         """Upload one or more files to anaconda.org."""
         # pylint: disable=too-many-arguments
@@ -837,7 +841,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             log_level=20,
             labels=labels,
             no_progress=not progress,
-            user=None,
+            user=user,
             keep_basename=False,
             package=None,
             version=None,
