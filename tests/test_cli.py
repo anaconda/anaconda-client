@@ -7,12 +7,12 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=use-dict-literal
 
+import shlex
 import sys
 import logging
 from argparse import Namespace
-from dataclasses import dataclass
 from importlib import reload
-from typing import Any, Callable, Dict, Generator, List, Tuple, Optional
+from typing import Any, Callable, Dict, Generator, List, Optional
 
 import pytest
 from pytest import FixtureRequest
@@ -317,80 +317,79 @@ def test_whoami_arg_parsing(
     mock.assert_main_args_contains(expected)
 
 
-@dataclass()
-class TestCase:
-    args: List[str]
-    prefix_args: List[str]
-    mods: Dict[str, Any]
+class CLICase:
+    # pylint: disable=too-few-public-methods
 
+    def __init__(
+        self,
+        args: str = "",
+        mods: Optional[Dict[str, Any]] = None,
+        *,
+        id: str,
+        prefix: bool = False,
+    ):
+        args_list = shlex.split(args)
 
-def case(
-    args: Optional[List[str]] = None,
-    mods: Optional[Dict[str, Any]] = None,
-    *,
-    id: str,
-    prefix: bool = False,
-) -> Tuple:
-    args = args or []
+        if prefix:
+            self.prefix_args, self.args = args_list, []
+        else:
+            self.prefix_args, self.args = [], args_list
 
-    if prefix:
-        p, a = args, []
-    else:
-        p, a = [], args
-
-    obj = TestCase(args=a, prefix_args=p, mods=mods or {})
-    return pytest.param(obj, id=id)
+        self.id = id
+        self.mods = mods or {}
+        self.marks = ()
+        self.values = (self,)
 
 
 @pytest.mark.parametrize(
     "case",
     [
-        case(id="defaults"),
-        case(["-l", "some-label"], dict(labels=["some-label"]), id="labels-short-single"),
-        case(["--label", "some-label"], dict(labels=["some-label"]), id="labels-long-single"),
-        case(["-l", "some-label", "-l", "another"], dict(labels=["some-label", "another"]), id="labels-short-multiple"),  # noqa: E501
-        case(["--label", "some-label", "--label", "another"], dict(labels=["some-label", "another"]), id="labels-long-multiple"),  # noqa: E501
-        case(["-l", "some-label", "--label", "another"], dict(labels=["some-label", "another"]), id="labels-mixed-multiple"),  # noqa: E501
-        case(["-c", "some-label", "--channel", "another"], dict(labels=["some-label", "another"]), id="channels-mixed-multiple"),  # noqa: E501
-        case(["--no-progress"], dict(no_progress=True), id="no-progress"),
-        case(["-u", "username"], dict(user="username"), id="username-short"),
-        case(["--user", "username"], dict(user="username"), id="username-long"),
-        case(["--keep-basename"], dict(keep_basename=True), id="keep-basename-long"),
-        case(["-p", "my_package"], dict(package="my_package"), id="package-short"),
-        case(["--package", "my_package"], dict(package="my_package"), id="package-long"),
-        case(["--version", "1.2.3"], dict(version="1.2.3"), id="version-long"),
-        case(["-v", "1.2.3"], dict(version="1.2.3"), id="version-short"),
-        case(["--summary", "Some package summary"], dict(summary="Some package summary"), id="summary-long"),  # noqa: E501
-        case(["-s", "Some package summary"], dict(summary="Some package summary"), id="summary-short"),
-        case(["--package-type", "conda"], dict(package_type="conda"), id="package-type-long"),
-        case(["-t", "conda"], dict(package_type="conda"), id="package-type-short"),
-        case(["--description", "Some package description"], dict(description="Some package description"), id="description-long"),  # noqa: E501
-        case(["-d", "Some package description"], dict(description="Some package description"), id="description-short"),  # noqa: E501
-        case(["--thumbnail", "/path/to/thumbnail"], dict(thumbnail="/path/to/thumbnail"), id="thumbnail-long"),  # noqa: E501
-        case(["--private"], dict(private=True), id="private-long"),
-        case(["--register"], dict(auto_register=True), id="register-long"),
-        case(["--no-register"], dict(auto_register=False), id="no-register-long"),
-        case(["--build-id", "BUILD123"], dict(build_id="BUILD123"), id="build-id-long"),
-        case(["-i"], dict(mode="interactive"), id="interactive-short"),
-        case(["--interactive"], dict(mode="interactive"), id="interactive-long"),
-        case(["-f"], dict(mode="fail"), id="fail-short"),
-        case(["--fail"], dict(mode="fail"), id="fail-long"),
-        case(["--force"], dict(mode="force"), id="force-long"),
-        case(["--skip-existing"], dict(mode="skip"), id="skip-existing-long"),
-        case(["-m"], dict(force_metadata_update=True), id="force-metadata-update-short"),
-        case(["--force-metadata-update"], dict(force_metadata_update=True), id="force-metadata-update-long"),  # noqa: E501
-        case(["--token", "TOKEN"], dict(token="TOKEN"), id="token", prefix=True),  # nosec
-        case(["--site", "my-site.com"], dict(site="my-site.com"), id="site", prefix=True),
-        case(["--disable-ssl-warnings"], dict(disable_ssl_warnings=True), id="disable-ssl-warnings", prefix=True),
-        case(["--show-traceback"], dict(show_traceback=True), id="show-traceback", prefix=True),
-        case(["--verbose"], dict(log_level=logging.DEBUG), id="verbose-long", prefix=True),
-        case(["-v"], dict(log_level=logging.DEBUG), id="verbose-short", prefix=True),
-        case(["--quiet"], dict(log_level=logging.WARNING), id="quiet-long", prefix=True),
-        case(["-q"], dict(log_level=logging.WARNING), id="quiet-short", prefix=True),
+        CLICase(id="defaults"),
+        CLICase("-l some-label", dict(labels=["some-label"]), id="labels-short-single"),
+        CLICase("--label some-label", dict(labels=["some-label"]), id="labels-long-single"),
+        CLICase("-l some-label -l another", dict(labels=["some-label", "another"]), id="labels-short-multiple"),  # noqa: E501
+        CLICase("--label some-label --label another", dict(labels=["some-label", "another"]), id="labels-long-multiple"),  # noqa: E501
+        CLICase("-l some-label --label another", dict(labels=["some-label", "another"]), id="labels-mixed-multiple"),  # noqa: E501
+        CLICase("-c some-label --channel another", dict(labels=["some-label", "another"]), id="channels-mixed-multiple"),  # noqa: E501
+        CLICase("--no-progress", dict(no_progress=True), id="no-progress"),
+        CLICase("-u username", dict(user="username"), id="username-short"),
+        CLICase("--user username", dict(user="username"), id="username-long"),
+        CLICase("--keep-basename", dict(keep_basename=True), id="keep-basename-long"),
+        CLICase("-p my_package", dict(package="my_package"), id="package-short"),
+        CLICase("--package my_package", dict(package="my_package"), id="package-long"),
+        CLICase("--version 1.2.3", dict(version="1.2.3"), id="version-long"),
+        CLICase("-v 1.2.3", dict(version="1.2.3"), id="version-short"),
+        CLICase("--summary 'Some package summary'", dict(summary="Some package summary"), id="summary-long"),  # noqa: E501
+        CLICase("-s 'Some package summary'", dict(summary="Some package summary"), id="summary-short"),
+        CLICase("--package-type conda", dict(package_type="conda"), id="package-type-long"),
+        CLICase("-t conda", dict(package_type="conda"), id="package-type-short"),
+        CLICase("--description 'Some package description'", dict(description="Some package description"), id="description-long"),  # noqa: E501
+        CLICase("-d 'Some package description'", dict(description="Some package description"), id="description-short"),  # noqa: E501
+        CLICase("--thumbnail /path/to/thumbnail", dict(thumbnail="/path/to/thumbnail"), id="thumbnail-long"),  # noqa: E501
+        CLICase("--private", dict(private=True), id="private-long"),
+        CLICase("--register", dict(auto_register=True), id="register-long"),
+        CLICase("--no-register", dict(auto_register=False), id="no-register-long"),
+        CLICase("--build-id BUILD123", dict(build_id="BUILD123"), id="build-id-long"),
+        CLICase("-i", dict(mode="interactive"), id="interactive-short"),
+        CLICase("--interactive", dict(mode="interactive"), id="interactive-long"),
+        CLICase("-f", dict(mode="fail"), id="fail-short"),
+        CLICase("--fail", dict(mode="fail"), id="fail-long"),
+        CLICase("--force", dict(mode="force"), id="force-long"),
+        CLICase("--skip-existing", dict(mode="skip"), id="skip-existing-long"),
+        CLICase("-m", dict(force_metadata_update=True), id="force-metadata-update-short"),
+        CLICase("--force-metadata-update", dict(force_metadata_update=True), id="force-metadata-update-long"),  # noqa: E501
+        CLICase("--token TOKEN", dict(token="TOKEN"), id="token", prefix=True),  # nosec
+        CLICase("--site my-site.com", dict(site="my-site.com"), id="site", prefix=True),
+        CLICase("--disable-ssl-warnings", dict(disable_ssl_warnings=True), id="disable-ssl-warnings", prefix=True),
+        CLICase("--show-traceback", dict(show_traceback=True), id="show-traceback", prefix=True),
+        CLICase("--verbose", dict(log_level=logging.DEBUG), id="verbose-long", prefix=True),
+        CLICase("-v", dict(log_level=logging.DEBUG), id="verbose-short", prefix=True),
+        CLICase("--quiet", dict(log_level=logging.WARNING), id="quiet-long", prefix=True),
+        CLICase("-q", dict(log_level=logging.WARNING), id="quiet-short", prefix=True),
     ]
 )
 def test_upload_arg_parsing(
-    case: TestCase, cli_mocker: InvokerFactory
+    case: CLICase, cli_mocker: InvokerFactory
 ) -> None:
     filename = "some-file"
     args = ["upload"] + case.args + [filename]
