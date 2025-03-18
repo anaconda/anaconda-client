@@ -1,16 +1,18 @@
 """Test entrypoint to anaconda-cli-base"""
+# pylint: disable=invalid-name
 # pylint: disable=line-too-long
-# pylint: disable=redefined-outer-name
-# pylint: disable=line-too-long
-# pylint: disable=missing-class-docstring
 # pylint: disable=missing-function-docstring
+# pylint: disable=missing-class-docstring
+# pylint: disable=redefined-builtin
+# pylint: disable=redefined-outer-name
 # pylint: disable=use-dict-literal
 
 import sys
 import logging
 from argparse import Namespace
+from dataclasses import dataclass
 from importlib import reload
-from typing import Any, Callable, Dict, Generator, List, Optional
+from typing import Any, Callable, Dict, Generator, List, Tuple, Optional
 
 import pytest
 from pytest import FixtureRequest
@@ -315,58 +317,83 @@ def test_whoami_arg_parsing(
     mock.assert_main_args_contains(expected)
 
 
+@dataclass()
+class TestCase:
+    args: List[str]
+    prefix_args: List[str]
+    mods: Dict[str, Any]
+
+
+def case(
+    args: Optional[List[str]] = None,
+    mods: Optional[Dict[str, Any]] = None,
+    *,
+    id: str,
+    prefix: bool = False,
+) -> Tuple:
+    args = args or []
+
+    if prefix:
+        p, a = args, []
+    else:
+        p, a = [], args
+
+    obj = TestCase(args=a, prefix_args=p, mods=mods or {})
+    return pytest.param(obj, id=id)
+
+
 @pytest.mark.parametrize(
-    "prefix_args, args, mods",
+    "case",
     [
-        pytest.param([], [], dict(), id="defaults"),
-        pytest.param([], ["-l", "some-label"], dict(labels=["some-label"]), id="labels-short-single"),
-        pytest.param([], ["--label", "some-label"], dict(labels=["some-label"]), id="labels-long-single"),
-        pytest.param([], ["-l", "some-label", "-l", "another"], dict(labels=["some-label", "another"]), id="labels-short-multiple"),  # noqa: E501
-        pytest.param([], ["--label", "some-label", "--label", "another"], dict(labels=["some-label", "another"]), id="labels-long-multiple"),  # noqa: E501
-        pytest.param([], ["-l", "some-label", "--label", "another"], dict(labels=["some-label", "another"]), id="labels-mixed-multiple"),  # noqa: E501
-        pytest.param([], ["-c", "some-label", "--channel", "another"], dict(labels=["some-label", "another"]), id="channels-mixed-multiple"),  # noqa: E501
-        pytest.param([], ["--no-progress"], dict(no_progress=True), id="no-progress"),
-        pytest.param([], ["-u", "username"], dict(user="username"), id="username-short"),
-        pytest.param([], ["--user", "username"], dict(user="username"), id="username-long"),
-        pytest.param([], ["--keep-basename"], dict(keep_basename=True), id="keep-basename-long"),
-        pytest.param([], ["-p", "my_package"], dict(package="my_package"), id="package-short"),
-        pytest.param([], ["--package", "my_package"], dict(package="my_package"), id="package-long"),
-        pytest.param([], ["--version", "1.2.3"], dict(version="1.2.3"), id="version-long"),
-        pytest.param([], ["-v", "1.2.3"], dict(version="1.2.3"), id="version-short"),
-        pytest.param([], ["--summary", "Some package summary"], dict(summary="Some package summary"), id="summary-long"),  # noqa: E501
-        pytest.param([], ["-s", "Some package summary"], dict(summary="Some package summary"), id="summary-short"),
-        pytest.param([], ["--package-type", "conda"], dict(package_type="conda"), id="package-type-long"),
-        pytest.param([], ["-t", "conda"], dict(package_type="conda"), id="package-type-short"),
-        pytest.param([], ["--description", "Some package description"], dict(description="Some package description"), id="description-long"),  # noqa: E501
-        pytest.param([], ["-d", "Some package description"], dict(description="Some package description"), id="description-short"),  # noqa: E501
-        pytest.param([], ["--thumbnail", "/path/to/thumbnail"], dict(thumbnail="/path/to/thumbnail"), id="thumbnail-long"),  # noqa: E501
-        pytest.param([], ["--private"], dict(private=True), id="private-long"),
-        pytest.param([], ["--register"], dict(auto_register=True), id="register-long"),
-        pytest.param([], ["--no-register"], dict(auto_register=False), id="no-register-long"),
-        pytest.param([], ["--build-id", "BUILD123"], dict(build_id="BUILD123"), id="build-id-long"),
-        pytest.param([], ["-i"], dict(mode="interactive"), id="interactive-short"),
-        pytest.param([], ["--interactive"], dict(mode="interactive"), id="interactive-long"),
-        pytest.param([], ["-f"], dict(mode="fail"), id="fail-short"),
-        pytest.param([], ["--fail"], dict(mode="fail"), id="fail-long"),
-        pytest.param([], ["--force"], dict(mode="force"), id="force-long"),
-        pytest.param([], ["--skip-existing"], dict(mode="skip"), id="skip-existing-long"),
-        pytest.param([], ["-m"], dict(force_metadata_update=True), id="force-metadata-update-short"),
-        pytest.param([], ["--force-metadata-update"], dict(force_metadata_update=True), id="force-metadata-update-long"),  # noqa: E501
-        pytest.param(["--token", "TOKEN"], [], dict(token="TOKEN"), id="token"),  # nosec
-        pytest.param(["--site", "my-site.com"], [], dict(site="my-site.com"), id="site"),
-        pytest.param(["--disable-ssl-warnings"], [], dict(disable_ssl_warnings=True), id="disable-ssl-warnings"),
-        pytest.param(["--show-traceback"], [], dict(show_traceback=True), id="show-traceback"),
-        pytest.param(["--verbose"], [], dict(log_level=logging.DEBUG), id="verbose-long"),
-        pytest.param(["-v"], [], dict(log_level=logging.DEBUG), id="verbose-short"),
-        pytest.param(["--quiet"], [], dict(log_level=logging.WARNING), id="quiet-long"),
-        pytest.param(["-q"], [], dict(log_level=logging.WARNING), id="quiet-short"),
+        case(id="defaults"),
+        case(["-l", "some-label"], dict(labels=["some-label"]), id="labels-short-single"),
+        case(["--label", "some-label"], dict(labels=["some-label"]), id="labels-long-single"),
+        case(["-l", "some-label", "-l", "another"], dict(labels=["some-label", "another"]), id="labels-short-multiple"),  # noqa: E501
+        case(["--label", "some-label", "--label", "another"], dict(labels=["some-label", "another"]), id="labels-long-multiple"),  # noqa: E501
+        case(["-l", "some-label", "--label", "another"], dict(labels=["some-label", "another"]), id="labels-mixed-multiple"),  # noqa: E501
+        case(["-c", "some-label", "--channel", "another"], dict(labels=["some-label", "another"]), id="channels-mixed-multiple"),  # noqa: E501
+        case(["--no-progress"], dict(no_progress=True), id="no-progress"),
+        case(["-u", "username"], dict(user="username"), id="username-short"),
+        case(["--user", "username"], dict(user="username"), id="username-long"),
+        case(["--keep-basename"], dict(keep_basename=True), id="keep-basename-long"),
+        case(["-p", "my_package"], dict(package="my_package"), id="package-short"),
+        case(["--package", "my_package"], dict(package="my_package"), id="package-long"),
+        case(["--version", "1.2.3"], dict(version="1.2.3"), id="version-long"),
+        case(["-v", "1.2.3"], dict(version="1.2.3"), id="version-short"),
+        case(["--summary", "Some package summary"], dict(summary="Some package summary"), id="summary-long"),  # noqa: E501
+        case(["-s", "Some package summary"], dict(summary="Some package summary"), id="summary-short"),
+        case(["--package-type", "conda"], dict(package_type="conda"), id="package-type-long"),
+        case(["-t", "conda"], dict(package_type="conda"), id="package-type-short"),
+        case(["--description", "Some package description"], dict(description="Some package description"), id="description-long"),  # noqa: E501
+        case(["-d", "Some package description"], dict(description="Some package description"), id="description-short"),  # noqa: E501
+        case(["--thumbnail", "/path/to/thumbnail"], dict(thumbnail="/path/to/thumbnail"), id="thumbnail-long"),  # noqa: E501
+        case(["--private"], dict(private=True), id="private-long"),
+        case(["--register"], dict(auto_register=True), id="register-long"),
+        case(["--no-register"], dict(auto_register=False), id="no-register-long"),
+        case(["--build-id", "BUILD123"], dict(build_id="BUILD123"), id="build-id-long"),
+        case(["-i"], dict(mode="interactive"), id="interactive-short"),
+        case(["--interactive"], dict(mode="interactive"), id="interactive-long"),
+        case(["-f"], dict(mode="fail"), id="fail-short"),
+        case(["--fail"], dict(mode="fail"), id="fail-long"),
+        case(["--force"], dict(mode="force"), id="force-long"),
+        case(["--skip-existing"], dict(mode="skip"), id="skip-existing-long"),
+        case(["-m"], dict(force_metadata_update=True), id="force-metadata-update-short"),
+        case(["--force-metadata-update"], dict(force_metadata_update=True), id="force-metadata-update-long"),  # noqa: E501
+        case(["--token", "TOKEN"], dict(token="TOKEN"), id="token", prefix=True),  # nosec
+        case(["--site", "my-site.com"], dict(site="my-site.com"), id="site", prefix=True),
+        case(["--disable-ssl-warnings"], dict(disable_ssl_warnings=True), id="disable-ssl-warnings", prefix=True),
+        case(["--show-traceback"], dict(show_traceback=True), id="show-traceback", prefix=True),
+        case(["--verbose"], dict(log_level=logging.DEBUG), id="verbose-long", prefix=True),
+        case(["-v"], dict(log_level=logging.DEBUG), id="verbose-short", prefix=True),
+        case(["--quiet"], dict(log_level=logging.WARNING), id="quiet-long", prefix=True),
+        case(["-q"], dict(log_level=logging.WARNING), id="quiet-short", prefix=True),
     ]
 )
 def test_upload_arg_parsing(
-    prefix_args: List[str], args: List[str], mods: Dict[str, Any], cli_mocker: InvokerFactory
+    case: TestCase, cli_mocker: InvokerFactory
 ) -> None:
     filename = "some-file"
-    args = ["upload"] + args + [filename]
+    args = ["upload"] + case.args + [filename]
     defaults: Dict[str, Any] = dict(
         token=None,
         site=None,
@@ -391,10 +418,10 @@ def test_upload_arg_parsing(
         force_metadata_update=False,
         json_help=None
     )
-    expected = {**defaults, **mods}
+    expected = {**defaults, **case.mods}
 
     mock = cli_mocker("binstar_client.commands.upload.main")
-    result = mock.invoke(args, prefix_args=prefix_args)
+    result = mock.invoke(args, prefix_args=case.prefix_args)
     assert result.exit_code == 0, result.stdout
     mock.assert_main_called_once()
     mock.assert_main_args_contains(expected)
