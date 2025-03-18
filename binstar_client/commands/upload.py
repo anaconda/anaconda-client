@@ -818,6 +818,12 @@ def _exclusive_mode(ctx: typer.Context, param: typer.CallbackParam, value: str) 
 
 def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, context_settings: dict) -> None:
     # pylint: disable=missing-function-docstring
+    label_help: str = (
+        '{deprecation}Add this file to a specific {label}. '
+        'Warning: if the file {label}s do not include "main", '
+        'the file will not show up in your user {label}'
+    )
+
     @app.command(
         name=name,
         hidden=hidden,
@@ -827,8 +833,17 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
     def upload(
         ctx: typer.Context,
         files: typing.List[str] = typer.Argument(),
-        labels: list[str] = typer.Option([], '-l', '--label'),
-        channels: list[str] = typer.Option([], '-c', '--channel'),
+        labels: list[str] = typer.Option(
+            [], '-l', '--label',
+            help=label_help.format(deprecation='', label='label'),
+        ),
+        channels: list[str] = typer.Option(
+            [], '-c', '--channel',
+            help=label_help.format(
+                deprecation=typer.style('(deprecated) ', fg=typer.colors.RED, bold=True),
+                label='channel',
+            ),
+        ),
         progress: bool = typer.Option(True, is_flag=True, help='Show upload progress'),
         user: typing.Optional[str] = typer.Option(
             None, '-u', '--user',
@@ -863,7 +878,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         description: typing.Optional[str] = typer.Option(
             None,
             '-d', '--description',
-            help='description of the file(s)',
+            help='Description of the file(s)',
         ),
         thumbnail: typing.Optional[str] = typer.Option(None, help="Notebook's thumbnail image"),
         private: bool = typer.Option(
