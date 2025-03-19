@@ -642,3 +642,31 @@ def test_update_arg_parsing(case: CLICase, cli_mocker: InvokerFactory, tmp_path:
     assert result.exit_code == 0, result.stdout
     mock.assert_main_called_once()
     mock.assert_main_args_contains(expected)
+
+
+@pytest.mark.parametrize(
+    "case",
+    [
+        CLICase(id="defaults"),
+        CLICase("--package-type conda", dict(package_type="conda"), id="package-type-long"),
+        CLICase("-t conda", dict(package_type="conda"), id="package-type-short"),
+        CLICase("--token TOKEN", dict(token="TOKEN"), id="token", prefix=True),  # nosec
+        CLICase("--site my-site.com", dict(site="my-site.com"), id="site", prefix=True),
+    ]
+)
+def test_search_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
+    args = ["search"] + case.args + ["search-term"]
+    defaults = dict(
+        token=None,
+        site=None,
+        name=["search-term"],
+        package_type=None,
+        platform=None,
+    )
+    expected = {**defaults, **case.mods}
+
+    mock = cli_mocker("binstar_client.commands.search.search")
+    result = mock.invoke(args, prefix_args=case.prefix_args)
+    assert result.exit_code == 0, result.stdout
+    mock.assert_main_called_once()
+    mock.assert_main_args_contains(expected)

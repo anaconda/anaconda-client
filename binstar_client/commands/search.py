@@ -4,7 +4,11 @@
 Search your Anaconda repository for packages.
 """
 
+import argparse
 import logging
+from typing import Optional
+
+import typer
 
 from binstar_client.utils import config
 from binstar_client.utils import get_server_api
@@ -52,3 +56,41 @@ def add_parser(subparsers):
         help='only search for packages of the chosen platform'
     )
     parser.set_defaults(main=search)
+
+
+def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, context_settings: dict) -> None:
+    @app.command(
+        name=name,
+        hidden=hidden,
+        help=help_text,
+        context_settings=context_settings,
+        no_args_is_help=True,
+    )
+    def search_subcommand(
+        ctx: typer.Context,
+        name: str = typer.Argument(
+            help='Search string',
+            show_default=False,
+        ),
+        package_type: Optional[str] = typer.Option(
+            None,
+            '-t',
+            '--package-type',
+            help='Only search for packages of this type',
+        ),
+        platform: Optional[str] = typer.Option(
+            None,
+            '-p',
+            '--platform',
+            help='Only search for packages of the chosen platform',
+        ),
+    ) -> None:
+        args = argparse.Namespace(
+            token=ctx.obj.params.get('token'),
+            site=ctx.obj.params.get('site'),
+            name=[name],
+            package_type=package_type,
+            platform=platform,
+        )
+
+        search(args)
