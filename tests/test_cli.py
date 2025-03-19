@@ -86,7 +86,8 @@ class MockedCliInvoker:
         actual = vars(namespace)
 
         # Now we can assert that the passed args are a superset of some expected dictionary of values
-        assert actual.items() >= expected.items()
+        actual_cmp = {key: val for key, val in actual.items() if key in expected}
+        assert actual_cmp == expected
 
 
 InvokerFactory = Callable[[str], MockedCliInvoker]
