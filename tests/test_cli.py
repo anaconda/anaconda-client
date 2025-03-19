@@ -614,6 +614,8 @@ def test_channel_mutually_exclusive_options_required(mocker):
     "case",
     [
         CLICase(id="defaults"),
+        CLICase("--package-type conda", dict(package_type="conda"), id="package-type-long"),
+        CLICase("-t conda", dict(package_type="conda"), id="package-type-short"),
         CLICase("--token TOKEN", dict(token="TOKEN"), id="token", prefix=True),  # nosec
         CLICase("--site my-site.com", dict(site="my-site.com"), id="site", prefix=True),
     ]
