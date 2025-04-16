@@ -818,12 +818,12 @@ def test_remove_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
 @pytest.mark.parametrize(
     "case",
     [
-        CLICase(id="defaults"),
-        CLICase("--name my-token", dict(name="my-token"), id="name-long"),
-        CLICase("-n my-token", dict(name="my-token"), id="name-short"),
-        CLICase("--organization my-org", dict(organization="my-org"), id="organization-long"),
-        CLICase("--org my-org", dict(organization="my-org"), id="organization-mid"),
-        CLICase("-o my-org", dict(organization="my-org"), id="organization-short"),
+        CLICase("-i", dict(info=True), id="defaults"),
+        CLICase("--name my-token -i", dict(name="my-token", info=True), id="name-long"),
+        CLICase("-n my-token -i", dict(name="my-token", info=True), id="name-short"),
+        CLICase("--organization my-org -i", dict(organization="my-org", info=True), id="organization-long"),
+        CLICase("--org my-org -i", dict(organization="my-org", info=True), id="organization-mid"),
+        CLICase("-o my-org -i", dict(organization="my-org", info=True), id="organization-short"),
         CLICase("--list-scopes", dict(list_scopes=True), id="list-scopes-long"),
         CLICase("-x", dict(list_scopes=True), id="list-scopes-short"),
         CLICase("--list", dict(list=True), id="list-long"),
@@ -834,25 +834,32 @@ def test_remove_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
         CLICase("--info", dict(info=True), id="info-mid"),
         CLICase("-i", dict(info=True), id="info-short"),
         CLICase("--remove token-1", dict(remove=["token-1"]), id="remove-long-single"),
-        CLICase("--remove token-1 --remove token-2", dict(remove=["token-1", "token-2"]), id="remove-long-multiple"),
-        CLICase("-r token-1 -r token-2", dict(remove=["token-1", "token-2"]), id="remove-short-multiple"),
+        CLICase("--remove token-1 token-2", dict(remove=["token-1", "token-2"]), id="remove-long-multiple"),
+        CLICase("-r token-1 token-2", dict(remove=["token-1", "token-2"]), id="remove-short-multiple"),
         CLICase("--token TOKEN", dict(token="TOKEN"), id="token", prefix=True),  # nosec
         CLICase("--site my-site.com", dict(site="my-site.com"), id="site", prefix=True),
     ]
 )
 def test_auth_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
+    if case.prefix_args:
+        # Need this for the prefix-args tests, since we need an action
+        case.args = ["-i"]
+        expected_info = True
+    else:
+        expected_info = False
+
     args = ["auth"] + case.args
 
     defaults: Dict[str, Any] = dict(
         token=None,
         site=None,
-        name=f"anaconda_token:{gethostname()}",
+        name=f"binstar_token:{gethostname()}",
         organization=None,
         list_scopes=False,
         list=False,
         create=False,
-        info=False,
-        remove=[],
+        info=expected_info,
+        remove=None,
     )
     expected = {**defaults, **case.mods}
 

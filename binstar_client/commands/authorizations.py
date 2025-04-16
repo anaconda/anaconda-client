@@ -299,7 +299,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         hidden=hidden,
         help=help_text,
         context_settings=context_settings,
-        # no_args_is_help=True,
+        no_args_is_help=True,
     )
     def auth_subcommand(
         ctx: typer.Context,
@@ -307,7 +307,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             ...,
             '-n',
             '--name',
-            default_factory=lambda: f'anaconda_token:{socket.gethostname()}',
+            default_factory=lambda: f'binstar_token:{socket.gethostname()}',
             help='A unique name so you can identify this token later. View your tokens at anaconda.org/settings/access'
         ),
         organization: typing.Optional[str] = typer.Option(
@@ -353,9 +353,15 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             help='Remove authentication tokens. Multiple token names can be provided',
             callback=_exclusive_action,
         ),
+        extra_args: typing.List[str] = typer.Argument(default=None, hidden=True, metavar=''),
     ) -> None:
         if not any([list_scopes, list_, create, info, remove]):
             raise typer.BadParameter('one of --list-scopes, --list, --list, --info, or --remove must be provided')
+
+        if remove:
+            # Legacy parser supports e.g. --remove token-1 token-2, while click/typer
+            # requires --remove token-1 --remove token-2. This makes them compatible.
+            remove += extra_args
 
         args = argparse.Namespace(
             token=ctx.obj.params.get('token'),
@@ -366,7 +372,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             list=list_,
             create=create,
             info=info,
-            remove=remove,
+            remove=remove or None,  # The default of None here is to match existing argparse behavior
         )
 
         main(args)
