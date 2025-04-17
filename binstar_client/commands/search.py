@@ -60,7 +60,7 @@ def add_parser(subparsers):
 
 
 class Platform(Enum):
-    # pylint: disable=missing-class-docstring
+    """An enum representing platforms that can be passed as options."""
     OSX_32 = 'osx-32'
     OSX_64 = 'osx-64'
     WIN_32 = 'win-32'

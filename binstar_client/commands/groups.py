@@ -74,6 +74,7 @@ def add_parser(subparsers):
 
 
 class GroupAction(Enum):
+    """Available actions to take on a group."""
     ADD = 'add'
     SHOW = 'show'
     MEMBERS = 'members'
@@ -85,6 +86,7 @@ class GroupAction(Enum):
 
 
 class Permission(Enum):
+    """Available permissions to grant to groups."""
     READ = 'read'
     WRITE = 'write'
     ADMIN = 'admin'

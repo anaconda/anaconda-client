@@ -297,6 +297,7 @@ def _exclusive_action(ctx: typer.Context, param: typer.CallbackParam, value: str
 
 
 class TokenStrength(Enum):
+    """Available options for strength when creating a token."""
     STRONG = 'strong'
     WEAK = 'weak'
 
