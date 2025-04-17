@@ -88,12 +88,16 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         force: bool = typer.Option(
             False, '-f', '--force', help='Overwrite',
         ),
+        output: str = typer.Option(
+            '.', '-o', '--output', help='Download as',
+        ),
     ) -> None:
         args = argparse.Namespace(
             token=ctx.obj.params.get('token'),
             site=ctx.obj.params.get('site'),
             handle=handle,
             force=force,
+            output=output,
         )
 
         main(args)

@@ -1055,6 +1055,8 @@ def test_package_mutually_exclusive_options_required(mocker):
         CLICase(id="defaults"),
         CLICase("--force", dict(force=True), id="force-long"),
         CLICase("-f", dict(force=True), id="force-short"),
+        CLICase("--output somewhere", dict(output="somewhere"), id="output-long"),
+        CLICase("-o somewhere", dict(output="somewhere"), id="output-short"),
         CLICase("--token TOKEN", dict(token="TOKEN"), id="token", prefix=True),  # nosec
         CLICase("--site my-site.com", dict(site="my-site.com"), id="site", prefix=True),
     ]
@@ -1067,6 +1069,7 @@ def test_download_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None
         site=None,
         handle="handle",
         force=False,
+        output=".",
     )
     expected = {**defaults, **case.mods}
 
