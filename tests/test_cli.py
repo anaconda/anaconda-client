@@ -313,9 +313,11 @@ def test_top_level_options_passed_through(cmd: str, monkeypatch: MonkeyPatch, as
     ]
 )
 def test_whoami_arg_parsing(
-    prefix_args: List[str], args: List[str], mods: Dict[str, Any], cli_mocker: InvokerFactory
+    prefix_args: List[str], args: List[str], mods: Dict[str, Any], cli_mocker: InvokerFactory, request: FixtureRequest
 ) -> None:
-    args = ["whoami"] + args
+    # This is a bit of a hack but not worth fixing since usage of legacy parser (which doesn't support --at) is temporary
+    at_arg = ["--at", "anaconda.org"] if "orig-bar" not in str(request) else []
+    args = ["whoami"] + at_arg + args
     defaults = dict(
         token=None,
         site=None,
