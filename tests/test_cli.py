@@ -912,7 +912,7 @@ def test_auth_mutually_exclusive_options(opts, error_opt, conflict_opt, mocker):
 def test_auth_mutually_exclusive_options_required(mocker):
     mock = mocker.patch("binstar_client.commands.authorizations.main")
 
-    args = ["auth"]
+    args = ["auth", "required-arg"]
     runner = CliRunner()
     result = runner.invoke(anaconda_cli_base.cli.app, args)
 
