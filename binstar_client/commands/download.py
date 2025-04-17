@@ -11,6 +11,8 @@ from __future__ import unicode_literals
 import argparse
 import logging
 
+import typer
+
 from binstar_client import errors
 from binstar_client.utils import get_server_api
 from binstar_client.utils.config import PackageType
@@ -70,3 +72,22 @@ def main(args):
             logger.info('%s has been downloaded as %s', args.handle, download_file)
     except (errors.DestinationPathExists, errors.NotFound, errors.BinstarError, OSError) as err:
         logger.info(err)
+
+
+def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, context_settings: dict) -> None:
+    @app.command(
+        name=name,
+        hidden=hidden,
+        help=help_text,
+        context_settings=context_settings,
+        no_args_is_help=True,
+    )
+    def download(
+        ctx: typer.Context,
+    ) -> None:
+        args = argparse.Namespace(
+            token=ctx.obj.params.get('token'),
+            site=ctx.obj.params.get('site'),
+        )
+
+        main(args)

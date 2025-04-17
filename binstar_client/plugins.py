@@ -81,6 +81,7 @@ SUBCOMMANDS_WITH_NEW_CLI = {
     "channel",
     "config",
     "copy",
+    "download",
     "groups",
     "label",
     "move",

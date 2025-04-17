@@ -1047,3 +1047,27 @@ def test_package_mutually_exclusive_options_required(mocker):
     assert "one of --add-collaborator, --list-collaborators, or --create must be provided" in result.stdout, result.stdout  # noqa: E501
 
     mock.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "case",
+    [
+        CLICase(id="defaults"),
+        CLICase("--token TOKEN", dict(token="TOKEN"), id="token", prefix=True),  # nosec
+        CLICase("--site my-site.com", dict(site="my-site.com"), id="site", prefix=True),
+    ]
+)
+def test_download_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
+    args = ["download"] + case.args + ["handle"]
+
+    defaults: Dict[str, Any] = dict(
+        token=None,
+        site=None,
+    )
+    expected = {**defaults, **case.mods}
+
+    mock = cli_mocker("binstar_client.commands.download.main")
+    result = mock.invoke(args, prefix_args=case.prefix_args)
+    assert result.exit_code == 0, result.stdout
+    mock.assert_main_called_once()
+    mock.assert_main_args_contains(expected)
