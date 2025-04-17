@@ -27,7 +27,6 @@ import typer
 import typer.colors
 from anaconda_cli_base import console, __version__
 from anaconda_cli_base.cli import app as main_app, ContextExtras
-from typer import Typer
 
 from binstar_client import commands as command_module
 from binstar_client.scripts.cli import (
@@ -101,7 +100,7 @@ SUBCOMMANDS_WITH_NEW_CLI = {
 log = logging.getLogger(__name__)
 warnings.simplefilter("always")
 
-app = Typer(
+app = typer.Typer(
     add_completion=False,
     name="org",
     help="Interact with anaconda.org",
