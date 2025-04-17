@@ -25,14 +25,17 @@ from typing import Optional
 
 import typer
 import typer.colors
-from anaconda_cli_base import console
-from anaconda_cli_base.cli import app as main_app
+from anaconda_cli_base import console, __version__
+from anaconda_cli_base.cli import app as main_app, ContextExtras
 from typer import Typer
 
 from binstar_client import commands as command_module
 from binstar_client.scripts.cli import (
     _add_subparser_modules as add_subparser_modules, main as binstar_main,
 )
+from binstar_client.utils import logging_utils
+
+logger = logging.getLogger('binstar')
 
 # All subcommands in anaconda-client
 ALL_SUBCOMMANDS = {
@@ -104,6 +107,95 @@ app = Typer(
     help="Interact with anaconda.org",
     no_args_is_help=True,
 )
+
+
+@main_app.callback(invoke_without_command=True, no_args_is_help=True)
+def cli_base_main_callback(
+    ctx: typer.Context,
+    token: Optional[str] = typer.Option(
+        None,
+        "-t",
+        "--token",
+        help="Authentication token to use. A token string or path to a file containing a token",
+        hidden=True,
+    ),
+    site: Optional[str] = typer.Option(
+        None,
+        "-s",
+        "--site",
+        help="select the anaconda-client site to use",
+        hidden=True,
+    ),
+    disable_ssl_warnings: Optional[bool] = typer.Option(
+        False,
+        help="Disable SSL warnings",
+        hidden=True,
+    ),
+    show_traceback: Optional[bool] = typer.Option(
+        False,
+        help="Show the full traceback for chalmers user errors",
+        hidden=True,
+    ),
+    verbose: Optional[bool] = typer.Option(
+        False,
+        "-v",
+        "--verbose",
+        help="Print debug information to the console.",
+        hidden=False,
+    ),
+    quiet: Optional[bool] = typer.Option(
+        False,
+        "-q",
+        "--quiet",
+        help="Only show warnings or errors on the console",
+        hidden=True,
+    ),
+    version: Optional[bool] = typer.Option(
+        None, "-V", "--version", help="Show version and exit."
+    ),
+    show_help: Optional[bool] = typer.Option(
+        False,
+        "-h",
+        "--help",
+        help="Show this message and exit.",
+    ),
+) -> None:
+    """Anaconda CLI."""
+    # TODO: This is a temporary copy of the callback defined in anaconda_cli_base.cli.
+    #       It is needed because we need to be able to configure the anaconda-client
+    #       logger based on CLI arguments, and that must happen at the top-level
+    #       entrypoint. And since typer overrides callbacks, instead of having an
+    #       inheritance mechanism. The real solution here is to provide more robust
+    #       logging support inside anaconda-cli-base instead of anaconda-client.
+    ctx.obj = ContextExtras()
+
+    # Store all the top-level params on the obj attribute
+    ctx.obj.params.update(ctx.params.copy())
+
+    if show_help:
+        console.print(ctx.get_help())
+        raise typer.Exit()
+
+    if version:
+        console.print(
+            f"Anaconda CLI, version [cyan]{__version__}[/cyan]",
+            style="bold green",
+        )
+        raise typer.Exit()
+
+    if ctx.obj.params.get("verbose"):
+        log_level = logging.DEBUG
+    elif ctx.obj.params.get("quiet"):
+        log_level = logging.WARNING
+    else:
+        log_level = logging.INFO
+
+    logging_utils.setup_logging(
+        logger,
+        log_level=log_level,
+        show_traceback=ctx.obj.params.get("show_traceback", False),
+        disable_ssl_warnings=ctx.obj.params.get("disable_ssl_warnings", False),
+    )
 
 
 @app.callback(invoke_without_command=True, no_args_is_help=True)
