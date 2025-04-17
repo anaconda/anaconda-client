@@ -830,20 +830,25 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         hidden=hidden,
         help=help_text,
         context_settings=context_settings,
+        no_args_is_help=True,
     )
     def upload(
         ctx: typer.Context,
         files: typing.List[str] = typer.Argument(),
-        labels: list[str] = typer.Option(
-            [], '-l', '--label',
-            help=label_help.format(deprecation='', label='label'),
-        ),
-        channels: list[str] = typer.Option(
-            [], '-c', '--channel',
+        channels: typing.List[str] = typer.Option(
+            [],
+            '-c',
+            '--channel',
             help=label_help.format(
                 deprecation=typer.style('(deprecated) ', fg=typer.colors.RED, bold=True),
                 label='channel',
             ),
+        ),
+        labels: typing.List[str] = typer.Option(
+            [],
+            '-l',
+            '--label',
+            help=label_help.format(deprecation='', label='label'),
         ),
         progress: bool = typer.Option(True, is_flag=True, help='Show upload progress'),
         user: typing.Optional[str] = typer.Option(
@@ -899,7 +904,6 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             False,
             '-i',
             '--interactive',
-            is_flag=True,
             help='Run an interactive prompt if any packages are missing',
             callback=_exclusive_mode,
         ),
