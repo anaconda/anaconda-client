@@ -1063,6 +1063,7 @@ def test_download_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None
     defaults: Dict[str, Any] = dict(
         token=None,
         site=None,
+        handle="handle",
     )
     expected = {**defaults, **case.mods}
 

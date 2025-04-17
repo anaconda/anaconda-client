@@ -84,10 +84,12 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
     )
     def download(
         ctx: typer.Context,
+        handle: str = typer.Argument(help='<channel_name>/<package_name>'),
     ) -> None:
         args = argparse.Namespace(
             token=ctx.obj.params.get('token'),
             site=ctx.obj.params.get('site'),
+            handle=handle,
         )
 
         main(args)
