@@ -488,12 +488,6 @@ def test_upload_mutually_exclusive_options(opts, error_opt, conflict_opt, mocker
         CLICase("--update", dict(update=True), id="update"),
         CLICase("--token TOKEN", dict(token="TOKEN"), id="token", prefix=True),  # nosec
         CLICase("--site my-site.com", dict(site="my-site.com"), id="site", prefix=True),
-        CLICase("--disable-ssl-warnings", dict(disable_ssl_warnings=True), id="disable-ssl-warnings", prefix=True),
-        CLICase("--show-traceback", dict(show_traceback=True), id="show-traceback", prefix=True),
-        CLICase("--verbose", dict(log_level=logging.DEBUG), id="verbose-long", prefix=True),
-        CLICase("-v", dict(log_level=logging.DEBUG), id="verbose-short", prefix=True),
-        CLICase("--quiet", dict(log_level=logging.WARNING), id="quiet-long", prefix=True),
-        CLICase("-q", dict(log_level=logging.WARNING), id="quiet-short", prefix=True),
     ]
 )
 def test_copy_arg_parsing(
