@@ -14,6 +14,7 @@ entrypoint in setup.py.
 
 """
 
+import functools
 import logging
 import os
 import sys
@@ -108,7 +109,6 @@ app = typer.Typer(
 )
 
 
-@main_app.callback(invoke_without_command=True, no_args_is_help=True)
 def cli_base_main_callback(
     ctx: typer.Context,
     token: Optional[str] = typer.Option(
@@ -197,6 +197,12 @@ def cli_base_main_callback(
         show_traceback=ctx.obj.params.get("show_traceback", False),
         disable_ssl_warnings=ctx.obj.params.get("disable_ssl_warnings", False),
     )
+
+
+if not isinstance(main_app, functools.partial):
+    # Don't apply decorator if legacy entrypoint is used
+    decorator = main_app.callback(invoke_without_command=True, no_args_is_help=True)
+    decorator(cli_base_main_callback)
 
 
 @app.callback(invoke_without_command=True, no_args_is_help=True)
