@@ -34,7 +34,7 @@ from binstar_client.scripts.cli import (
 )
 from binstar_client.utils import logging_utils
 
-logger = logging.getLogger('binstar')
+logger = logging.getLogger("binstar")
 
 # All subcommands in anaconda-client
 ALL_SUBCOMMANDS = {
@@ -160,6 +160,8 @@ def cli_base_main_callback(
     ),
 ) -> None:
     """Anaconda CLI."""
+    # pylint: disable=fixme
+    # pylint: disable=too-many-arguments
     # TODO: This is a temporary copy of the callback defined in anaconda_cli_base.cli.
     #       It is needed because we need to be able to configure the anaconda-client
     #       logger based on CLI arguments, and that must happen at the top-level
