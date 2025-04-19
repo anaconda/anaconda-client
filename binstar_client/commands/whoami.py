@@ -6,7 +6,11 @@ Print the information of the current user
 
 from __future__ import unicode_literals
 
+import argparse
 import logging
+from typing import Any, Dict
+
+import typer
 
 from binstar_client import errors
 from binstar_client.utils import get_server_api
@@ -26,6 +30,7 @@ def main(args):  # pylint: disable=inconsistent-return-statements
         return 1
 
     pprint_user(user)
+    return None
 
 
 def add_parser(subparsers):
@@ -34,3 +39,24 @@ def add_parser(subparsers):
                                       description=__doc__)
 
     subparser.set_defaults(main=main)
+
+
+def mount_subcommand(
+    app: typer.Typer,
+    name: str,
+    hidden: bool,
+    help_text: str,
+    context_settings: Dict[str, Any],
+) -> None:
+    @app.command(
+        name=name,
+        hidden=hidden,
+        help=help_text,
+        context_settings=context_settings,
+    )
+    def whoami(ctx: typer.Context) -> None:
+        args = argparse.Namespace(
+            token=ctx.obj.params.get('token'),
+            site=ctx.obj.params.get('site'),
+        )
+        main(args)

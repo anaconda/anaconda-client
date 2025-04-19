@@ -10,6 +10,9 @@ from __future__ import unicode_literals
 
 import argparse
 import logging
+from typing import List
+
+import typer
 
 from binstar_client import errors
 from binstar_client.utils import get_server_api
@@ -70,3 +73,39 @@ def main(args):
             logger.info('%s has been downloaded as %s', args.handle, download_file)
     except (errors.DestinationPathExists, errors.NotFound, errors.BinstarError, OSError) as err:
         logger.info(err)
+
+
+def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, context_settings: dict) -> None:
+    pkg_types = ', '.join(pkg_type.value for pkg_type in PackageType)
+
+    @app.command(
+        name=name,
+        hidden=hidden,
+        help=help_text,
+        context_settings=context_settings,
+        no_args_is_help=True,
+    )
+    def download(
+        ctx: typer.Context,
+        handle: str = typer.Argument(help='<channel_name>/<package_name>'),
+        force: bool = typer.Option(
+            False, '-f', '--force', help='Overwrite',
+        ),
+        output: str = typer.Option(
+            '.', '-o', '--output', help='Download as',
+        ),
+        package_type: List[str] = typer.Option(
+            None, '-t', '--package-type',
+            help='Set the package type [{0}]. Defaults to downloading all package types available'.format(pkg_types),
+        ),
+    ) -> None:
+        args = argparse.Namespace(
+            token=ctx.obj.params.get('token'),
+            site=ctx.obj.params.get('site'),
+            handle=handle,
+            force=force,
+            output=output,
+            package_type=package_type or None,
+        )
+
+        main(args)

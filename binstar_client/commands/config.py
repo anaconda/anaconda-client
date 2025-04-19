@@ -1,4 +1,6 @@
+# pylint: disable=fixme
 # pylint: disable=missing-function-docstring
+# pylint: disable=too-many-arguments
 
 """
 anaconda-client configuration
@@ -66,7 +68,11 @@ If no, then an upload will fail if the package name does not already exist on th
 from __future__ import print_function
 
 import logging
-from argparse import RawDescriptionHelpFormatter
+from argparse import Namespace, RawDescriptionHelpFormatter
+from typing import Callable, List, Optional
+
+import click
+import typer
 
 from binstar_client.errors import ShowHelp
 from binstar_client.utils.config import (SEARCH_PATH, USER_CONFIG, SYSTEM_CONFIG, CONFIGURATION_KEYS,
@@ -182,3 +188,92 @@ def add_parser(subparsers):
                         help='set a variable for all users on this machine')
 
     parser.set_defaults(main=main, sub_parser=parser)
+
+
+def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, context_settings: dict) -> None:
+    @app.command(
+        name=name,
+        hidden=hidden,
+        help=help_text,
+        context_settings=context_settings,
+        no_args_is_help=True,
+    )
+    def config_subcommand(
+        ctx: typer.Context,
+        type_: Optional[str] = typer.Option(
+            None,
+            '--type',
+            help='The type of the values in the set commands'
+        ),
+        set_: List[click.Tuple] = typer.Option(
+            [],
+            '--set',
+            help='sets a new variable: name value',
+            click_type=click.Tuple([str, str]),
+        ),
+        get: Optional[str] = typer.Option(
+            None,
+            help='get value: name',
+        ),
+        remove: List[str] = typer.Option(
+            [],
+            help='removes a variable',
+        ),
+        show: bool = typer.Option(
+            False,
+            help='Show all variables'
+        ),
+        files: bool = typer.Option(
+            False,
+            '-f',
+            '--files',
+            help='show the config file names',
+        ),
+        show_sources: bool = typer.Option(
+            False,
+            help='Display all identified config sources',
+        ),
+        user: Optional[bool] = typer.Option(
+            None,
+            '-u',
+            '--user',
+            help='set a variable for this user',
+        ),
+        system: bool = typer.Option(
+            False,
+            '-s',
+            '--system',
+            '--site',
+            help='set a variable for all users on this machine'
+        )
+    ) -> None:
+        # There's an existing bug in the type argument for anything but default
+        # TODO: Remove the --type option. The below code is what I think was intended, but it's not what happens
+        type_func: Callable
+        if type_ is None:
+            type_func = safe_load
+        elif type_ == 'int':
+            type_func = int
+
+        # Existing parser is a list of lists, instead of list of tuples
+        set_list = [list(item) for item in set_]  # type: ignore[call-overload]
+
+        if user is None:
+            user = True
+        if system:
+            user = False
+
+        args = Namespace(
+            token=ctx.obj.params.get('token'),
+            site=ctx.obj.params.get('site'),
+            type=type_func,
+            set=set_list,
+            get=get,
+            remove=remove,
+            show=show,
+            files=files,
+            show_sources=show_sources,
+            user=user,
+        )
+
+        main(args)

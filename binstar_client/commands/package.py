@@ -7,6 +7,10 @@ Anaconda repository package utilities
 from __future__ import print_function
 
 import logging
+from argparse import Namespace
+from typing import Optional
+
+import typer
 
 from binstar_client.utils import get_server_api, parse_specs
 
@@ -66,3 +70,111 @@ def add_parser(subparsers):
                              'This package will require authorized and authenticated access to install'))
 
     parser.set_defaults(main=main)
+
+
+def _exclusive_action(ctx: typer.Context, param: typer.CallbackParam, value: str) -> str:
+    """Check for exclusivity of action options.
+
+    To do this, we attach a new special attribute onto the typer Context the first time
+    one of the options in the group is used.
+
+    """
+    # pylint: disable=invalid-name
+    # pylint: disable=protected-access
+    if getattr(ctx, '_actions', None) is None:
+        ctx._actions = set()  # type: ignore[attr-defined]
+    if value:
+        if ctx._actions:  # type: ignore[attr-defined]
+            used_action, = ctx._actions  # type: ignore[attr-defined]
+            raise typer.BadParameter(f'mutually exclusive with {used_action}')
+        ctx._actions.add(' / '.join(f"'{o}'" for o in param.opts))  # type: ignore[attr-defined]
+    return value
+
+
+def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, context_settings: dict) -> None:
+
+    @app.command(
+        name=name,
+        hidden=hidden,
+        help=help_text,
+        context_settings=context_settings,
+        no_args_is_help=True,
+    )
+    def package_subcommand(
+        ctx: typer.Context,
+        spec: str = typer.Argument(
+            ...,
+            help='Package to operate on',
+            parser=parse_specs,
+        ),
+        add_collaborator: Optional[str] = typer.Option(
+            None,
+            help='username of the collaborator you want to add',
+            callback=_exclusive_action,
+        ),
+        list_collaborators: bool = typer.Option(
+            False,
+            help='list all of the collaborators in a package',
+            callback=_exclusive_action,
+        ),
+        create: bool = typer.Option(
+            False,
+            help='Create a package',
+            callback=_exclusive_action,
+        ),
+        summary: Optional[str] = typer.Option(
+            None,
+            help='Set the package short summary',
+        ),
+        license_: Optional[str] = typer.Option(
+            None,
+            '--license',
+            help='Set the package license',
+        ),
+        license_url: Optional[str] = typer.Option(
+            None,
+            help='Set the package license url',
+        ),
+        personal: bool = typer.Option(
+            False,
+            help=(
+                'Set the package access to personal '
+                'This package will be available only on your personal registries'
+            )
+        ),
+        private: bool = typer.Option(
+            False,
+            help=(
+                'Set the package access to private '
+                'This package will require authorized and authenticated access to install'
+            )
+        ),
+    ) -> None:
+        # pylint: disable=too-many-arguments
+        if not any([add_collaborator, list_collaborators, create]):
+            raise typer.BadParameter('one of --add-collaborator, --list-collaborators, or --create must be provided')
+
+        if private and personal:
+            raise typer.BadParameter('Cannot set both --private and --personal')
+
+        if private:
+            access = 'private'
+        elif personal:
+            access = 'personal'
+        else:
+            access = None
+
+        args = Namespace(
+            token=ctx.obj.params.get('token'),
+            site=ctx.obj.params.get('site'),
+            spec=spec,
+            add_collaborator=add_collaborator,
+            list_collaborators=list_collaborators,
+            create=create,
+            summary=summary,
+            license=license_,
+            license_url=license_url,
+            access=access,
+        )
+
+        main(args)
