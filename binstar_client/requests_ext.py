@@ -156,13 +156,15 @@ class MultiPartIO:
         if mode == 0:
             self.to_read = self.have_read + self.to_read
             self.have_read = []
-            [fd.seek(pos, mode) for fd in self.to_read]  # pylint: disable=expression-not-assigned
+            for fd in self.to_read:
+                fd.seek(pos, mode)
             self.cursor = 0
 
         elif mode == 2:
             self.have_read = self.have_read + self.to_read
             self.to_read = []
-            [fd.seek(pos, mode) for fd in self.have_read]  # pylint: disable=expression-not-assigned
+            for fd in self.have_read:
+                fd.seek(pos, mode)
             self._total = self.tell()
 
 
