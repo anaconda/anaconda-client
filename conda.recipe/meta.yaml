@@ -13,7 +13,8 @@ source:
 
 build:
   number: 0
-  script: {{ PYTHON }} -m pip install --no-build-isolation --no-deps .
+  script:
+    - SETUPTOOLS_SCM_PRETEND_VERSION={{version}} {{ PYTHON }} -m pip install . -vv
   noarch: python
   entry_points:
     - binstar = binstar_client.scripts.cli:main
@@ -23,7 +24,9 @@ requirements:
   host:
     - python {{ project['requires-python'] }}
     - pip
-    - setuptools
+    {% for dep in pyproject['build-system']['requires'] %}
+    - {{ dep.lower() }}
+    {% endfor %}
   run:
     - python
     - anaconda-anon-usage >=0.4.0
