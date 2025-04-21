@@ -68,10 +68,10 @@ python_version = "3.8"
 
 [tool.pytest.ini_options]
 addopts = [
-  "--durations=10",
+  "--color=yes",
   "--cov=binstar_client",
   "--cov-report=term-missing",
-  "--color=yes"
+  "--durations=10",
 ]
 cache_dir = ".cache/pytest"
 # Treat all warnings errors: https://til.simonwillison.net/pytest/treat-warnings-as-errors
