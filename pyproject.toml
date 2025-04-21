@@ -3,6 +3,12 @@ build-backend = "hatchling.build"
 requires = ["hatchling", "hatch-vcs>=0.3", "setuptools-scm>=7.1"]
 
 [project]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Environment :: Console",
+  "License :: OSI Approved :: BSD License",
+  "Programming Language :: Python",
+]
 dependencies = []
 description = "Client library and CLI plugin for anaconda.org"
 license = {text = "BSD-3-Clause"}
