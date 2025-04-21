@@ -6,11 +6,12 @@
 
 # Build artifacts
 binstar_client/_version.py
+conda-bld/
+dist/
 
 # Packages
 *.egg
 *.egg-info
-dist
 build
 eggs
 parts
