@@ -80,4 +80,6 @@ filterwarnings = [
 ]
 
 [tool.ruff]
-exclude = ["example-packages"]
+exclude = ["example-packages", "**/*.ipynb"]
+# TODO: These ignores handle * imports and also unused imports. We should fix them safely.
+ignore = ["F401", "F403", "F405"]
