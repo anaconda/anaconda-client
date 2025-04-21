@@ -10,15 +10,12 @@ classifiers = [
   "Programming Language :: Python",
 ]
 description = "Client library and CLI plugin for anaconda.org"
-# dynamic = ["version"]
-dynamic = ["dependencies", "optional-dependencies"]
+dynamic = ["dependencies", "optional-dependencies", "version"]
 license = {text = "BSD-3-Clause"}
 name = "anaconda-client"
 readme = "README.md"
 requires-python = ">=3.8"
 urls = {source = "https://github.com/anaconda/anaconda-client"}
-# TODO: Auto-versioning
-version = "1.13.0"
 
 [project.entry-points."anaconda_cli.subcommand"]
 org = "binstar_client.plugins:app"
@@ -30,6 +27,9 @@ conda-server = "binstar_client.scripts.cli:main"
 
 [tool.distutils.bdist_wheel]
 universal = true
+
+[tool.hatch.build.hooks.vcs]
+version-file = "binstar_client/_version.py"
 
 [tool.hatch.build.targets.sdist]
 include = [
@@ -48,5 +48,5 @@ files = ["requirements.txt"]
 dev = ["requirements-dev.txt"]
 full = ["requirements-extra.txt"]
 
-# [tool.hatch.version]
-# source = "vcs"
+[tool.hatch.version]
+source = "vcs"

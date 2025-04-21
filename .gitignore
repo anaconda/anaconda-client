@@ -4,6 +4,9 @@
 # C extensions
 *.so
 
+# Build artifacts
+binstar_client/_version.py
+
 # Packages
 *.egg
 *.egg-info
