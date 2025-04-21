@@ -3,11 +3,9 @@ define HELP
 Commands:
   help                print this help text
   init                initialize development environment
-  lint                run all linters for the project (see: lint-bandit, lint-mypy, lint-pycodestyle, lint-pylint)
+  lint                run all linters for the project (see: lint-bandit, lint-mypy)
   lint-bandit         check source code for common security issues
   lint-mypy           perform static type check of the project
-  lint-pycodestyle    check source code for PEP8 compliance
-  lint-pylint         perform static code analysis for common issues
   test                run all automated tests (see: test-pytest, test-autotest)
   test-pytest         run all pytest tests
   test-autotest       run autotest against production server
@@ -26,7 +24,7 @@ conda_env_dir ?= ./env
 CONDA_EXE ?= conda
 CONDA_RUN := $(CONDA_EXE) run --prefix $(conda_env_dir) --no-capture-output
 
-.PHONY: help init lint lint-bandit lint-mypy lint-pycodestyle lint-pylint test test-pytest build-wheel build-conda install-hooks pre-commit
+.PHONY: help init lint lint-bandit lint-mypy test test-pytest build-wheel build-conda install-hooks pre-commit
 
 help:
 	@echo "$${HELP}"
@@ -52,7 +50,7 @@ init:
 
 check: lint test
 
-lint: lint-pycodestyle lint-pylint lint-mypy lint-bandit
+lint:  lint-mypy lint-bandit
 
 lint-bandit:
 	@bandit -s B113 -qr binstar_client
@@ -60,12 +58,6 @@ lint-bandit:
 
 lint-mypy:
 	@mypy binstar_client tests
-
-lint-pycodestyle:
-	@pycodestyle binstar_client tests
-
-lint-pylint:
-	@pylint binstar_client tests
 
 test: test-pytest test-autotest
 

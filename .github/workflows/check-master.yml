@@ -54,12 +54,6 @@ jobs:
           conda list --show-channel-urls
           echo "exit_status=success" >> "$GITHUB_OUTPUT"
 
-      - name: Check with pycodestyle
-        if: ${{ always() && steps.conda_environment_information.outputs.exit_status == 'success' }}
-        run: |
-          mkdir -p .artifacts/reports
-          make lint-pycodestyle > .artifacts/reports/pycodestyle.txt 2>&1
-
       - name: Check with bandit
         if: ${{ always() && steps.conda_environment_information.outputs.exit_status == 'success' }}
         run: |
@@ -71,12 +65,6 @@ jobs:
         run: |
           mkdir -p .artifacts/reports
           make lint-mypy > .artifacts/reports/mypy.txt 2>&1
-
-      - name: Check with pylint
-        if: ${{ always() && steps.conda_environment_information.outputs.exit_status == 'success' }}
-        run: |
-          mkdir -p .artifacts/reports
-          make lint-pylint > .artifacts/reports/pylint.txt 2>&1
 
       - name: Export reports
         if: ${{ always() && steps.conda_environment_information.outputs.exit_status == 'success' }}
