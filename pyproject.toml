@@ -1,6 +1,6 @@
 [build-system]
 build-backend = "hatchling.build"
-requires = ["hatchling", "hatch-vcs>=0.3", "hatch-requirements-txt"]
+requires = ["hatchling", "hatch-vcs>=0.3", "setuptools-scm>=7.1", "hatch-requirements-txt"]
 
 [project]
 author = "Anaconda, Inc."
