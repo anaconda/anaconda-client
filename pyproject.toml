@@ -3,7 +3,7 @@ build-backend = "hatchling.build"
 requires = ["hatchling", "hatch-vcs>=0.3", "setuptools-scm>=7.1", "hatch-requirements-txt"]
 
 [project]
-author = 'Anaconda, Inc.'
+author = "Anaconda, Inc."
 classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Environment :: Console",
