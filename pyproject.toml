@@ -78,3 +78,6 @@ cache_dir = ".cache/pytest"
 filterwarnings = [
   "error",
 ]
+
+[tool.ruff]
+exclude = ["example-packages"]
