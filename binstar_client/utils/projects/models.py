@@ -25,7 +25,10 @@ class CondaProject:
             if value
         }
 
-    def tar_it(self, file=SpooledTemporaryFile()):  # pylint: disable=consider-using-with
+    def tar_it(self, file=None):
+        if file is None:
+            file = SpooledTemporaryFile()
+
         with tarfile.open(mode='w', fileobj=file) as tar:
             for pfile in self.pfiles:
                 tar.add(pfile.fullpath, arcname=pfile.relativepath)
