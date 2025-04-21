@@ -139,7 +139,7 @@ def _add_subparser_modules(parser, module=None, entry_point_name=None):
         for command_module in _get_sub_commands(module):
             command_module.add_parser(subparsers)
 
-    if entry_point_name:  # LOAD sub parsers from setup.py entry_point
+    if entry_point_name:  # LOAD sub parsers from pyproject.toml entry_point
         for entry_point in _get_entry_points(entry_point_name):
             add_parser = entry_point.load()
             add_parser(subparsers)
