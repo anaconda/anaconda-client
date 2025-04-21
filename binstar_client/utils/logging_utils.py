@@ -45,7 +45,6 @@ class ConsoleFormatter(logging.Formatter):
 
     def format(self, record: logging.LogRecord) -> str:
         """Format log record before printing it."""
-        # pylint: disable=protected-access
         self._style._fmt = self.FORMAT_CUSTOM.get(record.levelno, self.FORMAT_DEFAULT)
         return super().format(record)
 

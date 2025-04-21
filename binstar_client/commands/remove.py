@@ -1,5 +1,3 @@
-# pylint: disable=missing-function-docstring
-
 """
 Remove an object from your Anaconda repository.
 
@@ -22,25 +20,25 @@ from binstar_client.utils import get_server_api, parse_specs, \
 logger = logging.getLogger('binstar.remove')
 
 
-def main(args):  # pylint: disable=too-many-branches
+def main(args):
 
     aserver_api = get_server_api(args.token, args.site)
 
     for spec in args.specs:
         try:
-            if spec._basename:  # pylint: disable=protected-access
+            if spec._basename:
                 msg = 'Are you sure you want to remove file %s ?' % (spec,)
                 if args.force or bool_input(msg, False):
                     aserver_api.remove_dist(spec.user, spec.package, spec.version, spec.basename)
                 else:
                     logger.warning('Not removing file %s', spec)
-            elif spec._version:  # pylint: disable=protected-access
+            elif spec._version:
                 msg = 'Are you sure you want to remove the package release %s ? (and all files under it?)' % (spec,)
                 if args.force or bool_input(msg, False):
                     aserver_api.remove_release(spec.user, spec.package, spec.version)
                 else:
                     logger.warning('Not removing release %s', spec)
-            elif spec._package:  # pylint: disable=protected-access
+            elif spec._package:
                 msg = 'Are you sure you want to remove the package %s ? (and all data with it?)' % (spec,)
                 if args.force or bool_input(msg, False):
                     aserver_api.remove_package(spec.user, spec.package)

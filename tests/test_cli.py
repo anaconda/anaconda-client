@@ -1,14 +1,4 @@
 """Test entrypoint to anaconda-cli-base"""
-# pylint: disable=invalid-name
-# pylint: disable=line-too-long
-# pylint: disable=missing-function-docstring
-# pylint: disable=missing-class-docstring
-# pylint: disable=redefined-builtin
-# pylint: disable=redefined-outer-name
-# pylint: disable=too-few-public-methods
-# pylint: disable=too-many-lines
-# pylint: disable=use-dict-literal
-
 import shlex
 import sys
 import logging
@@ -337,8 +327,6 @@ def test_whoami_arg_parsing(
 
 
 class CLICase:
-    # pylint: disable=too-few-public-methods
-
     def __init__(
         self,
         args: str = "",

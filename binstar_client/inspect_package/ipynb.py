@@ -1,5 +1,3 @@
-# pylint: disable=missing-module-docstring,missing-function-docstring
-
 from __future__ import absolute_import, print_function, unicode_literals
 
 import os
@@ -12,7 +10,7 @@ from ..utils.notebook.data_uri import data_uri_from
 from ..utils.notebook.inflection import parameterize
 
 
-def inspect_ipynb_package(filename, fileobj, *args, **kwargs):  # pylint: disable=unused-argument
+def inspect_ipynb_package(filename, fileobj, *args, **kwargs):
 
     notebook = nbformat.read(fileobj, nbformat.NO_CONVERT)
     summary = notebook.get('metadata', {}).get('summary', 'Jupyter Notebook')

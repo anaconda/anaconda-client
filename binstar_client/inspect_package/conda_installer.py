@@ -1,5 +1,3 @@
-# pylint: disable=missing-module-docstring,missing-function-docstring
-
 import logging
 from os import path
 
@@ -15,7 +13,7 @@ def is_installer(filename):
     if not filename.endswith('.sh'):
         return False
 
-    with open(filename) as file:  # pylint: disable=unspecified-encoding
+    with open(filename) as file:
         file.readline()
         cio_copyright = file.readline()
         # Copyright (c) 2012-2014 Continuum Analytics, Inc.
@@ -33,7 +31,7 @@ def is_installer(filename):
         return True
 
 
-def inspect_package(filename, fileobj, *args, **kwarg):  # pylint: disable=unused-argument
+def inspect_package(filename, fileobj, *args, **kwarg):
     line = fileobj.readline()
     lines = []
     while line.startswith('#'):

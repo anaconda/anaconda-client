@@ -1,5 +1,3 @@
-# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
-
 from __future__ import annotations, print_function
 
 import json
@@ -83,7 +81,6 @@ def get_subdir(index):
 
 
 def inspect_conda_info_dir(info_contents: dict[str, bytes], basename: str) -> tuple[dict, dict, dict]:
-    # pylint: disable=too-many-locals
     def _load(filename, default=None):
         info_path = f'info/{filename}'
         if info_path in info_contents:
@@ -199,7 +196,7 @@ def gather_info_dir(
     return have
 
 
-def inspect_conda_package(filename, *args, **kwargs):  # pylint: disable=unused-argument
+def inspect_conda_package(filename, *args, **kwargs):
     info_contents = gather_info_dir(filename)
     package_data, release_data, file_data = inspect_conda_info_dir(
         info_contents, os.path.basename(filename)

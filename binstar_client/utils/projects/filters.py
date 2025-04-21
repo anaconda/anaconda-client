@@ -1,5 +1,3 @@
-# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
-
 import fnmatch
 import logging
 
@@ -25,10 +23,10 @@ class FilterBase:
         raise NotImplementedError
 
 
-class VCSFilter(FilterBase):  # pylint: disable=abstract-method
+class VCSFilter(FilterBase):
     """Version Control System Filtering."""
 
-    def __init__(self, pfiles, *args, **kwargs):  # pylint: disable=super-init-not-called
+    def __init__(self, pfiles, *args, **kwargs):
         self.pfiles = pfiles
 
     def run(self, pfile):
@@ -43,22 +41,22 @@ class VCSFilter(FilterBase):  # pylint: disable=abstract-method
         return True
 
 
-class FilesFilter(FilterBase):  # pylint: disable=abstract-method
+class FilesFilter(FilterBase):
     """Ignore specific files."""
 
     ignored = ['.anaconda/project-local.yml', '.anaconda/project-local.yaml']
 
-    def __init__(self, pfiles, *args, **kwargs):  # pylint: disable=super-init-not-called
+    def __init__(self, pfiles, *args, **kwargs):
         self.pfiles = pfiles
 
     def run(self, pfile):
         return pfile.relativepath not in self.ignored
 
 
-class LargeFilesFilter(FilterBase):  # pylint: disable=abstract-method
+class LargeFilesFilter(FilterBase):
     max_file_size = 2097152
 
-    def __init__(self, pfiles, *args, **kwargs):  # pylint: disable=super-init-not-called
+    def __init__(self, pfiles, *args, **kwargs):
         self.pfiles = pfiles
 
     def run(self, pfile):
@@ -67,8 +65,8 @@ class LargeFilesFilter(FilterBase):  # pylint: disable=abstract-method
         return True
 
 
-class ProjectIgnoreFilter(FilterBase):  # pylint: disable=abstract-method
-    def __init__(self, pfiles, *args, **kwargs):  # pylint: disable=super-init-not-called
+class ProjectIgnoreFilter(FilterBase):
+    def __init__(self, pfiles, *args, **kwargs):
         self._patterns = None
         self.pfiles = pfiles
         self.basepath = kwargs.get('basepath', '.')
@@ -106,7 +104,7 @@ def get_ignore_file(basepath):
 
 def ignore_patterns(basepath):
     patterns = []
-    with open(get_ignore_file(basepath)) as ifile:  # pylint: disable=unspecified-encoding
+    with open(get_ignore_file(basepath)) as ifile:
         for row in ifile:
             pattern = remove_comments(clean(row))
             patterns.append(pattern)

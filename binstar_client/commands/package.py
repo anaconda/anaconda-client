@@ -1,5 +1,3 @@
-# pylint: disable=missing-function-docstring
-
 """
 Anaconda repository package utilities
 """
@@ -79,8 +77,6 @@ def _exclusive_action(ctx: typer.Context, param: typer.CallbackParam, value: str
     one of the options in the group is used.
 
     """
-    # pylint: disable=invalid-name
-    # pylint: disable=protected-access
     if getattr(ctx, '_actions', None) is None:
         ctx._actions = set()  # type: ignore[attr-defined]
     if value:
@@ -150,7 +146,6 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             )
         ),
     ) -> None:
-        # pylint: disable=too-many-arguments
         if not any([add_collaborator, list_collaborators, create]):
             raise typer.BadParameter('one of --add-collaborator, --list-collaborators, or --create must be provided')
 

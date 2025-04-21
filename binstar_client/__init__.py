@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-
-# pylint: disable=missing-module-docstring,missing-function-docstring,too-many-locals,too-many-arguments
-
 from __future__ import absolute_import, print_function, unicode_literals
 
 import collections
@@ -30,7 +27,7 @@ from .utils.multipart_uploader import multipart_files_upload
 logger = logging.getLogger('binstar')
 
 
-class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-many-public-methods
+class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
     """
     An object that represents interfaces with the Anaconda repository restful API.
 
@@ -38,7 +35,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
                   an anonymous user.
     """
 
-    def __init__(  # pylint: disable=unused-argument
+    def __init__(
             self, token=None, domain='https://api.anaconda.org',
             verify=True, **kwargs
     ):
@@ -75,7 +72,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
 
         try:
             response = self.session.head(self.domain)
-        except Exception as error:  # pylint: disable=broad-except
+        except Exception as error:
             raise errors.ServerError(msg) from error
 
         try:
@@ -95,10 +92,9 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
 
     def krb_authenticate(self, *args, **kwargs):
         try:
-            from requests_kerberos import HTTPKerberosAuth  # pylint: disable=import-outside-toplevel
+            from requests_kerberos import HTTPKerberosAuth
             return self._authenticate(HTTPKerberosAuth(), *args, **kwargs)
         except ImportError as error:
-            # pylint: disable=implicit-str-concat
             raise BinstarError(
                 'Kerberos authentication requires the requests-kerberos package to be installed:\n'
                 '    conda install requests-kerberos\n'
@@ -109,7 +105,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
     def authenticate(self, username, password, *args, **kwargs):
         return self._authenticate((username, password), *args, **kwargs)
 
-    def _authenticate(self,  # pylint: disable=too-many-arguments
+    def _authenticate(self,
                       auth,
                       application,
                       application_url=None,
@@ -202,7 +198,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
 
             try:
                 data = res.json()
-            except Exception:  # pylint: disable=broad-except
+            except Exception:
                 data = {}
 
             msg = data.get('error', msg)
@@ -318,12 +314,12 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):  # pylint: disable=too-man
         self._check_response(res)
         return res.json()
 
-    def add_package(  # pylint: disable=too-many-arguments
+    def add_package(
             self,
             login,
             package_name,
             summary=None,
-            license=None,  # pylint: disable=redefined-builtin
+            license=None,
             public=True,
             license_url=None,
             license_family=None,

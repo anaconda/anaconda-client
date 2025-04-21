@@ -1,5 +1,4 @@
 # -*- coding: utf8 -*-
-# pylint: disable=missing-function-docstring
 
 """Tests for authentication commands."""
 

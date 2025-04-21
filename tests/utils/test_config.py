@@ -1,6 +1,4 @@
 # -*- coding: utf8 -*-
-# pylint: disable=missing-class-docstring,missing-function-docstring
-
 """Test anaconda-client configuration set/get."""
 
 from __future__ import annotations
@@ -19,7 +17,7 @@ from binstar_client.utils import config
 
 
 class Test(unittest.TestCase):
-    CONFIG_DATA = {'ssl_verify': False}  # pylint: disable=invalid-name
+    CONFIG_DATA = {'ssl_verify': False}
 
     def create_config_dirs(self):
         tmpdir = tempfile.mkdtemp()
@@ -91,7 +89,7 @@ sites:
             })
 
     def test_support_tags(self):
-        user_dir, system_dir = self.create_config_dirs()  # pylint: disable=unused-variable
+        user_dir, system_dir = self.create_config_dirs()
 
         with open(os.path.join(user_dir, 'config.yaml'), 'wb') as file:
             file.write(b'''

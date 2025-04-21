@@ -1,5 +1,3 @@
-# pylint: disable=missing-function-docstring
-
 """
 Show information about an object
 
@@ -47,7 +45,7 @@ def main(args):
     aserver_api = get_server_api(args.token, args.site)
 
     spec = args.spec
-    if spec._basename:  # pylint: disable=protected-access
+    if spec._basename:
         dist = aserver_api.distribution(spec.user, spec.package, spec.version, spec.basename)
         logger.info(dist.pop('basename'))
         logger.info(dist.pop('description') or 'no description')
@@ -59,14 +57,14 @@ def main(args):
         for key, value in metadata.items():
             logger.info('    + %-25s: %r', key, value)
 
-    elif args.spec._version:  # pylint: disable=protected-access
+    elif args.spec._version:
         logger.info('version %s', spec.version)
         release = aserver_api.release(spec.user, spec.package, spec.version)
         for dist in release['distributions']:
             logger.info('   + %(basename)s', dist)
         logger.info(release.get('public_attrs', {}).get('description'))
 
-    elif args.spec._package:  # pylint: disable=protected-access
+    elif args.spec._package:
         package = aserver_api.package(spec.user, spec.package)
         package['access'] = 'public' if package['public'] else 'private'
 
@@ -88,7 +86,7 @@ def main(args):
             logger.info('To generate a $TOKEN run:')
             logger.info('    TOKEN=$(anaconda auth --create --name <TOKEN-NAME>)')
 
-    elif args.spec._user:  # pylint: disable=protected-access
+    elif args.spec._user:
         user_info = aserver_api.user(spec.user)
         pprint_user(user_info)
         pprint_packages(aserver_api.user_packages(spec.user))

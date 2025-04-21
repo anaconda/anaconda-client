@@ -1,12 +1,10 @@
-# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
-
 from urllib.parse import parse_qsl
 
 from binstar_client.errors import UserError
 
 
 class PackageSpec:
-    def __init__(   # pylint: disable=too-many-arguments
+    def __init__(
             self,
             user,
             package=None,

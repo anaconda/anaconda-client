@@ -1,5 +1,3 @@
-# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
-
 import os
 from collections import OrderedDict
 from contextlib import suppress
@@ -114,14 +112,14 @@ class Downloader:
             else:
                 tmp[file['basename']] = [file]
 
-        for basename, versions in tmp.items():  # pylint: disable=unused-variable
+        for basename, versions in tmp.items():
             try:
                 output.append(max(versions, key=lambda x: int(x['version'])))
             except ValueError:
                 output.append(
                     max(versions, key=lambda x: mktime(parse(x['upload_time']).timetuple()))
                 )
-            except Exception:  # pylint: disable=broad-except
+            except Exception:
                 output.append(versions[-1])
 
         return output

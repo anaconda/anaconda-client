@@ -1,11 +1,9 @@
-# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
-
 import json
 import os
 import traceback
 
 
-class JSONFormatter:  # pylint: disable=too-few-public-methods
+class JSONFormatter:
 
     def __init__(self, *args, **extra_tags):
         self.dumps = extra_tags.pop('dumps', lambda obj: json.dumps(obj, default=str))

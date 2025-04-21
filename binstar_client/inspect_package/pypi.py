@@ -1,6 +1,3 @@
-# pylint: disable=consider-using-with,unused-argument,import-outside-toplevel,unspecified-encoding
-# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
-
 from __future__ import print_function, unicode_literals
 
 import json
@@ -290,7 +287,7 @@ def format_requires_metadata(run_requires):
     return attrs
 
 
-def format_sdist_header_metadata(data, filename):  # pylint: disable=too-many-branches,too-many-locals
+def format_sdist_header_metadata(data, filename):
     """
     Format the metadata of Standard Python packages stored in email header format.
 
@@ -331,7 +328,7 @@ def format_sdist_header_metadata(data, filename):  # pylint: disable=too-many-br
     environments = {}
     for key, val in config_items:
         if key in ['Requires-Dist', 'Requires']:
-            name, extras, const, marker, url = parse_specification(val)  # pylint: disable=unused-variable
+            name, extras, const, marker, url = parse_specification(val)
             name = norm_package_name(name)
             specs = const.split(',')
             new_specs = []

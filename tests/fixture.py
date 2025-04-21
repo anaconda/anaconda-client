@@ -19,7 +19,7 @@ def main(args: typing.Sequence[str]) -> None:
     cli.main(args, allow_plugin_main=False, exit_=False)
 
 
-class AnyIO(io.StringIO):  # pylint: disable=missing-class-docstring
+class AnyIO(io.StringIO):
 
     def write(self, msg):
         if hasattr('msg', 'decode'):
@@ -27,7 +27,7 @@ class AnyIO(io.StringIO):  # pylint: disable=missing-class-docstring
         return io.StringIO.write(self, msg)
 
 
-class CLITestCase(unittest.TestCase):  # pylint: disable=too-many-instance-attributes,missing-class-docstring
+class CLITestCase(unittest.TestCase):
 
     def setUp(self):
         self.get_config_patch = unittest.mock.patch('binstar_client.utils.get_config')

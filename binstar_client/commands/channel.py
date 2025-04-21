@@ -1,5 +1,3 @@
-# pylint: disable=protected-access,missing-function-docstring
-
 """
 Manage your Anaconda repository channels.
 """
@@ -18,7 +16,7 @@ from binstar_client.utils import get_server_api
 logger = logging.getLogger('binstar.channel')
 
 
-def main(args, name, deprecated=False):  # pylint: disable=too-many-branches
+def main(args, name, deprecated=False):
     aserver_api = get_server_api(args.token, args.site)
 
     if args.organization:
@@ -122,8 +120,6 @@ def _exclusive_action(ctx: typer.Context, param: typer.CallbackParam, value: Any
     one of the options in the group is used.
 
     """
-    # pylint: disable=invalid-name
-    # pylint: disable=protected-access
     if isinstance(value, tuple):
         # This is here so we can treat the empty tuple as falsy, but I don't like it
         parsed_value = _parse_optional_tuple(value)  # type: ignore[arg-type]
@@ -190,7 +186,6 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             callback=_exclusive_action,
         ),
     ) -> None:
-        # pylint: disable=too-many-arguments
         parsed_copy = _parse_optional_tuple(copy)
         if not any([parsed_copy, list_, show, lock, unlock, remove]):
             raise typer.BadParameter('one of --copy, --list, --show, --lock, --unlock, or --remove must be provided')

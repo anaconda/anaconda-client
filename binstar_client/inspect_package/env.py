@@ -1,5 +1,3 @@
-# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
-
 import os
 import time
 
@@ -38,7 +36,7 @@ class EnvInspector:
         return self._version
 
 
-def inspect_env_package(filename, fileobj, *args, **kwargs):  # pylint: disable=unused-argument
+def inspect_env_package(filename, fileobj, *args, **kwargs):
     environment = EnvInspector(filename, fileobj)
 
     package_data = environment.get_package_data()

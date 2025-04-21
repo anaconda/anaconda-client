@@ -1,5 +1,3 @@
-# pylint: disable=unspecified-encoding,missing-module-docstring,missing-class-docstring,missing-function-docstring
-
 import unittest
 
 from tests.utils.utils import data_dir
@@ -19,7 +17,7 @@ class EnvInspectorTestCase(unittest.TestCase):
 class InspectEnvironmentPackageTest(unittest.TestCase):
     def test_inspect_env_package(self):
         with open(data_dir('environment.yml')) as fileobj:
-            package_data, release_data, file_data = inspect_env_package(  # pylint: disable=unused-variable
+            package_data, release_data, file_data = inspect_env_package(
                 'environment.yml', fileobj)
 
         self.assertEqual({

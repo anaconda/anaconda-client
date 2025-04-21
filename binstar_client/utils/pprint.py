@@ -1,5 +1,3 @@
-# pylint: disable=missing-class-docstring,missing-function-docstring
-
 """
 Created on Aug 8, 2013
 
@@ -16,11 +14,11 @@ from binstar_client.utils import config
 
 logger = logging.getLogger('binstar.pprint')
 
-fmt_access = (  # pylint: disable=invalid-name
+fmt_access = (
     '     %(full_name)-32s | %(latest_version)8s | %(access)-12s | %(package_types)-17s | %(conda_platforms)-15s | ' +
     '%(builds)-10s'
 )
-fmt_no_access = (  # pylint: disable=invalid-name
+fmt_no_access = (
     '     %(full_name)-32s | %(latest_version)8s | %(package_types)-17s | %(conda_platforms)-15s | %(builds)-10s'
 )
 
@@ -99,7 +97,7 @@ def pprint_package(package, access=True, full_name=True, revision=False):
 
     logger.info(fmt, package)
     if package.get('summary'):
-        logger.info(' ' * 34 + '        : %s', package.get('summary'))  # pylint: disable=logging-not-lazy
+        logger.info(' ' * 34 + '        : %s', package.get('summary'))
 
 
 def pprint_packages(packages, access=True, full_name=True, revisions=False):

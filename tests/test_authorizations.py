@@ -1,6 +1,4 @@
 # -*- coding: utf8 -*-
-# pylint: disable=missing-function-docstring
-
 """Tests for anaconda-client authorizations and token management."""
 
 from binstar_client.errors import BinstarError

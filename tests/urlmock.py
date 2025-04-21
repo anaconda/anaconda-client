@@ -1,6 +1,3 @@
-# pylint: disable=too-many-arguments,invalid-name,missing-module-docstring,missing-class-docstring
-# pylint: disable=missing-function-docstring
-
 """
 Created on Feb 22, 2014
 
@@ -31,7 +28,7 @@ class Responses:
         return len(self._resps)
 
     @property
-    def req(self):  # pylint: disable=inconsistent-return-statements
+    def req(self):
         if self._resps:
             return self._resps[0][1]
 
@@ -47,7 +44,7 @@ class Registry:
         self._map = []
 
     def __enter__(self):
-        self.real_send = requests.Session.send  # pylint: disable=attribute-defined-outside-init
+        self.real_send = requests.Session.send
         requests.Session.send = self.mock_send
 
         return self
@@ -72,24 +69,24 @@ class Registry:
         return next((stored_rule for stored_rule in self._map[::-1]
                      if self.filter_request(stored_rule, prepared_request)), None)
 
-    def mock_send(self, prepared_request, *args, **kwargs):  # pylint: disable=unused-argument
+    def mock_send(self, prepared_request, *args, **kwargs):
 
         rule = self.find_rule(prepared_request)
 
         if rule is None:
-            raise Exception(  # pylint: disable=broad-exception-raised
+            raise Exception(
                 'No matching rule found for url [%s] %s' % (prepared_request.method, prepared_request.url),
             )
 
         if rule.expected_headers:
             for header, value in rule.expected_headers.items():
                 if header not in prepared_request.headers:
-                    raise Exception(  # pylint: disable=broad-exception-raised
+                    raise Exception(
                         '{}: header {} expected in {}'.format(prepared_request.url, header, prepared_request.headers),
                     )
 
                 if prepared_request.headers[header] != value:
-                    raise Exception(  # pylint: disable=broad-exception-raised
+                    raise Exception(
                         '{}: header {} has unexpected value {} was expecting {}'.format(
                             prepared_request.url, header, prepared_request.headers[header], value,
                         ),
@@ -103,8 +100,8 @@ class Registry:
 
         res = requests.models.Response()
         res.status_code = rule.status
-        res._content_consumed = True  # pylint: disable=protected-access
-        res._content = content  # pylint: disable=protected-access
+        res._content_consumed = True
+        res._content = content
         res.encoding = 'utf-8'
         res.request = prepared_request
         res.headers.update(rule.headers or {})

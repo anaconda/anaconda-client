@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=missing-function-docstring
-
 """Update public attributes of the package or the attributes of the package release."""
 
 from __future__ import annotations

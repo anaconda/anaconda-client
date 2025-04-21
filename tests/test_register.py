@@ -1,6 +1,4 @@
 # -*- coding: utf8 -*-
-# pylint: disable=invalid-name,missing-function-docstring
-
 """Tests for package registration commands."""
 
 import json
@@ -31,7 +29,7 @@ class Test(CLITestCase):
         self.assertTrue(data['public'])
 
     @urlpatch
-    def test_register_private(self, registry):  # pylint: disable=missing-function-docstring
+    def test_register_private(self, registry):
         r1 = registry.register(method='GET', path='/user', content='{"login": "eggs"}')
         r2 = registry.register(method='GET', path='/package/eggs/foo', status=404)
         r3 = registry.register(method='POST', path='/package/eggs/foo', status=200, content='{"login": "eggs"}')

@@ -1,6 +1,4 @@
 # -*- coding: utf8 -*-
-# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
-
 from __future__ import annotations
 
 import base64
@@ -55,7 +53,7 @@ def bool_input(prompt, default=True):
     default_str = '[Y|n]' if default else '[y|N]'
     while True:
         inpt = input('%s %s: ' % (prompt, default_str))
-        if inpt.lower() in ['y', 'yes'] and not default:  # pylint: disable=no-else-return
+        if inpt.lower() in ['y', 'yes'] and not default:
             return True
         elif inpt.lower() in ['', 'n', 'no'] and not default:
             return False

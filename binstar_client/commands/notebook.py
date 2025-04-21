@@ -1,5 +1,3 @@
-# pylint: disable=missing-function-docstring
-
 """
 [Deprecation warning]
 `anaconda notebook` is going to be deprecated
@@ -14,7 +12,7 @@ from binstar_client.deprecations import DEPRECATION_MESSAGE_NOTEBOOKS_PROJECTS_E
 logger = logging.getLogger('binstar.notebook')
 
 
-def main(args):  # pylint: disable=unused-argument
+def main(args):
     logger.error(DEPRECATION_MESSAGE_NOTEBOOKS_PROJECTS_ENVIRONMENTS_REMOVED)
     return sys.exit(1)
 

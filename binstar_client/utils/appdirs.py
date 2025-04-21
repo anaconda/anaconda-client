@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-
-# pylint: disable=redefined-outer-name,import-outside-toplevel,line-too-long
-# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
-
 """Utilities for determining application-specific dirs."""
 
 import os.path

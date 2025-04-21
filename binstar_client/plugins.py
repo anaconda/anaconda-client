@@ -160,8 +160,6 @@ def cli_base_main_callback(
     ),
 ) -> None:
     """Anaconda CLI."""
-    # pylint: disable=fixme
-    # pylint: disable=too-many-arguments
     # TODO: This is a temporary copy of the callback defined in anaconda_cli_base.cli.
     #       It is needed because we need to be able to configure the anaconda-client
     #       logger based on CLI arguments, and that must happen at the top-level
@@ -226,14 +224,14 @@ def main(
 
 def _get_help_text(parser: ArgumentParser, name: str) -> str:
     """Extract the help text from the anaconda-client CLI Argument Parser."""
-    if parser._subparsers is None:  # pylint: disable=protected-access
+    if parser._subparsers is None:
         return ""
     # MyPy says this was unreachable
-    # if parser._subparsers._actions is None:  # pylint: disable=protected-access
+    # if parser._subparsers._actions is None:
     #     return ""
-    if parser._subparsers._actions[1].choices is None:  # pylint: disable=protected-access
+    if parser._subparsers._actions[1].choices is None:
         return ""
-    subcommand_parser = dict(parser._subparsers._actions[1].choices).get(name)  # pylint: disable=protected-access
+    subcommand_parser = dict(parser._subparsers._actions[1].choices).get(name)
     if subcommand_parser is None:
         return ""
     description = subcommand_parser.description
@@ -296,7 +294,7 @@ def _mount_subcommand(
 
     """
 
-    # TODO: Use a real config object  # pylint: disable=fixme
+    # TODO: Use a real config object
     force_use_new_cli = bool(os.getenv("ANACONDA_CLI_FORCE_NEW"))
 
     main_help_text = f"{help_text + ' ' if help_text else ''}(alias for 'anaconda org {name}')"
@@ -353,7 +351,7 @@ def _load_new_subcommand(name: str, help_text: str, app_: Optional[typer.Typer] 
         mod_name = "authorizations"
     else:
         mod_name = name
-    # TODO: More safely check that mount_subcommand exists  # pylint: disable=fixme
+    # TODO: More safely check that mount_subcommand exists
     subcommand_module = getattr(command_module, mod_name)
     subcommand_module.mount_subcommand(
         app=app_ or app,
@@ -374,7 +372,7 @@ def load_legacy_subcommands() -> None:
     This allows them to be called from the new CLI, without having to manually migrate.
 
     """
-    # TODO: We should use a config parameter  # pylint: disable=fixme
+    # TODO: We should use a config parameter
     if bool(os.getenv("ANACONDA_CLIENT_FORCE_STANDALONE")):
         # Don't mount the typer subcommands if we've forced standalone mode
         return
@@ -383,7 +381,7 @@ def load_legacy_subcommands() -> None:
     add_subparser_modules(parser, command_module)
 
     for name in ALL_SUBCOMMANDS:
-        # TODO: Can we load the arguments, or at least the docstring to make the help nicer?  # pylint: disable=fixme
+        # TODO: Can we load the arguments, or at least the docstring to make the help nicer?
         _mount_subcommand(
             name=name,
             help_text=_get_help_text(parser, name),
