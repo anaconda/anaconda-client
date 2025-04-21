@@ -44,7 +44,7 @@ jobs:
         run: |
           conda install -c defaults -c anaconda-cloud python=${{ matrix.python-version }} pip --file requirements.txt --file requirements-extra.txt
           pip install -r requirements-dev.txt
-          python setup.py develop --no-deps
+          pip install -e . --no-deps
 
       - name: Conda environment information
         id: conda_environment_information
@@ -118,7 +118,7 @@ jobs:
         run: |
           conda install -c defaults -c anaconda-cloud python=${{ matrix.python-version }} pip --file requirements.txt --file requirements-extra.txt
           pip install -r requirements-dev.txt
-          python setup.py develop --no-deps
+          pip install -e . --no-deps
 
       - name: Conda environment information
         run: |
