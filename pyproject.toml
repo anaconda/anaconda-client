@@ -1,6 +1,6 @@
 [build-system]
 build-backend = "hatchling.build"
-requires = ["hatchling", "hatch-vcs>=0.3", "setuptools-scm>=7.1"]
+requires = ["hatchling", "hatch-vcs>=0.3", "setuptools-scm>=7.1", "hatch-requirements-txt"]
 
 [project]
 classifiers = [
@@ -9,25 +9,11 @@ classifiers = [
   "License :: OSI Approved :: BSD License",
   "Programming Language :: Python",
 ]
-dependencies = [
-  "conda-package-handling >=1.7.3",
-  "defusedxml >=0.7.1",
-  "nbformat >=4.4.0",
-  "python-dateutil >=2.6.1",
-  "pytz >=2021.3",
-  "pyyaml >=3.12",
-  "platformdirs >=3.10.0,<5.0",
-  "requests >=2.20.0",
-  "requests-toolbelt >=0.9.1",
-  "setuptools >=58.0.4",
-  "tqdm >=4.56.0",
-  "urllib3 >=1.26.4",
-  "anaconda-cli-base >=0.4.0",
-]
 description = "Client library and CLI plugin for anaconda.org"
+# dynamic = ["version"]
+dynamic = ["dependencies", "optional-dependencies"]
 license = {text = "BSD-3-Clause"}
 name = "anaconda-client"
-# dynamic = ["version"]
 readme = "README.md"
 requires-python = ">=3.8"
 urls = {source = "https://github.com/anaconda/anaconda-client"}
@@ -36,12 +22,6 @@ version = "1.13.0"
 
 [project.entry-points."anaconda_cli.subcommand"]
 org = "binstar_client.plugins:app"
-
-[project.optional-dependencies]
-dev = [
-]
-full = [
-]
 
 [project.scripts]
 # Legacy entrypoints
@@ -60,6 +40,13 @@ include = [
 
 [tool.hatch.build.targets.wheel]
 packages = ["binstar_client"]
+
+[tool.hatch.metadata.hooks.requirements_txt]
+files = ["requirements.txt"]
+
+[tool.hatch.metadata.hooks.requirements_txt.optional-dependencies]
+dev = ["requirements-dev.txt"]
+full = ["requirements-extra.txt"]
 
 # [tool.hatch.version]
 # source = "vcs"
