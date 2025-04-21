@@ -63,25 +63,5 @@ source = "vcs"
 
 [tool.mypy]
 cache_dir = ".cache/mypy"
-check_untyped_defs = false
-disallow_any_decorated = false
-disallow_any_explicit = false
-disallow_any_expr = false
-disallow_any_generics = false
-disallow_any_unimported = false
-disallow_incomplete_defs = true
-disallow_subclassing_any = false
-disallow_untyped_calls = false
-disallow_untyped_decorators = false
-disallow_untyped_defs = false
-ignore_errors = false
 ignore_missing_imports = true
-namespace_packages = true
-no_implicit_optional = true
 python_version = "3.8"
-strict_optional = true
-warn_no_return = true
-warn_redundant_casts = true
-warn_return_any = false
-warn_unreachable = true
-warn_unused_ignores = true
