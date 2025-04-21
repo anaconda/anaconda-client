@@ -17,7 +17,7 @@ from pkg_resources import parse_version as pv
 from tqdm import tqdm
 
 from . import errors
-from .__about__ import __version__
+from ._version import __version__
 # For backwards compatibility
 from .errors import *
 from .mixins.channels import ChannelsMixin
