@@ -14,15 +14,15 @@ Site Documentation
 
 .. toctree::
     :maxdepth: 2
-
+    
     getting_started
     installing_packages
     pypi_to_binstar
     faq
     api
-    windows
+    windows    
     support
-
+   
 
 Indices and tables
 ==================
@@ -36,3 +36,4 @@ License Agreement
 Binstar is distributed under the OpenBSD license.
 
 .. _OpenBSD: http://opensource.org/licenses/bsd-license.php
+

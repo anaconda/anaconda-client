@@ -4,17 +4,17 @@ We [keep a changelog.](http://keepachangelog.com/)
 
 ## 1.13.0
 
-As part of extending our CLI, we have been migrating to a plugin-based system.
+As part of extending our CLI, we have been migrating to a plugin-based system. 
 This release removes the `anaconda` entrypoint from `anaconda-client`, which is now located instead in `anaconda-cli-base`.
-When these changes are installed, we don't intend any breaking behavior for the user.
+When these changes are installed, we don't intend any breaking behavior for the user. 
 
 Any changes are generally dependent on the presence of other Anaconda CLI plugins.
 In the case that another plugin is installed (like `anaconda-cloud-auth`), the following changes may be observed:
 
 * All existing `anaconda-client` subcommands are available
-* All existing `anaconda-client` subcommands are ALSO available with the `org` prefix, e.g. `anaconda org upload`.
+* All existing `anaconda-client` subcommands are ALSO available with the `org` prefix, e.g. `anaconda org upload`. 
   It is recommended to adopt this format, as it is more explicit.
-* The help text will be modified (i.e. type `anaconda`).
+* The help text will be modified (i.e. type `anaconda`). 
   Not all `anaconda-client` subcommands will be shown.
 * The `anaconda notebooks` subcommand will explicitly be listed as deprecated in the CLI help.
 
@@ -66,7 +66,7 @@ However, if any unintended regressions do occur, please file a bug in our issue 
 * [PR 693](https://github.com/Anaconda-Platform/anaconda-client/pull/693) - AC-200: replace appdirs with platformdirs
 * [PR 691](https://github.com/Anaconda-Platform/anaconda-client/pull/691) - Support Python 3.12
 * [PR 688](https://github.com/Anaconda-Platform/anaconda-client/pull/688) - AC-194: check token before making /user call
-* [PR 680](https://github.com/Anaconda-Platform/anaconda-client/pull/680) - use conda.gateways.anaconda_client for tokens possible
+* [PR 680](https://github.com/Anaconda-Platform/anaconda-client/pull/680) - use conda.gateways.anaconda_client for tokens possible 
 
 ## 1.12.1 - 2023-09-13
 
@@ -163,7 +163,7 @@ However, if any unintended regressions do occur, please file a bug in our issue 
 
 ### Added
 
-* Client generates sha256 package checksum during upload process.
+* Client generates sha256 package checksum during upload process. 
 
 ### Pull requests merged
 
@@ -207,7 +207,7 @@ However, if any unintended regressions do occur, please file a bug in our issue 
 ### Fixed
 
 * Fixed _upload_ command for `pypi` and `conda` packages of the same name
-* Fixed string formatting on interactive input
+* Fixed string formatting on interactive input 
 
 ### Pull Requests Merged
 
@@ -436,7 +436,7 @@ In this release 2 pull requests were closed.
 not overwritten (#364)
 
 ### Changed
-* `anaconda-client` will load configuration files with the extension `.yaml` from
+* `anaconda-client` will load configuration files with the extension `.yaml` from 
   the directories `~/.continuum/anaconda-client`, `/etc/anaconda-client` and `$PREFIX/etc/anaconda-client`.
 
 ## 1.5.1 (2016-08-01)

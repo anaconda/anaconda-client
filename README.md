@@ -24,7 +24,7 @@ Test your login wit the `whoami` command:
 anaconda whoami
 ```
 
-For a complete tutorial on building and uploading Conda packages to [anaconda.org](https://anaconda.org) visit the [documentation page](https://docs.anaconda.org/anacondaorg/).
+For a complete tutorial on building and uploading Conda packages to [anaconda.org](https://anaconda.org) visit the [documentation page](https://docs.anaconda.org/anacondaorg/). 
 
 ## Local development
 
