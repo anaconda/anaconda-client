@@ -1,0 +1,83 @@
+name: pre-commit
+
+on:
+  # Caches have a certain level of isolation, see https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows#restrictions-for-accessing-a-cache
+  # We run on push to main to have all caches in the main branch so that they can be reused for PRs.
+  push:
+    branches:
+      - main
+  merge_group:
+  pull_request:
+    # Default is [opened, reopened, synchronize]. Since we want to run pre-commit on "ready to review",
+    # we add that one. Since lists are overwritten, not merged, we add all four.
+    # See https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request
+    # for documentation of the default behaviour
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+
+# Cancel a previous job if the same workflow is triggers on the same PR or commit.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  pre-commit:
+    runs-on:
+      labels:
+        - ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          token: ${{ secrets.ANACONDA_BOT_PRE_COMMIT }}
+
+      - uses: actions/cache@d4323d4df104b026a6aa633fdb11d772146be0bf # v4
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit|${{ runner.arch }}-${{ hashFiles('.pre-commit-config.yaml', '.tflint.hcl') }}
+
+      - name: Create conda environment
+        run: |
+          source $CONDA/bin/activate
+          conda env create -n pre-commit --file ./etc/pre-commit-environment.yml
+
+      - name: Install pre-commit hooks
+        # Ensure all hooks are installed so that the following pre-commit run step only measures
+        # the time for the actual pre-commit run.
+        run: |
+          source $CONDA/bin/activate && conda activate pre-commit
+          make install-hooks
+
+      # Adapted from https://github.com/pre-commit/action/blob/efd3bcfec120bd343786e46318186153b7bc8c68/action.yml#L19
+      - name: Run pre-commit
+        run: |
+          source $CONDA/bin/activate && conda activate pre-commit
+          # /usr/bin/time -v measure the time and memory usage
+          /usr/bin/time -v make pre-commit
+
+      ############################
+      # Checkout + commit + push when the previous pre-commit run step failed, as that indicates
+      # auto-fixes / formatting updates, but not outside pull-requests to avoid pushing commits without
+      # review to the main branch and also not for draft PRs to avoid pushing commits while the PR is
+      # still being worked on.
+      # Don't run pre-commit a second time after the commit, as that would mark the commit which triggered
+      # the workflow as green, which technically is not correct. A succeeding workflow run after commit + push
+      # will mark the PR as green, if everything is fine.
+
+      - name: Checkout the branch we're running on to enable a commit to it
+        if: ${{ failure() && github.event_name == 'pull_request' }}
+        run: |
+          git fetch origin refs/heads/${{ github.head_ref }}:refs/remotes/origin/${{ github.head_ref }}
+          git checkout ${{ github.head_ref }}
+
+      - name: Commit linted files
+        if: ${{ failure() && github.event_name == 'pull_request' }}
+        uses: EndBug/add-and-commit@a94899bca583c204427a224a7af87c02f9b325d5 # v9.1.4
+        with:
+          message: "chore(pre-commit): linting"
+          author_name: Anaconda Bot
+          author_email: devops+anaconda-bot@anaconda.com
+
+      ############################

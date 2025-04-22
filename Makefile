@@ -11,6 +11,8 @@ Commands:
   test                run all automated tests (see: test-pytest, test-autotest)
   test-pytest         run all pytest tests
   test-autotest       run autotest against production server
+  install-hooks       install pre-commit hooks
+  pre-commit          run pre-commit across all files
 
 endef
 export HELP
@@ -22,7 +24,7 @@ conda_env_dir ?= ./env
 CONDA_EXE ?= conda
 CONDA_RUN := $(CONDA_EXE) run --prefix $(conda_env_dir) --no-capture-output
 
-.PHONY: help init lint lint-bandit lint-mypy lint-pycodestyle lint-pylint test test-pytest
+.PHONY: help init lint lint-bandit lint-mypy lint-pycodestyle lint-pylint test test-pytest install-hooks pre-commit
 
 help:
 	@echo "$${HELP}"
@@ -70,6 +72,17 @@ test-pytest: .coveragerc
 
 test-autotest:
 	@cd autotest && bash -e autotest.sh
+
+install-hooks:
+	pre-commit install-hooks
+
+pre-commit:
+	@if ! which pre-commit >/dev/null; then \
+		echo "Install pre-commit via brew/conda"; \
+		echo "  e.g. 'brew install pre-commit'"; \
+		exit 1; \
+	fi
+	pre-commit run --verbose --show-diff-on-failure --color=always --all-files
 
 .coveragerc:
 	@python scripts/refresh_coveragerc.py
