@@ -67,13 +67,13 @@ jobs:
       # will mark the PR as green, if everything is fine.
 
       - name: Checkout the branch we're running on to enable a commit to it
-        if: ${{ failure() && github.event_name == 'pull_request' && !github.event.pull_request.draft }}
+        if: ${{ failure() && github.event_name == 'pull_request' }}
         run: |
           git fetch origin refs/heads/${{ github.head_ref }}:refs/remotes/origin/${{ github.head_ref }}
           git checkout ${{ github.head_ref }}
 
       - name: Commit linted files
-        if: ${{ failure() && github.event_name == 'pull_request' && !github.event.pull_request.draft }}
+        if: ${{ failure() && github.event_name == 'pull_request' }}
         uses: EndBug/add-and-commit@a94899bca583c204427a224a7af87c02f9b325d5 # v9.1.4
         with:
           message: "chore(pre-commit): linting"
