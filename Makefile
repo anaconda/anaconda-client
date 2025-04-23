@@ -76,7 +76,7 @@ test-autotest:
 	@cd autotest && bash -e autotest.sh
 
 build-wheel:
-	hatch build
+	@python -m build
 
 build-conda:
 	VERSION=`hatch version` conda build -c defaults -c conda-forge --override-channels conda.recipe --output-folder ./conda-bld
