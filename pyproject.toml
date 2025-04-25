@@ -42,9 +42,9 @@ version-file = "binstar_client/_version.py"
 
 [tool.hatch.build.targets.sdist]
 include = [
-  "/binstar_client",
-  "/pyproject.toml",
-  "/tests",
+  "binstar_client/",
+  "tests/",
+  "pyproject.toml",
   "LICENSE.md",
 ]
 
