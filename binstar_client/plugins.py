@@ -10,7 +10,7 @@ Rather than re-write all the CLI code in anaconda-client, we opt to dynamically
 register each subcommand in the `load_legacy_subcommands` function.
 
 Note: This module should not be imported, except as defined as a plugin
-entrypoint in setup.py.
+entrypoint in pyproject.toml.
 
 """
 

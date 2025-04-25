@@ -11,6 +11,8 @@ Commands:
   test                run all automated tests (see: test-pytest, test-autotest)
   test-pytest         run all pytest tests
   test-autotest       run autotest against production server
+  build-wheel         build the standard python wheel and sdist
+  build-conda         build the conda package
   install-hooks       install pre-commit hooks
   pre-commit          run pre-commit across all files
 
@@ -24,7 +26,7 @@ conda_env_dir ?= ./env
 CONDA_EXE ?= conda
 CONDA_RUN := $(CONDA_EXE) run --prefix $(conda_env_dir) --no-capture-output
 
-.PHONY: help init lint lint-bandit lint-mypy lint-pycodestyle lint-pylint test test-pytest install-hooks pre-commit
+.PHONY: help init lint lint-bandit lint-mypy lint-pycodestyle lint-pylint test test-pytest build-wheel build-conda install-hooks pre-commit
 
 help:
 	@echo "$${HELP}"
@@ -72,6 +74,12 @@ test-pytest: .coveragerc
 
 test-autotest:
 	@cd autotest && bash -e autotest.sh
+
+build-wheel:
+	@python -m build
+
+build-conda:
+	VERSION=`hatch version` conda build -c defaults -c conda-forge --override-channels conda.recipe --output-folder ./conda-bld
 
 install-hooks:
 	pre-commit install-hooks

@@ -1,15 +1,20 @@
-{% set data = load_setup_py_data() %}
+{% set pyproject = load_file_data('../pyproject.toml', from_recipe_dir=True) %}
+{% set project = pyproject['project'] %}
+
+{% set name = project['name'] %}
+{% set version = VERSION %}
 
 package:
-  name: anaconda-client
-  version: {{ data.get('version') }}
+  name: {{ name|lower }}
+  version: {{ version }}
 
 source:
   path: ..
 
 build:
   number: 0
-  script: {{ PYTHON }} -m pip install --no-build-isolation --no-deps .
+  script:
+    - SETUPTOOLS_SCM_PRETEND_VERSION={{version}} {{ PYTHON }} -m pip install . -vv
   noarch: python
   entry_points:
     - binstar = binstar_client.scripts.cli:main
@@ -17,9 +22,11 @@ build:
 
 requirements:
   host:
+    - python {{ project['requires-python'] }}
     - pip
-    - python
-    - setuptools
+    {% for dep in pyproject['build-system']['requires'] %}
+    - {{ dep.lower() }}
+    {% endfor %}
   run:
     - python
     - anaconda-anon-usage >=0.4.0
@@ -55,13 +62,13 @@ test:
 
 about:
   home: https://anaconda.org
-  license: BSD-3-Clause
+  license: {{ project['license']['text'] }}
   license_family: BSD
   license_file: LICENSE.md
-  summary: anaconda.org command line client library
+  summary: {{ project['description'] }}
   description: |
-    Anaconda-client is used to connect to and manage your Anaconda Cloud account, upload packages you have created
-    and generate access tokens to allow access to private packages.
-  doc_url: https://docs.anaconda.com/free/anacondaorg/
-  doc_source_url: https://github.com/Anaconda-Platform/anaconda-client/blob/master/README.md
-  dev_url: https://github.com/Anaconda-Platform/anaconda-client
+    Anaconda-client is used to connect to and manage your anaconda.org account,
+    upload packages you have created, and generate access tokens to manage packages.
+  doc_url: https://www.anaconda.com/docs/tools/anaconda-org/main
+  doc_source_url: https://github.com/anaconda/anaconda-client/blob/master/README.md
+  dev_url: https://github.com/anaconda/anaconda-client
