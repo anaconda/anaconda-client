@@ -45,6 +45,7 @@ include = [
   "/binstar_client",
   "/pyproject.toml",
   "/tests",
+  "LICENSE.md",
 ]
 
 [tool.hatch.build.targets.wheel]
