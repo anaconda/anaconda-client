@@ -73,5 +73,7 @@ filterwarnings = [
 
 [tool.ruff]
 exclude = ["example-packages", "**/*.ipynb"]
+
+[tool.ruff.lint]
 # TODO: These ignores handle * imports and also unused imports. We should fix them safely.
 ignore = ["F401", "F403", "F405"]
