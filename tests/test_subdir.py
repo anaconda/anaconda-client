@@ -4,7 +4,6 @@ from binstar_client.inspect_package.conda import get_subdir
 
 
 class TestGetSubdir(unittest.TestCase):
-
     def test_noarch(self):
         index = {'subdir': 'noarch'}
         self.assertEqual(get_subdir(index), 'noarch')

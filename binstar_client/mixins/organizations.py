@@ -2,9 +2,7 @@ from binstar_client.utils import jencode
 
 
 class OrgMixin:
-
     def user_orgs(self, username=None):
-
         if username:
             url = '%s/users/%s/orgs' % (self.domain, username)
         else:

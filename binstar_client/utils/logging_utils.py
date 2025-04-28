@@ -18,14 +18,15 @@ from . import config
 
 
 def _custom_excepthook(
-        logger: logging.Logger,
-        show_traceback: bool = False,
+    logger: logging.Logger,
+    show_traceback: bool = False,
 ) -> typing.Callable[[typing.Type[BaseException], BaseException, typing.Optional[types.TracebackType]], None]:
     """Generate custom exception hook to log captured exceptions."""
+
     def excepthook(
-            exc_type: typing.Type[BaseException],
-            exc_value: BaseException,
-            exc_traceback: typing.Optional[types.TracebackType],
+        exc_type: typing.Type[BaseException],
+        exc_value: BaseException,
+        exc_traceback: typing.Optional[types.TracebackType],
     ) -> None:
         if issubclass(exc_type, KeyboardInterrupt):
             return
@@ -50,10 +51,10 @@ class ConsoleFormatter(logging.Formatter):
 
 
 def setup_logging(
-        logger: logging.Logger,
-        log_level: int = logging.INFO,
-        show_traceback: bool = False,
-        disable_ssl_warnings: bool = False
+    logger: logging.Logger,
+    log_level: int = logging.INFO,
+    show_traceback: bool = False,
+    disable_ssl_warnings: bool = False,
 ) -> None:
     """Configure logging for the application."""
     logger.setLevel(logging.DEBUG)
@@ -63,7 +64,7 @@ def setup_logging(
 
     file_handler: logging.Handler = logging.handlers.RotatingFileHandler(
         log_file,
-        maxBytes=10 * (1024 ** 2),
+        maxBytes=10 * (1024**2),
         backupCount=5,
     )
     file_handler.setLevel(logging.DEBUG)

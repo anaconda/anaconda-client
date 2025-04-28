@@ -66,9 +66,7 @@ class Downloader:
         Download file into location.
         """
         filename = dist['basename']
-        requests_handle = self.aserver_api.download(
-            self.username, self.notebook, dist['version'], filename
-        )
+        requests_handle = self.aserver_api.download(self.username, self.notebook, dist['version'], filename)
 
         if not os.path.exists(os.path.dirname(filename)):
             try:
@@ -116,9 +114,7 @@ class Downloader:
             try:
                 output.append(max(versions, key=lambda x: int(x['version'])))
             except ValueError:
-                output.append(
-                    max(versions, key=lambda x: mktime(parse(x['upload_time']).timetuple()))
-                )
+                output.append(max(versions, key=lambda x: mktime(parse(x['upload_time']).timetuple())))
             except Exception:
                 output.append(versions[-1])
 

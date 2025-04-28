@@ -31,11 +31,8 @@ def main(args):
 
     if from_label not in channels:
         raise errors.UserError(
-            '{} {} does not exist\n\tplease choose from: {}'.format(
-                label_text.title(),
-                from_label,
-                ', '.join(channels)
-            ))
+            '{} {} does not exist\n\tplease choose from: {}'.format(label_text.title(), from_label, ', '.join(channels))
+        )
 
     if from_label == to_label:
         raise errors.UserError('--from-label and --to-label must be different')
@@ -83,7 +80,7 @@ def add_parser(subparsers):
     parser.add_argument(
         'spec',
         help='Package - written as user/package/version[/filename] '
-             'If filename is not given, move all files in the version',
+        'If filename is not given, move all files in the version',
         type=parse_specs,
     )
     # NOTE: To be implemented later on
