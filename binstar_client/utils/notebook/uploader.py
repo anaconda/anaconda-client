@@ -1,5 +1,3 @@
-# pylint: disable=missing-module-docstring,missing-function-docstring
-
 import os
 import re
 import time
@@ -12,7 +10,7 @@ from .inflection import parameterize
 VALID_FORMATS = ['ipynb', 'csv', 'yml', 'yaml', 'json', 'md', 'rst', 'txt']
 
 
-class Uploader:  # pylint: disable=too-many-instance-attributes
+class Uploader:
     """
     * Find or create a package (project)
     * Find or create release (version)
@@ -52,7 +50,7 @@ class Uploader:  # pylint: disable=too-many-instance-attributes
 
     def remove(self):
         return self.aserver_api.remove_dist(
-            self, self.username, self.project, self.version, basename=self.notebook,  # pylint: disable=no-member
+            self, self.username, self.project, self.version, basename=self.notebook,
         )
 
     @property

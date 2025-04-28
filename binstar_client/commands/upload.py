@@ -9,7 +9,7 @@ See Also:
 * Uploading a Conda Package: https://docs.anaconda.com/free/anacondaorg/user-guide/packages/conda-packages/#cloud-uploading-conda-packages
 * Uploading a Standard Python Package: https://docs.anaconda.com/free/anacondaorg/user-guide/packages/standard-python-packages/#uploading-stdpython-packages
 
-"""  # noqa: E501, pylint: disable=line-too-long
+"""  # noqa: E501
 
 from __future__ import annotations
 
@@ -72,7 +72,7 @@ class UploadedPackage(typing.TypedDict):
     url: str
 
 
-class CacheRecord:  # pylint: disable=too-few-public-methods
+class CacheRecord:
     """Common interface for cached server records."""
 
     __slots__ = ('empty',)
@@ -305,7 +305,7 @@ class PackageMeta:
         self.__version = value
 
 
-class Uploader:  # pylint: disable=too-many-instance-attributes
+class Uploader:
     """Manager for package and project uploads."""
 
     __slots__ = (
@@ -507,9 +507,9 @@ class Uploader:  # pylint: disable=too-many-instance-attributes
             return False
 
         meta: PackageMeta = PackageMeta(filename=filename, meta=package_meta)
-        meta._update_attrs(parser_args=self.arguments)  # pylint: disable=protected-access
-        meta._update_name(self.arguments.package)  # pylint: disable=protected-access
-        meta._update_version(self.arguments.version)  # pylint: disable=protected-access
+        meta._update_attrs(parser_args=self.arguments)
+        meta._update_name(self.arguments.package)
+        meta._update_version(self.arguments.version)
         if self.arguments.build_id is not None:
             meta.file_attrs.setdefault('attrs', {})['binstar_build'] = self.arguments.build_id
         if self.arguments.summary is not None:
@@ -565,7 +565,7 @@ class Uploader:  # pylint: disable=too-many-instance-attributes
 
         logger.info(
             (
-                'Distribution already exists. '  # pylint: disable=implicit-str-concat
+                'Distribution already exists. '
                 'Please use the -i/--interactive or --force or --skip options or `anaconda remove %s/%s/%s/%s`'
             ),
             self.username, meta.name, meta.version, basename,
@@ -801,8 +801,6 @@ def _exclusive_mode(ctx: typer.Context, param: typer.CallbackParam, value: str) 
     one of the options in the group is used.
 
     """
-    # pylint: disable=invalid-name
-    # pylint: disable=protected-access
     if getattr(ctx, '_modes', None) is None:
         # Add an empty set on first call
         ctx._modes = set()  # type: ignore[attr-defined]
@@ -818,7 +816,6 @@ def _exclusive_mode(ctx: typer.Context, param: typer.CallbackParam, value: str) 
 
 
 def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, context_settings: dict) -> None:
-    # pylint: disable=missing-function-docstring
     label_help: str = (
         '{deprecation}Add this file to a specific {label}. '
         'Warning: if the file {label}s do not include "main", '
@@ -933,10 +930,6 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         ),
     ) -> None:
         """Upload one or more files to anaconda.org."""
-        # pylint: disable=fixme
-        # pylint: disable=too-many-arguments
-        # pylint: disable=too-many-locals
-
         labels += channels  # Support for deprecated --channels option
 
         # TODO: These should be mutually exclusive
@@ -961,7 +954,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         arguments = argparse.Namespace(
             # TODO: argparse handles this as a list of lists, with one filename in each.
             #       We should probably fix that one.
-            files=[[f] for f in files],  # pylint: disable=invalid-name
+            files=[[f] for f in files],
             token=ctx.obj.params.get('token'),
             site=ctx.obj.params.get('site'),
             disable_ssl_warnings=ctx.obj.params.get('disable_ssl_warnings'),

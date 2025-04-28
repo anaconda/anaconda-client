@@ -192,7 +192,7 @@ def is_environment(filename: str) -> typing.Optional[str]:
     return result
 
 
-is_installer: typing.Final[Detector] = (  # pylint: disable=invalid-name
+is_installer: typing.Final[Detector] = (
     detector_for(PackageType.INSTALLER)(conda_installer.is_installer)
 )
 
@@ -256,14 +256,14 @@ FileAttributes: typing_extensions.TypeAlias = typing.Dict[str, typing.Any]
 Attributes: typing_extensions.TypeAlias = typing.Tuple[PackageAttributes, ReleaseAttributes, FileAttributes]
 
 
-class Inspector(typing.Protocol):  # pylint: disable=too-few-public-methods
+class Inspector(typing.Protocol):
     """Common interface for package inspectors."""
 
     def __call__(self, filename: str, fileobj: typing.BinaryIO, *args: typing.Any, **kwargs: typing.Any) -> Attributes:
         """Collect metadata on a package."""
 
 
-def inspect_file(filename, fileobj, *args, **kwargs):  # pylint: disable=unused-argument
+def inspect_file(filename, fileobj, *args, **kwargs):
     """Collect metadata on a generic file."""
     return {}, {'description': ''}, {'basename': path.basename(filename), 'attrs': {}}
 

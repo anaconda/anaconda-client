@@ -1,5 +1,3 @@
-# pylint: disable=missing-function-docstring
-
 """
 Log out from binstar
 """

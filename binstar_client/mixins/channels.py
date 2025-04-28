@@ -1,5 +1,3 @@
-# pylint: disable=missing-class-docstring
-
 """
 Created on May 2, 2014
 
@@ -35,7 +33,7 @@ class ChannelsMixin:
         self._check_response(res, [200])
         return res.json()
 
-    def add_channel(  # pylint: disable=too-many-arguments
+    def add_channel(
             self, channel, owner, package=None, version=None, filename=None):
         """
         Add a channel to the specified files
@@ -52,7 +50,7 @@ class ChannelsMixin:
         res = self.session.post(url, data=data, headers=headers)
         self._check_response(res, [201])
 
-    def remove_channel(  # pylint: disable=too-many-arguments
+    def remove_channel(
             self, channel, owner, package=None, version=None, filename=None):
         """
         Remove a channel from the specified files.

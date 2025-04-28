@@ -1,6 +1,4 @@
 # -*- coding: utf8 -*-
-# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
-
 from __future__ import annotations
 
 import collections
@@ -124,7 +122,7 @@ def recursive_update(config, update_dict):
 def get_server_api(token=None, site=None, cls=None, config=None, **kwargs):
     """Get the anaconda server api class."""
     if not cls:
-        from binstar_client import Binstar  # pylint: disable=import-outside-toplevel,cyclic-import
+        from binstar_client import Binstar
 
         cls = Binstar
 
@@ -180,7 +178,7 @@ TOKEN_DIRS = [
 ]
 TOKEN_DIR = TOKEN_DIRS[-1]
 if c_client is not None:
-    conda_token_dir = c_client._get_binstar_token_directory()  # pylint: disable=W0212
+    conda_token_dir = c_client._get_binstar_token_directory()
     if conda_token_dir != TOKEN_DIRS[0]:
         warnings.warn(
             'conda and anaconda-client have conflicting token paths:\n'
@@ -207,7 +205,7 @@ def store_token(token, args):
 
         if os.path.isfile(tokenfile):
             os.unlink(tokenfile)
-        with open(tokenfile, 'w') as file:  # pylint: disable=unspecified-encoding
+        with open(tokenfile, 'w') as file:
             file.write(token)
         os.chmod(tokenfile, stat.S_IWRITE | stat.S_IREAD)
 
@@ -226,7 +224,7 @@ def load_token(url):
 
         if os.path.isfile(tokenfile):
             logger.debug('Found login token: %s', tokenfile)
-            with open(tokenfile) as file:  # pylint: disable=unspecified-encoding
+            with open(tokenfile) as file:
                 token = file.read().strip()
 
             if token:
@@ -254,7 +252,7 @@ def load_config(config_file):
     warn_msg = None
 
     try:
-        with open(config_file) as file:  # pylint: disable=unspecified-encoding
+        with open(config_file) as file:
             data = yaml_load(file) or data
     except yaml.YAMLError:
         backup_file = config_file + '.bak'
@@ -342,7 +340,7 @@ def save_config(data, config_file):
         os.makedirs(os.path.dirname(config_file), exist_ok=True)
 
         temp_file = config_file + '~'
-        with open(temp_file, 'w') as stream:  # pylint: disable=unspecified-encoding
+        with open(temp_file, 'w') as stream:
             yaml_dump(data, stream=stream)
 
         os.replace(temp_file, config_file)

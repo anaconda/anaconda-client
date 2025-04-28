@@ -1,5 +1,3 @@
-# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
-
 class BinstarError(Exception):
 
     def __init__(self, *args):

@@ -1,5 +1,3 @@
-# pylint: disable=missing-function-docstring
-
 """
 Copy packages from one account to another
 """
@@ -37,7 +35,7 @@ def main(args):
             ))
 
     files = aserver_api.copy(
-        spec.user, spec.package, spec.version, spec._basename,  # pylint: disable=protected-access
+        spec.user, spec.package, spec.version, spec._basename,
         to_owner=args.to_owner, from_label=from_label, to_label=to_label, replace=args.replace, update=args.update
     )
 
@@ -81,8 +79,6 @@ def _exclusive_method(ctx: typer.Context, param: typer.CallbackParam, value: str
     one of the options in the group is used.
 
     """
-    # pylint: disable=invalid-name
-    # pylint: disable=protected-access
     if getattr(ctx, '_methods', None) is None:
         ctx._methods = set()  # type: ignore[attr-defined]
     if value:
@@ -133,7 +129,6 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             callback=_exclusive_method,
         ),
     ) -> None:
-        # pylint: disable=too-many-arguments
         args = argparse.Namespace(
             token=ctx.obj.params.get('token'),
             site=ctx.obj.params.get('site'),

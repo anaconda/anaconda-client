@@ -1,7 +1,3 @@
-# pylint: disable=missing-class-docstring
-# pylint: disable=missing-function-docstring
-# pylint: disable=too-many-arguments
-# pylint: disable=too-many-locals
 """
 Manage Authentication tokens
 
@@ -149,13 +145,13 @@ def show_auths(authentications: typing.Sequence[typing.Mapping[str, typing.Any]]
     logger.info('')
 
 
-def main(args):  # pylint: disable=too-many-branches
+def main(args):
     aserver_api = get_server_api(args.token, args.site)
     if args.info:
         data = aserver_api.authentication()
         logger.info('Name: %s', data['application'])
         logger.info('Id: %s', data['id'])
-    if args.list:  # pylint: disable=no-else-return
+    if args.list:
         show_auths(aserver_api.authentications())
         return
     elif args.remove:
@@ -177,7 +173,7 @@ def main(args):  # pylint: disable=too-many-branches
         try:
             current_user = aserver_api.user()
             username = current_user['login']
-        except Exception:  # pylint: disable=broad-except
+        except Exception:
             if auth_type == 'kerberos':
                 logger.error("Kerberos authentication needed, please use 'anaconda login' to authenticate")
                 return
@@ -196,7 +192,7 @@ def main(args):  # pylint: disable=too-many-branches
         for _ in range(3):
             try:
                 if auth_type == 'kerberos':
-                    token = aserver_api._authenticate(  # pylint: disable=protected-access
+                    token = aserver_api._authenticate(
                         None,
                         args.name,
                         application_url=args.url,
@@ -284,8 +280,6 @@ def _exclusive_action(ctx: typer.Context, param: typer.CallbackParam, value: str
     one of the options in the group is used.
 
     """
-    # pylint: disable=invalid-name
-    # pylint: disable=protected-access
     if getattr(ctx, '_actions', None) is None:
         ctx._actions = set()  # type: ignore[attr-defined]
     if value:

@@ -1,6 +1,4 @@
 # -*- coding: utf8 -*-
-# pylint: disable=missing-function-docstring
-
 """Tests for package upload commands."""
 
 import json

@@ -1,6 +1,4 @@
 # -*- coding: utf8 -*-
-# pylint: disable=missing-function-docstring
-
 """Tests for metadata update commands."""
 
 import json
@@ -10,7 +8,7 @@ from tests.fixture import CLITestCase, main
 from tests.urlmock import urlpatch
 from tests.utils.utils import data_dir
 
-with open(data_dir('metadata.json'), 'r') as f:  # pylint: disable=unspecified-encoding
+with open(data_dir('metadata.json'), 'r') as f:
     json_test_data = json.load(f)
 
 package_test_data = {

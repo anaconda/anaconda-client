@@ -1,5 +1,3 @@
-# pylint: disable=missing-function-docstring
-
 """
 Usage:
     anaconda download <package_name>

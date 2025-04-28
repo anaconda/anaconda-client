@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-
-# pylint: disable=broad-except,protected-access,missing-function-docstring
-
 """
 Move packages between labels.
 """

@@ -1,5 +1,3 @@
-# pylint: disable=missing-module-docstring,missing-function-docstring
-
 from __future__ import print_function, unicode_literals
 
 from fnmatch import fnmatch

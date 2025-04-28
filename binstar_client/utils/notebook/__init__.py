@@ -1,4 +1,3 @@
-# pylint: disable=missing-module-docstring,missing-function-docstring
 from urllib.parse import urlparse
 
 import nbformat
@@ -39,7 +38,7 @@ def has_environment(nb_file):
         return False
 
     try:
-        with open(nb_file) as file:  # pylint: disable=unspecified-encoding
+        with open(nb_file) as file:
             data = file.read()
         notebook = nbformat.reader.reads(data)
         return 'environment' in notebook['metadata']

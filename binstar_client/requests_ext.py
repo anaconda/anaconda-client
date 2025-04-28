@@ -1,6 +1,4 @@
 # -*- coding: utf8 -*-
-# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
-
 from __future__ import annotations
 
 from io import BytesIO, StringIO
@@ -29,7 +27,7 @@ def iter_fields(
     return iter(fields)
 
 
-class NullAuth(AuthBase):  # pylint: disable=too-few-public-methods
+class NullAuth(AuthBase):
     """force requests to ignore the ``.netrc``
 
     Some sites do not support regular authentication, but we still
@@ -87,7 +85,7 @@ def encode_multipart_formdata_stream(fields, boundary=None):
                 filename, data, content_type = value
             else:
                 filename, data = value
-                from mimetypes import guess_type  # pylint: disable=import-outside-toplevel
+                from mimetypes import guess_type
                 content_type, _ = guess_type(filename)
                 if content_type is None:
                     content_type = 'application/octet-stream'
@@ -126,7 +124,7 @@ class MultiPartIO:
         self.callback = callback
         self.cursor = None
 
-    def read(self, n=-1):  # pylint: disable=invalid-name
+    def read(self, n=-1):
         if self.callback:
             self.callback(self.tell(), self._total)
 
@@ -158,13 +156,15 @@ class MultiPartIO:
         if mode == 0:
             self.to_read = self.have_read + self.to_read
             self.have_read = []
-            [fd.seek(pos, mode) for fd in self.to_read]  # pylint: disable=expression-not-assigned
+            for fd in self.to_read:
+                fd.seek(pos, mode)
             self.cursor = 0
 
         elif mode == 2:
             self.have_read = self.have_read + self.to_read
             self.to_read = []
-            [fd.seek(pos, mode) for fd in self.have_read]  # pylint: disable=expression-not-assigned
+            for fd in self.have_read:
+                fd.seek(pos, mode)
             self._total = self.tell()
 
 

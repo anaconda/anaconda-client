@@ -1,5 +1,3 @@
-# pylint: disable=missing-class-docstring,missing-function-docstring
-
 """
 Created on May 23, 2014.
 
@@ -10,9 +8,9 @@ from binstar_client.utils import jencode
 from binstar_client.errors import Conflict
 
 
-class PackageMixin:  # pylint: disable=too-few-public-methods
+class PackageMixin:
 
-    def copy(self, owner, package, version, basename=None,  # pylint: disable=too-many-arguments,too-many-locals
+    def copy(self, owner, package, version, basename=None,
              to_owner=None, from_label='main', to_label='main', replace=False, update=False):
 
         copy_path = '/'.join((owner, package, version, basename or ''))

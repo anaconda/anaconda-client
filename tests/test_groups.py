@@ -1,6 +1,4 @@
 # -*- coding: utf8 -*-
-# pylint: disable=missing-function-docstring
-
 """Tests for group management commands."""
 
 from binstar_client import errors

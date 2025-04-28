@@ -1,6 +1,4 @@
 # -*- coding: utf8 -*-
-# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
-
 from __future__ import annotations
 
 __all__ = ['upload_project']
@@ -47,7 +45,7 @@ class _TmpDir:
     ) -> None:
         try:
             shutil.rmtree(path=self._dir)
-        except Exception as error:  # pylint: disable=broad-except
+        except Exception as error:
             logger.debug('Failed to clean up TmpDir "%s": %s', self._dir, str(error))
 
 
@@ -57,7 +55,6 @@ def _real_upload_project(
         username: str
 ) -> UploadedProject:
     try:
-        # pylint: disable=import-outside-toplevel
         from anaconda_project import project_ops
     except ImportError as error:
         raise errors.BinstarError('anaconda-project package is not installed') from error
@@ -87,7 +84,6 @@ def _real_upload_project(
 
 def upload_project(project_path: str, args: argparse.Namespace, username: str) -> UploadedProject:
     try:
-        # pylint: disable=import-outside-toplevel
         from anaconda_project import project
         from anaconda_project import project_ops
     except ImportError as error:

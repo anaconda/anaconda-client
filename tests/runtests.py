@@ -14,7 +14,7 @@ import binstar_client
 from tests.runner import ColorTextTestRunner
 
 
-def main():  # pylint: disable=missing-function-docstring
+def main():
     parser = ArgumentParser()
     parser.add_argument('--html', action='store_true')
     parser.add_argument('source_dir', nargs='?', default='')

@@ -1,5 +1,3 @@
-# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
-
 import unittest
 from binstar_client.utils.notebook import inflection
 

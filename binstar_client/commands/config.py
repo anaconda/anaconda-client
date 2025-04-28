@@ -1,7 +1,3 @@
-# pylint: disable=fixme
-# pylint: disable=missing-function-docstring
-# pylint: disable=too-many-arguments
-
 """
 anaconda-client configuration
 

@@ -1,5 +1,3 @@
-# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
-
 import tqdm
 
 import binstar_client
@@ -71,7 +69,7 @@ class ProjectUploader(binstar_client.Binstar):
         data, headers = jencode(self.project.to_project_creation())
         return self.session.get(url, data=data, headers=headers)
 
-    def upload(self):  # pylint: disable=arguments-differ
+    def upload(self):
         """
         * Check if project already exists
             * if it doesn't, then create it

@@ -1,5 +1,3 @@
-# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring,invalid-name
-
 """
 Created on Sep 23, 2013
 
@@ -93,7 +91,7 @@ class ColorTextTestResult(TextTestResult):
 
 class ColorTextTestRunner(TextTestRunner):
 
-    def __init__(self,  # pylint: disable=unspecified-encoding,too-many-arguments
+    def __init__(self,
                  stream=sys.stderr, descriptions=True, verbosity=1,
                  failfast=False, buffer=False, resultclass=ColorTextTestResult):
 

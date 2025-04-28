@@ -57,7 +57,6 @@ def file_or_token(value: str) -> str:
 
 
 def _json_action(action):
-    # pylint: disable=protected-access  # intentional access of argparse object members
     a_data = dict(action._get_kwargs())
 
     if a_data.get('help'):
@@ -82,7 +81,6 @@ def _json_action(action):
 
 
 def _json_group(group):
-    # pylint: disable=protected-access  # intentional access of argparse object members
     grp_data = {
         'description': group.description,
         'title': group.title,
@@ -96,12 +94,10 @@ def _json_group(group):
 
 
 class _JSONHelp(argparse.Action):
-    # pylint: disable-next=redefined-builtin
     def __init__(self, option_strings, dest, nargs=0, help=argparse.SUPPRESS, **kwargs):
         argparse.Action.__init__(self, option_strings, dest, nargs=nargs, help=help, **kwargs)
 
     def __call__(self, parser, namespace, values, option_string=None):
-        # pylint: disable=protected-access  # intentional access of argparse object members
         self.nargs = 0
         docs = {
             'prog': parser.prog,

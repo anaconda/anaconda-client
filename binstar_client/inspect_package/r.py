@@ -1,5 +1,3 @@
-# pylint: disable=missing-module-docstring,missing-function-docstring
-
 import tarfile
 import email.parser
 from os import path
@@ -18,7 +16,7 @@ def parse_package_list(package_spec):
     ]
 
 
-def inspect_r_package(filename, fileobj, *args, **kwargs):  # pylint: disable=unused-argument,too-many-locals
+def inspect_r_package(filename, fileobj, *args, **kwargs):
 
     with tarfile.open(filename, fileobj=fileobj) as tar_file:
         pkg_info = next(name for name in tar_file.getnames() if name.endswith('/DESCRIPTION'))
@@ -39,7 +37,7 @@ def inspect_r_package(filename, fileobj, *args, **kwargs):  # pylint: disable=un
     built = raw_attrs.get('Built')
 
     if built:
-        r, _, date, platform = built.split(';')  # pylint: disable=unused-variable
+        r, _, date, platform = built.split(';')
         r_version = r.strip('R ')
         attrs['R'] = r_version
         attrs['os'] = platform.strip()

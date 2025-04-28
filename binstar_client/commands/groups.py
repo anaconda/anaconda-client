@@ -1,7 +1,3 @@
-# pylint: disable=missing-class-docstring
-# pylint: disable=missing-function-docstring
-# pylint: disable=missing-module-docstring
-
 import argparse
 import logging
 from enum import Enum
@@ -26,7 +22,7 @@ def main(args):
         aserver_api.add_group(spec.org, spec.group_name, args.perms)
         logger.info('Created the group %s', spec)
     elif action == 'show':
-        if spec._group_name:  # pylint: disable=protected-access
+        if spec._group_name:
             result = aserver_api.group(spec.org, spec.group_name)
         else:
             result = aserver_api.groups(spec.org)

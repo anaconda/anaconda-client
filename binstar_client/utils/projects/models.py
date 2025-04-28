@@ -1,5 +1,3 @@
-# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
-
 import inspect
 import os
 import tarfile
@@ -9,7 +7,7 @@ from binstar_client.errors import BinstarError
 
 class CondaProject:
     # NOTE: This class will be moved into Anaconda-Project
-    def __init__(self, project_path, *args, **kwargs):  # pylint: disable=unused-argument
+    def __init__(self, project_path, *args, **kwargs):
 
         self.project_path = project_path
         self._name = None
@@ -27,7 +25,10 @@ class CondaProject:
             if value
         }
 
-    def tar_it(self, file=SpooledTemporaryFile()):  # pylint: disable=consider-using-with
+    def tar_it(self, file=None):
+        if file is None:
+            file = SpooledTemporaryFile()
+
         with tarfile.open(mode='w', fileobj=file) as tar:
             for pfile in self.pfiles:
                 tar.add(pfile.fullpath, arcname=pfile.relativepath)

@@ -141,7 +141,7 @@ class TableDesign:
         """Vertical borders between cells on the left of it and on the right"""
         return self.__vertical_view
 
-    def with_border_style(  # pylint: disable=too-many-arguments
+    def with_border_style(
             self,
             horizontal: str,
             vertical: str,
@@ -158,7 +158,6 @@ class TableDesign:
             This would create a new :class:`~TableDesign` with requested modifications. There would be no modifications
             to the original instance.
         """
-        # pylint: disable=protected-access
         result: 'TableDesign' = self.__copy()
         result.__horizontal[EMPTY, ANY] = horizontal
         result.__horizontal[ANY, EMPTY] = horizontal
@@ -170,7 +169,7 @@ class TableDesign:
         result.__vertical[ANY, EMPTY] = vertical
         return result
 
-    def with_border_transition(  # pylint: disable=too-many-arguments
+    def with_border_transition(
             self,
             kind: str,
             top: str,
@@ -186,7 +185,6 @@ class TableDesign:
             This would create a new :class:`~TableDesign` with requested modifications. There would be no modifications
             to the original instance.
         """
-        # pylint: disable=protected-access
         result: 'TableDesign' = self.__copy()
         result.__intersection[EMPTY, EMPTY, kind, kind] = top
         result.__intersection[EMPTY, kind, EMPTY, kind] = left
@@ -209,7 +207,6 @@ class TableDesign:
             This would create a new :class:`~TableDesign` with requested modifications. There would be no modifications
             to the original instance.
         """
-        # pylint: disable=protected-access
         result: 'TableDesign' = self.__copy()
         result.__horizontal[kind, kind] = horizontal
         result.__intersection[kind, kind, kind, kind] = intersection
@@ -230,12 +227,11 @@ class TableDesign:
             This would create a new :class:`~TableDesign` with requested modifications. There would be no modifications
             to the original instance.
         """
-        # pylint: disable=protected-access
         result: 'TableDesign' = self.__copy()
         result.__horizontal[top_kind, bottom_kind] = value
         return result
 
-    def with_intersection(  # pylint: disable=too-many-arguments
+    def with_intersection(
             self,
             top_left_kind: str,
             top_right_kind: str,
@@ -251,7 +247,6 @@ class TableDesign:
             This would create a new :class:`~TableDesign` with requested modifications. There would be no modifications
             to the original instance.
         """
-        # pylint: disable=protected-access
         result: 'TableDesign' = self.__copy()
         result.__intersection[top_left_kind, top_right_kind, bottom_left_kind, bottom_right_kind] = value
         return result
@@ -270,7 +265,6 @@ class TableDesign:
             This would create a new :class:`~TableDesign` with requested modifications. There would be no modifications
             to the original instance.
         """
-        # pylint: disable=protected-access
         result: 'TableDesign' = self.__copy()
         result.__vertical[left_kind, right_kind] = value
         return result
@@ -281,7 +275,6 @@ class TableDesign:
 
         Used for safe modifications without any changes to the original value.
         """
-        # pylint: disable=protected-access
         result: 'TableDesign' = TableDesign()
         result.__horizontal.update(self.__horizontal)
         result.__intersection.update(self.__intersection)
@@ -559,7 +552,7 @@ class TableCore:
         widths[index] = max(widths[index], len(design.intersection[prev_prev, EMPTY, EMPTY, EMPTY]))
 
         # normalization
-        for index in range(len(widths)):  # pylint: disable=consider-using-enumerate
+        for index in range(len(widths)):
             temp = widths[index] % steps[index]
             if temp > 0:
                 widths[index] += steps[index] - temp
