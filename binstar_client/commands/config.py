@@ -85,7 +85,9 @@ from ..utils.yaml import yaml_dump, safe_load
 
 logger = logging.getLogger('binstar.config')
 
-DEPRECATED = {'verify_ssl': 'Please use ssl_verify instead'}
+DEPRECATED = {
+    'verify_ssl': 'Please use ssl_verify instead',
+}
 
 
 def recursive_set(config_data, key, value, type_):
