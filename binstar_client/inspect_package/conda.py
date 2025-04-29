@@ -52,9 +52,7 @@ def transform_conda_deps(deps):
             else:
                 operator = '=='
 
-            depends.append(
-                {'name': name, 'specs': [['==', '%s+%s' % (spec, build_str)]]}
-            )
+            depends.append({'name': name, 'specs': [['==', '%s+%s' % (spec, build_str)]]})
 
     return {'depends': depends}
 
@@ -145,7 +143,7 @@ def inspect_conda_info_dir(info_contents: dict[str, bytes], basename: str) -> tu
             'target-triplet': '%s-any-%s' % (machine, operatingsystem),
             'has_prefix': has_prefix,
             'subdir': subdir,
-        }
+        },
     }
 
     file_data['attrs'].update(index)
@@ -171,9 +169,7 @@ def gather_info_dir(
     have: dict[str, bytes] = {}
     seeking = set(wanted)
     with open(path, mode='rb') as fileobj:
-        package_stream = stream_conda_component(
-            path, fileobj, CondaComponent.info
-        )
+        package_stream = stream_conda_component(path, fileobj, CondaComponent.info)
         for tar, member in package_stream:
             if member.name in wanted:
                 seeking.remove(member.name)
@@ -198,9 +194,7 @@ def gather_info_dir(
 
 def inspect_conda_package(filename, *args, **kwargs):
     info_contents = gather_info_dir(filename)
-    package_data, release_data, file_data = inspect_conda_info_dir(
-        info_contents, os.path.basename(filename)
-    )
+    package_data, release_data, file_data = inspect_conda_info_dir(info_contents, os.path.basename(filename))
     return package_data, release_data, file_data
 
 

@@ -13,7 +13,8 @@ from functools import wraps
 import requests
 
 Rule = namedtuple(
-    'Rule', ('url', 'path', 'method', 'status', 'content', 'side_effect', 'res', 'headers', 'expected_headers'))
+    'Rule', ('url', 'path', 'method', 'status', 'content', 'side_effect', 'res', 'headers', 'expected_headers')
+)
 
 
 class Responses:
@@ -66,11 +67,11 @@ class Registry:
         return True
 
     def find_rule(self, prepared_request):
-        return next((stored_rule for stored_rule in self._map[::-1]
-                     if self.filter_request(stored_rule, prepared_request)), None)
+        return next(
+            (stored_rule for stored_rule in self._map[::-1] if self.filter_request(stored_rule, prepared_request)), None
+        )
 
     def mock_send(self, prepared_request, *args, **kwargs):
-
         rule = self.find_rule(prepared_request)
 
         if rule is None:
@@ -88,7 +89,10 @@ class Registry:
                 if prepared_request.headers[header] != value:
                     raise Exception(
                         '{}: header {} has unexpected value {} was expecting {}'.format(
-                            prepared_request.url, header, prepared_request.headers[header], value,
+                            prepared_request.url,
+                            header,
+                            prepared_request.headers[header],
+                            value,
                         ),
                     )
 
@@ -112,8 +116,17 @@ class Registry:
 
         return res
 
-    def register(self, url=None, path=None, method='GET', status=200, content=b'',
-                 side_effect=None, headers=None, expected_headers=None):
+    def register(
+        self,
+        url=None,
+        path=None,
+        method='GET',
+        status=200,
+        content=b'',
+        side_effect=None,
+        headers=None,
+        expected_headers=None,
+    ):
         res = Responses()
         self._map.append(Rule(url, path, method, status, content, side_effect, res, headers, expected_headers))
         return res

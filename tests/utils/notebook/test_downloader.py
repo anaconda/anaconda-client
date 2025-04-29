@@ -4,11 +4,13 @@ from unittest import mock
 from binstar_client.utils.notebook.downloader import Downloader
 from tests.utils.utils import data_dir
 
-files = {'files': [
-    {'basename': 'notebook', 'version': '1'},
-    {'basename': 'notebook', 'version': '2'},
-    {'basename': 'data', 'version': '2'}
-]}
+files = {
+    'files': [
+        {'basename': 'notebook', 'version': '1'},
+        {'basename': 'notebook', 'version': '2'},
+        {'basename': 'data', 'version': '2'},
+    ]
+}
 
 
 class DownloaderTestCase(unittest.TestCase):
@@ -30,11 +32,11 @@ class DownloaderTestCase(unittest.TestCase):
         self.assertTrue(downloader.can_download(package_2))
 
     def test_list_old_files(self):
-        old_files = {'files': [{
-            'basename': 'old-notebook',
-            'version': '1.0.0',
-            'upload_time': '2015-04-02 22:32:31.253000+00:00'
-        }]}
+        old_files = {
+            'files': [
+                {'basename': 'old-notebook', 'version': '1.0.0', 'upload_time': '2015-04-02 22:32:31.253000+00:00'}
+            ]
+        }
         aserver_api = mock.MagicMock()
         aserver_api.package = mock.MagicMock(return_value=old_files)
 

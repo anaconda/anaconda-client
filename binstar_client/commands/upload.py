@@ -83,8 +83,8 @@ class CacheRecord:
 
     @staticmethod
     def cleanup(
-            storage: typing.Dict[KeyT, CacheRecordT],
-            action: typing.Optional[typing.Callable[[KeyT, CacheRecordT], typing.Any]] = None,
+        storage: typing.Dict[KeyT, CacheRecordT],
+        action: typing.Optional[typing.Callable[[KeyT, CacheRecordT], typing.Any]] = None,
     ) -> int:
         """
         Remove all empty records from :code:`storage`.
@@ -145,8 +145,13 @@ class PackageMeta:
     """Collected details on a package file being currently uploaded."""
 
     __slots__ = (
-        'filename', 'meta',
-        '__file_attrs', '__name', '__package_attrs', '__release_attrs', '__version',
+        'filename',
+        'meta',
+        '__file_attrs',
+        '__name',
+        '__package_attrs',
+        '__release_attrs',
+        '__version',
     )
 
     def __init__(self, filename: str, meta: detect.Meta) -> None:
@@ -252,7 +257,10 @@ class PackageMeta:
         logger.info('Extracting %s attributes for upload', self.package_type.label.lower())
         try:
             self.__package_attrs, self.__release_attrs, self.__file_attrs = detect.get_attrs(
-                self.package_type, self.filename, *args, **kwargs,
+                self.package_type,
+                self.filename,
+                *args,
+                **kwargs,
             )
         except Exception as error:
             message: str = (
@@ -309,9 +317,14 @@ class Uploader:
     """Manager for package and project uploads."""
 
     __slots__ = (
-        'arguments', 'uploaded_packages', 'uploaded_projects',
-        '__api', '__config', '__username',
-        '__package_cache', '__release_cache',
+        'arguments',
+        'uploaded_packages',
+        'uploaded_projects',
+        '__api',
+        '__config',
+        '__username',
+        '__package_cache',
+        '__release_cache',
     )
 
     def __init__(self, arguments: argparse.Namespace) -> None:
@@ -368,6 +381,7 @@ class Uploader:
 
         Package or release considered to be empty if it was created to upload files to, but all file uploads failed.
         """
+
         def remove_empty_release(_key: ReleaseKey, record: ReleaseCacheRecord) -> None:
             try:
                 if not self.api.release(self.username, record.name, record.version).get('distributions', []):
@@ -401,9 +415,7 @@ class Uploader:
         try:
             instance: typing.Mapping[str, typing.Any] = self.api.package(self.username, meta.name)
             cache_record = PackageCacheRecord(
-                name=meta.name,
-                empty=False,
-                package_types=list(map(PackageType, instance.get('package_types', ())))
+                name=meta.name, empty=False, package_types=list(map(PackageType, instance.get('package_types', ())))
             )
         except errors.NotFound as error:
             if not self.arguments.auto_register:
@@ -568,7 +580,10 @@ class Uploader:
                 'Distribution already exists. '
                 'Please use the -i/--interactive or --force or --skip options or `anaconda remove %s/%s/%s/%s`'
             ),
-            self.username, meta.name, meta.version, basename,
+            self.username,
+            meta.name,
+            meta.version,
+            basename,
         )
         raise errors.Conflict(f'file {basename} already exists for package {meta.name} version {meta.version}', 409)
 
@@ -592,14 +607,16 @@ class Uploader:
                 channels=self.arguments.labels,
             )
 
-        self.uploaded_packages.append({
-            'package_type': meta.package_type,
-            'username': self.username,
-            'name': meta.name,
-            'version': meta.version,
-            'basename': basename,
-            'url': result.get('url', f'https://anaconda.org/{self.username}/{meta.name}'),
-        })
+        self.uploaded_packages.append(
+            {
+                'package_type': meta.package_type,
+                'username': self.username,
+                'name': meta.name,
+                'version': meta.version,
+                'basename': basename,
+                'url': result.get('url', f'https://anaconda.org/{self.username}/{meta.name}'),
+            }
+        )
         self.__package_cache[meta.package_key].update(meta.package_type)
         self.__release_cache[meta.release_key].update()
         logger.info('Upload complete\n')
@@ -660,7 +677,8 @@ def add_parser(subparsers: typing.Any) -> None:
     parser: argparse.ArgumentParser = subparsers.add_parser(
         'upload',
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        help=description, description=description,
+        help=description,
+        description=description,
         epilog=__doc__,
     )
 
@@ -673,7 +691,8 @@ def add_parser(subparsers: typing.Any) -> None:
     )
 
     parser.add_argument(
-        '-c', '--channel',
+        '-c',
+        '--channel',
         action='append',
         default=[],
         dest='labels',
@@ -681,7 +700,8 @@ def add_parser(subparsers: typing.Any) -> None:
         metavar='CHANNELS',
     )
     parser.add_argument(
-        '-l', '--label',
+        '-l',
+        '--label',
         action='append',
         dest='labels',
         help=label_help.format(deprecation='', label='label'),
@@ -692,7 +712,8 @@ def add_parser(subparsers: typing.Any) -> None:
         action='store_true',
     )
     parser.add_argument(
-        '-u', '--user',
+        '-u',
+        '--user',
         help='User account or Organization, defaults to the current user',
     )
     parser.add_argument(
@@ -702,28 +723,33 @@ def add_parser(subparsers: typing.Any) -> None:
             'Do not normalize a basename when uploading a conda package. '
             'Note: this parameter only applies to conda, and not standard Python packages.'
         ),
-        action='store_true'
+        action='store_true',
     )
 
     mgroup = parser.add_argument_group('metadata options')
     mgroup.add_argument(
-        '-p', '--package',
+        '-p',
+        '--package',
         help='Defaults to the package name in the uploaded file',
     )
     mgroup.add_argument(
-        '-v', '--version',
+        '-v',
+        '--version',
         help='Defaults to the package version in the uploaded file',
     )
     mgroup.add_argument(
-        '-s', '--summary',
+        '-s',
+        '--summary',
         help='Set the summary of the package',
     )
     mgroup.add_argument(
-        '-t', '--package-type',
+        '-t',
+        '--package-type',
         help='Set the package type. Defaults to autodetect',
     )
     mgroup.add_argument(
-        '-d', '--description',
+        '-d',
+        '--description',
         help='description of the file(s)',
     )
     mgroup.add_argument(
@@ -758,14 +784,16 @@ def add_parser(subparsers: typing.Any) -> None:
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument(
-        '-i', '--interactive',
+        '-i',
+        '--interactive',
         action='store_const',
         help='Run an interactive prompt if any packages are missing',
         dest='mode',
         const='interactive',
     )
     group.add_argument(
-        '-f', '--fail',
+        '-f',
+        '--fail',
         help='Fail if a package or release does not exist (default)',
         action='store_const',
         dest='mode',
@@ -786,7 +814,8 @@ def add_parser(subparsers: typing.Any) -> None:
         const='skip',
     )
     group.add_argument(
-        '-m', '--force-metadata-update',
+        '-m',
+        '--force-metadata-update',
         action='store_true',
         help='Overwrite existing release metadata with the metadata from the package.',
     )
@@ -807,7 +836,7 @@ def _exclusive_mode(ctx: typer.Context, param: typer.CallbackParam, value: str) 
     if value:
         if ctx._modes:  # type: ignore[attr-defined]
             # Another option was already used
-            used_mode, = ctx._modes  # type: ignore[attr-defined]
+            (used_mode,) = ctx._modes  # type: ignore[attr-defined]
             raise typer.BadParameter(f'mutually exclusive with {used_mode}')
         # Store the used one for potential next option
         # noqa: C0103
@@ -849,7 +878,9 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         ),
         progress: bool = typer.Option(True, is_flag=True, help='Show upload progress'),
         user: typing.Optional[str] = typer.Option(
-            None, '-u', '--user',
+            None,
+            '-u',
+            '--user',
             help='User account or Organization, defaults to the current user',
         ),
         keep_basename: bool = typer.Option(
@@ -858,12 +889,14 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         ),
         package: typing.Optional[str] = typer.Option(
             None,
-            '-p', '--package',
+            '-p',
+            '--package',
             help='Defaults to the package name in the uploaded file',
         ),
         version: typing.Optional[str] = typer.Option(
             None,
-            '-v', '--version',
+            '-v',
+            '--version',
             help='Defaults to the package version in the uploaded file',
         ),
         summary: typing.Optional[str] = typer.Option(
@@ -880,7 +913,8 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         ),
         description: typing.Optional[str] = typer.Option(
             None,
-            '-d', '--description',
+            '-d',
+            '--description',
             help='Description of the file(s)',
         ),
         thumbnail: typing.Optional[str] = typer.Option(None, help="Notebook's thumbnail image"),

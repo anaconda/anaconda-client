@@ -4,16 +4,7 @@ from binstar_client.errors import UserError
 
 
 class PackageSpec:
-    def __init__(
-            self,
-            user,
-            package=None,
-            version=None,
-            basename=None,
-            attrs=None,
-            spec_str=None
-    ):
-
+    def __init__(self, user, package=None, version=None, basename=None, attrs=None, spec_str=None):
         self._user = user
         self._package = package
         self._version = version

@@ -17,18 +17,11 @@ class EnvInspectorTestCase(unittest.TestCase):
 class InspectEnvironmentPackageTest(unittest.TestCase):
     def test_inspect_env_package(self):
         with open(data_dir('environment.yml')) as fileobj:
-            package_data, release_data, file_data = inspect_env_package(
-                'environment.yml', fileobj)
+            package_data, release_data, file_data = inspect_env_package('environment.yml', fileobj)
 
-        self.assertEqual({
-            'name': 'stats',
-            'summary': 'Environment file'
-        }, package_data)
+        self.assertEqual({'name': 'stats', 'summary': 'Environment file'}, package_data)
 
-        self.assertEqual({
-            'basename': 'environment.yml',
-            'attrs': {}
-        }, file_data)
+        self.assertEqual({'basename': 'environment.yml', 'attrs': {}}, file_data)
 
 
 if __name__ == '__main__':

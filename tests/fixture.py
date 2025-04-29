@@ -20,7 +20,6 @@ def main(args: typing.Sequence[str]) -> None:
 
 
 class AnyIO(io.StringIO):
-
     def write(self, msg):
         if hasattr('msg', 'decode'):
             msg = msg.decode()
@@ -28,7 +27,6 @@ class AnyIO(io.StringIO):
 
 
 class CLITestCase(unittest.TestCase):
-
     def setUp(self):
         self.get_config_patch = unittest.mock.patch('binstar_client.utils.get_config')
         self.get_config = self.get_config_patch.start()

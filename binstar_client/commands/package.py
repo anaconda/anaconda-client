@@ -16,7 +16,6 @@ logger = logging.getLogger('binstar.package')
 
 
 def main(args):
-
     aserver_api = get_server_api(args.token, args.site)
     spec = args.spec
 
@@ -33,20 +32,21 @@ def main(args):
             logger.info(collab['login'])
     elif args.create:
         public = args.access != 'private'
-        aserver_api.add_package(args.spec.user, args.spec.package, args.summary,
-                                public=public,
-                                license=args.license, license_url=args.license_url)
+        aserver_api.add_package(
+            args.spec.user,
+            args.spec.package,
+            args.summary,
+            public=public,
+            license=args.license,
+            license_url=args.license_url,
+        )
         logger.info('Package created!')
 
 
 def add_parser(subparsers):
+    parser = subparsers.add_parser('package', help='Package utils', description=__doc__)
 
-    parser = subparsers.add_parser('package',
-                                   help='Package utils',
-                                   description=__doc__)
-
-    parser.add_argument('spec', help='Package to operate on', type=parse_specs,
-                        metavar='USER/PACKAGE')
+    parser.add_argument('spec', help='Package to operate on', type=parse_specs, metavar='USER/PACKAGE')
     agroup = parser.add_argument_group('actions')
     group = agroup.add_mutually_exclusive_group(required=True)
     group.add_argument('--add-collaborator', metavar='user', help='username of the collaborator you want to add')
@@ -60,12 +60,22 @@ def add_parser(subparsers):
 
     pgroup = parser.add_argument_group('privacy')
     group = pgroup.add_mutually_exclusive_group(required=False)
-    group.add_argument('--personal', action='store_const', const='personal', dest='access',
-                       help=('Set the package access to personal '
-                             'This package will be available only on your personal registries'))
-    group.add_argument('--private', action='store_const', const='private', dest='access',
-                       help=('Set the package access to private '
-                             'This package will require authorized and authenticated access to install'))
+    group.add_argument(
+        '--personal',
+        action='store_const',
+        const='personal',
+        dest='access',
+        help=('Set the package access to personal This package will be available only on your personal registries'),
+    )
+    group.add_argument(
+        '--private',
+        action='store_const',
+        const='private',
+        dest='access',
+        help=(
+            'Set the package access to private This package will require authorized and authenticated access to install'
+        ),
+    )
 
     parser.set_defaults(main=main)
 
@@ -81,14 +91,13 @@ def _exclusive_action(ctx: typer.Context, param: typer.CallbackParam, value: str
         ctx._actions = set()  # type: ignore[attr-defined]
     if value:
         if ctx._actions:  # type: ignore[attr-defined]
-            used_action, = ctx._actions  # type: ignore[attr-defined]
+            (used_action,) = ctx._actions  # type: ignore[attr-defined]
             raise typer.BadParameter(f'mutually exclusive with {used_action}')
         ctx._actions.add(' / '.join(f"'{o}'" for o in param.opts))  # type: ignore[attr-defined]
     return value
 
 
 def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, context_settings: dict) -> None:
-
     @app.command(
         name=name,
         hidden=hidden,
@@ -133,17 +142,14 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         ),
         personal: bool = typer.Option(
             False,
-            help=(
-                'Set the package access to personal '
-                'This package will be available only on your personal registries'
-            )
+            help=('Set the package access to personal This package will be available only on your personal registries'),
         ),
         private: bool = typer.Option(
             False,
             help=(
                 'Set the package access to private '
                 'This package will require authorized and authenticated access to install'
-            )
+            ),
         ),
     ) -> None:
         if not any([add_collaborator, list_collaborators, create]):

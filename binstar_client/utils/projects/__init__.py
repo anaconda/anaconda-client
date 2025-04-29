@@ -30,7 +30,6 @@ class UploadedProject(typing.TypedDict):
 
 
 class _TmpDir:
-
     def __init__(self, prefix: str = '') -> None:
         self._dir: str = tempfile.mkdtemp(prefix=prefix)
 
@@ -38,10 +37,10 @@ class _TmpDir:
         return self._dir
 
     def __exit__(
-            self,
-            _type: typing.Optional[typing.Type[Exception]] = None,
-            value: typing.Optional[Exception] = None,
-            traceback: typing.Optional[types.TracebackType] = None,
+        self,
+        _type: typing.Optional[typing.Type[Exception]] = None,
+        value: typing.Optional[Exception] = None,
+        traceback: typing.Optional[types.TracebackType] = None,
     ) -> None:
         try:
             shutil.rmtree(path=self._dir)
@@ -50,9 +49,7 @@ class _TmpDir:
 
 
 def _real_upload_project(
-        project: anaconda_project.project.Project,
-        args: argparse.Namespace,
-        username: str
+    project: anaconda_project.project.Project, args: argparse.Namespace, username: str
 ) -> UploadedProject:
     try:
         from anaconda_project import project_ops
@@ -96,7 +93,7 @@ def upload_project(project_path: str, args: argparse.Namespace, username: str) -
         return _real_upload_project(new_project, args, username)
 
     # make the single file into a temporary project directory
-    with (_TmpDir(prefix='anaconda_upload_')) as dirname:
+    with _TmpDir(prefix='anaconda_upload_') as dirname:
         shutil.copy(project_path, dirname)
         basename_no_extension = os.path.splitext(os.path.basename(project_path))[0]
         new_project = project_ops.create(dirname, name=basename_no_extension)

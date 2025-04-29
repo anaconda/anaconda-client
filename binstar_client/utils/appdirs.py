@@ -5,7 +5,6 @@ import os.path
 
 
 class EnvAppDirs:
-
     def __init__(self, root_path):
         self.root_path = root_path
 

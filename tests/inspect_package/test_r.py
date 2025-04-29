@@ -9,13 +9,13 @@ from tests.utils.utils import data_dir
 expected_package_data = {
     'license': 'GPL-2 | GPL-3',
     'name': 'rfordummies',
-    'summary': 'Code Examples to Accompany the Book "R for Dummies"'
+    'summary': 'Code Examples to Accompany the Book "R for Dummies"',
 }
 
 
 expected_version_data = {
     'description': 'Contains all the code examples in the book "R for Dummies" (1st\n    edition). '
-                   'You can view the table of contents as well as the sample code for each\n    chapter.',
+    'You can view the table of contents as well as the sample code for each\n    chapter.',
     'version': '0.1.2',
 }
 

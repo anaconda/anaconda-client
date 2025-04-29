@@ -31,7 +31,8 @@ from anaconda_cli_base.cli import app as main_app, ContextExtras
 
 from binstar_client import commands as command_module
 from binstar_client.scripts.cli import (
-    _add_subparser_modules as add_subparser_modules, main as binstar_main,
+    _add_subparser_modules as add_subparser_modules,
+    main as binstar_main,
 )
 from binstar_client.utils import logging_utils
 
@@ -149,9 +150,7 @@ def cli_base_main_callback(
         help="Only show warnings or errors on the console",
         hidden=True,
     ),
-    version: Optional[bool] = typer.Option(
-        None, "-V", "--version", help="Show version and exit."
-    ),
+    version: Optional[bool] = typer.Option(None, "-V", "--version", help="Show version and exit."),
     show_help: Optional[bool] = typer.Option(
         False,
         "-h",
@@ -248,6 +247,7 @@ def _deprecate(name: str, func: Callable) -> Callable:
         f: The subcommand callable.
 
     """
+
     def new_func() -> Any:
         msg = (
             f"The existing anaconda-client commands will be deprecated. To maintain compatibility, "

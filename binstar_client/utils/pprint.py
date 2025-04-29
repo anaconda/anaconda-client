@@ -15,8 +15,8 @@ from binstar_client.utils import config
 logger = logging.getLogger('binstar.pprint')
 
 fmt_access = (
-    '     %(full_name)-32s | %(latest_version)8s | %(access)-12s | %(package_types)-17s | %(conda_platforms)-15s | ' +
-    '%(builds)-10s'
+    '     %(full_name)-32s | %(latest_version)8s | %(access)-12s | %(package_types)-17s | %(conda_platforms)-15s | '
+    + '%(builds)-10s'
 )
 fmt_no_access = (
     '     %(full_name)-32s | %(latest_version)8s | %(package_types)-17s | %(conda_platforms)-15s | %(builds)-10s'
@@ -66,28 +66,18 @@ def pprint_package(package, access=True, full_name=True, revision=False):
         package['access'] = 'private'
 
     if package.get('conda_platforms'):
-        package['conda_platforms'] = ', '.join(
-            str(item)
-            for item in package['conda_platforms']
-            if item is not None
-        )
+        package['conda_platforms'] = ', '.join(str(item) for item in package['conda_platforms'] if item is not None)
 
     if not full_name:
         package['full_name'] = package['name']
 
     if package.get('package_types'):
         package['package_types'] = ', '.join(
-            format_package_type(item)
-            for item in package['package_types']
-            if item is not None
+            format_package_type(item) for item in package['package_types'] if item is not None
         )
 
     if package.get('builds'):
-        package['builds'] = ', '.join(
-            str(item)
-            for item in package['builds']
-            if item is not None
-        )
+        package['builds'] = ', '.join(str(item) for item in package['builds'] if item is not None)
     else:
         package['builds'] = ''
 
@@ -118,7 +108,7 @@ def pprint_packages(packages, access=True, full_name=True, revisions=False):
         'conda_platforms': '-' * 15,
         'package_types': '-' * 17,
         'revision': '-' * 6,
-        'builds': '-' * 10
+        'builds': '-' * 10,
     }
 
     logger.info(fmt, package_header)

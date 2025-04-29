@@ -200,20 +200,21 @@ def main(args):
                         for_user=args.organization,
                         max_age=args.max_age,
                         strength=args.strength,
-                        fail_if_already_exists=True
+                        fail_if_already_exists=True,
                     )
                 else:
                     sys.stderr.write("Please re-enter %s's " % username)
                     password = getpass.getpass()
                     token = aserver_api.authenticate(
-                        username, password,
+                        username,
+                        password,
                         args.name,
                         application_url=args.url,
                         scopes=scopes,
                         for_user=args.organization,
                         max_age=args.max_age,
                         strength=args.strength,
-                        fail_if_already_exists=True
+                        fail_if_already_exists=True,
                     )
                 args.out.write(token)
                 break
@@ -224,39 +225,51 @@ def main(args):
 
 def add_parser(subparsers):
     description = 'Manage Authorization Tokens'
-    parser = subparsers.add_parser('auth',
-                                   help=description,
-                                   description=description,
-                                   epilog=__doc__,
-                                   formatter_class=argparse.RawDescriptionHelpFormatter)
-
-    parser.add_argument(
-        '-n', '--name',
-        default='binstar_token:%s' % (socket.gethostname()),
-        help='A unique name so you can identify this token later. View your tokens at anaconda.org/settings/access'
+    parser = subparsers.add_parser(
+        'auth',
+        help=description,
+        description=description,
+        epilog=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
-    parser.add_argument('-o', '--org', '--organization',
-                        help='Set the token owner (must be an organization)', dest='organization')
+    parser.add_argument(
+        '-n',
+        '--name',
+        default='binstar_token:%s' % (socket.gethostname()),
+        help='A unique name so you can identify this token later. View your tokens at anaconda.org/settings/access',
+    )
 
-    token_group = parser.add_argument_group('token creation arguments',
-                                            'These arguments are only valid with the `--create` action')
+    parser.add_argument(
+        '-o', '--org', '--organization', help='Set the token owner (must be an organization)', dest='organization'
+    )
+
+    token_group = parser.add_argument_group(
+        'token creation arguments', 'These arguments are only valid with the `--create` action'
+    )
 
     token_group.add_argument('--strength', choices=['strong', 'weak'], default='strong', dest='strength')
-    token_group.add_argument('--strong', action='store_const', const='strong',
-                             dest='strength', help='Create a longer token (default)')
-    token_group.add_argument('-w', '--weak', action='store_const', const='weak',
-                             dest='strength', help='Create a shorter token')
+    token_group.add_argument(
+        '--strong', action='store_const', const='strong', dest='strength', help='Create a longer token (default)'
+    )
+    token_group.add_argument(
+        '-w', '--weak', action='store_const', const='weak', dest='strength', help='Create a shorter token'
+    )
 
-    token_group.add_argument('--url', default='http://anaconda.org',
-                             help='The url of the application that will use this token')
+    token_group.add_argument(
+        '--url', default='http://anaconda.org', help='The url of the application that will use this token'
+    )
     token_group.add_argument('--max-age', type=int, help='The maximum age in seconds that this token will be valid for')
     token_group.add_argument(
-        '-s', '--scopes', action='append',
-        help=('Scopes for token. ' +
-              'For example if you want to limit this token to conda downloads only you would use ' +
-              '--scopes "repo conda:download"'),
-        default=[]
+        '-s',
+        '--scopes',
+        action='append',
+        help=(
+            'Scopes for token. '
+            + 'For example if you want to limit this token to conda downloads only you would use '
+            + '--scopes "repo conda:download"'
+        ),
+        default=[],
     )
 
     token_group.add_argument('--out', default=sys.stdout, type=argparse.FileType('w'))
@@ -267,8 +280,14 @@ def add_parser(subparsers):
     group.add_argument('-l', '--list', action='store_true', help='list all user authentication tokens')
     group.add_argument('-r', '--remove', metavar='NAME', nargs='+', help='remove authentication tokens')
     group.add_argument('-c', '--create', action='store_true', help='Create an authentication token')
-    group.add_argument('-i', '--info', '--current-info', dest='info',
-                       action='store_true', help='Show information about the current authentication token')
+    group.add_argument(
+        '-i',
+        '--info',
+        '--current-info',
+        dest='info',
+        action='store_true',
+        help='Show information about the current authentication token',
+    )
 
     parser.set_defaults(main=main)
 
@@ -284,7 +303,7 @@ def _exclusive_action(ctx: typer.Context, param: typer.CallbackParam, value: str
         ctx._actions = set()  # type: ignore[attr-defined]
     if value:
         if ctx._actions:  # type: ignore[attr-defined]
-            used_action, = ctx._actions  # type: ignore[attr-defined]
+            (used_action,) = ctx._actions  # type: ignore[attr-defined]
             raise typer.BadParameter(f'mutually exclusive with {used_action}')
         ctx._actions.add(' / '.join(f"'{o}'" for o in param.opts))  # type: ignore[attr-defined]
     return value
@@ -292,6 +311,7 @@ def _exclusive_action(ctx: typer.Context, param: typer.CallbackParam, value: str
 
 class TokenStrength(Enum):
     """Available options for strength when creating a token."""
+
     STRONG = 'strong'
     WEAK = 'weak'
 
@@ -311,7 +331,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             '-n',
             '--name',
             default_factory=lambda: f'binstar_token:{socket.gethostname()}',
-            help='A unique name so you can identify this token later. View your tokens at anaconda.org/settings/access'
+            help='A unique name so you can identify this token later. View your tokens at anaconda.org/settings/access',
         ),
         organization: typing.Optional[str] = typer.Option(
             None,
@@ -347,10 +367,10 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             '-s',
             '--scopes',
             help=(
-                'Scopes for token. ' +
-                'For example if you want to limit this token to conda downloads only you would use ' +
-                '--scopes "repo conda:download". You can also provide multiple scopes by providing ' +
-                'this option multiple times, e.g. --scopes repo --scopes conda:download.'
+                'Scopes for token. '
+                + 'For example if you want to limit this token to conda downloads only you would use '
+                + '--scopes "repo conda:download". You can also provide multiple scopes by providing '
+                + 'this option multiple times, e.g. --scopes repo --scopes conda:download.'
             ),
         ),
         out: typing.Optional[typer.FileTextWrite] = typer.Option(

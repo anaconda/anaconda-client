@@ -73,5 +73,13 @@ filterwarnings = [
 
 [tool.ruff]
 exclude = ["example-packages", "**/*.ipynb"]
+# The pylint settings had a max line length of 120, so keeping that to reduce changeset
+line-length = 120
+
+[tool.ruff.format]
+# TODO: Defer changing quote style to minimize initial changeset
+quote-style = "preserve"
+
+[tool.ruff.lint]
 # TODO: These ignores handle * imports and also unused imports. We should fix them safely.
 ignore = ["F401", "F403", "F405"]

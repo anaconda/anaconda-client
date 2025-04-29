@@ -108,9 +108,11 @@ def interactive_get_token(args, fail_if_already_exists=True):
             else:
                 netloc = parsed_url.netloc
             hostparts = (parsed_url.scheme, netloc)
-            msg = ('Sorry. Please try again ' +
-                   '(go to %s://%s/account/forgot_password ' % hostparts +
-                   'to reset your password)')
+            msg = (
+                'Sorry. Please try again '
+                + '(go to %s://%s/account/forgot_password ' % hostparts
+                + 'to reset your password)'
+            )
             raise errors.BinstarError(msg)
 
     return token
@@ -128,10 +130,15 @@ def main(args):
 
 def add_parser(subparsers):
     subparser = subparsers.add_parser('login', help='Authenticate a user', description=__doc__)
-    subparser.add_argument('--hostname', default=platform.node(),
-                           help='Specify the host name of this login, this should be unique (default: %(default)s)')
-    subparser.add_argument('--username', dest='login_username',
-                           help='Specify your username. If this is not given, you will be prompted')
-    subparser.add_argument('--password', dest='login_password',
-                           help='Specify your password. If this is not given, you will be prompted')
+    subparser.add_argument(
+        '--hostname',
+        default=platform.node(),
+        help='Specify the host name of this login, this should be unique (default: %(default)s)',
+    )
+    subparser.add_argument(
+        '--username', dest='login_username', help='Specify your username. If this is not given, you will be prompted'
+    )
+    subparser.add_argument(
+        '--password', dest='login_password', help='Specify your password. If this is not given, you will be prompted'
+    )
     subparser.set_defaults(main=main)

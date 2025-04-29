@@ -46,6 +46,7 @@ OptMeta: typing_extensions.TypeAlias = typing.Optional[Meta]
 
 def checker_for(package_type: PackageType) -> typing.Callable[[typing.Callable[P, Raw]], typing.Callable[P, OptMeta]]:
     """Convert function to a checker for a particular :code:`package_type`."""
+
     def wrapper(function: typing.Callable[P, Raw]) -> typing.Callable[P, OptMeta]:
         @functools.wraps(function)
         def wrapped(*args: P.args, **kwargs: P.kwargs) -> OptMeta:
@@ -53,7 +54,9 @@ def checker_for(package_type: PackageType) -> typing.Callable[[typing.Callable[P
             if extension is None:
                 return None
             return Meta(package_type=package_type, extension=extension)
+
         return wrapped
+
     return wrapper
 
 
@@ -70,11 +73,13 @@ def detector_for(package_type: PackageType) -> typing.Callable[[RawDetector], De
 
         All detectors must be defined in the order they must be used to check for a package type.
     """
+
     def register(function: RawDetector) -> Detector:
         result: Detector = checker_for(package_type)(function)
         if DETECTORS.setdefault(package_type, result) is not result:
             raise ValueError(f'detector for "{package_type.value}" is already registered')
         return result
+
     return register
 
 
@@ -192,9 +197,7 @@ def is_environment(filename: str) -> typing.Optional[str]:
     return result
 
 
-is_installer: typing.Final[Detector] = (
-    detector_for(PackageType.INSTALLER)(conda_installer.is_installer)
-)
+is_installer: typing.Final[Detector] = detector_for(PackageType.INSTALLER)(conda_installer.is_installer)
 
 
 @detector_for(PackageType.PROJECT)

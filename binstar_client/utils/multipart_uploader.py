@@ -1,4 +1,5 @@
 """Multipart form utils."""
+
 import typing
 
 import requests
@@ -9,11 +10,12 @@ if typing.TYPE_CHECKING:
 
 
 def multipart_files_upload(
-        url: str,
-        data: typing.MutableMapping,
-        files: typing.Optional[typing.Mapping[str, tuple]] = None,
-        progress_bar: typing.Optional['tqdm.tqdm'] = None,
-        **request_kwargs: typing.Any) -> requests.Response:
+    url: str,
+    data: typing.MutableMapping,
+    files: typing.Optional[typing.Mapping[str, tuple]] = None,
+    progress_bar: typing.Optional['tqdm.tqdm'] = None,
+    **request_kwargs: typing.Any,
+) -> requests.Response:
     """
     Uploads one or more files as a multipart form.
 

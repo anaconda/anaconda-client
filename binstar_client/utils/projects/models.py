@@ -8,7 +8,6 @@ from binstar_client.errors import BinstarError
 class CondaProject:
     # NOTE: This class will be moved into Anaconda-Project
     def __init__(self, project_path, *args, **kwargs):
-
         self.project_path = project_path
         self._name = None
         self._tar = None
@@ -17,13 +16,9 @@ class CondaProject:
         self.metadata = {
             'summary': kwargs.get('summary', None),
             'description': kwargs.get('description', None),
-            'version': kwargs.get('version', None)
+            'version': kwargs.get('version', None),
         }
-        self.metadata = {
-            key: value
-            for key, value in self.metadata.items()
-            if value
-        }
+        self.metadata = {key: value for key, value in self.metadata.items() if value}
 
     def tar_it(self, file=None):
         if file is None:
@@ -43,7 +38,7 @@ class CondaProject:
             'profile': {
                 'description': self.metadata.get('description', ''),
                 'summary': self.metadata.get('summary', ''),
-            }
+            },
         }
 
     def to_stage(self):
@@ -61,10 +56,7 @@ class CondaProject:
     @property
     def configuration(self):
         output = self.metadata.get('configuration', {})
-        output.update({
-            'size': self.size,
-            'num_of_files': self.get_file_count()
-        })
+        output.update({'size': self.size, 'num_of_files': self.get_file_count()})
         return output
 
     def get_file_count(self):
@@ -121,9 +113,7 @@ class PFile:
 
     def validate(self, validator):
         if inspect.isfunction(validator):
-            return validator(basename=self.basename,
-                             relativepath=self.relativepath,
-                             fullpath=self.fullpath)
+            return validator(basename=self.basename, relativepath=self.relativepath, fullpath=self.fullpath)
 
         if inspect.isclass(validator):
             return validator(self)()
@@ -136,8 +126,4 @@ class PFile:
             self.basename = os.path.basename(self.fullpath)
 
     def to_dict(self):
-        return {
-            'basename': self.basename,
-            'size': self.size,
-            'relativepath': self.relativepath
-        }
+        return {'basename': self.basename, 'size': self.size, 'relativepath': self.relativepath}

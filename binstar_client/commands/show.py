@@ -41,7 +41,6 @@ def install_info(package, package_type):
 
 
 def main(args):
-
     aserver_api = get_server_api(args.token, args.site)
 
     spec = args.spec
@@ -99,13 +98,11 @@ def main(args):
 
 def add_parser(subparsers):
     description = 'Show information about an object'
-    parser = subparsers.add_parser('show',
-                                   help=description, description=description,
-                                   epilog=__doc__,
-                                   formatter_class=RawTextHelpFormatter)
+    parser = subparsers.add_parser(
+        'show', help=description, description=description, epilog=__doc__, formatter_class=RawTextHelpFormatter
+    )
 
-    parser.add_argument('spec', type=parse_specs,
-                        help='Package written as USER[/PACKAGE[/VERSION[/FILE]]]')
+    parser.add_argument('spec', type=parse_specs, help='Package written as USER[/PACKAGE[/VERSION[/FILE]]]')
 
     parser.set_defaults(main=main)
 
@@ -121,9 +118,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
     def show_subcommand(
         ctx: typer.Context,
         spec: str = typer.Argument(
-            show_default=False,
-            callback=parse_specs,
-            help='Package written as USER[/PACKAGE[/VERSION[/FILE]]]'
+            show_default=False, callback=parse_specs, help='Package written as USER[/PACKAGE[/VERSION[/FILE]]]'
         ),
     ) -> None:
         args = Namespace(

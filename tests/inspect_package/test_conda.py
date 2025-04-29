@@ -164,7 +164,6 @@ app_expected_version_data = {
 
 
 class Test(unittest.TestCase):
-
     def test_conda_old(self):
         filename = data_dir('conda_gc_test-1.2.1-py27_3.tar.bz2')
         package_data, version_data, file_data = conda.inspect_conda_package(filename)

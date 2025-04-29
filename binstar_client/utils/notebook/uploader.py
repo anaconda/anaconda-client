@@ -17,6 +17,7 @@ class Uploader:
     * List files from project
     * Upload new files to project
     """
+
     _package = None
     _release = None
     _project = None
@@ -38,9 +39,14 @@ class Uploader:
         :returns {}
         """
         try:
-            return self.aserver_api.upload(self.username, self.project, self.version,
-                                           basename(self.filepath), open(self.filepath, 'rb'),
-                                           self.filepath.split('.')[-1])
+            return self.aserver_api.upload(
+                self.username,
+                self.project,
+                self.version,
+                basename(self.filepath),
+                open(self.filepath, 'rb'),
+                self.filepath.split('.')[-1],
+            )
         except errors.Conflict as error:
             if force:
                 self.remove()
@@ -50,7 +56,11 @@ class Uploader:
 
     def remove(self):
         return self.aserver_api.remove_dist(
-            self, self.username, self.project, self.version, basename=self.notebook,
+            self,
+            self.username,
+            self.project,
+            self.version,
+            basename=self.notebook,
         )
 
     @property
@@ -89,9 +99,9 @@ class Uploader:
             try:
                 self._package = self.aserver_api.package(self.username, self.project)
             except errors.NotFound:
-                self._package = self.aserver_api.add_package(self.username, self.project,
-                                                             summary=self.summary,
-                                                             attrs=self.notebook_attrs)
+                self._package = self.aserver_api.add_package(
+                    self.username, self.project, summary=self.summary, attrs=self.notebook_attrs
+                )
         return self._package
 
     @property
@@ -100,8 +110,9 @@ class Uploader:
             try:
                 self._release = self.aserver_api.release(self.username, self.project, self.version)
             except errors.NotFound:
-                self._release = self.aserver_api.add_release(self.username, self.project,
-                                                             self.version, None, None, None)
+                self._release = self.aserver_api.add_release(
+                    self.username, self.project, self.version, None, None, None
+                )
         return self._release
 
     @property

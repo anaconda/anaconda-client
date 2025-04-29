@@ -11,7 +11,6 @@ from ..utils.notebook.inflection import parameterize
 
 
 def inspect_ipynb_package(filename, fileobj, *args, **kwargs):
-
     notebook = nbformat.read(fileobj, nbformat.NO_CONVERT)
     summary = notebook.get('metadata', {}).get('summary', 'Jupyter Notebook')
     description = notebook.get('metadata', {}).get('description', 'Jupyter Notebook')
@@ -33,7 +32,7 @@ def inspect_ipynb_package(filename, fileobj, *args, **kwargs):
 
     file_data = {
         'basename': os.path.basename(filename),
-        'attrs': {}
+        'attrs': {},
     }
 
     return package_data, release_data, file_data

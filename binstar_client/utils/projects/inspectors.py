@@ -15,12 +15,7 @@ class ProjectFilesInspector:
 
 
 class DocumentationInspector:
-    valid_names = [
-        'README.md',
-        'README.rst',
-        'README.txt',
-        'README'
-    ]
+    valid_names = ['README.md', 'README.rst', 'README.txt', 'README']
 
     def __init__(self, pfiles):
         self.pfiles = pfiles
@@ -45,10 +40,7 @@ class DocumentationInspector:
 
 
 class ConfigurationInspector:
-    valid_names = [
-        'project.yml',
-        'project.yaml'
-    ]
+    valid_names = ['project.yml', 'project.yaml']
 
     def __init__(self, pfiles):
         self.pfiles = pfiles
@@ -75,8 +67,4 @@ class ConfigurationInspector:
         return self.config_pfile is not None
 
 
-inspectors = [
-    DocumentationInspector,
-    ProjectFilesInspector,
-    ConfigurationInspector
-]
+inspectors = [DocumentationInspector, ProjectFilesInspector, ConfigurationInspector]

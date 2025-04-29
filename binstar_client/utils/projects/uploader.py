@@ -14,8 +14,7 @@ class ProjectUploader(binstar_client.Binstar):
         super().__init__(token, domain, verify)
 
     def exists(self):
-        url = '{}/apps/{}/projects/{}'.format(
-            self.domain, self.username, self.project.name)
+        url = '{}/apps/{}/projects/{}'.format(self.domain, self.username, self.project.name)
         res = self.session.get(url)
         return res.status_code == 200
 
@@ -26,26 +25,21 @@ class ProjectUploader(binstar_client.Binstar):
         return res
 
     def stage(self):
-        url = '{}/apps/{}/projects/{}/stage'.format(
-            self.domain, self.username, self.project.name)
+        url = '{}/apps/{}/projects/{}/stage'.format(self.domain, self.username, self.project.name)
         data, headers = jencode(self.project.to_stage())
         res = self.session.post(url, data=data, headers=headers)
         self._check_response(res)
         return res
 
     def commit(self, revision_id):
-        url = '{}/apps/{}/projects/{}/commit/{}'.format(
-            self.domain, self.username,
-            self.project.name, revision_id
-        )
+        url = '{}/apps/{}/projects/{}/commit/{}'.format(self.domain, self.username, self.project.name, revision_id)
         data, headers = jencode({})
         res = self.session.post(url, data=data, headers=headers)
         self._check_response(res, [201])
         return res
 
     def file_upload(self, url, obj):
-        _hexmd5, b64md5, size = compute_hash(
-            self.project.tar, size=self.project.size)
+        _hexmd5, b64md5, size = compute_hash(self.project.tar, size=self.project.size)
 
         s3data = obj['form_data']
         s3data['Content-Length'] = str(size)
@@ -57,11 +51,11 @@ class ProjectUploader(binstar_client.Binstar):
                 data=s3data,
                 files={'file': (self.project.basename, self.project.tar)},
                 progress_bar=progress,
-                verify=self.session.verify)
+                verify=self.session.verify,
+            )
 
         if s3res.status_code != 201:
-            raise binstar_client.errors.BinstarError(
-                'Error uploading package', s3res.status_code)
+            raise binstar_client.errors.BinstarError('Error uploading package', s3res.status_code)
         return s3res
 
     def projects(self):

@@ -60,7 +60,6 @@ class PackageType(enum.Enum):
 PACKAGE_TYPE_ALIASES: typing.Final[typing.Mapping[str, str]] = {
     'PyPI': 'pypi',
     'standard_python': 'pypi',
-
     'cran': 'r',
     'standard_r': 'r',
 }
@@ -85,7 +84,7 @@ DEFAULT_CONFIG = {
     'auto_register': True,
     'default_site': None,
     'url': DEFAULT_URL,
-    'ssl_verify': True
+    'ssl_verify': True,
 }
 
 CONFIGURATION_KEYS = [
@@ -159,10 +158,7 @@ def get_binstar(args=None, cls=None):
     use `get_server_api`
     """
 
-    warnings.warn(
-        'method get_binstar is deprecated, please use `get_server_api`',
-        DeprecationWarning
-    )
+    warnings.warn('method get_binstar is deprecated, please use `get_server_api`', DeprecationWarning)
 
     token = getattr(args, 'token', None)
     log_level = getattr(args, 'log_level', logging.INFO)
@@ -185,7 +181,7 @@ if c_client is not None:
             '  conda: %s\n'
             '  anaconda-client: %s\n'
             'to ensure consistent behavior, the conda path will be used.\n' % (conda_token_dir, TOKEN_DIR),
-            RuntimeWarning
+            RuntimeWarning,
         )
         TOKEN_DIRS.insert(0, conda_token_dir)
 
@@ -257,8 +253,11 @@ def load_config(config_file):
     except yaml.YAMLError:
         backup_file = config_file + '.bak'
         shutil.copyfile(config_file, backup_file)
-        warn_msg = 'Config file `{}` has invalid structure and couldn\'t be read. \n' \
-                   'File content was backed up to `{}`'.format(config_file, backup_file)
+        warn_msg = (
+            'Config file `{}` has invalid structure and couldn\'t be read. \nFile content was backed up to `{}`'.format(
+                config_file, backup_file
+            )
+        )
     except PermissionError:
         warn_msg = 'Not enough rights to access config file `{}`! Please review file permissions.'.format(config_file)
     except OSError as error:
@@ -272,8 +271,11 @@ def load_config(config_file):
 
 def load_file_configs(search_path):
     def _file_yaml_loader(fullpath):
-        assert (fullpath.endswith('.yml')  # nosec
-                or fullpath.endswith('.yaml') or fullpath.endswith('anacondarc')), fullpath
+        assert (
+            fullpath.endswith('.yml')  # nosec
+            or fullpath.endswith('.yaml')
+            or fullpath.endswith('anacondarc')
+        ), fullpath
         yield fullpath, load_config(fullpath)
 
     def _dir_yaml_loader(fullpath):
@@ -296,19 +298,9 @@ def load_file_configs(search_path):
             return None
 
     expanded_paths = list(map(paths.normalize, search_path))
-    stat_paths = (
-        _get_st_mode(path)
-        for path in expanded_paths
-    )
-    load_paths = (
-        _loader[st_mode](path)
-        for path, st_mode in zip(expanded_paths, stat_paths)
-        if st_mode is not None
-    )
-    raw_data = collections.OrderedDict(
-        kv
-        for kv in itertools.chain.from_iterable(load_paths)
-    )
+    stat_paths = (_get_st_mode(path) for path in expanded_paths)
+    load_paths = (_loader[st_mode](path) for path, st_mode in zip(expanded_paths, stat_paths) if st_mode is not None)
+    raw_data = collections.OrderedDict(kv for kv in itertools.chain.from_iterable(load_paths))
 
     return raw_data
 
