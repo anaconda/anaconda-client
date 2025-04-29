@@ -79,8 +79,10 @@ def add_parser(subparsers):
     )
     parser.add_argument(
         'spec',
-        help='Package - written as user/package/version[/filename] '
-        'If filename is not given, move all files in the version',
+        help=(
+            'Package - written as user/package/version[/filename] '
+            + 'If filename is not given, move all files in the version'
+        ),
         type=parse_specs,
     )
     # NOTE: To be implemented later on
