@@ -1,7 +1,7 @@
 # Requirements to develop and test the application that are unavailable in conda
 # Should be installed with pip
 
-ansi2html~=1.8.0
+ansi2html~=1.9.2
 bandit~=1.7.5
 build~=1.2.2
 coverage~=7.2.5
