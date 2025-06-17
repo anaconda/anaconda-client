@@ -2,7 +2,7 @@
 # Should be installed with pip
 
 ansi2html~=1.8.0
-bandit~=1.7.5
+bandit~=1.8.5
 build~=1.2.2
 coverage~=7.2.5
 freezegun~=1.2.2
