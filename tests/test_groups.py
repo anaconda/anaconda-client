@@ -82,7 +82,7 @@ class Test(CLITestCase):
         urls.register(
             method='GET',
             path='/group/org/grp/packages',
-            content='[{"name": "pkg", "full_name": "org/pkg", "summary": "An org pkg"}]'
+            content='[{"name": "pkg", "full_name": "org/pkg", "summary": "An org pkg"}]',
         )
 
         main(['--show-traceback', 'groups', 'packages', 'org/grp'])

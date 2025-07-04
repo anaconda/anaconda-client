@@ -25,7 +25,7 @@ class EnvInspector:
     def get_package_data(self):
         return {
             'name': self.name,
-            'summary': 'Environment file'
+            'summary': 'Environment file',
         }
 
     @property
@@ -42,11 +42,11 @@ def inspect_env_package(filename, fileobj, *args, **kwargs):
     package_data = environment.get_package_data()
     release_data = {
         'version': environment.version,
-        'description': ''
+        'description': '',
     }
     file_data = {
         'basename': environment.basename,
-        'attrs': {}
+        'attrs': {},
     }
 
     return package_data, release_data, file_data

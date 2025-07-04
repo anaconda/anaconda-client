@@ -71,14 +71,22 @@ import click
 import typer
 
 from binstar_client.errors import ShowHelp
-from binstar_client.utils.config import (SEARCH_PATH, USER_CONFIG, SYSTEM_CONFIG, CONFIGURATION_KEYS,
-                                         get_config, save_config, load_config, load_file_configs)
+from binstar_client.utils.config import (
+    SEARCH_PATH,
+    USER_CONFIG,
+    SYSTEM_CONFIG,
+    CONFIGURATION_KEYS,
+    get_config,
+    save_config,
+    load_config,
+    load_file_configs,
+)
 from ..utils.yaml import yaml_dump, safe_load
 
 logger = logging.getLogger('binstar.config')
 
 DEPRECATED = {
-    'verify_ssl': 'Please use ssl_verify instead'
+    'verify_ssl': 'Please use ssl_verify instead',
 }
 
 
@@ -154,34 +162,34 @@ def main(args):
 
 def add_parser(subparsers):
     description = 'Anaconda client configuration'
-    parser = subparsers.add_parser('config',
-                                   help=description,
-                                   description=description,
-                                   epilog=__doc__,
-                                   formatter_class=RawDescriptionHelpFormatter)
+    parser = subparsers.add_parser(
+        'config', help=description, description=description, epilog=__doc__, formatter_class=RawDescriptionHelpFormatter
+    )
 
-    parser.add_argument('--type', default=safe_load,
-                        help='The type of the values in the set commands')
+    parser.add_argument('--type', default=safe_load, help='The type of the values in the set commands')
 
     agroup = parser.add_argument_group('actions')
 
-    agroup.add_argument('--set', nargs=2, action='append', default=[],
-                        help='sets a new variable: name value', metavar=('name', 'value'))
-    agroup.add_argument('--get', metavar='name',
-                        help='get value: name')
-    agroup.add_argument('--remove', action='append', default=[],
-                        help='removes a variable')
-    agroup.add_argument('--show', action='store_true', default=False,
-                        help='show all variables')
-    agroup.add_argument('-f', '--files', action='store_true',
-                        help='show the config file names')
-    agroup.add_argument('--show-sources', action='store_true',
-                        help='Display all identified config sources')
+    agroup.add_argument(
+        '--set', nargs=2, action='append', default=[], help='sets a new variable: name value', metavar=('name', 'value')
+    )
+    agroup.add_argument('--get', metavar='name', help='get value: name')
+    agroup.add_argument('--remove', action='append', default=[], help='removes a variable')
+    agroup.add_argument('--show', action='store_true', default=False, help='show all variables')
+    agroup.add_argument('-f', '--files', action='store_true', help='show the config file names')
+    agroup.add_argument('--show-sources', action='store_true', help='Display all identified config sources')
     lgroup = parser.add_argument_group('location')
-    lgroup.add_argument('-u', '--user', action='store_true', dest='user', default=True,
-                        help='set a variable for this user')
-    lgroup.add_argument('-s', '--system', '--site', action='store_false', dest='user',
-                        help='set a variable for all users on this machine')
+    lgroup.add_argument(
+        '-u', '--user', action='store_true', dest='user', default=True, help='set a variable for this user'
+    )
+    lgroup.add_argument(
+        '-s',
+        '--system',
+        '--site',
+        action='store_false',
+        dest='user',
+        help='set a variable for all users on this machine',
+    )
 
     parser.set_defaults(main=main, sub_parser=parser)
 
@@ -196,11 +204,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
     )
     def config_subcommand(
         ctx: typer.Context,
-        type_: Optional[str] = typer.Option(
-            None,
-            '--type',
-            help='The type of the values in the set commands'
-        ),
+        type_: Optional[str] = typer.Option(None, '--type', help='The type of the values in the set commands'),
         set_: List[click.Tuple] = typer.Option(
             [],
             '--set',
@@ -215,10 +219,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             [],
             help='removes a variable',
         ),
-        show: bool = typer.Option(
-            False,
-            help='Show all variables'
-        ),
+        show: bool = typer.Option(False, help='Show all variables'),
         files: bool = typer.Option(
             False,
             '-f',
@@ -236,12 +237,8 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             help='set a variable for this user',
         ),
         system: bool = typer.Option(
-            False,
-            '-s',
-            '--system',
-            '--site',
-            help='set a variable for all users on this machine'
-        )
+            False, '-s', '--system', '--site', help='set a variable for all users on this machine'
+        ),
     ) -> None:
         # There's an existing bug in the type argument for anything but default
         # TODO: Remove the --type option. The below code is what I think was intended, but it's not what happens

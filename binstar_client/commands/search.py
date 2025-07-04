@@ -34,7 +34,7 @@ def add_parser(subparsers):
         'search',
         help='Search in your Anaconda repository',
         description='Search in your Anaconda repository',
-        epilog=__doc__
+        epilog=__doc__,
     )
     parser.add_argument(
         'name',
@@ -42,23 +42,36 @@ def add_parser(subparsers):
         help='Search string',
     )
     parser.add_argument(
-        '-t', '--package-type',
+        '-t',
+        '--package-type',
         # choices=['conda', 'pypi', 'r'],
-        help='only search for packages of this type'
+        help='only search for packages of this type',
     )
     parser.add_argument(
-        '-p', '--platform',
+        '-p',
+        '--platform',
         choices=[
-            'osx-32', 'osx-64', 'win-32', 'win-64', 'linux-32', 'linux-64', 'linux-aarch64', 'linux-armv6l',
-            'linux-armv7l', 'linux-ppc64le', 'linux-s390x', 'noarch',
+            'osx-32',
+            'osx-64',
+            'win-32',
+            'win-64',
+            'linux-32',
+            'linux-64',
+            'linux-aarch64',
+            'linux-armv6l',
+            'linux-armv7l',
+            'linux-ppc64le',
+            'linux-s390x',
+            'noarch',
         ],
-        help='only search for packages of the chosen platform'
+        help='only search for packages of the chosen platform',
     )
     parser.set_defaults(main=search)
 
 
 class Platform(Enum):
     """An enum representing platforms that can be passed as options."""
+
     OSX_32 = 'osx-32'
     OSX_64 = 'osx-64'
     WIN_32 = 'win-32'

@@ -66,38 +66,21 @@ def _add_parser(subparsers, name, deprecated=False):
         name,
         help='{}Manage your Anaconda repository {}s'.format(deprecated_warn, name),
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description=__doc__)
+        description=__doc__,
+    )
 
-    subparser.add_argument('-o', '--organization',
-                           help='Manage an organizations {}s'.format(name))
+    subparser.add_argument('-o', '--organization', help='Manage an organizations {}s'.format(name))
 
     group = subparser.add_mutually_exclusive_group(required=True)
 
     group.add_argument('--copy', nargs=2, metavar=name.upper())
+    group.add_argument('--list', action='store_true', help='{}list all {}s for a user'.format(deprecated_warn, name))
     group.add_argument(
-        '--list',
-        action='store_true',
-        help='{}list all {}s for a user'.format(deprecated_warn, name)
+        '--show', metavar=name.upper(), help='{}Show all of the files in a {}'.format(deprecated_warn, name)
     )
-    group.add_argument(
-        '--show',
-        metavar=name.upper(),
-        help='{}Show all of the files in a {}'.format(deprecated_warn, name)
-    )
-    group.add_argument(
-        '--lock',
-        metavar=name.upper(),
-        help='{}Lock a {}'.format(deprecated_warn, name))
-    group.add_argument(
-        '--unlock',
-        metavar=name.upper(),
-        help='{}Unlock a {}'.format(deprecated_warn, name)
-    )
-    group.add_argument(
-        '--remove',
-        metavar=name.upper(),
-        help='{}Remove a {}'.format(deprecated_warn, name)
-    )
+    group.add_argument('--lock', metavar=name.upper(), help='{}Lock a {}'.format(deprecated_warn, name))
+    group.add_argument('--unlock', metavar=name.upper(), help='{}Unlock a {}'.format(deprecated_warn, name))
+    group.add_argument('--remove', metavar=name.upper(), help='{}Remove a {}'.format(deprecated_warn, name))
     subparser.set_defaults(main=functools.partial(main, name=name, deprecated=deprecated))
 
 
@@ -130,7 +113,7 @@ def _exclusive_action(ctx: typer.Context, param: typer.CallbackParam, value: Any
         ctx._actions = set()  # type: ignore[attr-defined]
     if parsed_value:
         if ctx._actions:  # type: ignore[attr-defined]
-            used_action, = ctx._actions  # type: ignore[attr-defined]
+            (used_action,) = ctx._actions  # type: ignore[attr-defined]
             raise typer.BadParameter(f'mutually exclusive with {used_action}')
         ctx._actions.add(' / '.join(f"'{o}'" for o in param.opts))  # type: ignore[attr-defined]
     return value
