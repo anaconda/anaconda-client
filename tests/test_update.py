@@ -12,17 +12,13 @@ with open(data_dir('metadata.json'), 'r') as f:
     json_test_data = json.load(f)
 
 package_test_data = {
-    'public_attrs': {
-        'license': 'custom',
-        'name': 'test-package34',
-        'summary': 'Python test package for binstar client'
-    }
+    'public_attrs': {'license': 'custom', 'name': 'test-package34', 'summary': 'Python test package for binstar client'}
 }
 release_test_data = {
     'public_attrs': {
         'description': 'longer description of the package',
         'home_page': 'http://github.com/binstar/binstar_pypi',
-        'version': '0.3.1'
+        'version': '0.3.1',
     }
 }
 
@@ -43,8 +39,9 @@ class TestUpdate(CLITestCase):
     @urlpatch
     def test_update_package_from_file(self, urls):
         urls.register(method='HEAD', path='/', status=200)
-        update = urls.register(method='PATCH', path='/package/owner/package_name',
-                               content=package_test_data, status=200)
+        update = urls.register(
+            method='PATCH', path='/package/owner/package_name', content=package_test_data, status=200
+        )
         main(['update', 'owner/package_name', data_dir('test_package34-0.3.1.tar.gz')])
 
         urls.assertAllCalled()
@@ -54,8 +51,9 @@ class TestUpdate(CLITestCase):
     @urlpatch
     def test_update_release_from_json(self, urls):
         urls.register(method='HEAD', path='/', status=200)
-        update = urls.register(method='PATCH', path='/release/owner/package_name/1.0.0',
-                               content=json_test_data, status=200)
+        update = urls.register(
+            method='PATCH', path='/release/owner/package_name/1.0.0', content=json_test_data, status=200
+        )
         main(['update', 'owner/package_name/1.0.0', data_dir('metadata.json'), '--release'])
 
         urls.assertAllCalled()
@@ -65,8 +63,9 @@ class TestUpdate(CLITestCase):
     @urlpatch
     def test_update_release_from_file(self, urls):
         urls.register(method='HEAD', path='/', status=200)
-        update = urls.register(method='PATCH', path='/release/owner/package_name/1.0.0',
-                               content=release_test_data, status=200)
+        update = urls.register(
+            method='PATCH', path='/release/owner/package_name/1.0.0', content=release_test_data, status=200
+        )
         main(['update', 'owner/package_name/1.0.0', data_dir('test_package34-0.3.1.tar.gz'), '--release'])
 
         urls.assertAllCalled()
