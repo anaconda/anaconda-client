@@ -44,8 +44,7 @@ def get_attributes(package: str, args: argparse.Namespace) -> typing.Tuple[Attri
         package_type = detect.detect_package_type(package)
     if package_type is None:
         message: str = (
-            f'Could not detect package type of file "{package}". '
-            'Please specify package type with option --package-type'
+            f'Could not detect package type of file "{package}". Please specify package type with option --package-type'
         )
         logger.error(message)
         raise errors.BinstarError(message)
@@ -115,7 +114,8 @@ def add_parser(subparsers: typing.Any) -> None:
         type=file_type,
     )
     parser.add_argument(
-        '-t', '--package-type',
+        '-t',
+        '--package-type',
         help='Set the package type. Defaults to autodetect',
     )
 
@@ -123,7 +123,7 @@ def add_parser(subparsers: typing.Any) -> None:
     release_group.add_argument(
         '--release',
         help='Use `source` file to update public attributes of the release specified in `spec`',
-        action='store_true'
+        action='store_true',
     )
 
     parser.set_defaults(main=main)

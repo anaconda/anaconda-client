@@ -53,11 +53,11 @@ class ValuesView(typing.Mapping[typing.Tuple[str, ...], str]):
     __slots__ = ('__content', '__default', '__key_length')
 
     def __init__(
-            self,
-            content: typing.Mapping[typing.Tuple[str, ...], str],
-            key_length: int,
-            *,
-            default: typing.Optional[str] = None,
+        self,
+        content: typing.Mapping[typing.Tuple[str, ...], str],
+        key_length: int,
+        *,
+        default: typing.Optional[str] = None,
     ) -> None:
         """Initialize new :class:`~ValuesView` instance."""
         self.__content: 'typing_extensions.Final[typing.Mapping[typing.Tuple[str, ...], str]]' = content
@@ -78,10 +78,7 @@ class ValuesView(typing.Mapping[typing.Tuple[str, ...], str]):
 
         combination: typing.Tuple[int, ...]
         for combination in COMBINATIONS[self.__key_length]:
-            current_key = tuple(
-                ANY if (index in combination) else value
-                for index, value in enumerate(key)
-            )
+            current_key = tuple(ANY if (index in combination) else value for index, value in enumerate(key))
             try:
                 return self.__content[current_key]
             except KeyError:
@@ -110,9 +107,12 @@ class TableDesign:
     """
 
     __slots__ = (
-        '__horizontal', '__horizontal_view',
-        '__intersection', '__intersection_view',
-        '__vertical', '__vertical_view',
+        '__horizontal',
+        '__horizontal_view',
+        '__intersection',
+        '__intersection_view',
+        '__vertical',
+        '__vertical_view',
     )
 
     def __init__(self) -> None:
@@ -142,13 +142,13 @@ class TableDesign:
         return self.__vertical_view
 
     def with_border_style(
-            self,
-            horizontal: str,
-            vertical: str,
-            corner_nw: str,
-            corner_ne: str,
-            corner_se: str,
-            corner_sw: str,
+        self,
+        horizontal: str,
+        vertical: str,
+        corner_nw: str,
+        corner_ne: str,
+        corner_se: str,
+        corner_sw: str,
     ) -> 'TableDesign':
         """
         Define a style for an external border of the table.
@@ -170,12 +170,12 @@ class TableDesign:
         return result
 
     def with_border_transition(
-            self,
-            kind: str,
-            top: str,
-            right: str,
-            bottom: str,
-            left: str,
+        self,
+        kind: str,
+        top: str,
+        right: str,
+        bottom: str,
+        left: str,
     ) -> 'TableDesign':
         """
         Define how external border should transition into borders of a :code:`kind`.
@@ -193,11 +193,11 @@ class TableDesign:
         return result
 
     def with_cell_style(
-            self,
-            kind: str,
-            horizontal: str,
-            vertical: str,
-            intersection: str,
+        self,
+        kind: str,
+        horizontal: str,
+        vertical: str,
+        intersection: str,
     ) -> 'TableDesign':
         """
         Define the borders between cells of the same :code:`kind`.
@@ -214,10 +214,10 @@ class TableDesign:
         return result
 
     def with_horizontal(
-            self,
-            top_kind: str,
-            bottom_kind: str,
-            value: str,
+        self,
+        top_kind: str,
+        bottom_kind: str,
+        value: str,
     ) -> 'TableDesign':
         """
         Define a single horizontal border rule.
@@ -232,12 +232,12 @@ class TableDesign:
         return result
 
     def with_intersection(
-            self,
-            top_left_kind: str,
-            top_right_kind: str,
-            bottom_left_kind: str,
-            bottom_right_kind: str,
-            value: str,
+        self,
+        top_left_kind: str,
+        top_right_kind: str,
+        bottom_left_kind: str,
+        bottom_right_kind: str,
+        value: str,
     ) -> 'TableDesign':
         """
         Define a single intersection border rule.
@@ -252,10 +252,10 @@ class TableDesign:
         return result
 
     def with_vertical(
-            self,
-            left_kind: str,
-            right_kind: str,
-            value: str,
+        self,
+        left_kind: str,
+        right_kind: str,
+        value: str,
     ) -> 'TableDesign':
         """
         Define a single vertical border rule.
@@ -294,11 +294,11 @@ class TableCell:
     __slots__ = ('alignment', 'kind', 'value')
 
     def __init__(
-            self,
-            kind: str,
-            value: typing.Any,
-            *,
-            alignment: 'Alignment' = '<',
+        self,
+        kind: str,
+        value: typing.Any,
+        *,
+        alignment: 'Alignment' = '<',
     ) -> None:
         """Initialize new :class:`~TableCell` instance."""
         if value is None:
@@ -406,11 +406,11 @@ class TableCore:
         yield from self.__render_separator(above_row=previous, below_row=empty_row, widths=widths, design=design)
 
     def trim(
-            self,
-            *,
-            empty_columns: bool = False,
-            empty_rows: bool = False,
-            empty_values: bool = False,
+        self,
+        *,
+        empty_columns: bool = False,
+        empty_rows: bool = False,
+        empty_values: bool = False,
     ) -> typing.Tuple[typing.List[int], typing.List[int]]:
         """
         Remove trailing empty cells from each row.
@@ -433,8 +433,7 @@ class TableCore:
             # remove cells with empty values
             if empty_values:
                 self.__content[index] = [
-                    cell if (cell is not None) and cell.value else None
-                    for cell in self.__content[index]
+                    cell if (cell is not None) and cell.value else None for cell in self.__content[index]
                 ]
 
             # remove trailing columns
@@ -561,10 +560,10 @@ class TableCore:
         return widths
 
     def __render_row(
-            self,
-            row: typing.Sequence[typing.Optional[TableCell]],
-            widths: typing.Iterable[int],
-            design: TableDesign,
+        self,
+        row: typing.Sequence[typing.Optional[TableCell]],
+        widths: typing.Iterable[int],
+        design: TableDesign,
     ) -> typing.Iterator[str]:
         """Render a row with values."""
         cell: typing.Optional[TableCell]
@@ -578,11 +577,11 @@ class TableCore:
         yield result + design.vertical[previous_kind, EMPTY]
 
     def __render_separator(
-            self,
-            above_row: typing.Sequence[typing.Optional[TableCell]],
-            below_row: typing.Sequence[typing.Optional[TableCell]],
-            widths: typing.Iterable[int],
-            design: TableDesign,
+        self,
+        above_row: typing.Sequence[typing.Optional[TableCell]],
+        below_row: typing.Sequence[typing.Optional[TableCell]],
+        widths: typing.Iterable[int],
+        design: TableDesign,
     ) -> typing.Iterator[str]:
         """Render a string that contains of horizontal separators and intersections."""
         above_cell: typing.Optional[TableCell]
@@ -652,9 +651,9 @@ class SimpleTable:
     __slots__ = ('__alignment', '__clean', '__core', '__heading_columns', '__heading_rows')
 
     def __init__(
-            self,
-            heading_rows: int = 0,
-            heading_columns: int = 0,
+        self,
+        heading_rows: int = 0,
+        heading_columns: int = 0,
     ) -> None:
         """Initialize new :class:`~SimpleTable` instance."""
         self.__alignment: typing.Dict[typing.Tuple[int, int], 'Alignment'] = {(-1, -1): '<'}
@@ -696,9 +695,7 @@ class SimpleTable:
     def align_column(self, column: int, alignment: 'Alignment') -> None:
         """Align each cell in a single column of the table."""
         new_alignment: typing.Dict[typing.Tuple[int, int], 'Alignment'] = {
-            key: value
-            for key, value in self.__alignment.items()
-            if key[1] != column
+            key: value for key, value in self.__alignment.items() if key[1] != column
         }
         new_alignment[-1, column] = alignment
         self.__alignment = new_alignment
@@ -707,9 +704,7 @@ class SimpleTable:
     def align_row(self, row: int, alignment: 'Alignment') -> None:
         """Aline each cell in a single row of the table."""
         new_alignment: typing.Dict[typing.Tuple[int, int], 'Alignment'] = {
-            key: value
-            for key, value in self.__alignment.items()
-            if key[0] != row
+            key: value for key, value in self.__alignment.items() if key[0] != row
         }
         new_alignment[row, -1] = alignment
         self.__alignment = new_alignment
@@ -791,11 +786,11 @@ class SimpleTable:
                     kind = CELL
 
                 alignment: 'Alignment' = (
-                        self.__alignment.get((row, column), None) or  # type: ignore
-                        self.__alignment.get((row, -1), None) or
-                        self.__alignment.get((-1, column), None) or
-                        self.__alignment.get((-1, -1), None) or
-                        '<'
+                    self.__alignment.get((row, column), None)  # type: ignore
+                    or self.__alignment.get((row, -1), None)
+                    or self.__alignment.get((-1, column), None)
+                    or self.__alignment.get((-1, -1), None)
+                    or '<'
                 )
 
                 cell: TableCell = self.__core[row, column]
@@ -841,10 +836,10 @@ class SimpleTableWithAliases(SimpleTable):
     __slots__ = ('__aliases',)
 
     def __init__(
-            self,
-            aliases: typing.Union[typing.Iterable[typing.Union[str, typing.Tuple[str, str]]], typing.Mapping[str, str]],
-            heading_rows: int = 0,
-            heading_columns: int = 0,
+        self,
+        aliases: typing.Union[typing.Iterable[typing.Union[str, typing.Tuple[str, str]]], typing.Mapping[str, str]],
+        heading_rows: int = 0,
+        heading_columns: int = 0,
     ) -> None:
         """Initialize new :class:`~SimpleTableWithAliases` instance."""
         super().__init__(heading_rows=heading_rows, heading_columns=heading_columns)
@@ -893,10 +888,10 @@ class SimpleTableWithAliases(SimpleTable):
         super().align_column(column=column, alignment=alignment)
 
     def append_row(
-            self,
-            values: typing.Union[typing.Iterable[typing.Any], typing.Mapping[str, typing.Any]],
-            *,
-            strict: bool = False,
+        self,
+        values: typing.Union[typing.Iterable[typing.Any], typing.Mapping[str, typing.Any]],
+        *,
+        strict: bool = False,
     ) -> None:
         """Append new row to the bottom of this table."""
         if isinstance(values, typing.Mapping):

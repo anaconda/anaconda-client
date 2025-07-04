@@ -1,5 +1,4 @@
 class BinstarError(Exception):
-
     def __init__(self, *args):
         super().__init__(*args)
 
@@ -19,7 +18,6 @@ class Conflict(BinstarError):
 
 
 class NotFound(BinstarError, IndexError):
-
     def __init__(self, *args):
         super().__init__(*args)
         self.msg = self.message
@@ -42,7 +40,6 @@ class NoMetadataError(BinstarError):
 
 
 class DestinationPathExists(BinstarError):
-
     def __init__(self, location):
         self.msg = "destination path '{}' already exists.".format(location)
         self.location = location
@@ -50,7 +47,6 @@ class DestinationPathExists(BinstarError):
 
 
 class PillowNotInstalled(BinstarError):
-
     def __init__(self):
         self.msg = 'pillow is not installed. Install it with:\n\tconda install pillow'
         super().__init__(self.msg)
