@@ -14,14 +14,12 @@ from typing import List
 import typer
 
 from binstar_client import errors
-from binstar_client.utils import get_server_api, parse_specs, \
-    bool_input
+from binstar_client.utils import get_server_api, parse_specs, bool_input
 
 logger = logging.getLogger('binstar.remove')
 
 
 def main(args):
-
     aserver_api = get_server_api(args.token, args.site)
 
     for spec in args.specs:
@@ -74,7 +72,8 @@ def add_parser(subparsers):
         nargs='+',
     )
     parser.add_argument(
-        '-f', '--force',
+        '-f',
+        '--force',
         help='Do not prompt removal',
         action='store_true',
     )
@@ -93,9 +92,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
     def remove_subcommand(
         ctx: typer.Context,
         specs: List[str] = typer.Argument(
-            show_default=False,
-            parser=parse_specs,
-            help='Package written as USER[/PACKAGE[/VERSION[/FILE]]]'
+            show_default=False, parser=parse_specs, help='Package written as USER[/PACKAGE[/VERSION[/FILE]]]'
         ),
         force: bool = typer.Option(
             False,

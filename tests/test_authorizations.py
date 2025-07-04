@@ -15,7 +15,7 @@ class Test(CLITestCase):
             method='DELETE',
             path='/authentications/org/orgname/name/tokenname',
             content='{"token": "a-token"}',
-            status=201
+            status=201,
         )
         main(['--show-traceback', 'auth', '--remove', 'tokenname', '-o', 'orgname'])
         self.assertIn('Removed token tokenname', self.stream.getvalue())
@@ -25,10 +25,7 @@ class Test(CLITestCase):
     @urlpatch
     def test_remove_token(self, urls):
         remove_token = urls.register(
-            method='DELETE',
-            path='/authentications/name/tokenname',
-            content='{"token": "a-token"}',
-            status=201
+            method='DELETE', path='/authentications/name/tokenname', content='{"token": "a-token"}', status=201
         )
         main(['--show-traceback', 'auth', '--remove', 'tokenname'])
         self.assertIn('Removed token tokenname', self.stream.getvalue())
@@ -41,7 +38,7 @@ class Test(CLITestCase):
             method='DELETE',
             path='/authentications/org/wrong_org/name/tokenname',
             content='{"token": "a-token"}',
-            status=403
+            status=403,
         )
         with self.assertRaises(BinstarError):
             main(['--show-traceback', 'auth', '--remove', 'tokenname', '-o', 'wrong_org'])
