@@ -14,6 +14,7 @@ from tqdm import tqdm
 
 from . import errors
 from ._version import __version__
+
 # For backwards compatibility
 from .errors import *
 from .mixins.channels import ChannelsMixin
@@ -35,10 +36,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
                   an anonymous user.
     """
 
-    def __init__(
-            self, token=None, domain='https://api.anaconda.org',
-            verify=True, **kwargs
-    ):
+    def __init__(self, token=None, domain='https://api.anaconda.org', verify=True, **kwargs):
         self._session = requests.Session()
         self._session.headers['x-binstar-api-version'] = __version__
         self.session.verify = verify
@@ -47,11 +45,13 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         self._token_warning_sent = False
 
         user_agent = 'Anaconda-Client/{} (+https://anaconda.org)'.format(__version__)
-        self._session.headers.update({
-            'User-Agent': user_agent,
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-        })
+        self._session.headers.update(
+            {
+                'User-Agent': user_agent,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            }
+        )
 
         if token:
             self._session.headers.update({'Authorization': 'token {}'.format(token)})
@@ -93,6 +93,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
     def krb_authenticate(self, *args, **kwargs):
         try:
             from requests_kerberos import HTTPKerberosAuth
+
             return self._authenticate(HTTPKerberosAuth(), *args, **kwargs)
         except ImportError as error:
             raise BinstarError(
@@ -105,16 +106,18 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
     def authenticate(self, username, password, *args, **kwargs):
         return self._authenticate((username, password), *args, **kwargs)
 
-    def _authenticate(self,
-                      auth,
-                      application,
-                      application_url=None,
-                      for_user=None,
-                      scopes=None,
-                      max_age=None,
-                      strength='strong',
-                      fail_if_already_exists=False,
-                      hostname=_platform.node()):
+    def _authenticate(
+        self,
+        auth,
+        application,
+        application_url=None,
+        for_user=None,
+        scopes=None,
+        max_age=None,
+        strength='strong',
+        fail_if_already_exists=False,
+        hostname=_platform.node(),
+    ):
         """
         Use basic authentication to create an authentication token using the interface below.
         With this technique, a username and password need not be stored permanently, and the user can
@@ -128,12 +131,16 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         """
 
         url = '%s/authentications' % (self.domain)
-        payload = {'scopes': scopes, 'note': application, 'note_url': application_url,
-                   'hostname': hostname,
-                   'user': for_user,
-                   'max-age': max_age,
-                   'strength': strength,
-                   'fail-if-exists': fail_if_already_exists}
+        payload = {
+            'scopes': scopes,
+            'note': application,
+            'note_url': application_url,
+            'hostname': hostname,
+            'user': for_user,
+            'max-age': max_age,
+            'strength': strength,
+            'fail-if-exists': fail_if_already_exists,
+        }
 
         data, headers = jencode(payload)
         res = self.session.post(url, auth=auth, data=data, headers=headers)
@@ -227,20 +234,15 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
             url = f'{self.domain}/user'
         else:
             raise errors.Unauthorized(
-                'Authentication token is missing. Please, use `anaconda login` to reauthenticate.', 401)
+                'Authentication token is missing. Please, use `anaconda login` to reauthenticate.', 401
+            )
 
         res = self.session.get(url, verify=self.session.verify)
         self._check_response(res)
 
         return res.json()
 
-    def user_packages(
-            self,
-            login=None,
-            platform=None,
-            package_type=None,
-            type_=None,
-            access=None):
+    def user_packages(self, login=None, platform=None, package_type=None, type_=None, access=None):
         """
         Returns a list of packages for a given user and optionally filter
         by `platform`, `package_type` and `type_`.
@@ -301,7 +303,6 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         self._check_response(res, [201])
 
     def package_collaborators(self, owner, package_name):
-
         url = '%s/packages/%s/%s/collaborators' % (self.domain, owner, package_name)
         res = self.session.get(url)
         self._check_response(res, [200])
@@ -315,16 +316,16 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         return res.json()
 
     def add_package(
-            self,
-            login,
-            package_name,
-            summary=None,
-            license=None,
-            public=True,
-            license_url=None,
-            license_family=None,
-            attrs=None,
-            package_type=None,
+        self,
+        login,
+        package_name,
+        summary=None,
+        license=None,
+        public=True,
+        license_url=None,
+        license_family=None,
+        attrs=None,
+        package_type=None,
     ):
         """
         Add a new package to a users account
@@ -391,7 +392,6 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         return res.json()
 
     def remove_package(self, username, package_name):
-
         url = '%s/package/%s/%s' % (self.domain, username, package_name)
 
         res = self.session.delete(url)
@@ -451,7 +451,6 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         return res.json()
 
     def distribution(self, login, package_name, release, basename=None):
-
         url = '%s/dist/%s/%s/%s/%s' % (self.domain, login, package_name, release, basename)
 
         res = self.session.get(url)
@@ -459,7 +458,6 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         return res.json()
 
     def remove_dist(self, login, package_name, release, basename=None, _id=None):
-
         if basename:
             url = '%s/dist/%s/%s/%s/%s' % (self.domain, login, package_name, release, basename)
         elif _id:
@@ -487,7 +485,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
 
         url = '%s/download/%s/%s/%s/%s' % (self.domain, login, package_name, release, basename)
         if md5:
-            headers = {'ETag': md5, }
+            headers = {'ETag': md5}
         else:
             headers = {}
 
@@ -510,9 +508,22 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
 
         return None
 
-    def upload(self, login, package_name, release, basename, file, distribution_type,
-               description='', md5=None, sha256=None, size=None, dependencies=None, attrs=None,
-               channels=('main',)):
+    def upload(
+        self,
+        login,
+        package_name,
+        release,
+        basename,
+        file,
+        distribution_type,
+        description='',
+        md5=None,
+        sha256=None,
+        size=None,
+        dependencies=None,
+        attrs=None,
+        channels=('main',),
+    ):
         """
         Upload a new distribution to a package release.
 
@@ -572,8 +583,8 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         file_size = os.fstat(file.fileno()).st_size
         with tqdm(total=file_size, unit='B', unit_scale=True, unit_divisor=1024) as progress:
             s3res = multipart_files_upload(
-                s3url, s3data, {'file': (basename, file)}, progress,
-                verify=self.session.verify)
+                s3url, s3data, {'file': (basename, file)}, progress, verify=self.session.verify
+            )
 
         if s3res.status_code != 201:
             logger.info(s3res.text)
@@ -596,11 +607,14 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
             package_type = package_type.value
 
         url = '%s/search' % self.domain
-        res = self.session.get(url, params={
-            'name': query,
-            'type': package_type,
-            'platform': platform,
-        })
+        res = self.session.get(
+            url,
+            params={
+                'name': query,
+                'type': package_type,
+                'platform': platform,
+            },
+        )
         self._check_response(res)
         return res.json()
 

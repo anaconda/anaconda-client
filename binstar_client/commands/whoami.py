@@ -32,9 +32,7 @@ def main(args):
 
 
 def add_parser(subparsers):
-    subparser = subparsers.add_parser('whoami',
-                                      help='Print the information of the current user',
-                                      description=__doc__)
+    subparser = subparsers.add_parser('whoami', help='Print the information of the current user', description=__doc__)
 
     subparser.set_defaults(main=main)
 
