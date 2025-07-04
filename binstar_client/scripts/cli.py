@@ -128,7 +128,6 @@ def _get_sub_commands(module):
 
 
 def _add_subparser_modules(parser, module=None, entry_point_name=None):
-
     subparsers = parser.add_subparsers(title='Commands', metavar='')
 
     if module:  # LOAD sub parsers from module
@@ -146,43 +145,61 @@ def _add_subparser_modules(parser, module=None, entry_point_name=None):
 
 
 def binstar_main(
-        sub_command_module: types.ModuleType,
-        args: typing.Optional[typing.Sequence[str]] = None,
-        exit_: bool = True,
+    sub_command_module: types.ModuleType,
+    args: typing.Optional[typing.Sequence[str]] = None,
+    exit_: bool = True,
 ) -> int:
     """Run `anaconda-client` cli utility."""
     parser: argparse.ArgumentParser = argparse.ArgumentParser(
-        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
     group = parser.add_argument_group('output')
     group.add_argument(
-        '--disable-ssl-warnings', action='store_true', default=False,
+        '--disable-ssl-warnings',
+        action='store_true',
+        default=False,
         help='Disable SSL warnings (default: %(default)s)',
     )
     group.add_argument(
-        '--show-traceback', action='store_true',
+        '--show-traceback',
+        action='store_true',
         help='Show the full traceback for chalmers user errors (default: %(default)s)',
     )
     group.add_argument(
-        '-v', '--verbose', action='store_const', dest='log_level', default=logging.INFO, const=logging.DEBUG,
+        '-v',
+        '--verbose',
+        action='store_const',
+        dest='log_level',
+        default=logging.INFO,
+        const=logging.DEBUG,
         help='print debug information on the console',
     )
     group.add_argument(
-        '-q', '--quiet', action='store_const', dest='log_level', const=logging.WARNING,
+        '-q',
+        '--quiet',
+        action='store_const',
+        dest='log_level',
+        const=logging.WARNING,
         help='Only show warnings or errors on the console',
     )
 
     group = parser.add_argument_group('anaconda-client options')
     group.add_argument(
-        '-t', '--token', type=file_or_token,
+        '-t',
+        '--token',
+        type=file_or_token,
         help='Authentication token to use. May be a token or a path to a file containing a token',
     )
     group.add_argument('-s', '--site', default=None, help='select the anaconda-client site to use')
 
     if __version__:
         parser.add_argument(
-            '-V', '--version', action='version', version=f'%(prog)s Command line client (version {__version__})',
+            '-V',
+            '--version',
+            action='version',
+            version=f'%(prog)s Command line client (version {__version__})',
         )
 
     _add_subparser_modules(parser, sub_command_module, 'conda_server.subcommand')
@@ -224,8 +241,7 @@ def _load_main_plugin() -> typing.Optional[typing.Callable[[], typing.Any]]:
     if len(plugin_mains) > 1:
         raise EnvironmentError(
             'More than one `anaconda_cli.main` plugin is installed. Please ensure only one '
-            'of the following packages are installed:\n\n' +
-            '\n'.join(f'  * {ep.value}' for ep in plugin_mains)
+            'of the following packages are installed:\n\n' + '\n'.join(f'  * {ep.value}' for ep in plugin_mains)
         )
 
     if plugin_mains:
@@ -238,10 +254,10 @@ def _load_main_plugin() -> typing.Optional[typing.Callable[[], typing.Any]]:
 
 
 def main(
-        args: typing.Optional[typing.Sequence[str]] = None,
-        *,
-        exit_: bool = True,
-        allow_plugin_main: bool = True,
+    args: typing.Optional[typing.Sequence[str]] = None,
+    *,
+    exit_: bool = True,
+    allow_plugin_main: bool = True,
 ) -> None:
     """Entrypoint for CLI interface of `anaconda`."""
     if allow_plugin_main and (not os.environ.get('ANACONDA_CLIENT_FORCE_STANDALONE', '')):

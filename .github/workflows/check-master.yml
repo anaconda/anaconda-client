@@ -27,10 +27,10 @@ jobs:
 
     steps:
       - name: Checkout project
-        uses: actions/checkout@v2
+        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
 
       - name: Setup Miniconda
-        uses: conda-incubator/setup-miniconda@v2
+        uses: conda-incubator/setup-miniconda@9f54435e0e72c53962ee863144e47a4b094bfd35 # v2
         with:
           auto-update-conda: true
           python-version: ${{ matrix.python-version }}
@@ -68,7 +68,7 @@ jobs:
 
       - name: Export reports
         if: ${{ always() && steps.conda_environment_information.outputs.exit_status == 'success' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: report-lint-${{ matrix.python-version }}-${{ matrix.os }}
           path: .artifacts/reports
@@ -82,17 +82,17 @@ jobs:
       fail-fast: false
       matrix:
         os: [ macos-latest, ubuntu-latest, windows-latest ]
-        python-version: [ '3.8', '3.9', '3.10', '3.11', '3.12' ]
+        python-version: [ '3.9', '3.10', '3.11', '3.12', '3.13' ]
 
     steps:
       # most of these steps might be anchored to corresponding ones in the "lint_code" job
       # unfortunately, as of June 2021 - GitHub doesn't support anchors for action scripts
 
       - name: Checkout project
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
       - name: Setup Miniconda
-        uses: conda-incubator/setup-miniconda@v3
+        uses: conda-incubator/setup-miniconda@505e6394dae86d6a5c7fbb6e3fb8938e3e863830 # v3
         with:
           auto-update-conda: true
           python-version: ${{ matrix.python-version }}
@@ -124,7 +124,7 @@ jobs:
 
       - name: Export reports
         if: ${{ always() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: report-test-${{ matrix.python-version }}-${{ matrix.os }}
           path: .artifacts/reports
