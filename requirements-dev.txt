@@ -4,7 +4,7 @@
 bandit~=1.7.5
 build~=1.2.2
 coverage~=7.2.5
-freezegun~=1.2.2
+freezegun~=1.5.2
 jinja2~=3.1.2
 mypy~=1.16.1
 pytest~=7.4.4
