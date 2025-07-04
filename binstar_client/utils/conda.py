@@ -20,6 +20,7 @@ FLAGS: typing.Final[int] = subprocess.CREATE_NO_WINDOW if sys.platform == 'win32
 
 class CondaInfo(typing.TypedDict):
     """Details on detected conda instance."""
+
     CONDA_EXE: str
     CONDA_PREFIX: str
     CONDA_ROOT: str

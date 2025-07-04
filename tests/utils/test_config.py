@@ -74,19 +74,23 @@ sites:
         ssl_verify: false
             ''')
 
-        with unittest.mock.patch('binstar_client.utils.config.SEARCH_PATH', [system_dir, user_dir]), \
-                unittest.mock.patch('binstar_client.utils.config.DEFAULT_CONFIG', {}):
+        with unittest.mock.patch(
+            'binstar_client.utils.config.SEARCH_PATH', [system_dir, user_dir]
+        ), unittest.mock.patch('binstar_client.utils.config.DEFAULT_CONFIG', {}):
             cfg = config.get_config()
 
-            self.assertEqual(cfg, {
-                'ssl_verify': True,
-                'sites': {
-                    'develop': {
-                        'url': 'http://develop.anaconda.org',
-                        'ssl_verify': False,
-                    }
-                }
-            })
+            self.assertEqual(
+                cfg,
+                {
+                    'ssl_verify': True,
+                    'sites': {
+                        'develop': {
+                            'url': 'http://develop.anaconda.org',
+                            'ssl_verify': False,
+                        }
+                    },
+                },
+            )
 
     def test_support_tags(self):
         user_dir, system_dir = self.create_config_dirs()
@@ -99,21 +103,25 @@ sites:
 ssl_verify: False
 ''')
 
-        with unittest.mock.patch('binstar_client.utils.config.SEARCH_PATH', [user_dir]), \
-                unittest.mock.patch('binstar_client.utils.config.DEFAULT_CONFIG', {}):
+        with unittest.mock.patch('binstar_client.utils.config.SEARCH_PATH', [user_dir]), unittest.mock.patch(
+            'binstar_client.utils.config.DEFAULT_CONFIG', {}
+        ):
             cfg = config.get_config()
 
-            self.assertEqual(cfg, {
-                'ssl_verify': False,
-                'sites': {
-                    'alpha': {
-                        'url': 'foobar',
+            self.assertEqual(
+                cfg,
+                {
+                    'ssl_verify': False,
+                    'sites': {
+                        'alpha': {
+                            'url': 'foobar',
+                        },
+                        'binstar': {
+                            'url': 'barfoo',
+                        },
                     },
-                    'binstar': {
-                        'url': 'barfoo',
-                    },
-                }
-            })
+                },
+            )
 
     @unittest.mock.patch('binstar_client.utils.config.warnings')
     @unittest.mock.patch('binstar_client.utils.config.yaml_load', wraps=config.yaml_load)

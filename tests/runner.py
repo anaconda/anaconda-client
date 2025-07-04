@@ -90,14 +90,24 @@ class ColorTextTestResult(TextTestResult):
 
 
 class ColorTextTestRunner(TextTestRunner):
-
-    def __init__(self,
-                 stream=sys.stderr, descriptions=True, verbosity=1,
-                 failfast=False, buffer=False, resultclass=ColorTextTestResult):
-
-        TextTestRunner.__init__(self, stream=stream, descriptions=descriptions,
-                                verbosity=verbosity, failfast=failfast, buffer=buffer,
-                                resultclass=resultclass)
+    def __init__(
+        self,
+        stream=sys.stderr,
+        descriptions=True,
+        verbosity=1,
+        failfast=False,
+        buffer=False,
+        resultclass=ColorTextTestResult,
+    ):
+        TextTestRunner.__init__(
+            self,
+            stream=stream,
+            descriptions=descriptions,
+            verbosity=verbosity,
+            failfast=failfast,
+            buffer=buffer,
+            resultclass=resultclass,
+        )
 
     def run(self, test):
         'Run the given test case or test suite.'
@@ -121,19 +131,15 @@ class ColorTextTestRunner(TextTestRunner):
         if hasattr(result, 'separator2'):
             self.stream.writeln(result.separator2)
         run = result.testsRun
-        self.stream.writeln('Ran %d test%s in %.3fs' %
-                            (run, run != 1 and 's' or '', timeTaken))
+        self.stream.writeln('Ran %d test%s in %.3fs' % (run, run != 1 and 's' or '', timeTaken))
         self.stream.writeln()
 
         return result
 
     def write_end(self, result):
-
         expectedFails = unexpectedSuccesses = skipped = 0
         try:
-            results = map(len, (result.expectedFailures,
-                                result.unexpectedSuccesses,
-                                result.skipped))
+            results = map(len, (result.expectedFailures, result.unexpectedSuccesses, result.skipped))
         except AttributeError:
             pass
         else:

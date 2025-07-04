@@ -9,10 +9,18 @@ from binstar_client.errors import Conflict
 
 
 class PackageMixin:
-
-    def copy(self, owner, package, version, basename=None,
-             to_owner=None, from_label='main', to_label='main', replace=False, update=False):
-
+    def copy(
+        self,
+        owner,
+        package,
+        version,
+        basename=None,
+        to_owner=None,
+        from_label='main',
+        to_label='main',
+        replace=False,
+        update=False,
+    ):
         copy_path = '/'.join((owner, package, version, basename or ''))
         url = '{}/copy/package/{}'.format(self.domain, copy_path)
 
@@ -30,6 +38,7 @@ class PackageMixin:
             self._check_response(res)
         except Conflict as conflict:
             raise Conflict(
-                'File conflict while copying! Try to use --replace or --update options for force copying') from conflict
+                'File conflict while copying! Try to use --replace or --update options for force copying'
+            ) from conflict
 
         return res.json()
