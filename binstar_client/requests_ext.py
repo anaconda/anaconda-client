@@ -19,7 +19,7 @@ ValueT = typing.TypeVar('ValueT')
 
 
 def iter_fields(
-        fields: typing.Union[typing.Mapping[KeyT, ValueT], typing.Iterable[typing.Tuple[KeyT, ValueT]]],
+    fields: typing.Union[typing.Mapping[KeyT, ValueT], typing.Iterable[typing.Tuple[KeyT, ValueT]]],
 ) -> typing.Iterator[typing.Tuple[KeyT, ValueT]]:
     """Iterate over fields."""
     if isinstance(fields, typing.Mapping):
@@ -86,17 +86,15 @@ def encode_multipart_formdata_stream(fields, boundary=None):
             else:
                 filename, data = value
                 from mimetypes import guess_type
+
                 content_type, _ = guess_type(filename)
                 if content_type is None:
                     content_type = 'application/octet-stream'
-            body_write_encode('Content-Disposition: form-data; name="%s"; '
-                              'filename="%s"\r\n' % (fieldname, filename))
-            body_write_encode('Content-Type: %s\r\n\r\n' %
-                              (content_type,))
+            body_write_encode('Content-Disposition: form-data; name="%s"; filename="%s"\r\n' % (fieldname, filename))
+            body_write_encode('Content-Type: %s\r\n\r\n' % (content_type,))
         else:
             data = value
-            body_write_encode('Content-Disposition: form-data; name="%s"\r\n'
-                              % (fieldname))
+            body_write_encode('Content-Disposition: form-data; name="%s"\r\n' % (fieldname))
             body_write(b'\r\n')
 
         if isinstance(data, (int,)):

@@ -28,29 +28,18 @@ def add_parser(subparsers):
         formatter_class=argparse.RawDescriptionHelpFormatter,
         help=description,
         description=description,
-        epilog=__doc__
+        epilog=__doc__,
     )
 
-    parser.add_argument(
-        'handle',
-        help='<channel_name>/<package_name>',
-        action='store'
-    )
+    parser.add_argument('handle', help='<channel_name>/<package_name>', action='store')
 
-    parser.add_argument(
-        '-f', '--force',
-        help='Overwrite',
-        action='store_true'
-    )
+    parser.add_argument('-f', '--force', help='Overwrite', action='store_true')
 
-    parser.add_argument(
-        '-o', '--output',
-        help='Download as',
-        default='.'
-    )
+    parser.add_argument('-o', '--output', help='Download as', default='.')
     pkg_types = ', '.join(pkg_type.value for pkg_type in PackageType)
     parser.add_argument(
-        '-t', '--package-type',
+        '-t',
+        '--package-type',
         help='Set the package type [{0}]. Defaults to downloading all package types available'.format(pkg_types),
         action='append',
     )
@@ -87,13 +76,21 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         ctx: typer.Context,
         handle: str = typer.Argument(help='<channel_name>/<package_name>'),
         force: bool = typer.Option(
-            False, '-f', '--force', help='Overwrite',
+            False,
+            '-f',
+            '--force',
+            help='Overwrite',
         ),
         output: str = typer.Option(
-            '.', '-o', '--output', help='Download as',
+            '.',
+            '-o',
+            '--output',
+            help='Download as',
         ),
         package_type: List[str] = typer.Option(
-            None, '-t', '--package-type',
+            None,
+            '-t',
+            '--package-type',
             help='Set the package type [{0}]. Defaults to downloading all package types available'.format(pkg_types),
         ),
     ) -> None:

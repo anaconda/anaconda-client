@@ -81,7 +81,10 @@ class Test(CLITestCase):
         )
         registry.register(method='POST', path='/s3_url', status=201)
         registry.register(
-            method='POST', path='/commit/eggs/mock/2.0.0/osx-64/mock-2.0.0-py37_1000.conda', status=200, content={},
+            method='POST',
+            path='/commit/eggs/mock/2.0.0/osx-64/mock-2.0.0-py37_1000.conda',
+            status=200,
+            content={},
         )
 
         main(['--show-traceback', 'upload', data_dir('mock-2.0.0-py37_1000.conda')])
@@ -161,10 +164,17 @@ class Test(CLITestCase):
         )
 
         # Pass -o to override the channel/package pypi package should go to
-        main([
-            '--show-traceback', 'upload', '--package', 'test_package34', '--package-type', 'pypi',
-            data_dir('test_package34-0.3.1.tar.gz'),
-        ])
+        main(
+            [
+                '--show-traceback',
+                'upload',
+                '--package',
+                'test_package34',
+                '--package-type',
+                'pypi',
+                data_dir('test_package34-0.3.1.tar.gz'),
+            ]
+        )
         registry.assertAllCalled()
         self.assertIsNotNone(json.loads(staging_response.req.body).get('sha256'))
 
@@ -175,10 +185,17 @@ class Test(CLITestCase):
 
         # Passing -o for `file` package_type doesn't override channel
         with self.assertRaises(errors.BinstarError):
-            main([
-                '--show-traceback', 'upload', '--package', 'test_package', '--package-type', 'file',
-                data_dir('test_package34-0.3.1.tar.gz'),
-            ])
+            main(
+                [
+                    '--show-traceback',
+                    'upload',
+                    '--package',
+                    'test_package',
+                    '--package-type',
+                    'file',
+                    data_dir('test_package34-0.3.1.tar.gz'),
+                ]
+            )
 
         registry.assertAllCalled()
 
@@ -212,10 +229,19 @@ class Test(CLITestCase):
             content={},
         )
 
-        main([
-            '--show-traceback', 'upload', '--package-type', 'file', '--package', 'test-package34', '--version', '0.3.1',
-            data_dir('test_package34-0.3.1.tar.gz'),
-        ])
+        main(
+            [
+                '--show-traceback',
+                'upload',
+                '--package-type',
+                'file',
+                '--package',
+                'test-package34',
+                '--version',
+                '0.3.1',
+                data_dir('test_package34-0.3.1.tar.gz'),
+            ]
+        )
 
         registry.assertAllCalled()
         self.assertIsNotNone(json.loads(staging_response.req.body).get('sha256'))

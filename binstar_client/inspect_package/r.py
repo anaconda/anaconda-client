@@ -10,14 +10,10 @@ def parse_package_list(package_spec):
     if not package_spec:
         return []
 
-    return [
-        spec.strip()
-        for spec in package_spec.split(',')
-    ]
+    return [spec.strip() for spec in package_spec.split(',')]
 
 
 def inspect_r_package(filename, fileobj, *args, **kwargs):
-
     with tarfile.open(filename, fileobj=fileobj) as tar_file:
         pkg_info = next(name for name in tar_file.getnames() if name.endswith('/DESCRIPTION'))
         tar_file_descriptor = tar_file.extractfile(pkg_info)
@@ -45,10 +41,11 @@ def inspect_r_package(filename, fileobj, *args, **kwargs):
     else:
         attrs['type'] = 'source'
 
-    package_data = {'name': name,
-                    'summary': summary,
-                    'license': _license,
-                    }
+    package_data = {
+        'name': name,
+        'summary': summary,
+        'license': _license,
+    }
     release_data = {
         'version': version,
         'description': description,
