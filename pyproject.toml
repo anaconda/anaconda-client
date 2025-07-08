@@ -56,7 +56,7 @@ source = "vcs"
 [tool.mypy]
 cache_dir = ".cache/mypy"
 ignore_missing_imports = true
-python_version = "3.8"
+python_version = "3.9"
 
 [tool.pytest.ini_options]
 addopts = [

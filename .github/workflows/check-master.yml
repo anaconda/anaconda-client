@@ -47,32 +47,18 @@ jobs:
           pip install -e . --no-deps
 
       - name: Conda environment information
-        id: conda_environment_information
         run: |
           conda info
           conda config --show
           conda list --show-channel-urls
-          echo "exit_status=success" >> "$GITHUB_OUTPUT"
 
       - name: Check with bandit
-        if: ${{ always() && steps.conda_environment_information.outputs.exit_status == 'success' }}
         run: |
-          mkdir -p .artifacts/reports
-          make lint-bandit > .artifacts/reports/bandit.txt 2>&1
+          make lint-bandit
 
       - name: Check with mypy
-        if: ${{ always() && steps.conda_environment_information.outputs.exit_status == 'success' }}
         run: |
-          mkdir -p .artifacts/reports
-          make lint-mypy > .artifacts/reports/mypy.txt 2>&1
-
-      - name: Export reports
-        if: ${{ always() && steps.conda_environment_information.outputs.exit_status == 'success' }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: report-lint-${{ matrix.python-version }}-${{ matrix.os }}
-          path: .artifacts/reports
-          retention-days: 7
+          make lint-mypy
 
   test:
     name: Test (Python ${{ matrix.python-version }} on ${{ matrix.os }})
@@ -85,9 +71,6 @@ jobs:
         python-version: [ '3.9', '3.10', '3.11', '3.12', '3.13' ]
 
     steps:
-      # most of these steps might be anchored to corresponding ones in the "lint_code" job
-      # unfortunately, as of June 2021 - GitHub doesn't support anchors for action scripts
-
       - name: Checkout project
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
