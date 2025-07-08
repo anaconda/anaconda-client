@@ -18,7 +18,7 @@ def main(args):
 
 
 def add_parser(subparsers):
-    description = 'Interact with notebooks in your Anaconda repository'
+    description = '(DEPRECATED) Interact with notebooks in your Anaconda repository'
     parser = subparsers.add_parser(
         'notebook',
         formatter_class=argparse.RawDescriptionHelpFormatter,
