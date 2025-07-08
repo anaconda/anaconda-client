@@ -47,20 +47,16 @@ jobs:
           pip install -e . --no-deps
 
       - name: Conda environment information
-        id: conda_environment_information
         run: |
           conda info
           conda config --show
           conda list --show-channel-urls
-          echo "exit_status=success" >> "$GITHUB_OUTPUT"
 
       - name: Check with bandit
-        if: ${{ always() && steps.conda_environment_information.outputs.exit_status == 'success' }}
         run: |
           make lint-bandit
 
       - name: Check with mypy
-        if: ${{ always() && steps.conda_environment_information.outputs.exit_status == 'success' }}
         run: |
           make lint-mypy
 
