@@ -57,22 +57,12 @@ jobs:
       - name: Check with bandit
         if: ${{ always() && steps.conda_environment_information.outputs.exit_status == 'success' }}
         run: |
-          mkdir -p .artifacts/reports
-          make lint-bandit > .artifacts/reports/bandit.txt 2>&1
+          make lint-bandit
 
       - name: Check with mypy
         if: ${{ always() && steps.conda_environment_information.outputs.exit_status == 'success' }}
         run: |
-          mkdir -p .artifacts/reports
-          make lint-mypy > .artifacts/reports/mypy.txt 2>&1
-
-      - name: Export reports
-        if: ${{ always() && steps.conda_environment_information.outputs.exit_status == 'success' }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: report-lint-${{ matrix.python-version }}-${{ matrix.os }}
-          path: .artifacts/reports
-          retention-days: 7
+          make lint-mypy
 
   test:
     name: Test (Python ${{ matrix.python-version }} on ${{ matrix.os }})
