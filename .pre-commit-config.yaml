@@ -18,6 +18,6 @@ repos:
   hooks:
   - id: pretty-format-yaml
     args: [--autofix]
-    exclude: conda.recipe/.*
+    exclude: (conda.recipe/.*)|(example-packages/.*)|(tests/.*)|(autotest/.*)|(etc/.*)
   - id: pretty-format-toml
     args: [--autofix, --trailing-commas]
