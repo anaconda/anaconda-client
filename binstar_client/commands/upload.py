@@ -509,7 +509,8 @@ class Uploader:
         )
 
         if package_meta.package_type is PackageType.PROJECT:
-            return self.upload_project(filename)
+            logger.error(DEPRECATION_MESSAGE_NOTEBOOKS_PROJECTS_ENVIRONMENTS_REMOVED)
+            return False
         return self.upload_package(filename, package_meta)
 
     def upload_package(self, filename: str, package_meta: detect.Meta) -> bool:
