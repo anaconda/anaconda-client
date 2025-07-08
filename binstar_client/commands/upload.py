@@ -504,14 +504,14 @@ class Uploader:
         if package_meta.package_type is PackageType.PROJECT:
             logger.error(DEPRECATION_MESSAGE_NOTEBOOKS_PROJECTS_ENVIRONMENTS_REMOVED)
             return False
+        elif package_meta.package_type is PackageType.NOTEBOOK:
+            logger.error(DEPRECATION_MESSAGE_NOTEBOOKS_PROJECTS_ENVIRONMENTS_REMOVED)
+            return False
+
         return self.upload_package(filename, package_meta)
 
     def upload_package(self, filename: str, package_meta: detect.Meta) -> bool:
         """Upload a package to the server."""
-        if package_meta.package_type is PackageType.NOTEBOOK:
-            logger.error(DEPRECATION_MESSAGE_NOTEBOOKS_PROJECTS_ENVIRONMENTS_REMOVED)
-            return False
-
         meta: PackageMeta = PackageMeta(filename=filename, meta=package_meta)
         meta._update_attrs(parser_args=self.arguments)
         meta._update_name(self.arguments.package)
