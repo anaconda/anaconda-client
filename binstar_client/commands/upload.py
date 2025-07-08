@@ -30,7 +30,6 @@ from binstar_client.deprecations import DEPRECATION_MESSAGE_NOTEBOOKS_PROJECTS_E
 from binstar_client.utils import bool_input, DEFAULT_CONFIG, get_config, get_server_api
 from binstar_client.utils.config import PackageType
 from binstar_client.utils import detect
-from binstar_client.utils import projects
 
 if typing.TYPE_CHECKING:
     import typing_extensions
@@ -314,12 +313,11 @@ class PackageMeta:
 
 
 class Uploader:
-    """Manager for package and project uploads."""
+    """Manager for package uploads."""
 
     __slots__ = (
         'arguments',
         'uploaded_packages',
-        'uploaded_projects',
         '__api',
         '__config',
         '__username',
@@ -331,7 +329,6 @@ class Uploader:
         """Initialize new :class:`~Uploader` instance."""
         self.arguments: typing.Final[argparse.Namespace] = arguments
         self.uploaded_packages: typing.Final[typing.List[UploadedPackage]] = []
-        self.uploaded_projects: typing.Final[typing.List[projects.UploadedProject]] = []
 
         self.__api: typing.Optional[binstar_client.Binstar] = None
         self.__config: typing.Optional[typing.Mapping[str, typing.Any]] = None
@@ -356,7 +353,7 @@ class Uploader:
 
     @property
     def username(self) -> str:  # noqa: D401
-        """Name of the user or organization to upload packages and projects to."""
+        """Name of the user or organization to upload packages to."""
         if self.__username is None:
             details: str = ''
             username: str = self.arguments.user or ''
@@ -486,14 +483,10 @@ class Uploader:
         return cache_record
 
     def print_uploads(self) -> None:
-        """Print details on all successful package and project uploads."""
+        """Print details on all successful package uploads."""
         package_info: UploadedPackage
         for package_info in self.uploaded_packages:
             logger.info('%s located at:\n  %s\n', package_info['package_type'].label.lower(), package_info['url'])
-
-        project_info: projects.UploadedProject
-        for project_info in self.uploaded_projects:
-            logger.info('Project %s uploaded to:\n  %s\n', project_info['name'], project_info['url'])
 
     def upload(self, filename: str) -> bool:
         """Upload a file to the server."""
@@ -545,12 +538,6 @@ class Uploader:
 
         logger.info('Uploading file "%s/%s/%s/%s"', self.username, meta.name, meta.version, meta.file_attrs['basename'])
         return self._upload_file(meta)
-
-    def upload_project(self, filename: str) -> bool:
-        """Upload a project to the server."""
-        uploaded_project: projects.UploadedProject = projects.upload_project(filename, self.arguments, self.username)
-        self.uploaded_projects.append(uploaded_project)
-        return True
 
     def _check_file(self, meta: PackageMeta) -> bool:
         """"""
