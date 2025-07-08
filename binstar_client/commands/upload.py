@@ -501,7 +501,7 @@ class Uploader:
             package_type=self.arguments.package_type and PackageType(self.arguments.package_type),
         )
 
-        if package_meta.package_type in {PackageType.PROJECT, PackageType.NOTEBOOK}:
+        if package_meta.package_type in {PackageType.PROJECT, PackageType.NOTEBOOK, PackageType.ENV}:
             logger.error(DEPRECATION_MESSAGE_NOTEBOOKS_PROJECTS_ENVIRONMENTS_REMOVED)
             return False
 
