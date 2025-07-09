@@ -502,8 +502,7 @@ class Uploader:
         )
 
         if package_meta.package_type in {PackageType.PROJECT, PackageType.NOTEBOOK, PackageType.ENV}:
-            logger.error(DEPRECATION_MESSAGE_NOTEBOOKS_PROJECTS_ENVIRONMENTS_REMOVED)
-            return False
+            raise typer.BadParameter(DEPRECATION_MESSAGE_NOTEBOOKS_PROJECTS_ENVIRONMENTS_REMOVED)
 
         return self.upload_package(filename, package_meta)
 
