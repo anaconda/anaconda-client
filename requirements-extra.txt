@@ -1,9 +1,3 @@
 # Additional requirements for complete experience
 
-# Disabling these extras since they break CI and the server doesn't support
-# projects anyway. The problem is that anaconda-project has a circular
-# dependency back onto anaconda-client.
-
-# anaconda-project>=0.9.1
-# ruamel.yaml  # Required by anaconda-project
 pillow>=8.2

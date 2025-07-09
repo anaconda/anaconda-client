@@ -50,7 +50,6 @@ ALL_SUBCOMMANDS = {
     "login",
     "logout",
     "move",
-    "notebook",
     "package",
     "remove",
     "search",
@@ -77,7 +76,6 @@ NON_HIDDEN_SUBCOMMANDS = {
 # Any subcommands that should emit deprecation warnings, and show as deprecated in the help
 DEPRECATED_SUBCOMMANDS = {
     "channel",
-    "notebook",
 }
 # Subcommands which have typer subcommands defined
 SUBCOMMANDS_WITH_NEW_CLI = {
