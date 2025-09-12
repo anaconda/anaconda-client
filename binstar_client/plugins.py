@@ -153,9 +153,6 @@ def _subcommand(ctx: Context) -> None:
     to the binstar_main function.
 
     """
-    # HOTFIX: There is a bug when capturing the full CLI arguments via the typer context.
-    #         For the use case when another plugin is installed, and this code path is
-    #         executed, we will just send the raw CLI arguments to the binstar parser.
     # We use the sys.argv and remove the "org" subcommand, in order to properly handle
     # any CLI flags or parameters passed in before the subcommand,
     # e.g. anaconda -t TOKEN upload ...
