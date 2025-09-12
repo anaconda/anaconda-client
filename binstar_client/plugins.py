@@ -153,11 +153,6 @@ def _subcommand(ctx: Context) -> None:
     to the binstar_main function.
 
     """
-    # args = []
-    # # Ensure we capture the subcommand name if there is one
-    # if ctx.info_name is not None:
-    #     args.append(ctx.info_name)
-    # args.extend(ctx.args)
     # HOTFIX: There is a bug when capturing the full CLI arguments via the typer context.
     #         For the use case when another plugin is installed, and this code path is
     #         executed, we will just send the raw CLI arguments to the binstar parser.
