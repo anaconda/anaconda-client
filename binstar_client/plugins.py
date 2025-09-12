@@ -15,6 +15,7 @@ entrypoint in setup.py.
 """
 
 import logging
+import sys
 import warnings
 from argparse import ArgumentParser
 from typing import Any
@@ -152,11 +153,10 @@ def _subcommand(ctx: Context) -> None:
     to the binstar_main function.
 
     """
-    args = []
-    # Ensure we capture the subcommand name if there is one
-    if ctx.info_name is not None:
-        args.append(ctx.info_name)
-    args.extend(ctx.args)
+    # We use the sys.argv and remove the "org" subcommand, in order to properly handle
+    # any CLI flags or parameters passed in before the subcommand,
+    # e.g. anaconda -t TOKEN upload ...
+    args = [arg for arg in sys.argv[1:] if arg != "org"]
     binstar_main(args, allow_plugin_main=False)
 
 
