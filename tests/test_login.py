@@ -2,12 +2,14 @@
 
 """Tests for authentication commands."""
 
+import unittest
 import unittest.mock
 
 from tests.fixture import CLITestCase, main
 from tests.urlmock import urlpatch
 
 
+@unittest.skip("migrated to unified anaconda-auth")
 class Test(CLITestCase):
     """Tests for authentication commands."""
 

@@ -420,7 +420,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         if remove:
             # Legacy parser supports e.g. --remove token-1 token-2, while click/typer
             # requires --remove token-1 --remove token-2. This makes them compatible.
-            remove += extra_args
+            remove += [] if extra_args is None else extra_args
 
         if weak:
             strength = TokenStrength.WEAK
