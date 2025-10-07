@@ -40,6 +40,10 @@ def interactive_get_token(args, fail_if_already_exists=True):
     api_client = get_server_api(args.token, args.site)
     config = get_config(site=args.site)
 
+    if not FALLBACK:
+        # use new auth flow
+        return token
+
     token = None
     # This function could be called from a totally different CLI, so we don't
     # know if the attribute hostname exists.

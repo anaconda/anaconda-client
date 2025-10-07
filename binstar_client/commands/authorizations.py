@@ -189,6 +189,10 @@ def main(args):
             logger.warning('This token will grant full access to %s\'s account', args.organization or username)
             logger.warning('Use the --list-scopes option to see a listing of your options')
 
+        if not AUTH_FALLBACK:
+            token = ...
+            args.out.write(token)
+            
         for _ in range(3):
             try:
                 if auth_type == 'kerberos':

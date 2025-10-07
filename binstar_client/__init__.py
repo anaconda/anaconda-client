@@ -25,6 +25,8 @@ from .utils import compute_hash, jencode
 from .utils.http_codes import STATUS_CODES
 from .utils.multipart_uploader import multipart_files_upload
 
+# from anaconda_auth.client import BaseClient
+
 logger = logging.getLogger('binstar')
 
 
@@ -37,11 +39,11 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
     """
 
     def __init__(self, token=None, domain='https://api.anaconda.org', verify=True, **kwargs):
-        self._session = requests.Session()
+        self._session = requests.Session() # BaseClient(site=..., api_key=token)
         self._session.headers['x-binstar-api-version'] = __version__
         self.session.verify = verify
-        self.session.auth = NullAuth()
-        self.token = token
+        # self.session.auth = NullAuth()
+        # self.token = token
         self._token_warning_sent = False
 
         user_agent = 'Anaconda-Client/{} (+https://anaconda.org)'.format(__version__)
@@ -53,8 +55,8 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
             }
         )
 
-        if token:
-            self._session.headers.update({'Authorization': 'token {}'.format(token)})
+        # if token:
+        #     self._session.headers.update({'Authorization': 'token {}'.format(token)})
 
         if domain.endswith('/'):
             domain = domain[:-1]
