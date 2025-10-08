@@ -1,0 +1,70 @@
+name: build
+
+on:
+  pull_request:
+    branches:
+    - main
+  workflow_dispatch:
+
+jobs:
+
+  build-conda-package:
+    name: Build conda package
+    runs-on: ubuntu-latest
+    steps:
+        - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+          with:
+            fetch-depth: 0
+        - name: Create build environment
+          run: |
+            source $CONDA/bin/activate
+            conda create -n build --file ./etc/build.linux-64.lock
+        - name: conda build
+          run: |
+            source $CONDA/bin/activate && conda activate build
+            mkdir -p ./conda-bld
+            VERSION=`hatch version` conda build -c conda-forge -c defaults --override-channels conda.recipe --output-folder ./conda-bld
+        - name: Upload the build artifact
+          uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+          with:
+            name: conda-${{ github.sha }}
+            path: ./conda-bld
+            if-no-files-found: error
+            retention-days: 7
+
+  build-wheel:
+    name: Build the wheel
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          fetch-depth: 0
+      - name: Setup Python
+        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
+        with:
+          python-version: "3.13"
+      - name: Install build dependencies
+        run: pip install build
+      - name: Build the package
+        run: python -m build
+      - name: Upload the build artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: wheel-${{ github.sha }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 7
+
+  # This check job runs to ensure all tests and builds have passed, such that we can use it as a "wildcard"
+  # for branch protection to ensure all tests pass before a PR can be merged.
+  check:
+    name: Check all tests passed
+    if: always()
+    needs: [test, build-conda-package, build-wheel]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Decide whether all required jobs succeeded or failed
+      uses: re-actors/alls-green@release/v1
+      with:
+        jobs: ${{ toJSON(needs) }}
