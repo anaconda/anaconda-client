@@ -9,7 +9,7 @@ on:
 
 jobs:
   test:
-    uses: ./.github/workflows/test.yml
+    uses: ./.github/workflows/lint-and-test.yml
 
   publish-conda-pkg-to-anaconda-dot-org:
     name: Publish conda package to Anaconda.org
