@@ -108,8 +108,8 @@ jobs:
         path: ./dist
     - name: Install build dependencies
       run: pip install hatch
-    # - name: Upload to PyPI
-    #   run: hatch publish
-    #   env:
-    #     HATCH_INDEX_USER: __token__
-    #     HATCH_INDEX_AUTH: ${{ secrets.PYPI_TOKEN }}
+    - name: Upload to PyPI
+      run: hatch publish
+      env:
+        HATCH_INDEX_USER: __token__
+        HATCH_INDEX_AUTH: ${{ secrets.PYPI_TOKEN }}
