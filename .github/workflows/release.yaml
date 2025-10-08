@@ -37,11 +37,11 @@ jobs:
       env:
         TOKEN: ${{ secrets.ANACONDA_ORG_UPLOAD_TOKEN }}
       run: |
+        [[ -z "$TOKEN" ]] && { echo "Error: TOKEN is not set"; exit 1; }
         source $CONDA/bin/activate && conda activate build
         # If it's not a tagged release, publish to dev label
         [[ "$GITHUB_REF" =~ ^refs/tags/[0-9] ]] || export LABEL="--label dev"
         export LABEL="--label deleteme"
-        [[ -z "$TOKEN" ]] && { echo "Error: TOKEN is not set"; exit 1; }
         anaconda --verbose \
           --token $TOKEN \
           upload \
@@ -73,11 +73,11 @@ jobs:
         TOKEN: ${{ secrets.ANACONDA_ORG_UPLOAD_TOKEN }}
         GITHUB_REF: ${{ github.ref }}
       run: |
+        [[ -z "$TOKEN" ]] && { echo "Error: TOKEN is not set"; exit 1; }
         source $CONDA/bin/activate && conda activate build
         # If it's not a tagged release, publish to dev label
         [[ "$GITHUB_REF" =~ ^refs/tags/[0-9] ]] || export LABEL="--label dev"
         export LABEL="--label deleteme"
-        [[ -z "$TOKEN" ]] && { echo "Error: TOKEN is not set"; exit 1; }
         anaconda --verbose \
           --token $TOKEN \
           upload \
