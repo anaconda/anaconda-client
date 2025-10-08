@@ -1,6 +1,10 @@
 name: release
 
 on:
+  # TODO(mattkram): Remove pull request trigger after workflow is tested
+  pull_request:
+    branches:
+      - main
   push:
     branches:
       - main
@@ -36,6 +40,7 @@ jobs:
         source $CONDA/bin/activate && conda activate build
         # If it's not a tagged release, publish to dev label
         [[ "$GITHUB_REF" =~ ^refs/tags/[0-9] ]] || export LABEL="--label dev"
+        export LABEL="--label deleteme"
         anaconda --verbose \
           --token $TOKEN \
           upload \
@@ -70,6 +75,7 @@ jobs:
         source $CONDA/bin/activate && conda activate build
         # If it's not a tagged release, publish to dev label
         [[ "$GITHUB_REF" =~ ^refs/tags/[0-9] ]] || export LABEL="--label dev"
+        export LABEL="--label deleteme"
         anaconda --verbose \
           --token $TOKEN \
           upload \
@@ -98,8 +104,8 @@ jobs:
         path: ./dist
     - name: Install build dependencies
       run: pip install hatch
-    - name: Upload to PyPI
-      run: hatch publish
-      env:
-        HATCH_INDEX_USER: __token__
-        HATCH_INDEX_AUTH: ${{ secrets.PYPI_TOKEN }}
+    # - name: Upload to PyPI
+    #   run: hatch publish
+    #   env:
+    #     HATCH_INDEX_USER: __token__
+    #     HATCH_INDEX_AUTH: ${{ secrets.PYPI_TOKEN }}
