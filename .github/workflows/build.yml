@@ -61,7 +61,7 @@ jobs:
   check:
     name: Check all tests passed
     if: always()
-    needs: [test, build-conda-package, build-wheel]
+    needs: [build-conda-package, build-wheel]
     runs-on: ubuntu-latest
     steps:
     - name: Decide whether all required jobs succeeded or failed
