@@ -41,6 +41,7 @@ jobs:
         # If it's not a tagged release, publish to dev label
         [[ "$GITHUB_REF" =~ ^refs/tags/[0-9] ]] || export LABEL="--label dev"
         export LABEL="--label deleteme"
+        [[ -z "$TOKEN" ]] && { echo "Error: TOKEN is not set"; exit 1; }
         anaconda --verbose \
           --token $TOKEN \
           upload \
@@ -76,6 +77,7 @@ jobs:
         # If it's not a tagged release, publish to dev label
         [[ "$GITHUB_REF" =~ ^refs/tags/[0-9] ]] || export LABEL="--label dev"
         export LABEL="--label deleteme"
+        [[ -z "$TOKEN" ]] && { echo "Error: TOKEN is not set"; exit 1; }
         anaconda --verbose \
           --token $TOKEN \
           upload \
