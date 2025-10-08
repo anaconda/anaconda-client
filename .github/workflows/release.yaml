@@ -41,7 +41,6 @@ jobs:
         source $CONDA/bin/activate && conda activate build
         # If it's not a tagged release, publish to dev label
         [[ "$GITHUB_REF" =~ ^refs/tags/[0-9] ]] || export LABEL="--label dev"
-        export LABEL="--label deleteme"
         anaconda --verbose \
           --token $TOKEN \
           upload \
@@ -77,7 +76,6 @@ jobs:
         source $CONDA/bin/activate && conda activate build
         # If it's not a tagged release, publish to dev label
         [[ "$GITHUB_REF" =~ ^refs/tags/[0-9] ]] || export LABEL="--label dev"
-        export LABEL="--label deleteme"
         anaconda --verbose \
           --token $TOKEN \
           upload \
