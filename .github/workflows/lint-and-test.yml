@@ -14,6 +14,7 @@ on:
     - feature/**
     - release/**
     types: [opened, reopened, synchronize]
+  merge_group:
   release:
     types: [edited, published]
   workflow_dispatch:
