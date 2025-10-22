@@ -30,6 +30,21 @@ from .utils.multipart_uploader import multipart_files_upload
 logger = logging.getLogger('binstar')
 
 
+class HTTPBearerAuth(requests.auth.AuthBase):
+    def __init__(self, token):
+        self.token = token
+
+    def __eq__(self, other):
+        return self.token == getattr(other, 'token', None)
+
+    def __ne__(self, other):
+        return not self == other
+
+    def __call__(self, r):
+        r.headers['Authorization'] = 'Bearer ' + self.token
+        return r
+
+
 class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
     """
     An object that represents interfaces with the Anaconda repository restful API.
@@ -39,11 +54,11 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
     """
 
     def __init__(self, token=None, domain='https://api.anaconda.org', verify=True, **kwargs):
-        self._session = requests.Session() # BaseClient(site=..., api_key=token)
+        self._session = requests.Session()
         self._session.headers['x-binstar-api-version'] = __version__
         self.session.verify = verify
-        # self.session.auth = NullAuth()
-        # self.token = token
+        self.session.auth = NullAuth()
+        self.token = token
         self._token_warning_sent = False
 
         user_agent = 'Anaconda-Client/{} (+https://anaconda.org)'.format(__version__)
@@ -55,8 +70,8 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
             }
         )
 
-        # if token:
-        #     self._session.headers.update({'Authorization': 'token {}'.format(token)})
+        if token:
+            self._session.headers.update({'Authorization': 'token {}'.format(token)})
 
         if domain.endswith('/'):
             domain = domain[:-1]
@@ -104,6 +119,11 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
                 'or: \n'
                 '    pip install requests-kerberos'
             ) from error
+
+    def unified_authentication(self, *args, **kwargs):
+        access_token = kwargs.pop("auth")
+        auth = HTTPBearerAuth(token=access_token)
+        return self._authenticate(auth=auth, *args, **kwargs)
 
     def authenticate(self, username, password, *args, **kwargs):
         return self._authenticate((username, password), *args, **kwargs)
