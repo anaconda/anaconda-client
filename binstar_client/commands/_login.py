@@ -83,7 +83,7 @@ def interactive_get_token(args, fail_if_already_exists=True):
             application=auth_name,
             application_url=url,
             fail_if_already_exists=fail_if_already_exists,
-            hostname=hostname
+            hostname=hostname,
         )
 
         return token

@@ -192,7 +192,7 @@ def main(args):
         if not AUTH_FALLBACK:
             token = ...
             args.out.write(token)
-            
+
         for _ in range(3):
             try:
                 if auth_type == 'kerberos':
