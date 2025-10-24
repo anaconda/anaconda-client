@@ -21,4 +21,4 @@ types-tqdm~=4.67.0.20250516
 typing-extensions~=4.15.0
 
 # Pinned down for testing due to how we use fixtures
-typer<0.10.0
+typer<0.20.1
