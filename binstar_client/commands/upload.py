@@ -823,7 +823,6 @@ def _exclusive_mode(ctx: typer.Context, param: typer.CallbackParam, value: str) 
             (used_mode,) = ctx._modes  # type: ignore[attr-defined]
             raise typer.BadParameter(f'mutually exclusive with {used_mode}')
         # Store the used one for potential next option
-        # noqa: C0103
         ctx._modes.add(' / '.join(f'\'{o}\'' for o in param.opts))  # type: ignore[attr-defined]
     return value
 
