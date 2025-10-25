@@ -25,7 +25,7 @@ jobs:
         mkdir -p ./conda-bld
         VERSION=`hatch version` conda build -c conda-forge -c defaults --override-channels conda.recipe --output-folder ./conda-bld
     - name: Upload the build artifact
-      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02     # v4.6.2
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4     # v5.0.0
       with:
         name: conda-${{ github.sha }}
         path: ./conda-bld
@@ -49,7 +49,7 @@ jobs:
     - name: Build the package
       run: python -m build
     - name: Upload the build artifact
-      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02   # v4.6.2
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4   # v5.0.0
       with:
         name: wheel-${{ github.sha }}
         path: dist/*
