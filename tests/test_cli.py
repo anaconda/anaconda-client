@@ -3,6 +3,7 @@
 import shlex
 import sys
 import logging
+import unittest
 from argparse import Namespace
 from importlib import reload
 from pathlib import Path
@@ -295,6 +296,7 @@ def test_top_level_options_passed_through(cmd: str, monkeypatch: MonkeyPatch, as
         assert_binstar_args(["-t", "TOKEN", "-s", "some-site.com", cmd, "-h"])  # nosec
 
 
+@unittest.skip("migrated to anaconda-auth")
 @pytest.mark.parametrize(
     "prefix_args, args, mods",
     [

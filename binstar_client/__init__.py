@@ -25,7 +25,24 @@ from .utils import compute_hash, jencode
 from .utils.http_codes import STATUS_CODES
 from .utils.multipart_uploader import multipart_files_upload
 
+# from anaconda_auth.client import BaseClient
+
 logger = logging.getLogger('binstar')
+
+
+class HTTPBearerAuth(requests.auth.AuthBase):
+    def __init__(self, token):
+        self.token = token
+
+    def __eq__(self, other):
+        return self.token == getattr(other, 'token', None)
+
+    def __ne__(self, other):
+        return not self == other
+
+    def __call__(self, r):
+        r.headers['Authorization'] = 'Bearer ' + self.token
+        return r
 
 
 class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
@@ -102,6 +119,11 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
                 'or: \n'
                 '    pip install requests-kerberos'
             ) from error
+
+    def unified_authentication(self, *args, **kwargs):
+        access_token = kwargs.pop("auth")
+        auth = HTTPBearerAuth(token=access_token)
+        return self._authenticate(auth=auth, *args, **kwargs)
 
     def authenticate(self, username, password, *args, **kwargs):
         return self._authenticate((username, password), *args, **kwargs)

@@ -189,6 +189,10 @@ def main(args):
             logger.warning('This token will grant full access to %s\'s account', args.organization or username)
             logger.warning('Use the --list-scopes option to see a listing of your options')
 
+        if not AUTH_FALLBACK:
+            token = ...
+            args.out.write(token)
+
         for _ in range(3):
             try:
                 if auth_type == 'kerberos':
@@ -420,7 +424,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         if remove:
             # Legacy parser supports e.g. --remove token-1 token-2, while click/typer
             # requires --remove token-1 --remove token-2. This makes them compatible.
-            remove += extra_args
+            remove += [] if extra_args is None else extra_args
 
         if weak:
             strength = TokenStrength.WEAK

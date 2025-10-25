@@ -47,8 +47,8 @@ ALL_SUBCOMMANDS = {
     "download",
     "groups",
     "label",
-    "login",
-    "logout",
+    # "login",
+    # "logout",
     "move",
     "package",
     "remove",
@@ -56,7 +56,7 @@ ALL_SUBCOMMANDS = {
     "show",
     "update",
     "upload",
-    "whoami",
+    # "whoami",
 }
 # These subcommands will be shown in the top-level help
 NON_HIDDEN_SUBCOMMANDS = {

@@ -3,6 +3,7 @@
 
 import json
 import os
+import unittest
 import unittest.mock
 
 import requests.utils
@@ -12,6 +13,7 @@ from tests.urlmock import urlpatch
 from tests.utils.utils import data_dir
 
 
+@unittest.skip("migrated to anaconda-auth")
 class Test(CLITestCase):
     """Tests for whoami command."""
 
