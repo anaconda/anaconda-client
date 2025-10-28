@@ -19,7 +19,7 @@ types-requests~=2.32.4.20250611
 types-setuptools~=80.9.0.20250529
 types-tqdm~=4.67.0.20250516
 typing-extensions~=4.15.0
-anaconda-auth~=0.9.2
+anaconda-auth>=0.9.1
 
 # Pinned down for testing due to how we use fixtures
 typer<0.10.0
