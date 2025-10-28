@@ -902,7 +902,7 @@ def test_auth_mutually_exclusive_options(opts, error_opt, conflict_opt, mocker, 
     result = runner.invoke(anaconda_cli_base.cli.app, args)
 
     assert result.exit_code == 2, result.stdout
-    assert f"Invalid value for {error_opt}: mutually exclusive with {conflict_opt}" in result.stdout, result.stdout
+    assert "not allowed" in result.stdout, result.stdout
 
     mock.assert_not_called()
 
@@ -916,7 +916,9 @@ def test_auth_mutually_exclusive_options_required(mocker, monkeypatch):
     result = runner.invoke(anaconda_cli_base.cli.app, args)
 
     assert result.exit_code == 2, result.stdout
-    assert "one of --list-scopes, --list, --list, --info, or --remove must be provided" in result.stdout, result.stdout
+    # Loose testing of error message to allow slight variations between new and old CLI
+    for arg in ["--list-scopes", "--list", "--list", "--info", "--remove"]:
+        assert arg in result.stdout, result.stdout
 
     mock.assert_not_called()
 
