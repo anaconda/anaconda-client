@@ -98,7 +98,7 @@ jobs:
       run: |
         conda install -c defaults -c anaconda-cloud python=${{ matrix.python-version }} pip --file requirements.txt --file requirements-extra.txt
         # TODO(mattkram): Handle this special case better
-        conda install "anaconda-cloud/label/dev::anacondaeauth=0.10.1.dev8"
+        conda install "anaconda-cloud/label/dev::anaconda-auth>=0.10.1.dev8"
         pip install -r requirements-dev.txt
         pip install -e . --no-deps
 
