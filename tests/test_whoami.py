@@ -13,7 +13,6 @@ from tests.urlmock import urlpatch
 from tests.utils.utils import data_dir
 
 
-@unittest.skip("migrated to anaconda-auth")
 class Test(CLITestCase):
     """Tests for whoami command."""
 
