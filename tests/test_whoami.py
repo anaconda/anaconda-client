@@ -3,7 +3,6 @@
 
 import json
 import os
-import unittest
 import unittest.mock
 
 import requests.utils
