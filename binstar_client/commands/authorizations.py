@@ -24,6 +24,7 @@ import typer
 from dateutil.parser import parse as parse_date
 
 from binstar_client import errors
+from binstar_client.commands.login import LEGACY_INTERACTIVE_LOGIN, get_anaconda_token
 from binstar_client.utils import get_server_api
 from binstar_client.utils import tables
 
@@ -179,9 +180,10 @@ def main(args):
                 return
 
             current_user = None
-            sys.stderr.write('Username: ')
-            sys.stderr.flush()
-            username = input('')
+            if LEGACY_INTERACTIVE_LOGIN:
+                sys.stderr.write('Username: ')
+                sys.stderr.flush()
+                username = input('')
 
         scopes = [scope for scopes in args.scopes for scope in scopes.split()]
         if not scopes:
@@ -189,9 +191,20 @@ def main(args):
             logger.warning('This token will grant full access to %s\'s account', args.organization or username)
             logger.warning('Use the --list-scopes option to see a listing of your options')
 
-        if not AUTH_FALLBACK:
-            token = ...
+        if not LEGACY_INTERACTIVE_LOGIN:
+            anaconda_token = get_anaconda_token(aserver_api.domain)
+            token = aserver_api.unified_authentication(
+                auth=anaconda_token,
+                application=args.name,
+                application_url=args.url,
+                scopes=scopes,
+                for_user=args.organization,
+                max_age=args.max_age,
+                strength=args.strength,
+                fail_if_already_exists=True,
+            )
             args.out.write(token)
+            return
 
         for _ in range(3):
             try:
