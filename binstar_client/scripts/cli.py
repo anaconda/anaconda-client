@@ -19,7 +19,7 @@ import typing
 from binstar_client import __version__
 from binstar_client import commands
 from binstar_client import errors
-from binstar_client.commands._login import interactive_login
+from binstar_client.commands.login import interactive_login
 from binstar_client.utils import logging_utils
 
 
