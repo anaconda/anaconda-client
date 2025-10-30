@@ -25,8 +25,6 @@ from .utils import compute_hash, jencode
 from .utils.http_codes import STATUS_CODES
 from .utils.multipart_uploader import multipart_files_upload
 
-# from anaconda_auth.client import BaseClient
-
 logger = logging.getLogger('binstar')
 
 
