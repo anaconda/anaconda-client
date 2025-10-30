@@ -179,20 +179,6 @@ def cli_base_main_callback(
         )
         raise typer.Exit()
 
-    if ctx.obj.params.get("verbose"):
-        log_level = logging.DEBUG
-    elif ctx.obj.params.get("quiet"):
-        log_level = logging.WARNING
-    else:
-        log_level = logging.INFO
-
-    logging_utils.setup_logging(
-        logger,
-        log_level=log_level,
-        show_traceback=ctx.obj.params.get("show_traceback", False),
-        disable_ssl_warnings=ctx.obj.params.get("disable_ssl_warnings", False),
-    )
-
 
 if not isinstance(main_app, functools.partial):
     # Don't apply decorator if legacy entrypoint is used
