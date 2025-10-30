@@ -47,7 +47,7 @@ class Test(CLITestCase):
             path='/.well-known/openid-configuration',
             method='GET',
             status=200,
-            content='{"authorization_endpoint": "/auth", "token_endpoint": "/token"}'
+            content='{"authorization_endpoint": "/auth", "token_endpoint": "/token"}',
         )
 
         auth = urls.register(method='POST', path='/authentications', content='{"token": "a-token"}')
@@ -93,7 +93,6 @@ class Test(CLITestCase):
     @unittest.mock.patch('binstar_client.commands.login.store_token')
     @urlpatch
     def test_legacy_login_user_pass_flags(self, urls, store_token, _do_auth_flow):
-
         urls.register(path='/', method='HEAD', status=200)
         urls.register(path='/authentication-type', status=404)
 
