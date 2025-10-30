@@ -88,6 +88,7 @@ def interactive_get_token(args, fail_if_already_exists=True):
 
         return token
 
+    logger.warning('Username/password login is deprecated')
     auth_type = api_client.authentication_type()
 
     if auth_type == 'kerberos':
@@ -169,9 +170,13 @@ def add_parser(subparsers):
         help='Specify the host name of this login, this should be unique (default: %(default)s)',
     )
     subparser.add_argument(
-        '--username', dest='login_username', help='Specify your username. If this is not given, you will be prompted'
+        '--username',
+        dest='login_username',
+        help='(deprecated) Specify your username. If this is not given, you will be prompted'
     )
     subparser.add_argument(
-        '--password', dest='login_password', help='Specify your password. If this is not given, you will be prompted'
+        '--password',
+        dest='login_password',
+        help='(deprecated) Specify your password. If this is not given, you will be prompted'
     )
     subparser.set_defaults(main=main)
