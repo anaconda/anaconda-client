@@ -172,11 +172,11 @@ def add_parser(subparsers):
     subparser.add_argument(
         '--username',
         dest='login_username',
-        help='(deprecated) Specify your username. If this is not given, you will be prompted'
+        help='(deprecated) Specify your username. If this is not given, you will be prompted',
     )
     subparser.add_argument(
         '--password',
         dest='login_password',
-        help='(deprecated) Specify your password. If this is not given, you will be prompted'
+        help='(deprecated) Specify your password. If this is not given, you will be prompted',
     )
     subparser.set_defaults(main=main)
