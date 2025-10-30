@@ -64,7 +64,9 @@ def interactive_get_token(args, fail_if_already_exists=True):
 
     api_client.check_server()
 
-    if not LEGACY_INTERACTIVE_LOGIN:
+    legacy_flags = getattr(args, "login_username") or getattr(args, "login_password")
+
+    if not (LEGACY_INTERACTIVE_LOGIN or legacy_flags):
         dot_org_api_domain = urlparse(url).netloc
         config = AnacondaAuthSite(domain=dot_org_api_domain)
 
