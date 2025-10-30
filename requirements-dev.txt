@@ -22,4 +22,4 @@ typing-extensions~=4.15.0
 anaconda-auth>=0.9.1
 
 # Pinned down for testing due to how we use fixtures
-typer<0.10.0
+typer<0.20.1
