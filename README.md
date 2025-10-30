@@ -45,3 +45,4 @@ Run anaconda-client commands:
 ```bash
 python -m binstar_client.scripts.cli --version
 ```
+
