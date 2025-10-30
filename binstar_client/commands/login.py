@@ -102,7 +102,7 @@ def interactive_get_token(args, fail_if_already_exists=True):
         anaconda_token = get_anaconda_token(url)
 
         token = try_replace_token(
-            api_client.unified_authentication,
+            api_client.bearer_authentication,
             auth=anaconda_token,
             application=auth_name,
             application_url=url,

@@ -193,7 +193,7 @@ def main(args):
 
         if not LEGACY_INTERACTIVE_LOGIN:
             anaconda_token = get_anaconda_token(aserver_api.domain)
-            token = aserver_api.unified_authentication(
+            token = aserver_api.bearer_authentication(
                 auth=anaconda_token,
                 application=args.name,
                 application_url=args.url,

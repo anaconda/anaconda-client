@@ -120,7 +120,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
                 '    pip install requests-kerberos'
             ) from error
 
-    def unified_authentication(self, *args, **kwargs):
+    def bearer_authentication(self, *args, **kwargs):
         access_token = kwargs.pop("auth")
         auth = HTTPBearerAuth(token=access_token)
         return self._authenticate(auth=auth, *args, **kwargs)
