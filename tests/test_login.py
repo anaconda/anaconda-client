@@ -88,3 +88,25 @@ class Test(CLITestCase):
 
         self.assertTrue(store_token.called)
         self.assertEqual(store_token.call_args[0][0], 'a-token')
+
+    @unittest.mock.patch('binstar_client.commands.login._do_auth_flow')
+    @unittest.mock.patch('binstar_client.commands.login.store_token')
+    @urlpatch
+    def test_legacy_login_user_pass_flags(self, urls, store_token, _do_auth_flow):
+
+        urls.register(path='/', method='HEAD', status=200)
+        urls.register(path='/authentication-type', status=404)
+
+        auth = urls.register(method='POST', path='/authentications', content='{"token": "a-token"}')
+        main(['--show-traceback', 'login', "--username", "test-user", "--password", "test-pass"])
+        self.assertIn('login successful', self.stream.getvalue())
+
+        auth.assertCalled()
+
+        self.assertFalse(_do_auth_flow.called)
+
+        self.assertIn('Authorization', auth.req.headers)
+        self.assertIn('Basic ', auth.req.headers['Authorization'])
+
+        self.assertTrue(store_token.called)
+        self.assertEqual(store_token.call_args[0][0], 'a-token')
