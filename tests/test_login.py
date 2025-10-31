@@ -98,6 +98,7 @@ class Test(CLITestCase):
         auth = urls.register(method='POST', path='/authentications', content='{"token": "a-token"}')
         main(['--show-traceback', 'login', "--username", "test-user", "--password", "test-pass"])
         self.assertIn('login successful', self.stream.getvalue())
+        self.assertIn('Username/password login is deprecated', self.stream.getvalue())
 
         auth.assertCalled()
 
