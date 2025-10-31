@@ -2,7 +2,6 @@
 
 """Tests for authentication commands."""
 
-import unittest
 import unittest.mock
 
 from tests.fixture import CLITestCase, main

@@ -3,7 +3,6 @@
 import shlex
 import sys
 import logging
-import unittest
 from argparse import Namespace
 from importlib import reload
 from pathlib import Path
