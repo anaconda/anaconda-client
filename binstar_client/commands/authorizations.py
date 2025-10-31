@@ -24,7 +24,7 @@ import typer
 from dateutil.parser import parse as parse_date
 
 from binstar_client import errors
-from binstar_client.commands.login import LEGACY_INTERACTIVE_LOGIN, get_anaconda_token
+from binstar_client.commands.login import LEGACY_INTERACTIVE_LOGIN, get_anaconda_unified_token
 from binstar_client.utils import get_server_api
 from binstar_client.utils import tables
 
@@ -192,7 +192,7 @@ def main(args):
             logger.warning('Use the --list-scopes option to see a listing of your options')
 
         if not LEGACY_INTERACTIVE_LOGIN:
-            anaconda_token = get_anaconda_token(aserver_api.domain)
+            anaconda_token = get_anaconda_unified_token(aserver_api.domain)
             token = aserver_api.bearer_authentication(
                 auth=anaconda_token,
                 application=args.name,

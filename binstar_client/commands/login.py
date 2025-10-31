@@ -43,7 +43,10 @@ class DotOrgSite(AnacondaAuthSite):
         return urljoin(f"https://{self.domain_for_keyring_token}", self.login_error_path)
 
 
-def get_anaconda_token(url):
+def get_anaconda_unified_token(url):
+    """Retrieve an anaconda unified auth credential, either a stored API key or a new
+    access token retrieved via interactive login.
+    """
     dot_org_api_domain = urlparse(url).netloc
     config = DotOrgSite(domain=dot_org_api_domain)
 
@@ -99,7 +102,7 @@ def interactive_get_token(args, fail_if_already_exists=True):
     has_legacy_flags = getattr(args, "login_username") or getattr(args, "login_password")
 
     if not (LEGACY_INTERACTIVE_LOGIN or has_legacy_flags):
-        anaconda_token = get_anaconda_token(url)
+        anaconda_token = get_anaconda_unified_token(url)
 
         token = try_replace_token(
             api_client.bearer_authentication,
