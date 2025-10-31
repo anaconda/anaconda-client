@@ -4,15 +4,58 @@ from __future__ import unicode_literals
 
 import getpass
 import logging
+import os
 import platform
+import re
 import socket
 import sys
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urljoin
 
+from anaconda_auth.actions import _do_auth_flow
+from anaconda_auth.config import AnacondaAuthSite
+from anaconda_auth.token import TokenInfo
+from anaconda_auth.exceptions import TokenNotFoundError
 from binstar_client import errors
 from binstar_client.utils import get_config, get_server_api, store_token, bool_input
 
+LEGACY_INTERACTIVE_LOGIN = os.getenv("ANACONDA_CLIENT_LEGACY_INTERACTIVE_LOGIN", False)
+
 logger = logging.getLogger('binstar.login')
+
+
+class DotOrgSite(AnacondaAuthSite):
+    @property
+    def domain_for_keyring_token(self):
+        # The unified CLI/SDK does not prefer the "auth." subdomain
+        # API Keys generated from `anaconda login` are stored in the
+        # keyring without the "auth." subdomain.
+        domain = re.sub(r"^auth\.", "", urlparse(self.oidc.authorization_endpoint).netloc)
+        return domain
+
+    @property
+    def login_success_url(self) -> str:
+        """The location to redirect after auth flow, if successful."""
+        return urljoin(f"https://{self.domain_for_keyring_token}", self.login_success_path)
+
+    @property
+    def login_error_url(self) -> str:
+        """The location to redirect after auth flow, if there is an error."""
+        return urljoin(f"https://{self.domain_for_keyring_token}", self.login_error_path)
+
+
+def get_anaconda_unified_token(url):
+    """Retrieve an anaconda unified auth credential, either a stored API key or a new
+    access token retrieved via interactive login.
+    """
+    dot_org_api_domain = urlparse(url).netloc
+    config = DotOrgSite(domain=dot_org_api_domain)
+
+    try:
+        anaconda_token = TokenInfo.load(domain=config.domain_for_keyring_token).api_key
+    except TokenNotFoundError:
+        anaconda_token = _do_auth_flow(config=config)
+
+    return anaconda_token
 
 
 def try_replace_token(authenticate, **kwargs):
@@ -55,6 +98,24 @@ def interactive_get_token(args, fail_if_already_exists=True):
     auth_name += '%s@%s' % (getpass.getuser(), hostname)
 
     api_client.check_server()
+
+    has_legacy_flags = getattr(args, "login_username") or getattr(args, "login_password")
+
+    if not (LEGACY_INTERACTIVE_LOGIN or has_legacy_flags):
+        anaconda_token = get_anaconda_unified_token(url)
+
+        token = try_replace_token(
+            api_client.bearer_authentication,
+            auth=anaconda_token,
+            application=auth_name,
+            application_url=url,
+            fail_if_already_exists=fail_if_already_exists,
+            hostname=hostname,
+        )
+
+        return token
+
+    logger.warning('Username/password login is deprecated')
     auth_type = api_client.authentication_type()
 
     if auth_type == 'kerberos':
@@ -136,9 +197,13 @@ def add_parser(subparsers):
         help='Specify the host name of this login, this should be unique (default: %(default)s)',
     )
     subparser.add_argument(
-        '--username', dest='login_username', help='Specify your username. If this is not given, you will be prompted'
+        '--username',
+        dest='login_username',
+        help='(deprecated) Specify your username. If this is not given, you will be prompted',
     )
     subparser.add_argument(
-        '--password', dest='login_password', help='Specify your password. If this is not given, you will be prompted'
+        '--password',
+        dest='login_password',
+        help='(deprecated) Specify your password. If this is not given, you will be prompted',
     )
     subparser.set_defaults(main=main)

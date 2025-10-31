@@ -24,6 +24,7 @@ import typer
 from dateutil.parser import parse as parse_date
 
 from binstar_client import errors
+from binstar_client.commands.login import LEGACY_INTERACTIVE_LOGIN, get_anaconda_unified_token
 from binstar_client.utils import get_server_api
 from binstar_client.utils import tables
 
@@ -179,15 +180,31 @@ def main(args):
                 return
 
             current_user = None
-            sys.stderr.write('Username: ')
-            sys.stderr.flush()
-            username = input('')
+            if LEGACY_INTERACTIVE_LOGIN:
+                sys.stderr.write('Username: ')
+                sys.stderr.flush()
+                username = input('')
 
         scopes = [scope for scopes in args.scopes for scope in scopes.split()]
         if not scopes:
             logger.warning('You have not specified the scope of this token with the \'--scopes\' argument.')
             logger.warning('This token will grant full access to %s\'s account', args.organization or username)
             logger.warning('Use the --list-scopes option to see a listing of your options')
+
+        if not LEGACY_INTERACTIVE_LOGIN:
+            anaconda_token = get_anaconda_unified_token(aserver_api.domain)
+            token = aserver_api.bearer_authentication(
+                auth=anaconda_token,
+                application=args.name,
+                application_url=args.url,
+                scopes=scopes,
+                for_user=args.organization,
+                max_age=args.max_age,
+                strength=args.strength,
+                fail_if_already_exists=True,
+            )
+            args.out.write(token)
+            return
 
         for _ in range(3):
             try:
@@ -420,6 +437,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         if remove:
             # Legacy parser supports e.g. --remove token-1 token-2, while click/typer
             # requires --remove token-1 --remove token-2. This makes them compatible.
+            extra_args = extra_args or []
             remove += extra_args
 
         if weak:

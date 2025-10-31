@@ -23,7 +23,15 @@ jobs:
       run: |
         source $CONDA/bin/activate && conda activate build
         mkdir -p ./conda-bld
-        VERSION=`hatch version` conda build -c conda-forge -c defaults --override-channels conda.recipe --output-folder ./conda-bld
+        # TODO(mattkram): Remove anaconda-cloud/label/dev channel before release
+        VERSION=`hatch version` \
+          conda build \
+            -c conda-forge \
+            -c defaults \
+            -c anaconda-cloud/label/dev \
+            --override-channels \
+            conda.recipe \
+            --output-folder ./conda-bld
     - name: Upload the build artifact
       uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4     # v5.0.0
       with:
