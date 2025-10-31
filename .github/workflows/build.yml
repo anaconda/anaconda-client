@@ -23,11 +23,11 @@ jobs:
       run: |
         source $CONDA/bin/activate && conda activate build
         mkdir -p ./conda-bld
+        # TODO(mattkram): Remove anaconda-cloud/label/dev channel before release
         VERSION=`hatch version` \
           conda build \
             -c conda-forge \
             -c defaults \
-            # TODO(mattkram): Remove dev channel before release
             -c anaconda-cloud/label/dev \
             --override-channels \
             conda.recipe \
