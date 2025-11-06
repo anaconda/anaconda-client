@@ -859,7 +859,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             '--label',
             help=label_help.format(deprecation='', label='label'),
         ),
-        progress: bool = typer.Option(True, is_flag=True, help='Show upload progress'),
+        progress: bool = typer.Option(True, help='Show upload progress'),
         user: typing.Optional[str] = typer.Option(
             None,
             '-u',
@@ -903,7 +903,6 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         thumbnail: typing.Optional[str] = typer.Option(None, help="Notebook's thumbnail image"),
         private: bool = typer.Option(
             False,
-            is_flag=True,
             help='Create the package with private access',
         ),
         register: bool = typer.Option(

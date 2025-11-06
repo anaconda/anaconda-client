@@ -144,7 +144,6 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         list_: bool = typer.Option(
             False,
             '--list',
-            is_flag=True,
             help=f'List all {name}s for a user',
             callback=_exclusive_action,
         ),
