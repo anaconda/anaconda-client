@@ -104,16 +104,21 @@ def interactive_get_token(args, fail_if_already_exists=True):
     if not (LEGACY_INTERACTIVE_LOGIN or has_legacy_flags):
         anaconda_token = get_anaconda_unified_token(url)
 
-        token = try_replace_token(
-            api_client.bearer_authentication,
-            auth=anaconda_token,
-            application=auth_name,
-            application_url=url,
-            fail_if_already_exists=fail_if_already_exists,
-            hostname=hostname,
-        )
-
-        return token
+        try:
+            token = try_replace_token(
+                api_client.bearer_authentication,
+                auth=anaconda_token,
+                application=auth_name,
+                application_url=url,
+                fail_if_already_exists=fail_if_already_exists,
+                hostname=hostname,
+            )
+        except errors.Unauthorized as e:
+            # This is the error state before the unified auth support is deployed on anaconda.org
+            if e.message == "Bearer token authentication is not enabled":
+                logger.warning("Server does not support unified auth yet, defaulting to legacy login flow")
+        else:
+            return token
 
     logger.warning('Username/password login is deprecated')
     auth_type = api_client.authentication_type()
