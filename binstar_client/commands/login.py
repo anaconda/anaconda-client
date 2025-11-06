@@ -117,6 +117,9 @@ def interactive_get_token(args, fail_if_already_exists=True):
             # This is the error state before the unified auth support is deployed on anaconda.org
             if e.message == "Bearer token authentication is not enabled":
                 logger.warning("Server does not support unified auth yet, defaulting to legacy login flow")
+            else:
+                # If we don't have a specific error, we just raise it
+                raise
         else:
             return token
 
