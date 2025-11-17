@@ -105,6 +105,15 @@ def interactive_get_token(args, fail_if_already_exists=True):
     has_legacy_flags = getattr(args, "login_username") or getattr(args, "login_password")
 
     if not (LEGACY_INTERACTIVE_LOGIN or has_legacy_flags):
+        # If the user already has a token, prompt them if they want to login again.
+        # This is to prevent the browser auth flow required by `get_anaconda_unified_token`.
+        if api_client.token is not None:
+            logger.warning('It appears you are already logged into %s', api_client.domain)
+            logger.warning('Logging in again will remove the previous token.')
+            if not bool_input('Would you like to continue'):
+                # Exit before we try to overwrite the token
+                raise SystemExit(1)
+
         anaconda_token = get_anaconda_unified_token(url)
 
         try:
