@@ -35,10 +35,12 @@ class Test(CLITestCase):
         self.assertTrue(store_token.called)
         self.assertEqual(store_token.call_args[0][0], 'a-token')
 
+    @unittest.mock.patch('binstar_client.utils.config.load_token')
     @unittest.mock.patch('binstar_client.commands.login._do_auth_flow')
     @unittest.mock.patch('binstar_client.commands.login.store_token')
     @urlpatch
-    def test_login_unified(self, urls, store_token, _do_auth_flow):
+    def test_login_unified(self, urls, store_token, _do_auth_flow, load_token):
+        load_token.return_value = None
         _do_auth_flow.return_value = "dot-com-access-token"
 
         urls.register(path='/', method='HEAD', status=200)
