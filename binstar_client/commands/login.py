@@ -75,6 +75,9 @@ def try_replace_token(authenticate, **kwargs):
             if bool_input('Would you like to continue'):
                 kwargs['fail_if_already_exists'] = False
                 return authenticate(**kwargs)
+            else:
+                # Exit before we try to overwrite the token
+                raise SystemExit(1)
 
         raise
 
