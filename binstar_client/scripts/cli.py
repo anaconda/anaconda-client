@@ -197,7 +197,7 @@ def binstar_main(
     # cli-base now parses `anaconda --at <site>`
     # here we just ignore the `--at <site>` flag if set
     group = parser.add_argument_group("ignored")
-    group.add_argument("--at", default=None, help="Ignored from cli-base")
+    group.add_argument("--at", default=None, help=argparse.SUPPRESS)
 
     if __version__:
         parser.add_argument(
