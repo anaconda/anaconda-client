@@ -43,9 +43,8 @@ requirements:
     - setuptools >=58.0.4
     - tqdm >=4.56.0
     - urllib3 >=1.26.4
-    - anaconda-cli-base >=0.4.0
-    # TODO(mattkram): Update to an appropriate minimum pin
-    - anaconda-auth >0.10.1.dev7
+    - anaconda-cli-base >=0.5.3
+    - anaconda-auth >=0.11.0
 
 test:
   requires:
