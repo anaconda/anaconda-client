@@ -28,6 +28,21 @@ from .utils.multipart_uploader import multipart_files_upload
 logger = logging.getLogger('binstar')
 
 
+class HTTPBearerAuth(requests.auth.AuthBase):
+    def __init__(self, token):
+        self.token = token
+
+    def __eq__(self, other):
+        return self.token == getattr(other, 'token', None)
+
+    def __ne__(self, other):
+        return not self == other
+
+    def __call__(self, r):
+        r.headers['Authorization'] = 'Bearer ' + self.token
+        return r
+
+
 class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
     """
     An object that represents interfaces with the Anaconda repository restful API.
@@ -102,6 +117,11 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
                 'or: \n'
                 '    pip install requests-kerberos'
             ) from error
+
+    def bearer_authentication(self, *args, **kwargs):
+        access_token = kwargs.pop("auth")
+        auth = HTTPBearerAuth(token=access_token)
+        return self._authenticate(auth=auth, *args, **kwargs)
 
     def authenticate(self, username, password, *args, **kwargs):
         return self._authenticate((username, password), *args, **kwargs)
