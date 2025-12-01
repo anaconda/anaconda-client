@@ -122,7 +122,7 @@ def interactive_get_token(args, fail_if_already_exists=True):
                 auth=anaconda_token,
                 application=auth_name,
                 application_url=url,
-                fail_if_already_exists=fail_if_already_exists,
+                fail_if_already_exists=False,  # Overwrite because user has already confirmed
                 hostname=hostname,
             )
         except errors.Unauthorized as e:
