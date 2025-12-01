@@ -8,9 +8,9 @@ repos:
     args: [--allow-multiple-documents]
     exclude: conda.recipe/.*
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.14.5
+  rev: v0.14.7
   hooks:
-  - id: ruff
+  - id: ruff-check
     args: [--fix]
   - id: ruff-format
 - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
