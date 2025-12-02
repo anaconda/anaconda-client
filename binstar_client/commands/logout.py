@@ -2,6 +2,7 @@
 Log out from binstar
 """
 
+import argparse
 import logging
 
 from binstar_client import errors
@@ -28,5 +29,6 @@ def main(args):
 
 def add_parser(subparsers):
     subparser = subparsers.add_parser('logout', help='Log out from your Anaconda repository', description=__doc__)
+    subparser.add_argument("--at", help=argparse.SUPPRESS)
 
     subparser.set_defaults(main=main)
