@@ -102,7 +102,7 @@ def interactive_get_token(args, fail_if_already_exists=True):
 
     api_client.check_server()
 
-    has_legacy_flags = getattr(args, "login_username") or getattr(args, "login_password")
+    has_legacy_flags = getattr(args, "login_username", None) or getattr(args, "login_password", None)
 
     if not (LEGACY_INTERACTIVE_LOGIN or has_legacy_flags):
         # If the user already has a token, prompt them if they want to login again.
