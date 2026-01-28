@@ -459,8 +459,9 @@ def test_upload_mutually_exclusive_options(opts, error_opt, conflict_opt, mocker
     args = ["org", "upload"] + opts + ["./some-file"]
     result = runner.invoke(anaconda_cli_base.cli.app, args)
 
-    assert result.exit_code == 2, result.stdout
-    assert f"Invalid value for {error_opt}: mutually exclusive with {conflict_opt}" in result.stdout, result.stdout
+    assert result.exit_code == 2, result.output
+    assert f"Invalid value for {error_opt}" in result.output, result.output
+    assert f"mutually exclusive with {conflict_opt}" in result.output, result.output
 
     mock.assert_not_called()
 
@@ -581,8 +582,9 @@ def test_channel_mutually_exclusive_options(opts, error_opt, conflict_opt, mocke
     args = ["org", "channel"] + opts
     result = runner.invoke(anaconda_cli_base.cli.app, args)
 
-    assert result.exit_code == 2, result.stdout
-    assert f"Invalid value for {error_opt}: mutually exclusive with {conflict_opt}" in result.stdout, result.stdout
+    assert result.exit_code == 2, result.output
+    assert f"Invalid value for {error_opt}" in result.output, result.output
+    assert f"mutually exclusive with {conflict_opt}" in result.output, result.output
 
     mock.assert_not_called()
 
@@ -594,9 +596,9 @@ def test_channel_mutually_exclusive_options_required(mocker):
     args = ["org", "channel", "--organization", "need-some-argument-to-prevent-help"]
     result = runner.invoke(anaconda_cli_base.cli.app, args)
 
-    assert result.exit_code == 2, result.stdout
-    assert "one of --copy, --list, --show, --lock, --unlock, or --remove must be provided" in result.stdout, (
-        result.stdout
+    assert result.exit_code == 2, result.output
+    assert "one of --copy, --list, --show, --lock, --unlock, or --remove must be provided" in result.output, (
+        result.output
     )  # noqa: E501
 
     mock.assert_not_called()
@@ -897,12 +899,12 @@ def test_auth_mutually_exclusive_options(opts, error_opt, conflict_opt, mocker, 
     mock = mocker.patch("binstar_client.commands.authorizations.main")
 
     runner = CliRunner()
-    args = ["auth"] + opts
+    args = ["org", "auth"] + opts
     monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
     result = runner.invoke(anaconda_cli_base.cli.app, args)
 
-    assert result.exit_code == 2, result.stdout
-    assert "not allowed" in result.stdout, result.stdout
+    assert f"Invalid value for {error_opt}" in result.output, result.output
+    assert f"mutually exclusive with {conflict_opt}" in result.output, result.output
 
     mock.assert_not_called()
 
@@ -910,15 +912,15 @@ def test_auth_mutually_exclusive_options(opts, error_opt, conflict_opt, mocker, 
 def test_auth_mutually_exclusive_options_required(mocker, monkeypatch):
     mock = mocker.patch("binstar_client.commands.authorizations.main")
 
-    args = ["auth", "required-arg"]
+    args = ["org", "auth", "required-arg"]
     monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
     runner = CliRunner()
     result = runner.invoke(anaconda_cli_base.cli.app, args)
 
-    assert result.exit_code == 2, result.stdout
+    assert result.exit_code == 2, result.output
     # Loose testing of error message to allow slight variations between new and old CLI
     for arg in ["--list-scopes", "--list", "--list", "--info", "--remove"]:
-        assert arg in result.stdout, result.stdout
+        assert arg in result.output, result.output
 
     mock.assert_not_called()
 
@@ -1027,8 +1029,9 @@ def test_package_mutually_exclusive_options(mocker, opts, error_opt, conflict_op
     runner = CliRunner()
     result = runner.invoke(anaconda_cli_base.cli.app, args)
 
-    assert result.exit_code == 2, result.stdout
-    assert f"Invalid value for {error_opt}: mutually exclusive with {conflict_opt}" in result.stdout, result.stdout
+    assert result.exit_code == 2, result.output
+    assert f"Invalid value for {error_opt}" in result.output, result.output
+    assert f"mutually exclusive with {conflict_opt}" in result.output, result.output
 
     mock.assert_not_called()
 
@@ -1040,9 +1043,9 @@ def test_package_mutually_exclusive_options_required(mocker):
     runner = CliRunner()
     result = runner.invoke(anaconda_cli_base.cli.app, args)
 
-    assert result.exit_code == 2, result.stdout
-    assert "one of --add-collaborator, --list-collaborators, or --create must be provided" in result.stdout, (
-        result.stdout
+    assert result.exit_code == 2, result.output
+    assert "one of --add-collaborator, --list-collaborators, or --create must be provided" in result.output, (
+        result.output
     )  # noqa: E501
 
     mock.assert_not_called()
