@@ -16,9 +16,10 @@ class Test(CLITestCase):
         tmpdir = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, tmpdir)
 
-        with unittest.mock.patch(
-            'binstar_client.commands.config.USER_CONFIG', os.path.join(tmpdir, 'config.yaml')
-        ), unittest.mock.patch('binstar_client.commands.config.SEARCH_PATH', [tmpdir]):
+        with (
+            unittest.mock.patch('binstar_client.commands.config.USER_CONFIG', os.path.join(tmpdir, 'config.yaml')),
+            unittest.mock.patch('binstar_client.commands.config.SEARCH_PATH', [tmpdir]),
+        ):
             main(['config', '--set', 'url', 'http://localhost:5000'])
 
             self.assertTrue(os.path.exists(os.path.join(tmpdir, 'config.yaml')))

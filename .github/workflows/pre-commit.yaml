@@ -29,11 +29,11 @@ jobs:
       labels:
       - ubuntu-latest
     steps:
-    - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3   # v6.0.0
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd   # v6.0.2
       with:
         token: ${{ secrets.ANACONDA_BOT_PRE_COMMIT }}
 
-    - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830   # v4.3.0
+    - uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7   # v5.0.2
       with:
         path: ~/.cache/pre-commit
         key: pre-commit|${{ runner.arch }}-${{ hashFiles('.pre-commit-config.yaml', '.tflint.hcl') }}
