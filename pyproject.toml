@@ -69,7 +69,7 @@ cache_dir = ".cache/pytest"
 # Treat all warnings errors: https://til.simonwillison.net/pytest/treat-warnings-as-errors
 filterwarnings = [
   "error",
-  "ignore:FileType is deprecated:PendingDeprecationWarning"
+  "ignore:FileType is deprecated:PendingDeprecationWarning",
 ]
 
 [tool.ruff]
