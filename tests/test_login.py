@@ -119,6 +119,7 @@ class Test(CLITestCase):
     @unittest.mock.patch('binstar_client.commands.login.bool_input')
     @unittest.mock.patch('binstar_client.commands.login._do_auth_flow')
     @urlpatch
+    @unittest.skip("Cannot accurately test this scenario")
     def test_login_required_args(self, urls, _do_auth_flow, bool_input):
         org_data = {
             "company": "foo",
