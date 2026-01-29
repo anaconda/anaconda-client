@@ -74,9 +74,10 @@ sites:
         ssl_verify: false
             ''')
 
-        with unittest.mock.patch(
-            'binstar_client.utils.config.SEARCH_PATH', [system_dir, user_dir]
-        ), unittest.mock.patch('binstar_client.utils.config.DEFAULT_CONFIG', {}):
+        with (
+            unittest.mock.patch('binstar_client.utils.config.SEARCH_PATH', [system_dir, user_dir]),
+            unittest.mock.patch('binstar_client.utils.config.DEFAULT_CONFIG', {}),
+        ):
             cfg = config.get_config()
 
             self.assertEqual(
@@ -103,8 +104,9 @@ sites:
 ssl_verify: False
 ''')
 
-        with unittest.mock.patch('binstar_client.utils.config.SEARCH_PATH', [user_dir]), unittest.mock.patch(
-            'binstar_client.utils.config.DEFAULT_CONFIG', {}
+        with (
+            unittest.mock.patch('binstar_client.utils.config.SEARCH_PATH', [user_dir]),
+            unittest.mock.patch('binstar_client.utils.config.DEFAULT_CONFIG', {}),
         ):
             cfg = config.get_config()
 
