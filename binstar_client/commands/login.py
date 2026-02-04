@@ -2,6 +2,7 @@
 
 from __future__ import unicode_literals
 
+import argparse
 import getpass
 import logging
 import os
@@ -226,4 +227,5 @@ def add_parser(subparsers):
         dest='login_password',
         help='(deprecated) Specify your password. If this is not given, you will be prompted',
     )
+    subparser.add_argument("--at", help=argparse.SUPPRESS)
     subparser.set_defaults(main=main)
