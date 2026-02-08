@@ -3,11 +3,14 @@ from os import path
 
 from ..utils.yaml import yaml_load
 
+from binstar_client.deprecations import deprecated, DEPRECATE_IN_1_15_0, REMOVE_IN_2_0_0
+
 logger = logging.getLogger(__name__)
 
 PACKAGE_TYPE = 'installer'
 
 
+@deprecated(deprecate_in=DEPRECATE_IN_1_15_0, remove_in=REMOVE_IN_2_0_0)
 def is_installer(filename):
     # NOTE: allow
     if not filename.endswith('.sh'):
@@ -31,6 +34,7 @@ def is_installer(filename):
         return True
 
 
+@deprecated(deprecate_in=DEPRECATE_IN_1_15_0, remove_in=REMOVE_IN_2_0_0)
 def inspect_package(filename, fileobj, *args, **kwarg):
     line = fileobj.readline()
     lines = []
