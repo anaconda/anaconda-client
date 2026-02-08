@@ -70,6 +70,7 @@ cache_dir = ".cache/pytest"
 filterwarnings = [
   "error",
   "ignore:FileType is deprecated:PendingDeprecationWarning",
+  "ignore:binstar:DeprecationWarning",
 ]
 
 [tool.ruff]
