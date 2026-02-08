@@ -15,7 +15,9 @@ DEPRECATION_MESSAGE_NOTEBOOKS_PROJECTS_ENVIRONMENTS_REMOVED = " ".join(
 
 # Store verrsions for which things are deprecated. This gives us a very
 # easy way to find all references, for removal.
-DEPRECATED_2_0_0 = "2.0.0"
+# TODO(mattkram): Change to 1.15.0 before merge
+DEPRECATE_IN_1_15_0 = "1.14.0"
+REMOVE_IN_2_0_0 = "2.0.0"
 
 
 # Define a deprecation handler specific to anaconda-client/binstar_client
