@@ -4,12 +4,14 @@ import time
 from os.path import basename
 
 from binstar_client import errors
+from binstar_client.deprecations import deprecated, DEPRECATE_IN_1_15_0, REMOVE_IN_2_0_0
 from .data_uri import data_uri_from
 from .inflection import parameterize
 
 VALID_FORMATS = ['ipynb', 'csv', 'yml', 'yaml', 'json', 'md', 'rst', 'txt']
 
 
+@deprecated(deprecate_in=DEPRECATE_IN_1_15_0, remove_in=REMOVE_IN_2_0_0)
 class Uploader:
     """
     * Find or create a package (project)
