@@ -13,9 +13,12 @@ except ImportError:
 
 from ...errors import PillowNotInstalled
 
+from binstar_client.deprecations import deprecated, DEPRECATE_IN_1_15_0, REMOVE_IN_2_0_0
+
 THUMB_SIZE = (340, 210)
 
 
+@deprecated(deprecate_in=DEPRECATE_IN_1_15_0, remove_in=REMOVE_IN_2_0_0)
 class DataURIConverter:
     def __init__(self, location, data=None):
         self.check_pillow_installed()
@@ -67,9 +70,11 @@ class DataURIConverter:
         return data64
 
 
+@deprecated(deprecate_in=DEPRECATE_IN_1_15_0, remove_in=REMOVE_IN_2_0_0)
 def data_uri_from(location):
     return DataURIConverter(location)()
 
 
+@deprecated(deprecate_in=DEPRECATE_IN_1_15_0, remove_in=REMOVE_IN_2_0_0)
 def data_uri_from_bytes(data):
     return DataURIConverter(location=None, data=data)()

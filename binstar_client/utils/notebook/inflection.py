@@ -2,7 +2,10 @@
 import re
 import unicodedata
 
+from binstar_client.deprecations import deprecated, DEPRECATE_IN_1_15_0, REMOVE_IN_2_0_0
 
+
+@deprecated(deprecate_in=DEPRECATE_IN_1_15_0, remove_in=REMOVE_IN_2_0_0)
 def parameterize(string, separator='-'):
     """
     Replace special characters in a string so that it may be used as part of a
@@ -24,6 +27,7 @@ def parameterize(string, separator='-'):
     return string.lower()
 
 
+@deprecated(deprecate_in=DEPRECATE_IN_1_15_0, remove_in=REMOVE_IN_2_0_0)
 def transliterate(string):
     """
     Replace non-ASCII characters with an ASCII approximation. If no
