@@ -14,6 +14,7 @@ from tqdm import tqdm
 
 from . import errors
 from ._version import __version__
+from binstar_client.deprecations import DEPRECATE_IN_1_15_0, REMOVE_IN_2_0_0, deprecated
 
 # For backwards compatibility
 from .errors import *
@@ -105,6 +106,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         except BinstarError:
             return 'password'
 
+    @deprecated(deprecate_in=DEPRECATE_IN_1_15_0, remove_in=REMOVE_IN_2_0_0)
     def krb_authenticate(self, *args, **kwargs):
         try:
             from requests_kerberos import HTTPKerberosAuth
@@ -644,3 +646,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         res = self.session.get(url)
         self._check_response(res)
         return res.json()
+
+
+# Prevent export of these into the global symbols
+del DEPRECATE_IN_1_15_0, REMOVE_IN_2_0_0, deprecated
