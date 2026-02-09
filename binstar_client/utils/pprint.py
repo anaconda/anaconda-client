@@ -1,9 +1,3 @@
-"""
-Created on Aug 8, 2013
-
-@author: sean
-"""
-
 import logging
 
 from dateutil.parser import parse as parse_date

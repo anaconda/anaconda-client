@@ -1,7 +1,5 @@
 """
-Created on Aug 9, 2013
-
-@author: sean
+HTTP Status codes.
 """
 
 # Table mapping response codes to messages; entries have the
