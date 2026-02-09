@@ -3,7 +3,18 @@ import logging
 from ._version import __version__
 
 # For backwards compatibility
-from .errors import *
+from .errors import (
+    BinstarError,
+    Unauthorized,
+    Conflict,
+    NotFound,
+    UserError,
+    ServerError,
+    ShowHelp,
+    NoMetadataError,
+    DestinationPathExists,
+    PillowNotInstalled,
+)
 from .mixins.channels import ChannelsMixin
 from .mixins.organizations import OrgMixin
 from .mixins.package import PackageMixin
@@ -60,4 +71,29 @@ deprecated.constant(
     addendum="Use `binstar_client.client.HTTPBearerAuth` instead",
 )
 
+# Deprecated re-imports from binstar_client.errors
+from binstar_client import errors  # noqa: E402
+
+for name in [
+    "BinstarError",
+    "Unauthorized",
+    "Conflict",
+    "NotFound",
+    "UserError",
+    "ServerError",
+    "ShowHelp",
+    "NoMetadataError",
+    "DestinationPathExists",
+    "PillowNotInstalled",
+]:
+    deprecated.constant(
+        deprecate_in=DEPRECATE_IN_1_15_0,
+        remove_in=REMOVE_IN_2_0_0,
+        constant=name,
+        value=getattr(errors, name),
+        addendum=f"Use `binstar_client.errors.{name}` instead",
+    )
+del errors
+
+# Prevent export of these into the global symbols
 del DEPRECATE_IN_1_15_0, REMOVE_IN_2_0_0, deprecated
