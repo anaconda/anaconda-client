@@ -1,9 +1,14 @@
 import logging
 
-from ._version import __version__
-
-# For backwards compatibility
-from .errors import (
+from binstar_client._version import __version__
+from binstar_client.client import NullAuth, HTTPBearerAuth
+from binstar_client.client import Binstar as Binstar
+from binstar_client.deprecations import (
+    DEPRECATE_IN_1_15_0,
+    REMOVE_IN_2_0_0,
+    deprecated,
+)
+from binstar_client.errors import (
     BinstarError,
     Unauthorized,
     Conflict,
@@ -15,16 +20,12 @@ from .errors import (
     DestinationPathExists,
     PillowNotInstalled,
 )
-from .mixins.channels import ChannelsMixin
-from .mixins.organizations import OrgMixin
-from .mixins.package import PackageMixin
-from .utils import compute_hash, jencode
-from .utils.http_codes import STATUS_CODES
-from .utils.multipart_uploader import multipart_files_upload
-
-from binstar_client.client import NullAuth, HTTPBearerAuth
-from binstar_client.client import Binstar as Binstar
-from binstar_client.deprecations import DEPRECATE_IN_1_15_0, REMOVE_IN_2_0_0, deprecated
+from binstar_client.mixins.channels import ChannelsMixin
+from binstar_client.mixins.organizations import OrgMixin
+from binstar_client.mixins.package import PackageMixin
+from binstar_client.utils import compute_hash, jencode
+from binstar_client.utils.http_codes import STATUS_CODES
+from binstar_client.utils.multipart_uploader import multipart_files_upload
 
 
 logger = logging.getLogger('binstar')
