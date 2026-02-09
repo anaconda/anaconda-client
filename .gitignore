@@ -34,6 +34,9 @@ pip-log.txt
 .tox
 nosetests.xml
 
+# Dev tool caches
+.ruff_cache/
+
 # Translations
 *.mo
 
