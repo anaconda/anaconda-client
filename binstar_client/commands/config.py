@@ -61,8 +61,6 @@ If no, then an upload will fail if the package name does not already exist on th
 
 """
 
-from __future__ import print_function
-
 import logging
 from argparse import Namespace, RawDescriptionHelpFormatter
 from typing import Callable, List, Optional

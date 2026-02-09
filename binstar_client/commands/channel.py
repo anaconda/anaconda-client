@@ -2,8 +2,6 @@
 Manage your Anaconda repository channels.
 """
 
-from __future__ import unicode_literals, print_function
-
 import argparse
 import functools
 import logging

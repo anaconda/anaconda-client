@@ -1,5 +1,3 @@
-from __future__ import print_function, unicode_literals
-
 # Standard libary imports
 import unittest
 from pathlib import Path

@@ -2,8 +2,6 @@
 Print the information of the current user
 """
 
-from __future__ import unicode_literals
-
 import argparse
 import logging
 from typing import Any, Dict

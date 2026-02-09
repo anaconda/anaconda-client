@@ -1,5 +1,3 @@
-from __future__ import print_function, unicode_literals
-
 from fnmatch import fnmatch
 from zipfile import ZipFile
 from tarfile import TarFile
