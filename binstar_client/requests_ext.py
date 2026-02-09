@@ -9,6 +9,8 @@ import typing
 from requests.auth import AuthBase
 from urllib3.filepost import choose_boundary
 
+from binstar_client.deprecations import DEPRECATE_IN_1_15_0, REMOVE_IN_2_0_0, deprecated
+
 __all__ = ['NullAuth', 'encode_multipart_formdata_stream', 'stream_multipart']
 
 logger = logging.getLogger('binstar.requests_ext')
@@ -18,6 +20,7 @@ KeyT = typing.TypeVar('KeyT')
 ValueT = typing.TypeVar('ValueT')
 
 
+@deprecated(deprecate_in=DEPRECATE_IN_1_15_0, remove_in=REMOVE_IN_2_0_0)
 def iter_fields(
     fields: typing.Union[typing.Mapping[KeyT, ValueT], typing.Iterable[typing.Tuple[KeyT, ValueT]]],
 ) -> typing.Iterator[typing.Tuple[KeyT, ValueT]]:
@@ -46,6 +49,7 @@ class NullAuth(AuthBase):
         return r
 
 
+@deprecated(deprecate_in=DEPRECATE_IN_1_15_0, remove_in=REMOVE_IN_2_0_0)
 def encode_multipart_formdata_stream(fields, boundary=None):
     """
     Encode a dictionary of ``fields`` using the multipart/form-data MIME format.
@@ -114,6 +118,7 @@ def encode_multipart_formdata_stream(fields, boundary=None):
     return body, content_type
 
 
+@deprecated(deprecate_in=DEPRECATE_IN_1_15_0, remove_in=REMOVE_IN_2_0_0)
 class MultiPartIO:
     def __init__(self, body, callback=None):
         self.to_read = body
@@ -166,6 +171,7 @@ class MultiPartIO:
             self._total = self.tell()
 
 
+@deprecated(deprecate_in=DEPRECATE_IN_1_15_0, remove_in=REMOVE_IN_2_0_0)
 def stream_multipart(data, files=None, callback=None):
     if files:
         fields = chain(iter_fields(data), iter_fields(files))
