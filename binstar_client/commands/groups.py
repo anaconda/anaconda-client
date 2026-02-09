@@ -5,11 +5,26 @@ from pprint import pformat
 
 import typer
 
-from binstar_client.pprintb import package_list, user_list
 from binstar_client.utils import get_server_api
 from binstar_client.utils.spec import group_spec
 
 logger = logging.getLogger('binstar.groups')
+
+
+def package_list(lst, verbose=True):
+    if verbose:
+        result = pformat(lst)
+    else:
+        result = '\n'.join('%-25s %s' % (pkg['full_name'], pkg['summary']) for pkg in lst)
+    return result
+
+
+def user_list(lst, verbose=True):
+    if verbose:
+        result = pformat(lst)
+    else:
+        result = '\n'.join('%-25s %s' % (user['login'], user['name']) for user in lst)
+    return result
 
 
 def main(args):
