@@ -648,5 +648,30 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         return res.json()
 
 
+# Deprecated re-imports from binstar_client.mixins
+deprecated.constant(
+    deprecate_in=DEPRECATE_IN_1_15_0,
+    remove_in=REMOVE_IN_2_0_0,
+    constant="ChannelsMixin",
+    value=ChannelsMixin,
+    addendum="Use `binstar_client.mixins.channels.ChannelsMixin` instead",
+)
+
+deprecated.constant(
+    deprecate_in=DEPRECATE_IN_1_15_0,
+    remove_in=REMOVE_IN_2_0_0,
+    constant="OrgMixin",
+    value=OrgMixin,
+    addendum="Use `binstar_client.mixins.organizations.OrgMixin` instead",
+)
+
+deprecated.constant(
+    deprecate_in=DEPRECATE_IN_1_15_0,
+    remove_in=REMOVE_IN_2_0_0,
+    constant="PackageMixin",
+    value=PackageMixin,
+    addendum="Use `binstar_client.mixins.package.PackageMixin` instead",
+)
+
 # Prevent export of these into the global symbols
 del DEPRECATE_IN_1_15_0, REMOVE_IN_2_0_0, deprecated
