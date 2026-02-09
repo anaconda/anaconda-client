@@ -1,6 +1,3 @@
-from binstar_client.utils import jencode
-
-
 class ChannelsMixin:
     def list_channels(self, owner):
         """
@@ -37,9 +34,9 @@ class ChannelsMixin:
         :param filename: The exact file to add the channel to
         """
         url = '%s/channels/%s/%s' % (self.domain, owner, channel)
-        data, headers = jencode(package=package, version=version, basename=filename)
+        payload = dict(package=package, version=version, basename=filename)
 
-        res = self.session.post(url, data=data, headers=headers)
+        res = self.session.post(url, json=payload)
         self._check_response(res, [201])
 
     def remove_channel(self, channel, owner, package=None, version=None, filename=None):
@@ -53,9 +50,9 @@ class ChannelsMixin:
         :param filename: The exact file to remove the channel from
         """
         url = '%s/channels/%s/%s' % (self.domain, owner, channel)
-        data, headers = jencode(package=package, version=version, basename=filename)
+        payload = dict(package=package, version=version, basename=filename)
 
-        res = self.session.delete(url, data=data, headers=headers)
+        res = self.session.delete(url, json=payload)
         self._check_response(res, [201])
 
     def copy_channel(self, channel, owner, to_channel):

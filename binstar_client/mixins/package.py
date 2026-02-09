@@ -1,4 +1,3 @@
-from binstar_client.utils import jencode
 from binstar_client.errors import Conflict
 
 
@@ -19,14 +18,13 @@ class PackageMixin:
         url = '{}/copy/package/{}'.format(self.domain, copy_path)
 
         payload = {'to_owner': to_owner, 'from_channel': from_label, 'to_channel': to_label}
-        data, headers = jencode(payload)
 
         if replace:
-            res = self.session.put(url, data=data, headers=headers)
+            res = self.session.put(url, json=payload)
         elif update:
-            res = self.session.patch(url, data=data, headers=headers)
+            res = self.session.patch(url, json=payload)
         else:
-            res = self.session.post(url, data=data, headers=headers)
+            res = self.session.post(url, json=payload)
 
         try:
             self._check_response(res)
