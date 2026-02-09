@@ -4,6 +4,8 @@ from fnmatch import fnmatch
 from zipfile import ZipFile
 from tarfile import TarFile
 
+from binstar_client.deprecations import DEPRECATE_IN_1_15_0, REMOVE_IN_2_0_0, deprecated
+
 
 def extract_first(fileobj, pat):
     if isinstance(fileobj, ZipFile):
@@ -33,10 +35,12 @@ def tarfile_match_and_extract(tar_file, pat):
     return file_obj.read().decode(errors='ignore')
 
 
+@deprecated(deprecate_in=DEPRECATE_IN_1_15_0, remove_in=REMOVE_IN_2_0_0)
 def safe(version):
     return version.replace('\n', '-').replace('\\', '-').replace('#', '-')
 
 
+@deprecated(deprecate_in=DEPRECATE_IN_1_15_0, remove_in=REMOVE_IN_2_0_0)
 def get_key(data, key, *d):
     value = data.get(key, *d)
     if value == 'UNKNOWN':
