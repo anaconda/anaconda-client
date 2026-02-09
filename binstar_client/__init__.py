@@ -10,6 +10,7 @@ from urllib.parse import quote
 
 import defusedxml.ElementTree as ET
 import requests
+from requests.auth import AuthBase
 from tqdm import tqdm
 
 from . import errors
@@ -20,7 +21,6 @@ from .errors import *
 from .mixins.channels import ChannelsMixin
 from .mixins.organizations import OrgMixin
 from .mixins.package import PackageMixin
-from .requests_ext import NullAuth
 from .utils import compute_hash, jencode
 from .utils.http_codes import STATUS_CODES
 from .utils.multipart_uploader import multipart_files_upload
@@ -28,7 +28,26 @@ from .utils.multipart_uploader import multipart_files_upload
 logger = logging.getLogger('binstar')
 
 
-class HTTPBearerAuth(requests.auth.AuthBase):
+class NullAuth(AuthBase):
+    """force requests to ignore the ``.netrc``
+
+    Some sites do not support regular authentication, but we still
+    want to store credentials in the ``.netrc`` file and submit them
+    as form elements. Without this, requests would otherwise use the
+    .netrc which leads, on some sites, to a 401 error.
+
+    https://github.com/psf/requests/issues/2773
+
+    Use with::
+
+        requests.get(url, auth=NullAuth())
+    """
+
+    def __call__(self, r):
+        return r
+
+
+class HTTPBearerAuth(AuthBase):
     def __init__(self, token):
         self.token = token
 
