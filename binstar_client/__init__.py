@@ -54,6 +54,36 @@ deprecated.constant(
     addendum="Use `binstar_client.mixins.package.PackageMixin` instead",
 )
 
+# Deprecated re-imports from binstar_client.utils
+deprecated.constant(
+    deprecate_in=DEPRECATE_IN_1_15_0,
+    remove_in=REMOVE_IN_2_0_0,
+    constant="compute_hash",
+    value=compute_hash,
+    addendum="Use `binstar_client.utils.compute_hash` instead",
+)
+deprecated.constant(
+    deprecate_in=DEPRECATE_IN_1_15_0,
+    remove_in=REMOVE_IN_2_0_0,
+    constant="jencode",
+    value=jencode,
+    addendum="Use `binstar_client.utils.jencode` instead",
+)
+deprecated.constant(
+    deprecate_in=DEPRECATE_IN_1_15_0,
+    remove_in=REMOVE_IN_2_0_0,
+    constant="multipart_files_upload",
+    value=multipart_files_upload,
+    addendum="Use `binstar_client.utils.multipart_files_upload` instead",
+)
+deprecated.constant(
+    deprecate_in=DEPRECATE_IN_1_15_0,
+    remove_in=REMOVE_IN_2_0_0,
+    constant="STATUS_CODES",
+    value=STATUS_CODES,
+    addendum="Use `binstar_client.utils.http_codes.STATUS_CODES` instead",
+)
+
 # Deprecated re-imports from binstar_client.client
 deprecated.constant(
     deprecate_in=DEPRECATE_IN_1_15_0,
