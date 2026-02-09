@@ -1,4 +1,3 @@
-# -*- coding: utf8 -*-
 from __future__ import annotations
 
 import collections

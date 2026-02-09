@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-Move packages between labels.
-"""
+"""Move packages between labels."""
 
 import argparse
 import logging

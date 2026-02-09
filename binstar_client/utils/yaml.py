@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from yaml import safe_load, safe_dump, SafeLoader
 
 

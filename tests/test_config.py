@@ -1,4 +1,3 @@
-# -*- coding: utf8 -*-
 """Tests for configuration management."""
 
 import shutil

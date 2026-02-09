@@ -1,5 +1,3 @@
-# -*- coding: utf8 -*-
-
 """Utilities to detect :code:`conda`."""
 
 from __future__ import annotations
