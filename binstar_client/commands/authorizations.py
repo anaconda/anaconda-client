@@ -167,7 +167,7 @@ def main(args):
         logger.info(SCOPE_EXAMPLES)
 
     elif args.create:
-        auth_type = aserver_api.authentication_type()
+        auth_type = aserver_api.get_authentication_type()
 
         try:
             current_user = aserver_api.user()

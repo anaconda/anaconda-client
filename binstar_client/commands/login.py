@@ -134,7 +134,7 @@ def interactive_get_token(args, fail_if_already_exists=True):
             return token
 
     logger.warning('Username/password login is deprecated')
-    auth_type = api_client.authentication_type()
+    auth_type = api_client.get_authentication_type()
 
     if auth_type == 'kerberos':
         token = try_replace_token(

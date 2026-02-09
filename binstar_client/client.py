@@ -110,7 +110,15 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         except errors.NotFound as error:
             raise errors.ServerError(msg) from error
 
+    @deprecated(
+        deprecate_in=DEPRECATE_IN_1_15_0,
+        remove_in=REMOVE_IN_2_0_0,
+        addendum="Use `Binstar.get_authentication_type` instead",
+    )
     def authentication_type(self):
+        return self.get_authentication_type()
+
+    def get_authentication_type(self):
         url = '%s/authentication-type' % self.domain
         res = self.session.get(url)
         try:
