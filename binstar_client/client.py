@@ -12,7 +12,6 @@ from tqdm import tqdm
 
 from binstar_client import __version__, errors
 from binstar_client.deprecations import DEPRECATE_IN_1_15_0, REMOVE_IN_2_0_0, deprecated
-from binstar_client.errors import *
 from binstar_client.mixins.channels import ChannelsMixin
 from binstar_client.mixins.organizations import OrgMixin
 from binstar_client.mixins.package import PackageMixin
@@ -118,7 +117,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
             self._check_response(res)
             res = res.json()
             return res['authentication_type']
-        except BinstarError:
+        except errors.BinstarError:
             return 'password'
 
     @deprecated(deprecate_in=DEPRECATE_IN_1_15_0, remove_in=REMOVE_IN_2_0_0)
@@ -128,7 +127,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
 
             return self._authenticate(HTTPKerberosAuth(), *args, **kwargs)
         except ImportError as error:
-            raise BinstarError(
+            raise errors.BinstarError(
                 'Kerberos authentication requires the requests-kerberos package to be installed:\n'
                 '    conda install requests-kerberos\n'
                 'or: \n'
