@@ -2,8 +2,6 @@
 Copy packages from one account to another
 """
 
-from __future__ import unicode_literals, print_function
-
 import argparse
 import logging
 from typing import Optional

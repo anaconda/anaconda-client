@@ -4,8 +4,6 @@ Created on Feb 22, 2014
 @author: sean
 """
 
-from __future__ import unicode_literals
-
 import json
 from collections import namedtuple
 from functools import wraps

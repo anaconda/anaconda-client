@@ -1,7 +1,5 @@
 """Authenticate a user."""
 
-from __future__ import unicode_literals
-
 import getpass
 import logging
 import os

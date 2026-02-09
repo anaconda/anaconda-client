@@ -3,14 +3,11 @@
 Move packages between labels.
 """
 
-# Standard library imports
-from __future__ import unicode_literals, print_function
 import argparse
 import logging
 
 import typer
 
-# Local imports
 from binstar_client import errors
 from binstar_client.utils import get_server_api, parse_specs
 
