@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-Move packages between labels.
-"""
+"""Move packages between labels."""
 
 # Standard library imports
 from __future__ import unicode_literals, print_function

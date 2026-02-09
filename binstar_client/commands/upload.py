@@ -1,5 +1,3 @@
-# -*- coding: utf8 -*-
-
 """
 
     anaconda upload CONDA_PACKAGE_1.tar.bz2

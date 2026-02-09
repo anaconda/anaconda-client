@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Details about package."""
 
 from ._version import __version__

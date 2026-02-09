@@ -1,5 +1,3 @@
-# -*- coding: utf8 -*-
-
 """Anaconda repository command line manager."""
 
 from __future__ import annotations

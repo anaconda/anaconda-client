@@ -1,5 +1,3 @@
-# -*- coding: utf8 -*-
-
 """Utilities to manage file paths."""
 
 from __future__ import annotations

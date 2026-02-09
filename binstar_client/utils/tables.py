@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Utility to print tables to terminal."""
 
 __all__ = ()

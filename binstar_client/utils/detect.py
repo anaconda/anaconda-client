@@ -1,5 +1,3 @@
-# -*- coding: utf8 -*-
-
 """Package type detection and meta-data extraction."""
 
 from __future__ import annotations

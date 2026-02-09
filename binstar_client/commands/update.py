@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Update public attributes of the package or the attributes of the package release."""
 
 from __future__ import annotations

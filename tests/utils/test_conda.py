@@ -1,5 +1,3 @@
-# -*- coding: utf8 -*-
-
 """Tests for :mod:`binstar_client.utils.conda`."""
 
 from __future__ import annotations
