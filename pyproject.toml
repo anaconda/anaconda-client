@@ -72,6 +72,7 @@ filterwarnings = [
   "ignore:FileType is deprecated:PendingDeprecationWarning",
   # Ignore errors from our own internal deprecation warnings
   "ignore:binstar:DeprecationWarning",
+  "ignore:binstar:PendingDeprecationWarning",
 ]
 
 [tool.ruff]
