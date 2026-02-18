@@ -7,7 +7,6 @@ from ...errors import BinstarError
 from binstar_client.deprecations import deprecated, DEPRECATE_IN_1_15_0, REMOVE_IN_2_0_0
 
 
-@deprecated(deprecate_in=DEPRECATE_IN_1_15_0, remove_in=REMOVE_IN_2_0_0)
 def parse(handle):
     """
     >>> parse("user/notebook")

@@ -5,12 +5,10 @@ from time import mktime
 
 from dateutil.parser import parse
 
-from binstar_client.deprecations import deprecated, DEPRECATE_IN_1_15_0, REMOVE_IN_2_0_0
 from binstar_client.errors import DestinationPathExists
 from binstar_client.utils.config import PackageType
 
 
-@deprecated(deprecate_in=DEPRECATE_IN_1_15_0, remove_in=REMOVE_IN_2_0_0)
 class Downloader:
     """
     Download files from your Anaconda repository.
