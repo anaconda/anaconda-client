@@ -21,4 +21,4 @@ REMOVE_IN_2_0_0 = "2.0.0"
 
 
 # Define a deprecation handler specific to anaconda-client/binstar_client
-deprecated = DeprecationHandler(__version__)
+deprecated: DeprecationHandler = DeprecationHandler(__version__)
