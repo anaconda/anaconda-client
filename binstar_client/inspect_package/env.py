@@ -4,7 +4,10 @@ import time
 
 from ..utils.yaml import yaml_load
 
+from binstar_client.deprecations import deprecated, DEPRECATE_IN_1_15_0, REMOVE_IN_2_0_0
 
+
+@deprecated(deprecate_in=DEPRECATE_IN_1_15_0, remove_in=REMOVE_IN_2_0_0)
 class EnvInspector:
     def __init__(self, filename, fileobj):
         self._name = None
@@ -36,6 +39,7 @@ class EnvInspector:
         return self._version
 
 
+@deprecated(deprecate_in=DEPRECATE_IN_1_15_0, remove_in=REMOVE_IN_2_0_0)
 def inspect_env_package(filename, fileobj, *args, **kwargs):
     environment = EnvInspector(filename, fileobj)
 

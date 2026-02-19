@@ -14,9 +14,21 @@ from tqdm import tqdm
 
 from . import errors
 from ._version import __version__
+from binstar_client.deprecations import DEPRECATE_IN_1_15_0, REMOVE_IN_2_0_0, deprecated
 
 # For backwards compatibility
-from .errors import *
+from .errors import (
+    BinstarError,
+    Unauthorized,
+    Conflict,
+    NotFound,
+    UserError,
+    ServerError,
+    ShowHelp,
+    NoMetadataError,
+    DestinationPathExists,
+    PillowNotInstalled,
+)
 from .mixins.channels import ChannelsMixin
 from .mixins.organizations import OrgMixin
 from .mixins.package import PackageMixin
@@ -105,6 +117,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         except BinstarError:
             return 'password'
 
+    @deprecated(deprecate_in=DEPRECATE_IN_1_15_0, remove_in=REMOVE_IN_2_0_0)
     def krb_authenticate(self, *args, **kwargs):
         try:
             from requests_kerberos import HTTPKerberosAuth
@@ -644,3 +657,84 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         res = self.session.get(url)
         self._check_response(res)
         return res.json()
+
+
+# Deprecated re-imports from binstar_client.mixins
+deprecated.constant(
+    deprecate_in=DEPRECATE_IN_1_15_0,
+    remove_in=REMOVE_IN_2_0_0,
+    constant="ChannelsMixin",
+    value=ChannelsMixin,
+    addendum="Use `binstar_client.mixins.channels.ChannelsMixin` instead",
+)
+
+deprecated.constant(
+    deprecate_in=DEPRECATE_IN_1_15_0,
+    remove_in=REMOVE_IN_2_0_0,
+    constant="OrgMixin",
+    value=OrgMixin,
+    addendum="Use `binstar_client.mixins.organizations.OrgMixin` instead",
+)
+
+deprecated.constant(
+    deprecate_in=DEPRECATE_IN_1_15_0,
+    remove_in=REMOVE_IN_2_0_0,
+    constant="PackageMixin",
+    value=PackageMixin,
+    addendum="Use `binstar_client.mixins.package.PackageMixin` instead",
+)
+
+# Deprecated re-imports from binstar_client.utils
+deprecated.constant(
+    deprecate_in=DEPRECATE_IN_1_15_0,
+    remove_in=REMOVE_IN_2_0_0,
+    constant="compute_hash",
+    value=compute_hash,
+    addendum="Use `binstar_client.utils.compute_hash` instead",
+)
+deprecated.constant(
+    deprecate_in=DEPRECATE_IN_1_15_0,
+    remove_in=REMOVE_IN_2_0_0,
+    constant="jencode",
+    value=jencode,
+    addendum="Use `binstar_client.utils.jencode` instead",
+)
+deprecated.constant(
+    deprecate_in=DEPRECATE_IN_1_15_0,
+    remove_in=REMOVE_IN_2_0_0,
+    constant="multipart_files_upload",
+    value=multipart_files_upload,
+    addendum="Use `binstar_client.utils.multipart_files_upload` instead",
+)
+deprecated.constant(
+    deprecate_in=DEPRECATE_IN_1_15_0,
+    remove_in=REMOVE_IN_2_0_0,
+    constant="STATUS_CODES",
+    value=STATUS_CODES,
+    addendum="Use `binstar_client.utils.http_codes.STATUS_CODES` instead",
+)
+
+# Deprecated re-imports from binstar_client.errors
+
+for name in [
+    "BinstarError",
+    "Unauthorized",
+    "Conflict",
+    "NotFound",
+    "UserError",
+    "ServerError",
+    "ShowHelp",
+    "NoMetadataError",
+    "DestinationPathExists",
+    "PillowNotInstalled",
+]:
+    deprecated.constant(
+        deprecate_in=DEPRECATE_IN_1_15_0,
+        remove_in=REMOVE_IN_2_0_0,
+        constant=name,
+        value=getattr(errors, name),
+        addendum=f"Use `binstar_client.errors.{name}` instead",
+    )
+
+# Prevent export of these into the global symbols
+del DEPRECATE_IN_1_15_0, REMOVE_IN_2_0_0, deprecated

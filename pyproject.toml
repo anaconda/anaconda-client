@@ -70,6 +70,9 @@ cache_dir = ".cache/pytest"
 filterwarnings = [
   "error",
   "ignore:FileType is deprecated:PendingDeprecationWarning",
+  # Ignore errors from our own internal deprecation warnings
+  "ignore:binstar:DeprecationWarning",
+  "ignore:binstar:PendingDeprecationWarning",
 ]
 
 [tool.ruff]
@@ -82,5 +85,4 @@ line-length = 120
 quote-style = "preserve"
 
 [tool.ruff.lint]
-# TODO: These ignores handle * imports and also unused imports. We should fix them safely.
-ignore = ["F401", "F403", "F405"]
+ignore = ["F401", "F403"]

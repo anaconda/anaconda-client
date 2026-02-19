@@ -10,6 +10,10 @@ from ..utils.notebook.data_uri import data_uri_from
 from ..utils.notebook.inflection import parameterize
 
 
+from binstar_client.deprecations import deprecated, DEPRECATE_IN_1_15_0, REMOVE_IN_2_0_0
+
+
+@deprecated(deprecate_in=DEPRECATE_IN_1_15_0, remove_in=REMOVE_IN_2_0_0)
 def inspect_ipynb_package(filename, fileobj, *args, **kwargs):
     notebook = nbformat.read(fileobj, nbformat.NO_CONVERT)
     summary = notebook.get('metadata', {}).get('summary', 'Jupyter Notebook')
