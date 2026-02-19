@@ -3,7 +3,7 @@ from collections import OrderedDict
 from contextlib import suppress
 from time import mktime
 
-from dateutil.parser import parse
+from dateutil.parser import parse as parse_date
 
 from binstar_client.errors import DestinationPathExists
 from binstar_client.utils.config import PackageType
@@ -114,7 +114,7 @@ class Downloader:
             try:
                 output.append(max(versions, key=lambda x: int(x['version'])))
             except ValueError:
-                output.append(max(versions, key=lambda x: mktime(parse(x['upload_time']).timetuple())))
+                output.append(max(versions, key=lambda x: mktime(parse_date(x['upload_time']).timetuple())))
             except Exception:
                 output.append(versions[-1])
 
