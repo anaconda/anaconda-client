@@ -1,9 +1,3 @@
-"""
-Created on Feb 22, 2014
-
-@author: sean
-"""
-
 import json
 from collections import namedtuple
 from functools import wraps

@@ -1,9 +1,3 @@
-"""
-Created on Aug 5, 2013
-
-@author: sean
-"""
-
 import sys
 import unittest
 from argparse import ArgumentParser
