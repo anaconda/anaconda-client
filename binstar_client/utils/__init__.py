@@ -24,10 +24,12 @@ from .config import (
     DEFAULT_CONFIG,
 )
 from .spec import PackageSpec, package_specs, parse_specs
+from binstar_client.deprecations import deprecated, DEPRECATE_IN_1_15_0, REMOVE_IN_2_0_0
 
 logger = logging.getLogger('binstar')
 
 
+@deprecated(deprecate_in=DEPRECATE_IN_1_15_0, remove_in=REMOVE_IN_2_0_0)
 def jencode(*E, **F):
     payload = dict(*E, **F)
     return json.dumps(payload), {'Content-Type': 'application/json'}
