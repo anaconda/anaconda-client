@@ -2,28 +2,17 @@ from urllib.parse import urlparse
 
 import nbformat
 
-from ...errors import BinstarError
-
+from binstar_client.commands.download import parse
 from binstar_client.deprecations import deprecated, DEPRECATE_IN_1_15_0, REMOVE_IN_2_0_0
 
 
-def parse(handle):
-    """
-    >>> parse("user/notebook")
-    ('user', 'notebook')
-    >>> parse("notebook")
-    (None, 'notebook')
-
-    :param handle: String
-    :return: username, notebooks
-    """
-
-    components = handle.split('/', 1)
-    if len(components) == 1:
-        return None, components[0]
-    if len(components) == 2:
-        return components[0], components[1]
-    raise BinstarError("{} can't be parsed".format(handle))
+deprecated.constant(
+    deprecate_in=DEPRECATE_IN_1_15_0,
+    remove_in=REMOVE_IN_2_0_0,
+    constant="parse",
+    value=parse,
+    addendum="Use `binstar_client.commands.dowload.parse` instead",
+)
 
 
 @deprecated(deprecate_in=DEPRECATE_IN_1_15_0, remove_in=REMOVE_IN_2_0_0)

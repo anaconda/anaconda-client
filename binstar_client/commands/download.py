@@ -18,12 +18,30 @@ import typer
 from dateutil.parser import parse as parse_date
 
 from binstar_client import errors
-from binstar_client.errors import DestinationPathExists
+from binstar_client.errors import BinstarError, DestinationPathExists
 from binstar_client.utils import get_server_api
 from binstar_client.utils.config import PackageType
-from binstar_client.utils.notebook import parse
 
 logger = logging.getLogger('binstar.download')
+
+
+def parse(handle):
+    """
+    >>> parse("user/notebook")
+    ('user', 'notebook')
+    >>> parse("notebook")
+    (None, 'notebook')
+
+    :param handle: String
+    :return: username, notebooks
+    """
+
+    components = handle.split('/', 1)
+    if len(components) == 1:
+        return None, components[0]
+    if len(components) == 2:
+        return components[0], components[1]
+    raise BinstarError("{} can't be parsed".format(handle))
 
 
 class Downloader:
