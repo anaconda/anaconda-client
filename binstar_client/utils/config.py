@@ -20,6 +20,7 @@ try:
 except ImportError:
     c_client = None
 
+from binstar_client.deprecations import deprecated, DEPRECATE_IN_1_15_0, REMOVE_IN_2_0_0
 from binstar_client.errors import BinstarError
 from binstar_client.utils import conda, paths
 from binstar_client.utils.appdirs import EnvAppDirs
@@ -118,10 +119,16 @@ def recursive_update(config, update_dict):
     return config
 
 
+@deprecated.argument(
+    deprecate_in=DEPRECATE_IN_1_15_0,
+    remove_in=REMOVE_IN_2_0_0,
+    argument="cls",
+    addendum="Only the default client class is now supported",
+)
 def get_server_api(token=None, site=None, cls=None, config=None, **kwargs):
     """Get the anaconda server api class."""
     if not cls:
-        from binstar_client import Binstar
+        from binstar_client.client import Binstar
 
         cls = Binstar
 
