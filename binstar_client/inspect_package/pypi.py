@@ -11,7 +11,7 @@ from os import path
 from packaging.requirements import Requirement
 
 from binstar_client import errors
-from binstar_client.inspect_package.uitls import extract_first, pop_key
+from binstar_client.inspect_package.utils import extract_first, pop_key
 from binstar_client.utils.config import PackageType
 
 
