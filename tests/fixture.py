@@ -1,5 +1,3 @@
-# -*- coding: utf8 -*-
-
 """Base components to use in tests."""
 
 from __future__ import annotations

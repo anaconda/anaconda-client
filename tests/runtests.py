@@ -1,11 +1,3 @@
-"""
-Created on Aug 5, 2013
-
-@author: sean
-"""
-
-from __future__ import print_function
-
 import sys
 import unittest
 from argparse import ArgumentParser

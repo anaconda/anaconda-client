@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Script to prepare .coveragerc file for the current OS."""
 
 from __future__ import annotations

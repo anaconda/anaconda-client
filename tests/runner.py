@@ -1,9 +1,3 @@
-"""
-Created on Sep 23, 2013
-
-@author: sean
-"""
-
 from unittest.runner import TextTestRunner, TextTestResult
 from unittest.signals import registerResult
 import time

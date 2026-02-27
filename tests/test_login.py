@@ -1,5 +1,3 @@
-# -*- coding: utf8 -*-
-
 """Tests for authentication commands."""
 
 import json

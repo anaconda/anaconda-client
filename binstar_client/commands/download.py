@@ -4,8 +4,6 @@ Usage:
     anaconda download <channel_name>/<package_name>
 """
 
-from __future__ import unicode_literals
-
 import argparse
 import logging
 import os

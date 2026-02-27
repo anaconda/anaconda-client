@@ -1,4 +1,3 @@
-# -*- coding: utf8 -*-
 """Tests for package upload commands."""
 
 import json

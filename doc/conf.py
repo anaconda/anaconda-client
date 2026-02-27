@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-#
 # Anaconda Client documentation build configuration file, created by
 # sphinx-quickstart on Sat Mar 30 10:10:48 2013.
 #

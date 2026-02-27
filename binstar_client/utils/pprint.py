@@ -1,11 +1,3 @@
-"""
-Created on Aug 8, 2013
-
-@author: sean
-"""
-
-from __future__ import unicode_literals
-
 import logging
 
 from dateutil.parser import parse as parse_date
