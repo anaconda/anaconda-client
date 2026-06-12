@@ -196,21 +196,3 @@ class RepoApi:
             f'Error details: {response.content}'
         )
         raise errors.BinstarError(msg)
-
-
-def get_repo_api(
-    url: str,
-    token: Optional[str] = None,
-    verify_ssl: bool = True,
-) -> RepoApi:
-    """Create a RepoApi instance.
-
-    Args:
-        url: Base URL for the repo-core server
-        token: Authentication token
-        verify_ssl: Whether to verify SSL certificates
-
-    Returns:
-        Configured RepoApi instance
-    """
-    return RepoApi(base_url=url, user_token=token, verify_ssl=verify_ssl)
