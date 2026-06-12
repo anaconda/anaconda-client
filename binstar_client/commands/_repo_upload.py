@@ -64,12 +64,8 @@ def upload_command(
     package_type: Optional[PackageType] = typer.Option(
         None, "--package-type", "-t", help="Package type. Defaults to auto-detect."
     ),
-    name: Optional[str] = typer.Option(
-        None, "--name", "-n", help="Package name (required for General Artifacts)"
-    ),
-    version: Optional[str] = typer.Option(
-        None, "--version", "-v", help="Package version (for General Artifacts)"
-    ),
+    name: Optional[str] = typer.Option(None, "--name", "-n", help="Package name (required for General Artifacts)"),
+    version: Optional[str] = typer.Option(None, "--version", "-v", help="Package version (for General Artifacts)"),
 ) -> None:
     """Upload packages to your Anaconda repository."""
     api = ctx.obj.repo_api
@@ -119,7 +115,5 @@ def upload_command(
                             error_msg = f"status {response.status_code}"
                         console.print(f"[red]Error:[/red] Failed to upload {filepath}: {error_msg}")
                 except Unauthorized:
-                    console.print(
-                        "[red]Error:[/red] Authentication failed. Please run 'anaconda login'."
-                    )
+                    console.print("[red]Error:[/red] Authentication failed. Please run 'anaconda login'.")
                     raise typer.Exit(1)

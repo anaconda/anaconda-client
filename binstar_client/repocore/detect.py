@@ -18,9 +18,7 @@ def is_ipynb(filename):
 
 
 def is_anaconda_project_yaml(filename):
-    return filename == "anaconda-project.yml" or filename.endswith(
-        "/anaconda-project.yml"
-    )
+    return filename == "anaconda-project.yml" or filename.endswith("/anaconda-project.yml")
 
 
 def is_project(filename):

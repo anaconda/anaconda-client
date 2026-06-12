@@ -292,6 +292,7 @@ def _mock_response(status_code, json_data):
 
 def _get_app():
     from binstar_client.commands._repo_app import app
+
     return app
 
 
@@ -300,9 +301,7 @@ class _patch_repo_api:
 
     def __init__(self, mock_api):
         self.mock_api = mock_api
-        self.patcher = patch(
-            "binstar_client.commands._repo_app.get_repo_api", return_value=mock_api
-        )
+        self.patcher = patch("binstar_client.commands._repo_app.get_repo_api", return_value=mock_api)
 
     def __enter__(self):
         self.patcher.start()
