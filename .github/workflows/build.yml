@@ -25,7 +25,7 @@ jobs:
         mkdir -p ./conda-bld
         # TODO(mattkram): Remove anaconda-cloud/label/dev channel before release
         VERSION=`hatch version` \
-          conda build \
+          conda-build \
             -c conda-forge \
             -c defaults \
             -c anaconda-cloud/label/dev \
