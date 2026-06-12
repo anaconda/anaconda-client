@@ -55,21 +55,6 @@ class RepoApi:
             }
         return self._urls
 
-    @property
-    def xauth_headers(self) -> dict:
-        """Headers for X-Auth token authentication."""
-        headers = {}
-        if self._access_token:
-            headers['X-Auth'] = self._access_token
-        return headers
-
-    def _get_headers(self, extra: Optional[dict] = None) -> dict:
-        """Get headers for a request."""
-        headers = self.xauth_headers.copy()
-        if extra:
-            headers.update(extra)
-        return headers
-
     def _handle_response(
         self,
         response,
@@ -106,7 +91,7 @@ class RepoApi:
         """Get the user's default channel."""
         url = self.urls['account']
         logger.debug(f'Getting user default channel from {url}')
-        response = self._client.get(url, headers=self.xauth_headers)
+        response = self._client.get(url)
         data = self._handle_response(response, 'getting account details')
         return data.get('default_channel_name', '')
 
@@ -158,7 +143,6 @@ class RepoApi:
         response = self._client.post(
             url,
             files=multipart_form_data,
-            headers=self.xauth_headers,
         )
         return response
 
@@ -181,8 +165,7 @@ class RepoApi:
             url = self.urls['channels']
             data = {'name': channel}
 
-        headers = self._get_headers({'Content-Type': 'application/json'})
-        response = self._client.post(url, json=data, headers=headers)
+        response = self._client.post(url, json=data)
         return self._handle_response(
             response,
             f'creating channel {channel}',
@@ -198,8 +181,7 @@ class RepoApi:
         url = self._get_channel_url(channel)
         logger.debug(f'Removing channel {channel} on {self.base_url}')
 
-        headers = self._get_headers({'Content-Type': 'application/json'})
-        response = self._client.delete(url, headers=headers)
+        response = self._client.delete(url)
 
         if response.status_code == 202:
             logger.info(f'Channel {channel} successfully removed')
