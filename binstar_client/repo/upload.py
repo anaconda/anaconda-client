@@ -14,8 +14,7 @@ logger = logging.getLogger('binstar.repo')
 
 def upload_main(arguments: argparse.Namespace, channel: str) -> None:
     """Upload to a repo-core server instead of anaconda.org."""
-    url = 'https://stage.anaconda.com/api/repo'
-    api = RepoApi(base_url=url, user_token=arguments.token)
+    api = RepoApi(user_token=arguments.token)
 
     for filepath_list in arguments.files:
         for filepath in filepath_list:

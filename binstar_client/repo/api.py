@@ -26,33 +26,23 @@ class RepoApi:
 
     def __init__(
         self,
-        base_url: str,
+        base_url: str = '',
         user_token: Optional[str] = None,
         verify_ssl: bool = True,
     ):
         self.base_url = base_url.rstrip('/')
         self._access_token = user_token
         self._client = self._create_client(verify_ssl)
-        self._urls: Optional[dict] = None
 
     def _create_client(self, verify_ssl: bool):
         """Create the HTTP client, via anaconda-auth, which handles
         domain construction, authentication, and configuration more broadly.
         """
         return BaseClient(
-            domain=self.base_url,
+            domain=self.base_url or None,
             ssl_verify=verify_ssl,
             user_agent=f'anaconda-client/{__version__}',
         )
-
-    @property
-    def urls(self) -> dict:
-        """Lazily construct URL endpoints."""
-        if self._urls is None:
-            self._urls = {
-                'channels': join(self.base_url, 'channels'),
-            }
-        return self._urls
 
     def _handle_response(
         self,
@@ -90,8 +80,8 @@ class RepoApi:
         """Get the URL for a channel, handling subchannels."""
         if '/' in channel:
             parent, subchannel = channel.split('/', 1)
-            return join(self.urls['channels'], parent, 'subchannels', subchannel)
-        return join(self.urls['channels'], channel)
+            return join("api", "repo", "channels", parent, "subchannels", subchannel)
+        return join("api", "repo", "channels", channel)
 
     def upload_file(
         self,
@@ -150,10 +140,10 @@ class RepoApi:
 
         if '/' in channel:
             parent, subchannel = channel.split('/', 1)
-            url = join(self.urls['channels'], parent, 'subchannels')
+            url = join('api', 'repo', 'channels', parent, 'subchannels')
             data = {'name': subchannel}
         else:
-            url = self.urls['channels']
+            url = join('api', 'repo', 'channels')
             data = {'name': channel}
 
         response = self._client.post(url, json=data)
