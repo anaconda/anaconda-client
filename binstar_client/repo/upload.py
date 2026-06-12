@@ -17,6 +17,7 @@ def upload_main(arguments: argparse.Namespace, channel: str) -> None:
     """Upload to a repo-core server instead of anaconda.org."""
     config = get_config(site=arguments.site)
     url = config.get('url', 'https://repo.anaconda.com/api')
+    url = 'https://stage.anaconda.com/api/repo'
     token = arguments.token
 
     api = get_repo_api(url=url, token=token, verify_ssl=config.get('ssl_verify', True))
