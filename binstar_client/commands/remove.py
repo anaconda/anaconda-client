@@ -92,7 +92,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
     def remove_subcommand(
         ctx: typer.Context,
         specs: List[str] = typer.Argument(
-            show_default=False, parser=parse_specs, help='Package written as USER[/PACKAGE[/VERSION[/FILE]]]'
+            show_default=False, parser=parse_specs, help='Package written as USER\\[/PACKAGE\\[/VERSION\\[/FILE]]]'
         ),
         force: bool = typer.Option(
             False,
