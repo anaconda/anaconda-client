@@ -47,6 +47,18 @@ logger = logging.getLogger('binstar.upload')
 
 def main(arguments: argparse.Namespace) -> None:
     """Entrypoint of the :code:`upload` command."""
+    # Check if we should use the repo-core API
+    if repo_channel := getattr(arguments, 'repo_channel', None):
+        if '/' in repo_channel:
+            # Contains slash - this is a repo channel (e.g., "org/subchannel")
+            from binstar_client.repo.upload import upload_main
+
+            return upload_main(arguments, repo_channel)
+        else:
+            # No slash - treat as alias for --user
+            if not arguments.user:
+                arguments.user = repo_channel
+
     uploader: Uploader = Uploader(arguments=arguments)
     uploader.api.check_server()
     _ = uploader.username
@@ -701,6 +713,15 @@ def add_parser(subparsers: typing.Any) -> None:
         help='User account or Organization, defaults to the current user',
     )
     parser.add_argument(
+        '-C',
+        '--repo-channel',
+        dest='repo_channel',
+        help=(
+            'Upload to a specific channel or subchannel. If the value contains "/" (e.g., "org/subchannel"), '
+            'uploads to that channel on the repo server. Otherwise, acts as an alias for --user.'
+        ),
+    )
+    parser.add_argument(
         '--keep-basename',
         dest='keep_basename',
         help=(
@@ -866,6 +887,15 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             '--user',
             help='User account or Organization, defaults to the current user',
         ),
+        repo_channel: typing.Optional[str] = typer.Option(
+            None,
+            '-C',
+            '--repo-channel',
+            help=(
+                'Upload to a specific channel or subchannel. If the value contains "/" (e.g., "org/subchannel"), '
+                'uploads to that channel on the repo server. Otherwise, acts as an alias for --user.'
+            ),
+        ),
         keep_basename: bool = typer.Option(
             False,
             help='Do not normalize a basename when uploading a conda package.',
@@ -979,6 +1009,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             labels=labels,
             no_progress=not progress,
             user=user,
+            repo_channel=repo_channel,
             keep_basename=keep_basename,
             package=package,
             version=version,
