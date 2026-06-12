@@ -20,6 +20,7 @@ urls = {source = "https://github.com/anaconda/anaconda-client"}
 
 [project.entry-points."anaconda_cli.subcommand"]
 org = "binstar_client.plugins:app"
+repo = "binstar_client.repo_plugin:app"
 
 [project.scripts]
 # Legacy entrypoints
