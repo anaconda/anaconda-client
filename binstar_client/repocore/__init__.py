@@ -77,6 +77,16 @@ class RepoCoreClient(BaseClient):
             error_message += " Channel names must start with a lowercase letter and contain only lowercase letters, digits, hyphens, and underscores."
             raise InvalidName(error_message)
 
+    def _extract_error_message(self, response, action=""):
+        """Extract a user-friendly error message from a response."""
+        try:
+            data = response.json()
+            if isinstance(data, dict):
+                return data.get("message") or data.get("detail") or data.get("error", "")
+        except (ValueError, KeyError):
+            pass
+        return f"Error {action} (status {response.status_code})"
+
     def _manage_response(self, response, action="", success_codes=None):
         if not success_codes:
             success_codes = [200]
@@ -85,21 +95,11 @@ class RepoCoreClient(BaseClient):
                 return None
             return response.json()
 
-        msg = (
-            f"Error {action}. "
-            f"Server responded with status code {response.status_code}.\n"
-            f"Error details: {response.content or None}\n"
-        )
+        msg = self._extract_error_message(response, action)
 
         if response.status_code in [401, 403]:
-            try:
-                error_data = response.json()
-                error_message = error_data.get("message", msg)
-            except (ValueError, KeyError):
-                error_message = msg
-
             if response.status_code == 403:
-                raise Unauthorized(error_message)
+                raise Unauthorized(msg)
             else:
                 domain = getattr(self.config, "domain", None)
                 raise AnacondaLoginRequired(domain=domain)
@@ -133,13 +133,10 @@ class RepoCoreClient(BaseClient):
         response = self.delete(url)
         if response.status_code in [200, 202, 204]:
             return None
+        msg = self._extract_error_message(response, f"removing channel {channel}")
         if response.status_code in [401, 403]:
-            raise Unauthorized()
-        raise RepoCoreError(
-            f"Error removing {channel}. "
-            f"Server responded with status code {response.status_code}.\n"
-            f"Error details: {response.content}"
-        )
+            raise Unauthorized(msg)
+        raise RepoCoreError(msg)
 
     def get_channel(self, channel: str):
         url = self._get_channel_url(channel)
@@ -151,13 +148,10 @@ class RepoCoreClient(BaseClient):
         response = self.put(url, json=data)
         if response.status_code in [200, 204]:
             return None
+        msg = self._extract_error_message(response, f"updating channel {channel}")
         if response.status_code in [401, 403]:
-            raise Unauthorized()
-        raise RepoCoreError(
-            f"Error updating {channel}. "
-            f"Server responded with status code {response.status_code}.\n"
-            f"Error details: {response.content}"
-        )
+            raise Unauthorized(msg)
+        raise RepoCoreError(msg)
 
     def get_channel_subchannels(self, channel: str):
         url = join(self._channels_url, channel, "subchannels")

@@ -112,11 +112,12 @@ def upload_command(
                     elif response.status_code == 401:
                         raise Unauthorized()
                     else:
-                        console.print(
-                            f"[red]Error:[/red] Failed to upload {filepath}\n"
-                            f"Status: {response.status_code}\n"
-                            f"Details: {response.content.decode()}"
-                        )
+                        try:
+                            detail = response.json()
+                            error_msg = detail.get("message") or detail.get("detail") or str(detail)
+                        except (ValueError, KeyError):
+                            error_msg = f"status {response.status_code}"
+                        console.print(f"[red]Error:[/red] Failed to upload {filepath}: {error_msg}")
                 except Unauthorized:
                     console.print(
                         "[red]Error:[/red] Authentication failed. Please run 'anaconda login'."
