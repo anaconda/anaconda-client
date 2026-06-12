@@ -16,6 +16,8 @@ from typing import Optional
 from binstar_client import errors
 from binstar_client._version import __version__
 
+from anaconda_auth.client import BaseClient
+
 logger = logging.getLogger('binstar.repo')
 
 
@@ -34,33 +36,14 @@ class RepoApi:
         self._urls: Optional[dict] = None
 
     def _create_client(self, verify_ssl: bool):
-        """Create the HTTP client.
-
-        Tries to use anaconda-auth's BaseClient for unified authentication,
-        falls back to a basic requests session if not available.
+        """Create the HTTP client, via anaconda-auth, which handles
+        domain construction, authentication, and configuration more broadly.
         """
-        try:
-            from anaconda_auth.client import BaseClient
-
-            class AuthClient(BaseClient):
-                _user_agent: str = f'anaconda-client/{__version__}'
-
-                def __init__(self, *args, domain=None, **kwargs):
-                    super().__init__(*args, domain=domain, **kwargs)
-                    self._domain = domain
-
-            return AuthClient(domain=self.base_url, ssl_verify=verify_ssl)
-        except ImportError:
-            import requests
-
-            session = requests.Session()
-            session.verify = verify_ssl
-            session.headers.update(
-                {
-                    'User-Agent': f'anaconda-client/{__version__}',
-                }
-            )
-            return session
+        return BaseClient(
+            domain=self.base_url,
+            ssl_verify=verify_ssl,
+            user_agent=f'anaconda-client/{__version__}',
+        )
 
     @property
     def urls(self) -> dict:
