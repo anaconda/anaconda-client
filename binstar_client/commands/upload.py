@@ -27,7 +27,7 @@ import typer
 import binstar_client
 from binstar_client import errors
 from binstar_client.deprecations import DEPRECATION_MESSAGE_NOTEBOOKS_PROJECTS_ENVIRONMENTS_REMOVED
-from binstar_client.utils import bool_input, DEFAULT_CONFIG, get_config, get_server_api
+from binstar_client.utils import bool_input, DEFAULT_CONFIG, get_config, get_server_api, logging_utils
 from binstar_client.utils.config import PackageType
 from binstar_client.utils import detect
 
@@ -1025,6 +1025,13 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             # TODO: Explicitly ignoring the --json-help option since it would be very hard to
             #       support and I'd bet is never used.
             json_help=None,
+        )
+
+        logging_utils.setup_logging(
+            logging.getLogger('binstar'),
+            log_level=log_level,
+            show_traceback=arguments.show_traceback,
+            disable_ssl_warnings=arguments.disable_ssl_warnings,
         )
 
         main(arguments)
