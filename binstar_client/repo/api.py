@@ -51,7 +51,6 @@ class RepoApi:
         if self._urls is None:
             self._urls = {
                 'channels': join(self.base_url, 'channels'),
-                'account': join(self.base_url, 'account'),
             }
         return self._urls
 
@@ -86,14 +85,6 @@ class RepoApi:
             f'Error details: {response.content or None}\n'
         )
         raise errors.BinstarError(msg)
-
-    def get_default_channel(self) -> str:
-        """Get the user's default channel."""
-        url = self.urls['account']
-        logger.debug(f'Getting user default channel from {url}')
-        response = self._client.get(url)
-        data = self._handle_response(response, 'getting account details')
-        return data.get('default_channel_name', '')
 
     def _get_channel_url(self, channel: str) -> str:
         """Get the URL for a channel, handling subchannels."""
