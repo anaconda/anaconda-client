@@ -144,11 +144,13 @@ class TestRepoCoreClientAPI:
 
 class TestLoginRequiredErrorHandler:
     def test_handler_is_registered(self):
+        import binstar_client.plugins  # noqa: F401 — triggers registration
         from anaconda_cli_base.exceptions import ERROR_HANDLERS
 
         assert LoginRequiredError in ERROR_HANDLERS
 
     def test_handler_calls_continue_with_login(self):
+        import binstar_client.plugins  # noqa: F401 — triggers registration
         from anaconda_cli_base.exceptions import ERROR_HANDLERS
 
         handler = ERROR_HANDLERS[LoginRequiredError]

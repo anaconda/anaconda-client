@@ -383,3 +383,14 @@ from binstar_client.commands._repo_channels import app as channels_app  # noqa: 
 app.add_typer(channels_app)
 if not isinstance(main_app, functools.partial):
     main_app.add_typer(channels_app)
+
+# Register LoginRequiredError handler for interactive login prompting
+from anaconda_cli_base.exceptions import register_error_handler  # noqa: E402
+from binstar_client.repocore.errors import LoginRequiredError  # noqa: E402
+
+
+@register_error_handler(LoginRequiredError)
+def _handle_login_required(e: Exception) -> int:
+    from anaconda_auth.cli import _continue_with_login
+
+    return _continue_with_login()

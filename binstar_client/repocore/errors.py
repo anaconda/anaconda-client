@@ -1,7 +1,5 @@
 """Repocore-specific exceptions."""
 
-from anaconda_cli_base.exceptions import register_error_handler
-
 
 class RepoCoreError(Exception):
     def __init__(self, *args, **kwargs):
@@ -27,10 +25,3 @@ class InvalidName(RepoCoreError):
 
 class NoDefaultChannel(RepoCoreError):
     pass
-
-
-@register_error_handler(LoginRequiredError)
-def _handle_login_required(e: Exception) -> int:
-    from anaconda_auth.cli import _continue_with_login
-
-    return _continue_with_login()
