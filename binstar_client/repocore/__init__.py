@@ -57,9 +57,7 @@ class RepoCoreClient(BaseClient):
             try:
                 channel, subchannel = name.split("/")
             except ValueError:
-                raise InvalidName(
-                    f"Channel name {name} is not valid. It contains more than one '/'"
-                )
+                raise InvalidName(f"Channel name {name} is not valid. It contains more than one '/'")
             self._validate_channel_name(channel)
             self._validate_channel_name(subchannel)
             return

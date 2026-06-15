@@ -66,17 +66,13 @@ def create_command(
     ctx: typer.Context,
     name: str = typer.Argument(..., help="Channel name to create"),
     private: bool = typer.Option(False, "--private", help="Create as a private channel"),
-    authenticated: bool = typer.Option(
-        False, "--authenticated", help="Create as an authenticated channel"
-    ),
+    authenticated: bool = typer.Option(False, "--authenticated", help="Create as an authenticated channel"),
     public: bool = typer.Option(False, "--public", help="Create as a public channel"),
 ) -> None:
     """Create a new channel."""
     flags = sum([private, authenticated, public])
     if flags > 1:
-        console.print(
-            "[red]Error:[/red] --private, --authenticated, and --public are mutually exclusive."
-        )
+        console.print("[red]Error:[/red] --private, --authenticated, and --public are mutually exclusive.")
         raise typer.Exit(1)
 
     api = ctx.obj.repo_api
@@ -181,15 +177,11 @@ def modify_command(
         raise typer.Exit(1)
 
     if indexing_behavior and indexing_behavior not in valid_indexing:
-        console.print(
-            f"[red]Error:[/red] --indexing-behavior must be one of: {', '.join(valid_indexing)}"
-        )
+        console.print(f"[red]Error:[/red] --indexing-behavior must be one of: {', '.join(valid_indexing)}")
         raise typer.Exit(1)
 
     if not privacy and not indexing_behavior:
-        console.print(
-            "[red]Error:[/red] At least one option is required (--privacy or --indexing-behavior)."
-        )
+        console.print("[red]Error:[/red] At least one option is required (--privacy or --indexing-behavior).")
         raise typer.Exit(1)
 
     api = ctx.obj.repo_api
@@ -197,16 +189,12 @@ def modify_command(
     if privacy:
         api.update_channel(name, privacy=privacy)
         state_map = {"private": "locked", "authenticated": "soft-locked", "public": "unlocked"}
-        console.print(
-            f"[green]Success![/green] Channel '[cyan]{name}[/cyan]' is now {state_map[privacy]} ({privacy})."
-        )
+        console.print(f"[green]Success![/green] Channel '[cyan]{name}[/cyan]' is now {state_map[privacy]} ({privacy}).")
 
     if indexing_behavior:
         api.update_channel(name, indexing_behavior=indexing_behavior)
         state_map = {"frozen": "frozen", "default": "unfrozen"}
-        console.print(
-            f"[green]Success![/green] Channel '[cyan]{name}[/cyan]' is now {state_map[indexing_behavior]}."
-        )
+        console.print(f"[green]Success![/green] Channel '[cyan]{name}[/cyan]' is now {state_map[indexing_behavior]}.")
 
 
 def _prompt_for_privacy() -> str:
