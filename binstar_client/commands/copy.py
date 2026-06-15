@@ -114,7 +114,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         ctx: typer.Context,
         spec: str = typer.Argument(
             help=(
-                'Package - written as user/package/version[/filename]. '
+                r'Package - written as user/package/version\[/filename]. '
                 'If filename is not given, copy all files in the version'
             ),
             callback=parse_specs,
