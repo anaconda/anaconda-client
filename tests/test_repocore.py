@@ -8,6 +8,7 @@ from typer.testing import CliRunner
 from binstar_client.repocore import RepoCoreClient
 from binstar_client.repocore.errors import (
     InvalidName,
+    LoginRequiredError,
     RepoCoreError,
     Unauthorized,
 )
@@ -119,6 +120,13 @@ class TestRepoCoreClientAPI:
         call_args = client.put.call_args
         assert call_args[1]["json"] == {"privacy": "private"}
 
+    def test_manage_response_401_raises_login_required(self):
+        client = _make_client()
+        mock_response = _mock_response(401, {"error": {"code": "auth_required"}})
+
+        with pytest.raises(LoginRequiredError, match="Authentication required"):
+            client._manage_response(mock_response, "test action")
+
     def test_manage_response_403(self):
         client = _make_client()
         mock_response = _mock_response(403, {"message": "forbidden"})
@@ -132,6 +140,22 @@ class TestRepoCoreClientAPI:
 
         with pytest.raises(RepoCoreError):
             client._manage_response(mock_response, "test action")
+
+
+class TestLoginRequiredErrorHandler:
+    def test_handler_is_registered(self):
+        from anaconda_cli_base.exceptions import ERROR_HANDLERS
+
+        assert LoginRequiredError in ERROR_HANDLERS
+
+    def test_handler_calls_continue_with_login(self):
+        from anaconda_cli_base.exceptions import ERROR_HANDLERS
+
+        handler = ERROR_HANDLERS[LoginRequiredError]
+        with patch("anaconda_auth.cli._continue_with_login", return_value=1) as mock_login:
+            result = handler(LoginRequiredError())
+            mock_login.assert_called_once()
+            assert result == 1
 
 
 class TestRepoCoreChannelsCLI:

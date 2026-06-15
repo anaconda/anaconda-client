@@ -10,7 +10,7 @@ from typing import Optional
 from anaconda_auth.client import BaseClient
 
 from binstar_client.repocore.config import UPLOAD_TYPE_MAPPING
-from binstar_client.repocore.errors import InvalidName, RepoCoreError, Unauthorized
+from binstar_client.repocore.errors import InvalidName, LoginRequiredError, RepoCoreError, Unauthorized
 
 logger = logging.getLogger(__name__)
 
@@ -91,6 +91,8 @@ class RepoCoreClient(BaseClient):
 
         msg = self._extract_error_message(response, action)
 
+        if response.status_code == 401:
+            raise LoginRequiredError()
         if response.status_code == 403:
             raise Unauthorized(msg)
 
@@ -157,11 +159,12 @@ class RepoCoreClient(BaseClient):
         statinfo = os.stat(filepath)
         filename = basename(filepath)
 
-        multipart_form_data = {
-            "content": (filename, open(filepath, "rb")),
-            "filetype": (None, artifact_type),
-            "size": (None, str(statinfo.st_size)),
-        }
+        with open(filepath, "rb") as f:
+            multipart_form_data: list[tuple[str, tuple[str | None, str | bytes]]] = [
+                ("content", (filename, f.read())),
+                ("filetype", (None, artifact_type)),
+                ("size", (None, str(statinfo.st_size))),
+            ]
+            response = self.post(url, files=multipart_form_data)
 
-        response = self.post(url, files=multipart_form_data)
         return response
