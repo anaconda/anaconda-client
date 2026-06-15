@@ -29,7 +29,11 @@ import typer.colors
 from anaconda_cli_base import console, __version__
 from anaconda_cli_base.cli import app as main_app, ContextExtras
 
+from anaconda_cli_base.exceptions import register_error_handler
+
 from binstar_client import commands as command_module
+from binstar_client.commands._repo_channels import app as channels_app
+from binstar_client.repocore.errors import LoginRequiredError
 from binstar_client.scripts.cli import (
     _add_subparser_modules as add_subparser_modules,
     main as binstar_main,
@@ -378,15 +382,9 @@ def load_legacy_subcommands() -> None:
 load_legacy_subcommands()
 
 # Mount repocore channels command under `anaconda org channels` and `anaconda channels`
-from binstar_client.commands._repo_channels import app as channels_app  # noqa: E402
-
 app.add_typer(channels_app)
 if not isinstance(main_app, functools.partial):
     main_app.add_typer(channels_app)
-
-# Register LoginRequiredError handler for interactive login prompting
-from anaconda_cli_base.exceptions import register_error_handler  # noqa: E402
-from binstar_client.repocore.errors import LoginRequiredError  # noqa: E402
 
 
 @register_error_handler(LoginRequiredError)

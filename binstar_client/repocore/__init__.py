@@ -9,8 +9,13 @@ from typing import Optional
 
 from anaconda_auth.client import BaseClient
 
-from binstar_client.repocore.config import UPLOAD_TYPE_MAPPING
 from binstar_client.repocore.errors import InvalidName, LoginRequiredError, RepoCoreError, Unauthorized
+
+UPLOAD_TYPE_MAPPING = {
+    "conda": "conda1",
+    "pypi": "bdist_wheel",
+    "sdist": "sdist",
+}
 
 logger = logging.getLogger(__name__)
 
@@ -168,3 +173,12 @@ class RepoCoreClient(BaseClient):
             response = self.post(url, files=multipart_form_data)
 
         return response
+
+
+def get_repo_api(site=None):
+    """Create a RepoCoreClient configured from anaconda-auth domain handling.
+
+    URL construction is delegated entirely to anaconda-auth's BaseClient,
+    which reads domain from config.toml / env vars automatically.
+    """
+    return RepoCoreClient(site=site)

@@ -6,7 +6,7 @@ import typer
 from rich.panel import Panel
 
 from anaconda_cli_base.console import Table, console
-from binstar_client.repocore.config import get_repo_api
+from binstar_client.repocore import get_repo_api
 
 app = typer.Typer(
     name="channels",
