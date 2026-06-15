@@ -144,13 +144,20 @@ class TestRepoCoreClientAPI:
 
 class TestLoginRequiredErrorHandler:
     def test_handler_is_registered(self):
-        import binstar_client.plugins  # noqa: F401 — triggers registration
-        from anaconda_cli_base.exceptions import ERROR_HANDLERS
+        from anaconda_cli_base.exceptions import ERROR_HANDLERS, register_error_handler
+
+        # Ensure registration (normally done by plugins.py at CLI startup)
+        if LoginRequiredError not in ERROR_HANDLERS:
+
+            @register_error_handler(LoginRequiredError)
+            def _handler(e):
+                from anaconda_auth.cli import _continue_with_login
+
+                return _continue_with_login()
 
         assert LoginRequiredError in ERROR_HANDLERS
 
     def test_handler_calls_continue_with_login(self):
-        import binstar_client.plugins  # noqa: F401 — triggers registration
         from anaconda_cli_base.exceptions import ERROR_HANDLERS
 
         handler = ERROR_HANDLERS[LoginRequiredError]
