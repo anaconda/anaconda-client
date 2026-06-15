@@ -1,4 +1,4 @@
-"""Channels subcommand for repocore: anaconda repo channels <subcommand>."""
+"""Channels subcommand: anaconda org channels <subcommand>."""
 
 from typing import Optional
 
@@ -6,12 +6,30 @@ import typer
 from rich.panel import Panel
 
 from anaconda_cli_base.console import Table, console
+from binstar_client.repocore.config import get_repo_api
 
 app = typer.Typer(
     name="channels",
     help="Manage your Anaconda repository channels",
     no_args_is_help=True,
 )
+
+
+@app.callback(invoke_without_command=True, no_args_is_help=True)
+def _callback(ctx: typer.Context) -> None:
+    """Initialize repocore API client for channel commands."""
+    from anaconda_cli_base.cli import ContextExtras
+
+    if ctx.obj is None:
+        ctx.obj = ContextExtras()
+
+    site_value = getattr(ctx.obj, "params", {}).get("at") or getattr(ctx.obj, "params", {}).get("site")
+
+    try:
+        ctx.obj.repo_api = get_repo_api(site=site_value)
+    except Exception as e:
+        console.print(f"[red]Error:[/red] {e}")
+        raise typer.Exit(1)
 
 
 @app.command(name="list", help="List all channels")

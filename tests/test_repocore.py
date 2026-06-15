@@ -6,9 +6,7 @@ import pytest
 from typer.testing import CliRunner
 
 from binstar_client.repocore import RepoCoreClient
-from binstar_client.repocore.config import UPLOAD_TYPE_MAPPING
 from binstar_client.repocore.errors import (
-    AnacondaLoginRequired,
     InvalidName,
     RepoCoreError,
     Unauthorized,
@@ -121,21 +119,6 @@ class TestRepoCoreClientAPI:
         call_args = client.put.call_args
         assert call_args[1]["json"] == {"privacy": "private"}
 
-    def test_get_default_channel(self):
-        client = _make_client()
-        mock_response = _mock_response(200, {"default_channel_name": "main"})
-        client.get = MagicMock(return_value=mock_response)
-
-        result = client.get_default_channel()
-        assert result == "main"
-
-    def test_manage_response_401(self):
-        client = _make_client()
-        mock_response = _mock_response(401, {"message": "unauthorized"})
-
-        with pytest.raises(AnacondaLoginRequired):
-            client._manage_response(mock_response, "test action")
-
     def test_manage_response_403(self):
         client = _make_client()
         mock_response = _mock_response(403, {"message": "forbidden"})
@@ -154,8 +137,8 @@ class TestRepoCoreClientAPI:
 class TestRepoCoreChannelsCLI:
     def test_channels_help(self):
         runner = CliRunner()
-        app = _get_app()
-        result = runner.invoke(app, ["channels", "--help"])
+        app = _get_channels_app()
+        result = runner.invoke(app, ["--help"])
         assert result.exit_code == 0
         assert "list" in result.output
         assert "create" in result.output
@@ -165,7 +148,7 @@ class TestRepoCoreChannelsCLI:
 
     def test_channels_list(self):
         runner = CliRunner()
-        app = _get_app()
+        app = _get_channels_app()
         mock_api = MagicMock()
         mock_api.list_user_channels.return_value = {
             "items": [
@@ -174,7 +157,7 @@ class TestRepoCoreChannelsCLI:
         }
 
         with _patch_repo_api(mock_api):
-            result = runner.invoke(app, ["channels", "list"])
+            result = runner.invoke(app, ["list"])
 
         assert result.exit_code == 0
         assert "main" in result.output
@@ -182,11 +165,11 @@ class TestRepoCoreChannelsCLI:
 
     def test_channels_create(self):
         runner = CliRunner()
-        app = _get_app()
+        app = _get_channels_app()
         mock_api = MagicMock()
 
         with _patch_repo_api(mock_api):
-            result = runner.invoke(app, ["channels", "create", "test-channel", "--public"])
+            result = runner.invoke(app, ["create", "test-channel", "--public"])
 
         assert result.exit_code == 0
         assert "Success" in result.output
@@ -194,11 +177,11 @@ class TestRepoCoreChannelsCLI:
 
     def test_channels_remove(self):
         runner = CliRunner()
-        app = _get_app()
+        app = _get_channels_app()
         mock_api = MagicMock()
 
         with _patch_repo_api(mock_api):
-            result = runner.invoke(app, ["channels", "remove", "test-channel"])
+            result = runner.invoke(app, ["remove", "test-channel"])
 
         assert result.exit_code == 0
         assert "Success" in result.output
@@ -206,7 +189,7 @@ class TestRepoCoreChannelsCLI:
 
     def test_channels_show(self):
         runner = CliRunner()
-        app = _get_app()
+        app = _get_channels_app()
         mock_api = MagicMock()
         mock_api.get_channel.return_value = {
             "name": "test-channel",
@@ -223,7 +206,7 @@ class TestRepoCoreChannelsCLI:
         mock_api.is_subchannel.return_value = False
 
         with _patch_repo_api(mock_api):
-            result = runner.invoke(app, ["channels", "show", "test-channel"])
+            result = runner.invoke(app, ["show", "test-channel"])
 
         assert result.exit_code == 0
         assert "test-channel" in result.output
@@ -231,11 +214,11 @@ class TestRepoCoreChannelsCLI:
 
     def test_channels_modify_privacy(self):
         runner = CliRunner()
-        app = _get_app()
+        app = _get_channels_app()
         mock_api = MagicMock()
 
         with _patch_repo_api(mock_api):
-            result = runner.invoke(app, ["channels", "modify", "test-channel", "--privacy", "private"])
+            result = runner.invoke(app, ["modify", "test-channel", "--privacy", "private"])
 
         assert result.exit_code == 0
         assert "locked" in result.output
@@ -243,25 +226,14 @@ class TestRepoCoreChannelsCLI:
 
     def test_channels_modify_no_options(self):
         runner = CliRunner()
-        app = _get_app()
+        app = _get_channels_app()
         mock_api = MagicMock()
 
         with _patch_repo_api(mock_api):
-            result = runner.invoke(app, ["channels", "modify", "test-channel"])
+            result = runner.invoke(app, ["modify", "test-channel"])
 
         assert result.exit_code == 1
         assert "At least one option is required" in result.output
-
-
-class TestRepoCoreUploadCLI:
-    def test_upload_help(self):
-        runner = CliRunner()
-        app = _get_app()
-        result = runner.invoke(app, ["upload", "--help"])
-        assert result.exit_code == 0
-        assert "FILES" in result.output
-        assert "--channel" in result.output
-        assert "--package-type" in result.output
 
 
 # =============================================================================
@@ -273,7 +245,7 @@ def _make_client():
     """Create a RepoCoreClient with mocked auth (no real network)."""
     with patch("anaconda_auth.client.BaseClient.__init__", return_value=None):
         client = RepoCoreClient.__new__(RepoCoreClient)
-        client._base_url = "https://example.com/api"
+        client._base_uri = "https://example.com"
         client.config = MagicMock()
         client.config.domain = "example.com"
         return client
@@ -290,8 +262,8 @@ def _mock_response(status_code, json_data):
     return response
 
 
-def _get_app():
-    from binstar_client.commands._repo_app import app
+def _get_channels_app():
+    from binstar_client.commands._repo_channels import app
     return app
 
 
@@ -301,7 +273,7 @@ class _patch_repo_api:
     def __init__(self, mock_api):
         self.mock_api = mock_api
         self.patcher = patch(
-            "binstar_client.commands._repo_app.get_repo_api", return_value=mock_api
+            "binstar_client.commands._repo_channels.get_repo_api", return_value=mock_api
         )
 
     def __enter__(self):

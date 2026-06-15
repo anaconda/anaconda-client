@@ -376,3 +376,9 @@ def load_legacy_subcommands() -> None:
 
 
 load_legacy_subcommands()
+
+# Mount repocore channels command under `anaconda org channels` and `anaconda channels`
+from binstar_client.commands._repo_channels import app as channels_app  # noqa: E402
+
+app.add_typer(channels_app)
+main_app.add_typer(channels_app)

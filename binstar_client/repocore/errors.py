@@ -20,15 +20,3 @@ class InvalidName(RepoCoreError):
 
 class NoDefaultChannel(RepoCoreError):
     pass
-
-
-class AnacondaLoginRequired(RepoCoreError):
-    def __init__(self, domain=None):
-        domain_msg = f" for domain: {domain}" if domain else ""
-        self.msg = (
-            f"Authentication required{domain_msg}.\n\n"
-            "Please authenticate using the Anaconda CLI:\n\n"
-            "    anaconda login\n\n"
-            "After authentication, your credentials will be used automatically.\n"
-        )
-        super().__init__(self.msg)

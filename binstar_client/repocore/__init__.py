@@ -10,42 +10,38 @@ from typing import Optional
 from anaconda_auth.client import BaseClient
 
 from binstar_client.repocore.config import UPLOAD_TYPE_MAPPING
-from binstar_client.repocore.errors import (
-    AnacondaLoginRequired,
-    InvalidName,
-    RepoCoreError,
-    Unauthorized,
-)
+from binstar_client.repocore.errors import InvalidName, RepoCoreError, Unauthorized
 
 logger = logging.getLogger(__name__)
+
+API_PATH = "/api"
 
 
 class RepoCoreClient(BaseClient):
     """HTTP client for the repocore (PSM) API.
 
-    Extends anaconda_auth.BaseClient which handles Bearer token injection automatically.
+    Extends anaconda_auth.BaseClient which handles domain resolution,
+    Bearer token injection, and login-required prompting automatically.
     """
 
     _user_agent: str = "anaconda-client-repocore/1.0"
 
-    def __init__(self, base_url: str, site=None, ssl_verify=None):
+    def __init__(self, site=None, ssl_verify=None):
         kwargs = {}
         if site:
             kwargs["site"] = site
         if ssl_verify is not None:
             kwargs["ssl_verify"] = ssl_verify
-        kwargs["base_uri"] = base_url
 
         super().__init__(**kwargs)
-        self._base_url = base_url
+
+    @property
+    def _api_base(self):
+        return self._base_uri + API_PATH
 
     @property
     def _channels_url(self):
-        return join(self._base_url, "channels")
-
-    @property
-    def _account_url(self):
-        return join(self._base_url, "account")
+        return join(self._api_base, "channels")
 
     def is_subchannel(self, channel: str) -> bool:
         return "/" in channel
@@ -97,17 +93,13 @@ class RepoCoreClient(BaseClient):
 
         msg = self._extract_error_message(response, action)
 
-        if response.status_code in [401, 403]:
-            if response.status_code == 403:
-                raise Unauthorized(msg)
-            else:
-                domain = getattr(self.config, "domain", None)
-                raise AnacondaLoginRequired(domain=domain)
+        if response.status_code == 403:
+            raise Unauthorized(msg)
 
         raise RepoCoreError(msg)
 
     def list_user_channels(self, offset: int = 0, limit: int = 50):
-        url = join(self._account_url, "channels")
+        url = join(self._api_base, "account", "channels")
         response = self.get(url, params={"offset": offset, "limit": limit})
         return self._manage_response(response, "getting user channels")
 
@@ -134,7 +126,7 @@ class RepoCoreClient(BaseClient):
         if response.status_code in [200, 202, 204]:
             return None
         msg = self._extract_error_message(response, f"removing channel {channel}")
-        if response.status_code in [401, 403]:
+        if response.status_code == 403:
             raise Unauthorized(msg)
         raise RepoCoreError(msg)
 
@@ -149,7 +141,7 @@ class RepoCoreClient(BaseClient):
         if response.status_code in [200, 204]:
             return None
         msg = self._extract_error_message(response, f"updating channel {channel}")
-        if response.status_code in [401, 403]:
+        if response.status_code == 403:
             raise Unauthorized(msg)
         raise RepoCoreError(msg)
 
@@ -157,11 +149,6 @@ class RepoCoreClient(BaseClient):
         url = join(self._channels_url, channel, "subchannels")
         response = self.get(url)
         return self._manage_response(response, f"getting channel {channel} subchannels")
-
-    def get_default_channel(self):
-        response = self.get(self._account_url)
-        data = self._manage_response(response, "getting account details")
-        return data.get("default_channel_name")
 
     def upload_file(self, filepath: str, channel: str, package_type: str, name=None, version=None):
         if package_type not in UPLOAD_TYPE_MAPPING:
@@ -177,10 +164,6 @@ class RepoCoreClient(BaseClient):
             "filetype": (None, artifact_type),
             "size": (None, str(statinfo.st_size)),
         }
-        if artifact_type == UPLOAD_TYPE_MAPPING["gra"]:
-            multipart_form_data["name"] = (None, name)
-            if version:
-                multipart_form_data["version"] = (None, version)
 
         response = self.post(url, files=multipart_form_data)
         return response
