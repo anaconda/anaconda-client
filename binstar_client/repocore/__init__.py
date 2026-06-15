@@ -19,7 +19,7 @@ UPLOAD_TYPE_MAPPING = {
 
 logger = logging.getLogger(__name__)
 
-API_PATH = "/api"
+API_PATH = "/api/repo"
 
 
 class RepoCoreClient(BaseClient):
