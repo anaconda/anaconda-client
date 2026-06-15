@@ -381,4 +381,5 @@ load_legacy_subcommands()
 from binstar_client.commands._repo_channels import app as channels_app  # noqa: E402
 
 app.add_typer(channels_app)
-main_app.add_typer(channels_app)
+if not isinstance(main_app, functools.partial):
+    main_app.add_typer(channels_app)
