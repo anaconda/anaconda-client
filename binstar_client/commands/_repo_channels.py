@@ -131,7 +131,7 @@ def show_command(
         ("Updated", channel_data.get("updated", "")),
     ]
 
-    owners = channel_data.get("owners", [])
+    owners = [o for o in channel_data.get("owners", []) if o]
     if owners:
         fields.append(("Owners", ", ".join(owners)))
 
