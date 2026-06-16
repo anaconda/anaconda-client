@@ -17,14 +17,11 @@ jobs:
         fetch-depth: 0
     - name: Create build environment
       run: |
-        set -e
         source $CONDA/bin/activate
-        conda create -n build --file ./etc/build.linux-64.lock --yes
+        conda create -n build --file ./etc/build.linux-64.lock
     - name: conda build
       run: |
-        set -e
-        source $CONDA/bin/activate
-        conda activate build
+        source $CONDA/bin/activate && conda activate build
         mkdir -p ./conda-bld
         # TODO(mattkram): Remove anaconda-cloud/label/dev channel before release
         VERSION=`hatch version` \
