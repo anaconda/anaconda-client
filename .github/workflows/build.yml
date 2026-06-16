@@ -12,7 +12,7 @@ jobs:
     name: Build conda package
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd     # v6.0.2
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10     # v6.0.3
       with:
         fetch-depth: 0
     - name: Create build environment
@@ -28,7 +28,7 @@ jobs:
         mkdir -p ./conda-bld
         # TODO(mattkram): Remove anaconda-cloud/label/dev channel before release
         VERSION=`hatch version` \
-          conda build \
+          conda-build \
             -c conda-forge \
             -c defaults \
             -c anaconda-cloud/label/dev \
@@ -36,7 +36,7 @@ jobs:
             conda.recipe \
             --output-folder ./conda-bld
     - name: Upload the build artifact
-      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f     # v7.0.0
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a     # v7.0.1
       with:
         name: conda-${{ github.sha }}
         path: ./conda-bld
@@ -48,7 +48,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd   # v6.0.2
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10   # v6.0.3
       with:
         fetch-depth: 0
     - name: Setup Python
@@ -60,7 +60,7 @@ jobs:
     - name: Build the package
       run: python -m build
     - name: Upload the build artifact
-      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f   # v7.0.0
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a   # v7.0.1
       with:
         name: wheel-${{ github.sha }}
         path: dist/*
@@ -76,6 +76,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Decide whether all required jobs succeeded or failed
-      uses: re-actors/alls-green@release/v1
+      uses: re-actors/alls-green@05ac9388f0aebcb5727afa17fcccfecd6f8ec5fe # release/v1
       with:
         jobs: ${{ toJSON(needs) }}

@@ -1,6 +1,3 @@
-from binstar_client.utils import jencode
-
-
 class OrgMixin:
     def user_orgs(self, username=None):
         if username:
@@ -73,7 +70,6 @@ class OrgMixin:
         url = '%s/group/%s/%s' % (self.domain, org, name)
 
         payload = {'perms': perms}
-        data, headers = jencode(payload)
 
-        res = self.session.post(url, data=data, headers=headers)
+        res = self.session.post(url, json=payload)
         self._check_response(res, [204])
