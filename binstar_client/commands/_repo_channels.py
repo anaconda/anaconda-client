@@ -43,20 +43,31 @@ def list_command(
     data = api.list_user_channels(offset, limit)
 
     table = Table(title="Channels")
-    table.add_column("Name", style="cyan")
+    table.add_column("Namespace / Channel", style="cyan")
     table.add_column("Privacy")
     table.add_column("Description")
     table.add_column("Artifacts", justify="right")
     table.add_column("Downloads", justify="right")
 
     for ch in data.get("items", []):
+        channel_name = ch.get("name", "")
         table.add_row(
-            ch.get("name", ""),
+            channel_name,
             ch.get("privacy", ""),
             ch.get("description", "") or "",
             str(ch.get("artifact_count", 0)),
             str(ch.get("download_count", 0)),
         )
+        if ch.get("subchannel_count", 0) > 0:
+            subchannels = api.get_channel_subchannels(channel_name)
+            for sub in subchannels.get("items", []):
+                table.add_row(
+                    f"  {channel_name}/{sub.get('name', '')}",
+                    sub.get("privacy", ""),
+                    sub.get("description", "") or "",
+                    str(sub.get("artifact_count", 0)),
+                    str(sub.get("download_count", 0)),
+                )
 
     console.print(table)
 
