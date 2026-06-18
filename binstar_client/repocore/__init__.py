@@ -159,7 +159,9 @@ class RepoCoreClient(BaseClient):
         url = join(self._api_base, "namespace-channels")
         data = {"namespace": namespace, "subchannel_name": subchannel_name, "privacy": privacy}
         response = self.post(url, json=data)
-        return self._manage_response(response, f"creating namespace channel {namespace}/{subchannel_name}", success_codes=[200, 201])
+        return self._manage_response(
+            response, f"creating namespace channel {namespace}/{subchannel_name}", success_codes=[200, 201]
+        )
 
     def upload_file(self, filepath: str, channel: str, package_type: str, name=None, version=None):
         if package_type not in UPLOAD_TYPE_MAPPING:
