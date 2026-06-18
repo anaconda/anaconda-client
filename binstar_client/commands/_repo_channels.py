@@ -32,15 +32,54 @@ def _callback(ctx: typer.Context) -> None:
         raise typer.Exit(1)
 
 
+def _resolve_namespace(api, namespace: Optional[str] = None) -> Optional[str]:
+    """Resolve the user's namespace.
+
+    If explicitly provided, return it directly.
+    Otherwise look up available top-level channels:
+      - one available: return it
+      - none available: return None
+      - multiple: prompt the user to pick
+    """
+    if namespace:
+        return namespace
+
+    data = api.list_user_channels(offset=0, limit=100)
+    namespaces = [ch.get("name", "") for ch in data.get("items", [])]
+
+    if not namespaces:
+        return None
+
+    if len(namespaces) == 1:
+        return namespaces[0]
+
+    console.print("\nMultiple namespaces available:")
+    for i, ns in enumerate(namespaces, 1):
+        console.print(f"  {i}. [cyan]{ns}[/cyan]")
+    console.print()
+
+    options = {str(i): ns for i, ns in enumerate(namespaces, 1)}
+    while True:
+        choice = typer.prompt(f"Namespace [1-{len(namespaces)}]")
+        if choice in options:
+            return options[choice]
+        console.print(f"[red]Invalid choice.[/red] Please enter 1-{len(namespaces)}.")
+
+
 @app.command(name="list", help="List all channels")
 def list_command(
     ctx: typer.Context,
+    namespace: Optional[str] = typer.Option(None, "--namespace", "-n", help="Filter to a specific namespace"),
     offset: int = typer.Option(0, "--offset", "-o", help="Offset when displaying results"),
     limit: int = typer.Option(50, "--limit", "-l", help="Limit when displaying results"),
 ) -> None:
     """List all channels for the current user."""
     api = ctx.obj.repo_api
     data = api.list_user_channels(offset, limit)
+
+    channels = data.get("items", [])
+    if namespace:
+        channels = [ch for ch in channels if ch.get("name", "") == namespace]
 
     table = Table(title="Channels")
     table.add_column("Namespace / Channel", style="cyan")
@@ -49,7 +88,7 @@ def list_command(
     table.add_column("Artifacts", justify="right")
     table.add_column("Downloads", justify="right")
 
-    for ch in data.get("items", []):
+    for ch in channels:
         channel_name = ch.get("name", "")
         table.add_row(
             channel_name,
@@ -75,8 +114,9 @@ def list_command(
 @app.command(name="create", help="Create a new channel")
 def create_command(
     ctx: typer.Context,
-    name: str = typer.Argument(..., help="Channel name to create"),
-    private: bool = typer.Option(False, "--private", help="Create as a private channel"),
+    name: str = typer.Argument(..., help="Channel name to create (or namespace/channel)"),
+    namespace: Optional[str] = typer.Option(None, "--namespace", "-n", help="Namespace to create the channel under"),
+    private: bool = typer.Option(False, "--private", help="Create as a private channel (default)"),
     authenticated: bool = typer.Option(False, "--authenticated", help="Create as an authenticated channel"),
     public: bool = typer.Option(False, "--public", help="Create as a public channel"),
 ) -> None:
@@ -87,27 +127,42 @@ def create_command(
         raise typer.Exit(1)
 
     api = ctx.obj.repo_api
+    namespace = _resolve_namespace(api, namespace)
 
-    if private:
-        privacy = "private"
+    if "/" in name:
+        namespace, subchannel = name.split("/", 1)
+    elif namespace:
+        subchannel = name
+    else:
+        namespace = name
+        subchannel = "private"
+
+    if public:
+        privacy = "public"
     elif authenticated:
         privacy = "authenticated"
-    elif public:
-        privacy = "public"
     else:
-        privacy = _prompt_for_privacy()
+        privacy = "private"
 
-    api.create_channel(name, privacy=privacy)
-    console.print(f"[green]Success![/green] Channel '[cyan]{name}[/cyan]' created ({privacy}).")
+    manifest = api.create_namespace_channel(namespace=namespace, subchannel_name=subchannel, privacy=privacy)
+    channel_path = manifest.get("channel_path", f"{namespace}/{subchannel}")
+    console.print(f"[green]Success![/green] Channel '[cyan]{channel_path}[/cyan]' created ({privacy}).")
 
 
 @app.command(name="remove", help="Remove a channel")
 def remove_command(
     ctx: typer.Context,
     name: str = typer.Argument(..., help="Channel name to remove"),
+    namespace: Optional[str] = typer.Option(None, "--namespace", "-n", help="Namespace the channel belongs to"),
 ) -> None:
     """Remove a channel."""
     api = ctx.obj.repo_api
+    if "/" not in name:
+        namespace = _resolve_namespace(api, namespace)
+        if not namespace:
+            console.print("[red]Error:[/red] No resolvable namespaces. Specify one with --namespace or use namespace/channel format.")
+            raise typer.Exit(1)
+        name = f"{namespace}/{name}"
     api.remove_channel(name)
     console.print(f"[green]Success![/green] Channel '[cyan]{name}[/cyan]' removed.")
 
@@ -116,10 +171,17 @@ def remove_command(
 def show_command(
     ctx: typer.Context,
     name: str = typer.Argument(..., help="Channel name to show"),
+    namespace: Optional[str] = typer.Option(None, "--namespace", "-n", help="Namespace the channel belongs to"),
     full_details: bool = typer.Option(False, "--full-details", help="Show full details including subchannels"),
 ) -> None:
     """Show information about a channel."""
     api = ctx.obj.repo_api
+    if "/" not in name:
+        namespace = _resolve_namespace(api, namespace)
+        if not namespace:
+            console.print("[red]Error:[/red] No resolvable namespaces. Specify one with --namespace or use namespace/channel format.")
+            raise typer.Exit(1)
+        name = f"{namespace}/{name}"
     channel_data = api.get_channel(name)
 
     if full_details and not api.is_subchannel(name):
@@ -172,6 +234,7 @@ def show_command(
 def modify_command(
     ctx: typer.Context,
     name: str = typer.Argument(..., help="Channel name to modify"),
+    namespace: Optional[str] = typer.Option(None, "--namespace", "-n", help="Namespace the channel belongs to"),
     privacy: Optional[str] = typer.Option(
         None, "--privacy", help="Set channel privacy: public, authenticated, or private"
     ),
@@ -196,6 +259,12 @@ def modify_command(
         raise typer.Exit(1)
 
     api = ctx.obj.repo_api
+    if "/" not in name:
+        namespace = _resolve_namespace(api, namespace)
+        if not namespace:
+            console.print("[red]Error:[/red] No resolvable namespaces. Specify one with --namespace or use namespace/channel format.")
+            raise typer.Exit(1)
+        name = f"{namespace}/{name}"
 
     if privacy:
         api.update_channel(name, privacy=privacy)
@@ -208,17 +277,3 @@ def modify_command(
         console.print(f"[green]Success![/green] Channel '[cyan]{name}[/cyan]' is now {state_map[indexing_behavior]}.")
 
 
-def _prompt_for_privacy() -> str:
-    """Prompt the user to select a channel privacy level."""
-    console.print("\nSelect channel privacy level:")
-    console.print("  1. [cyan]public[/cyan] - Anyone can access")
-    console.print("  2. [cyan]authenticated[/cyan] - Only authenticated users can access")
-    console.print("  3. [cyan]private[/cyan] - Only authorized users can access")
-    console.print()
-
-    options = {"1": "public", "2": "authenticated", "3": "private"}
-    while True:
-        choice = typer.prompt("Choice [1/2/3]")
-        if choice in options:
-            return options[choice]
-        console.print("[red]Invalid choice.[/red] Please enter 1, 2, or 3.")
