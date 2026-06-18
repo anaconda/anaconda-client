@@ -170,9 +170,9 @@ class TestLoginRequiredErrorHandler:
 class TestRepoCoreNamespaceChannel:
     def test_create_namespace_channel(self):
         client = _make_client()
-        mock_response = _mock_response(201, {
-            "org_id": "abc", "namespace": "myns", "subchannel_name": "dev", "channel_path": "myns/dev"
-        })
+        mock_response = _mock_response(
+            201, {"org_id": "abc", "namespace": "myns", "subchannel_name": "dev", "channel_path": "myns/dev"}
+        )
         client.post = MagicMock(return_value=mock_response)
 
         result = client.create_namespace_channel("myns", subchannel_name="dev", privacy="public")
@@ -183,9 +183,9 @@ class TestRepoCoreNamespaceChannel:
 
     def test_create_namespace_channel_defaults(self):
         client = _make_client()
-        mock_response = _mock_response(201, {
-            "org_id": "abc", "namespace": "myns", "subchannel_name": "private", "channel_path": "myns/private"
-        })
+        mock_response = _mock_response(
+            201, {"org_id": "abc", "namespace": "myns", "subchannel_name": "private", "channel_path": "myns/private"}
+        )
         client.post = MagicMock(return_value=mock_response)
 
         result = client.create_namespace_channel("myns")
@@ -245,7 +245,14 @@ class TestRepoCoreChannelsCLI:
         mock_api = MagicMock()
         mock_api.list_user_channels.return_value = {
             "items": [
-                {"name": "main", "privacy": "public", "description": "", "artifact_count": 10, "download_count": 5, "subchannel_count": 0}
+                {
+                    "name": "main",
+                    "privacy": "public",
+                    "description": "",
+                    "artifact_count": 10,
+                    "download_count": 5,
+                    "subchannel_count": 0,
+                }
             ]
         }
 
@@ -261,8 +268,22 @@ class TestRepoCoreChannelsCLI:
         mock_api = MagicMock()
         mock_api.list_user_channels.return_value = {
             "items": [
-                {"name": "org-a", "privacy": "public", "description": "", "artifact_count": 5, "download_count": 1, "subchannel_count": 0},
-                {"name": "org-b", "privacy": "private", "description": "", "artifact_count": 3, "download_count": 0, "subchannel_count": 0},
+                {
+                    "name": "org-a",
+                    "privacy": "public",
+                    "description": "",
+                    "artifact_count": 5,
+                    "download_count": 1,
+                    "subchannel_count": 0,
+                },
+                {
+                    "name": "org-b",
+                    "privacy": "private",
+                    "description": "",
+                    "artifact_count": 3,
+                    "download_count": 0,
+                    "subchannel_count": 0,
+                },
             ]
         }
 
@@ -284,7 +305,9 @@ class TestRepoCoreChannelsCLI:
 
         assert result.exit_code == 0
         assert "Success" in result.output
-        mock_api.create_namespace_channel.assert_called_once_with(namespace="myns", subchannel_name="dev", privacy="public")
+        mock_api.create_namespace_channel.assert_called_once_with(
+            namespace="myns", subchannel_name="dev", privacy="public"
+        )
 
     def test_channels_create_with_namespace_flag(self):
         runner = CliRunner()
@@ -296,7 +319,9 @@ class TestRepoCoreChannelsCLI:
             result = runner.invoke(app, ["create", "dev", "--namespace", "myns", "--public"])
 
         assert result.exit_code == 0
-        mock_api.create_namespace_channel.assert_called_once_with(namespace="myns", subchannel_name="dev", privacy="public")
+        mock_api.create_namespace_channel.assert_called_once_with(
+            namespace="myns", subchannel_name="dev", privacy="public"
+        )
 
     def test_channels_create_bare_name_becomes_namespace(self):
         runner = CliRunner()
@@ -309,7 +334,9 @@ class TestRepoCoreChannelsCLI:
             result = runner.invoke(app, ["create", "newns"])
 
         assert result.exit_code == 0
-        mock_api.create_namespace_channel.assert_called_once_with(namespace="newns", subchannel_name="private", privacy="private")
+        mock_api.create_namespace_channel.assert_called_once_with(
+            namespace="newns", subchannel_name="private", privacy="private"
+        )
 
     def test_channels_create_auto_resolves_namespace(self):
         runner = CliRunner()
@@ -322,7 +349,9 @@ class TestRepoCoreChannelsCLI:
             result = runner.invoke(app, ["create", "dev", "--public"])
 
         assert result.exit_code == 0
-        mock_api.create_namespace_channel.assert_called_once_with(namespace="myorg", subchannel_name="dev", privacy="public")
+        mock_api.create_namespace_channel.assert_called_once_with(
+            namespace="myorg", subchannel_name="dev", privacy="public"
+        )
 
     def test_channels_remove_with_namespace_resolution(self):
         runner = CliRunner()

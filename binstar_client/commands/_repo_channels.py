@@ -160,7 +160,9 @@ def remove_command(
     if "/" not in name:
         namespace = _resolve_namespace(api, namespace)
         if not namespace:
-            console.print("[red]Error:[/red] No resolvable namespaces. Specify one with --namespace or use namespace/channel format.")
+            console.print(
+                "[red]Error:[/red] No resolvable namespaces. Specify one with --namespace or use namespace/channel format."
+            )
             raise typer.Exit(1)
         name = f"{namespace}/{name}"
     api.remove_channel(name)
@@ -179,7 +181,9 @@ def show_command(
     if "/" not in name:
         namespace = _resolve_namespace(api, namespace)
         if not namespace:
-            console.print("[red]Error:[/red] No resolvable namespaces. Specify one with --namespace or use namespace/channel format.")
+            console.print(
+                "[red]Error:[/red] No resolvable namespaces. Specify one with --namespace or use namespace/channel format."
+            )
             raise typer.Exit(1)
         name = f"{namespace}/{name}"
     channel_data = api.get_channel(name)
@@ -262,7 +266,9 @@ def modify_command(
     if "/" not in name:
         namespace = _resolve_namespace(api, namespace)
         if not namespace:
-            console.print("[red]Error:[/red] No resolvable namespaces. Specify one with --namespace or use namespace/channel format.")
+            console.print(
+                "[red]Error:[/red] No resolvable namespaces. Specify one with --namespace or use namespace/channel format."
+            )
             raise typer.Exit(1)
         name = f"{namespace}/{name}"
 
@@ -275,5 +281,3 @@ def modify_command(
         api.update_channel(name, indexing_behavior=indexing_behavior)
         state_map = {"frozen": "frozen", "default": "unfrozen"}
         console.print(f"[green]Success![/green] Channel '[cyan]{name}[/cyan]' is now {state_map[indexing_behavior]}.")
-
-
