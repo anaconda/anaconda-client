@@ -188,7 +188,7 @@ class TestRepoCoreNamespaceChannel:
         })
         client.post = MagicMock(return_value=mock_response)
 
-        result = client.create_namespace_channel("myns")
+        client.create_namespace_channel("myns")
         call_args = client.post.call_args
         assert call_args[1]["json"] == {"namespace": "myns", "subchannel_name": "private", "privacy": "private"}
 
