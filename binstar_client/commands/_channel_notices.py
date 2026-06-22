@@ -9,6 +9,7 @@ import sys
 from enum import Enum
 from typing import Any, Dict, Optional
 
+import click
 import typer
 from dateutil.parser import parse as parse_date
 
@@ -279,7 +280,7 @@ def main(args: argparse.Namespace) -> None:
 
 def _common_namespace(ctx: typer.Context) -> Dict[str, Any]:
     organization = None
-    current: Optional[typer.Context] = ctx
+    current: Optional[click.Context] = ctx
     while current is not None:
         org = current.params.get('organization')
         if org:

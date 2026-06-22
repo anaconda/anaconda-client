@@ -1,9 +1,5 @@
 """API client methods for conda channel notices."""
 
-from __future__ import annotations
-
-from typing import Any, Dict, Optional
-
 import requests
 
 from binstar_client.utils import jencode
@@ -24,19 +20,23 @@ class NoticesMixin:
     def _check_notice_response(self, res, allowed=None):
         self._check_response(res, allowed, parse_error=notice_error_message)
 
-    def _anonymous_headers(self) -> Dict[str, str]:
-        return {key: value for key, value in self.session.headers.items() if key.lower() != 'authorization'}
+    def _anonymous_headers(self):
+        return {
+            str(key): str(value)
+            for key, value in self.session.headers.items()
+            if str(key).lower() != 'authorization'
+        }
 
-    def _notice_url(self, owner: str, notice_id: str, action: Optional[str] = None) -> str:
+    def _notice_url(self, owner, notice_id, action=None):
         url = f'{self.domain}/{owner}/notices/{notice_id}'
         if action:
             url = f'{url}/{action}'
         return url
 
-    def list_active_notices(self, owner: Optional[str] = None) -> Dict[str, Any]:
+    def list_active_notices(self, owner=None):
         """List published, non-expired notices (public endpoint)."""
         url = f'{self.domain}/notices/active'
-        params: Dict[str, str] = {}
+        params = {}
         if owner:
             params['owner'] = owner
 
@@ -47,16 +47,10 @@ class NoticesMixin:
         self._check_notice_response(res, [200])
         return res.json()
 
-    def list_notices(
-        self,
-        owner: str,
-        status: Optional[str] = None,
-        offset: int = 0,
-        limit: int = 20,
-    ) -> Dict[str, Any]:
+    def list_notices(self, owner, status=None, offset=0, limit=20):
         """List notices for a channel owner (admin, paginated)."""
         url = f'{self.domain}/notices'
-        params: Dict[str, Any] = {'owner': owner, 'offset': offset, 'limit': limit}
+        params = {'owner': owner, 'offset': offset, 'limit': limit}
         if status:
             params['status'] = status
 
@@ -64,20 +58,13 @@ class NoticesMixin:
         self._check_notice_response(res, [200])
         return res.json()
 
-    def get_notice(self, owner: str, notice_id: str) -> Dict[str, Any]:
+    def get_notice(self, owner, notice_id):
         """Get a single notice (admin)."""
         res = self.session.get(self._notice_url(owner, notice_id))
         self._check_notice_response(res, [200])
         return res.json()
 
-    def create_notice(
-        self,
-        owner: str,
-        notice_id: str,
-        message: str,
-        level: str,
-        expires_at: str,
-    ) -> Dict[str, Any]:
+    def create_notice(self, owner, notice_id, message, level, expires_at):
         """Create a draft notice."""
         url = f'{self.domain}/{owner}/notices'
         data, headers = jencode(
@@ -90,7 +77,7 @@ class NoticesMixin:
         self._check_notice_response(res, [201])
         return res.json()
 
-    def update_notice(self, owner: str, notice_id: str, **fields: Optional[str]) -> Dict[str, Any]:
+    def update_notice(self, owner, notice_id, **fields):
         """Update a notice (partial)."""
         payload = {key: value for key, value in fields.items() if value is not None}
         data, headers = jencode(**payload)
@@ -98,20 +85,20 @@ class NoticesMixin:
         self._check_notice_response(res, [200])
         return res.json()
 
-    def delete_notice(self, owner: str, notice_id: str) -> None:
+    def delete_notice(self, owner, notice_id):
         """Soft-delete a notice."""
         res = self.session.delete(self._notice_url(owner, notice_id))
         self._check_notice_response(res, [204])
 
-    def _lifecycle_notice(self, owner: str, notice_id: str, action: str) -> Dict[str, Any]:
+    def _lifecycle_notice(self, owner, notice_id, action):
         res = self.session.post(self._notice_url(owner, notice_id, action))
         self._check_notice_response(res, [200])
         return res.json()
 
-    def publish_notice(self, owner: str, notice_id: str) -> Dict[str, Any]:
+    def publish_notice(self, owner, notice_id):
         """Publish a draft notice."""
         return self._lifecycle_notice(owner, notice_id, 'publish')
 
-    def archive_notice(self, owner: str, notice_id: str) -> Dict[str, Any]:
+    def archive_notice(self, owner, notice_id):
         """Archive a notice."""
         return self._lifecycle_notice(owner, notice_id, 'archive')
