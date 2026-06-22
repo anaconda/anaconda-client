@@ -155,9 +155,7 @@ class RepoCoreClient(BaseClient):
         response = self.get(url)
         return self._manage_response(response, f"getting channel {channel} subchannels")
 
-    def create_namespace_channel(
-        self, subchannel_name: str, namespace: Optional[str] = None, privacy: str = "private"
-    ):
+    def create_namespace_channel(self, subchannel_name: str, namespace: Optional[str] = None, privacy: str = "private"):
         url = join(self._api_base, "namespace-channels")
         data = {"subchannel_name": subchannel_name, "privacy": privacy}
         if namespace:
