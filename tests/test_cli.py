@@ -34,6 +34,14 @@ BASE_COMMANDS = {"login", "logout", "whoami"}
 HIDDEN_SUBCOMMANDS = ALL_SUBCOMMANDS - BASE_COMMANDS - NON_HIDDEN_SUBCOMMANDS
 
 
+def _find_registered_subcommand(typer_app: Typer, name: str) -> Any:
+    # Note: channel is a Typer group (not a flat command) because it nests the notice subcommand.
+    subcmd = next((subcmd for subcmd in typer_app.registered_commands if subcmd.name == name), None)
+    if subcmd is None:
+        subcmd = next((grp for grp in typer_app.registered_groups if grp.name == name), None)
+    return subcmd
+
+
 @pytest.fixture(autouse=True)
 def ensure_wide_terminal(monkeypatch: MonkeyPatch) -> None:
     """Ensure the terminal is wide enough for long output to stdout to prevent line breaks."""
@@ -205,7 +213,7 @@ def test_org_subcommands(cmd: str, monkeypatch: MonkeyPatch, assert_binstar_args
     assert org is not None
 
     assert org.typer_instance
-    subcmd = next((subcmd for subcmd in org.typer_instance.registered_commands if subcmd.name == cmd), None)
+    subcmd = _find_registered_subcommand(org.typer_instance, cmd)
     assert subcmd is not None
     assert subcmd.hidden is False
 
@@ -225,7 +233,7 @@ def test_hidden_commands(cmd: str, monkeypatch: MonkeyPatch, assert_binstar_args
     args = [cmd, "-h"]
     monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
 
-    subcmd = next((subcmd for subcmd in anaconda_cli_base.cli.app.registered_commands if subcmd.name == cmd), None)
+    subcmd = _find_registered_subcommand(anaconda_cli_base.cli.app, cmd)
     assert subcmd is not None
     assert subcmd.hidden is True
     assert subcmd.help is not None
