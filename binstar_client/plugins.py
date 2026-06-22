@@ -40,10 +40,9 @@ from binstar_client.utils import logging_utils
 
 logger = logging.getLogger("binstar")
 
-# All subcommands in anaconda-client
+# All subcommands in anaconda-client (legacy click/argparse commands)
 ALL_SUBCOMMANDS = {
     "auth",
-    "channel",
     "config",
     "copy",
     "download",
@@ -76,13 +75,10 @@ NON_HIDDEN_SUBCOMMANDS = {
     "upload",
 }
 # Any subcommands that should emit deprecation warnings, and show as deprecated in the help
-DEPRECATED_SUBCOMMANDS = {
-    "channel",
-}
+DEPRECATED_SUBCOMMANDS: set[str] = set()
 # Subcommands which have typer subcommands defined
 SUBCOMMANDS_WITH_NEW_CLI = {
     "auth",
-    "channel",
     "config",
     "copy",
     "download",

@@ -1,6 +1,12 @@
-"""Channels subcommand: anaconda org channels <subcommand>."""
+"""Channel subcommand: anaconda channel <subcommand>.
 
-from typing import Optional
+New subcommands (list, create, show, remove, modify) work with repocore private channels.
+Legacy --dashed options (--list, --copy, --show, --lock, --unlock, --remove) are preserved
+for backward compatibility and operate on labels via the old API.
+"""
+
+import argparse
+from typing import Optional, Tuple
 
 import typer
 from rich.panel import Panel
@@ -11,17 +17,69 @@ from binstar_client.repocore import get_repo_api
 app = typer.Typer(
     name="channel",
     help="Manage your Anaconda repository channels",
+    invoke_without_command=True,
     no_args_is_help=True,
 )
 
 
-@app.callback(invoke_without_command=True, no_args_is_help=True)
-def _callback(ctx: typer.Context) -> None:
-    """Initialize repocore API client for channel commands."""
+@app.callback(invoke_without_command=True)
+def _callback(
+    ctx: typer.Context,
+    organization: Optional[str] = typer.Option(None, "-o", "--organization", hidden=True),
+    copy: Tuple[str, str] = typer.Option(("", ""), "--copy", hidden=True, show_default=False),
+    list_: bool = typer.Option(False, "--list", hidden=True),
+    show_legacy: Optional[str] = typer.Option(None, "--show", hidden=True),
+    lock: Optional[str] = typer.Option(None, "--lock", hidden=True),
+    unlock: Optional[str] = typer.Option(None, "--unlock", hidden=True),
+    remove_legacy: Optional[str] = typer.Option(None, "--remove", hidden=True),
+) -> None:
+    """Manage your Anaconda repository channels."""
     from anaconda_cli_base.cli import ContextExtras
 
     if ctx.obj is None:
         ctx.obj = ContextExtras()
+
+    parsed_copy = list(copy) if copy != ("", "") else None
+    legacy_actions = [
+        ("'--list'", list_),
+        ("'--copy'", parsed_copy),
+        ("'--show'", show_legacy),
+        ("'--lock'", lock),
+        ("'--unlock'", unlock),
+        ("'--remove'", remove_legacy),
+    ]
+    active_legacy = [name for name, val in legacy_actions if val]
+
+    if len(active_legacy) > 1:
+        raise typer.BadParameter(
+            f"Invalid value for {active_legacy[1]}: mutually exclusive with {active_legacy[0]}"
+        )
+
+    if active_legacy:
+        from binstar_client.commands.channel import main
+
+        args = argparse.Namespace(
+            token=ctx.obj.params.get("token"),
+            site=ctx.obj.params.get("site"),
+            organization=organization,
+            copy=parsed_copy,
+            list=list_,
+            show=show_legacy,
+            lock=lock,
+            unlock=unlock,
+            remove=remove_legacy,
+        )
+        main(args, name="channel", deprecated=True)
+        raise typer.Exit(0)
+
+    if organization and not active_legacy:
+        raise typer.BadParameter(
+            "one of --copy, --list, --show, --lock, --unlock, or --remove must be provided"
+        )
+
+    if ctx.invoked_subcommand is None:
+        console.print(ctx.get_help())
+        raise typer.Exit(0)
 
     site_value = getattr(ctx.obj, "params", {}).get("at") or getattr(ctx.obj, "params", {}).get("site")
 
