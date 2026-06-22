@@ -22,9 +22,7 @@ class NoticesMixin:
 
     def _anonymous_headers(self):
         return {
-            str(key): str(value)
-            for key, value in self.session.headers.items()
-            if str(key).lower() != 'authorization'
+            str(key): str(value) for key, value in self.session.headers.items() if str(key).lower() != 'authorization'
         }
 
     def _notice_url(self, owner, notice_id, action=None):
