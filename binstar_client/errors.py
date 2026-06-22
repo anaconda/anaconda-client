@@ -50,3 +50,18 @@ class PillowNotInstalled(BinstarError):
     def __init__(self):
         self.msg = 'pillow is not installed. Install it with:\n\tconda install pillow'
         super().__init__(self.msg)
+
+
+def error_class_for_status_code(status_code: int) -> type:
+    """Return the BinstarError subclass for an HTTP status code."""
+    if status_code == 401:
+        return Unauthorized
+    if status_code == 404:
+        return NotFound
+    if status_code == 409:
+        return Conflict
+    if status_code == 422:
+        return UserError
+    if status_code >= 500:
+        return ServerError
+    return BinstarError

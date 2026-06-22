@@ -30,6 +30,7 @@ from .errors import (
     PillowNotInstalled,
 )
 from .mixins.channels import ChannelsMixin
+from .mixins.notices import NoticesMixin
 from .mixins.organizations import OrgMixin
 from .mixins.package import PackageMixin
 from .requests_ext import NullAuth
@@ -55,7 +56,7 @@ class HTTPBearerAuth(requests.auth.AuthBase):
         return r
 
 
-class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
+class Binstar(OrgMixin, ChannelsMixin, NoticesMixin, PackageMixin):
     """
     An object that represents interfaces with the Anaconda repository restful API.
 
@@ -219,7 +220,7 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
         res = self.session.delete(url)
         self._check_response(res, [201])
 
-    def _check_response(self, res, allowed=None):
+    def _check_response(self, res, allowed=None, parse_error=None):
         allowed = [200] if allowed is None else allowed
 
         if not self._token_warning_sent and 'Conda-Token-Warning' in res.headers:
@@ -241,18 +242,11 @@ class Binstar(OrgMixin, ChannelsMixin, PackageMixin):
             except Exception:
                 data = {}
 
-            msg = data.get('error', msg)
-            ErrCls = errors.BinstarError
-            if res.status_code == 401:
-                ErrCls = errors.Unauthorized
-            elif res.status_code == 404:
-                ErrCls = errors.NotFound
-            elif res.status_code == 409:
-                ErrCls = errors.Conflict
-            elif res.status_code >= 500:
-                ErrCls = errors.ServerError
-
-            raise ErrCls(msg, res.status_code)
+            if parse_error is not None:
+                msg = parse_error(data, msg)
+            else:
+                msg = data.get('error', msg)
+            raise errors.error_class_for_status_code(res.status_code)(msg, res.status_code)
 
     def user(self, login=None):
         """
