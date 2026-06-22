@@ -32,7 +32,9 @@ def _callback(ctx: typer.Context) -> None:
         raise typer.Exit(1)
 
 
-def _resolve_namespace_and_channel(api, name: str, namespace: Optional[str] = None, require_namespace: bool = True) -> tuple:
+def _resolve_namespace_and_channel(
+    api, name: str, namespace: Optional[str] = None, require_namespace: bool = True
+) -> tuple:
     """Resolve namespace and channel name from the given inputs.
 
     Returns (namespace, channel_name). namespace may be None if require_namespace=False
