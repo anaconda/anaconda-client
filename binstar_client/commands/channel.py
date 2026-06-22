@@ -28,8 +28,7 @@ def main(args, name, deprecated=False):
 
     if deprecated:
         logger.warning(
-            f'These options are deprecated and will be removed in {REMOVE_IN_2_0_0}. '
-            'Use "anaconda label" instead.'
+            f'These options are deprecated and will be removed in {REMOVE_IN_2_0_0}. Use "anaconda label" instead.'
         )
 
     if args.copy:
