@@ -29,11 +29,11 @@ jobs:
       labels:
       - ubuntu-latest
     steps:
-    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd   # v6.0.2
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0   # v7.0.0
       with:
         token: ${{ secrets.ANACONDA_BOT_PRE_COMMIT }}
 
-    - uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306   # v5.0.3
+    - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae   # v5.0.5
       with:
         path: ~/.cache/pre-commit
         key: pre-commit|${{ runner.arch }}-${{ hashFiles('.pre-commit-config.yaml', '.tflint.hcl') }}
@@ -74,7 +74,7 @@ jobs:
 
     - name: Commit linted files
       if: ${{ failure() && github.event_name == 'pull_request' }}
-      uses: EndBug/add-and-commit@a94899bca583c204427a224a7af87c02f9b325d5   # v9.1.4
+      uses: EndBug/add-and-commit@290ea2c423ad77ca9c62ae0f5b224379612c0321   # v10.0.0
       with:
         message: 'chore(pre-commit): linting'
         author_name: Anaconda Bot
