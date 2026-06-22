@@ -176,8 +176,7 @@ class Binstar(OrgMixin, ChannelsMixin, NoticesMixin, PackageMixin):
             'fail-if-exists': fail_if_already_exists,
         }
 
-        data, headers = jencode(payload)
-        res = self.session.post(url, auth=auth, data=data, headers=headers)
+        res = self.session.post(url, auth=auth, json=payload)
         self._check_response(res)
         res = res.json()
         token = res['token']
@@ -381,8 +380,7 @@ class Binstar(OrgMixin, ChannelsMixin, NoticesMixin, PackageMixin):
 
         payload = {'public': bool(public), 'publish': False, 'public_attrs': dict(attrs or {})}
 
-        data, headers = jencode(payload)
-        res = self.session.post(url, data=data, headers=headers)
+        res = self.session.post(url, json=payload)
         self._check_response(res)
         return res.json()
 
@@ -397,8 +395,7 @@ class Binstar(OrgMixin, ChannelsMixin, NoticesMixin, PackageMixin):
         url = '{}/package/{}/{}'.format(self.domain, login, package_name)
 
         payload = {'public_attrs': dict(attrs)}
-        data, headers = jencode(payload)
-        res = self.session.patch(url, data=data, headers=headers)
+        res = self.session.patch(url, json=payload)
         self._check_response(res)
         return res.json()
 
@@ -413,8 +410,7 @@ class Binstar(OrgMixin, ChannelsMixin, NoticesMixin, PackageMixin):
         """
         url = '{}/release/{}/{}/{}'.format(self.domain, login, package_name, version)
         payload = {'public_attrs': dict(attrs)}
-        data, headers = jencode(payload)
-        res = self.session.patch(url, data=data, headers=headers)
+        res = self.session.patch(url, json=payload)
         self._check_response(res)
         return res.json()
 
@@ -472,8 +468,7 @@ class Binstar(OrgMixin, ChannelsMixin, NoticesMixin, PackageMixin):
         }
         payload.update(release_attrs)
 
-        data, headers = jencode(payload)
-        res = self.session.post(url, data=data, headers=headers)
+        res = self.session.post(url, json=payload)
         self._check_response(res)
         return res.json()
 
@@ -588,8 +583,7 @@ class Binstar(OrgMixin, ChannelsMixin, NoticesMixin, PackageMixin):
             'sha256': sha256,
         }
 
-        data, headers = jencode(payload)
-        res = self.session.post(url, data=data, headers=headers)
+        res = self.session.post(url, json=payload)
         self._check_response(res)
         obj = res.json()
 
@@ -623,8 +617,7 @@ class Binstar(OrgMixin, ChannelsMixin, NoticesMixin, PackageMixin):
 
         url = '%s/commit/%s/%s/%s/%s' % (self.domain, login, package_name, release, quote(basename))
         payload = {'dist_id': obj['dist_id']}
-        data, headers = jencode(payload)
-        res = self.session.post(url, data=data, headers=headers)
+        res = self.session.post(url, json=payload)
         self._check_response(res)
 
         return res.json()

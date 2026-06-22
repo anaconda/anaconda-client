@@ -118,7 +118,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
     def show_subcommand(
         ctx: typer.Context,
         spec: str = typer.Argument(
-            show_default=False, callback=parse_specs, help='Package written as USER[/PACKAGE[/VERSION[/FILE]]]'
+            show_default=False, callback=parse_specs, help='Package written as USER\\[/PACKAGE\\[/VERSION\\[/FILE]]]'
         ),
     ) -> None:
         args = Namespace(
