@@ -379,13 +379,13 @@ def load_legacy_subcommands() -> None:
 
 load_legacy_subcommands()
 
-# Mount repocore channels command under `anaconda org channels` and `anaconda channels`
-from binstar_client.commands._repo_channels import app as channels_app  # noqa: E402
+# Mount repocore channel command under `anaconda org channel` and `anaconda channel`
+from binstar_client.commands._repo_channels import app as channel_app  # noqa: E402
 from binstar_client.repocore.errors import LoginRequiredError  # noqa: E402
 
-app.add_typer(channels_app)
+app.add_typer(channel_app)
 if not isinstance(main_app, functools.partial):
-    main_app.add_typer(channels_app)
+    main_app.add_typer(channel_app)
 
 
 @register_error_handler(LoginRequiredError)

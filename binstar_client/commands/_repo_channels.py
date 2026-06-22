@@ -9,7 +9,7 @@ from anaconda_cli_base.console import Table, console
 from binstar_client.repocore import get_repo_api
 
 app = typer.Typer(
-    name="channels",
+    name="channel",
     help="Manage your Anaconda repository channels",
     no_args_is_help=True,
 )
@@ -49,7 +49,8 @@ def _resolve_namespace_and_channel(api, name: str, namespace: Optional[str] = No
         raise typer.Exit(1)
 
     if "/" in name:
-        return name.split("/", 1)
+        parts = name.split("/", 1)
+        return (parts[0], parts[1])
 
     if namespace:
         return (namespace, name)
