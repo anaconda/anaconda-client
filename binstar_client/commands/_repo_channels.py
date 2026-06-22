@@ -32,26 +32,42 @@ def _callback(ctx: typer.Context) -> None:
         raise typer.Exit(1)
 
 
-def _resolve_namespace(api, namespace: Optional[str] = None) -> Optional[str]:
-    """Resolve the user's namespace.
+def _resolve_namespace_and_channel(api, name: str, namespace: Optional[str] = None, require_namespace: bool = True) -> tuple:
+    """Resolve namespace and channel name from the given inputs.
 
-    If explicitly provided, return it directly.
-    Otherwise look up available top-level channels:
-      - one available: return it
-      - none available: return None
-      - multiple: prompt the user to pick
+    Returns (namespace, channel_name). namespace may be None if require_namespace=False
+    and no namespaces are available (lets create delegate to the API).
+
+    Resolution order:
+      1. name contains "/" AND --namespace provided → error (ambiguous)
+      2. name contains "/" → split into namespace/channel
+      3. --namespace provided → use it, name is the channel
+      4. Neither → resolve namespace from API via user's top-level channels
     """
-    if namespace:
-        return namespace
+    if "/" in name and namespace:
+        console.print("[red]Error:[/red] Ambiguous: name contains '/' but --namespace was also provided.")
+        raise typer.Exit(1)
 
+    if "/" in name:
+        return name.split("/", 1)
+
+    if namespace:
+        return (namespace, name)
+
+    # Resolve from API
     data = api.list_user_channels(offset=0, limit=100)
     namespaces = [ch.get("name", "") for ch in data.get("items", [])]
 
     if not namespaces:
-        return None
+        if require_namespace:
+            console.print(
+                "[red]Error:[/red] No resolvable namespaces. Specify one with --namespace or use namespace/channel format."
+            )
+            raise typer.Exit(1)
+        return (None, name)
 
     if len(namespaces) == 1:
-        return namespaces[0]
+        return (namespaces[0], name)
 
     console.print("\nMultiple namespaces available:")
     for i, ns in enumerate(namespaces, 1):
@@ -62,7 +78,7 @@ def _resolve_namespace(api, namespace: Optional[str] = None) -> Optional[str]:
     while True:
         choice = typer.prompt(f"Namespace [1-{len(namespaces)}]")
         if choice in options:
-            return options[choice]
+            return (options[choice], name)
         console.print(f"[red]Invalid choice.[/red] Please enter 1-{len(namespaces)}.")
 
 
@@ -127,15 +143,7 @@ def create_command(
         raise typer.Exit(1)
 
     api = ctx.obj.repo_api
-    namespace = _resolve_namespace(api, namespace)
-
-    if "/" in name:
-        namespace, subchannel = name.split("/", 1)
-    elif namespace:
-        subchannel = name
-    else:
-        namespace = name
-        subchannel = "private"
+    namespace, subchannel = _resolve_namespace_and_channel(api, name, namespace, require_namespace=False)
 
     if public:
         privacy = "public"
@@ -144,8 +152,8 @@ def create_command(
     else:
         privacy = "private"
 
-    manifest = api.create_namespace_channel(namespace=namespace, subchannel_name=subchannel, privacy=privacy)
-    channel_path = manifest.get("channel_path", f"{namespace}/{subchannel}")
+    manifest = api.create_namespace_channel(subchannel_name=subchannel, namespace=namespace, privacy=privacy)
+    channel_path = manifest["channel_path"]
     console.print(f"[green]Success![/green] Channel '[cyan]{channel_path}[/cyan]' created ({privacy}).")
 
 
@@ -157,16 +165,10 @@ def remove_command(
 ) -> None:
     """Remove a channel."""
     api = ctx.obj.repo_api
-    if "/" not in name:
-        namespace = _resolve_namespace(api, namespace)
-        if not namespace:
-            console.print(
-                "[red]Error:[/red] No resolvable namespaces. Specify one with --namespace or use namespace/channel format."
-            )
-            raise typer.Exit(1)
-        name = f"{namespace}/{name}"
-    api.remove_channel(name)
-    console.print(f"[green]Success![/green] Channel '[cyan]{name}[/cyan]' removed.")
+    ns, channel = _resolve_namespace_and_channel(api, name, namespace)
+    qualified = f"{ns}/{channel}"
+    api.remove_channel(qualified)
+    console.print(f"[green]Success![/green] Channel '[cyan]{qualified}[/cyan]' removed.")
 
 
 @app.command(name="show", help="Show channel information")
@@ -178,14 +180,8 @@ def show_command(
 ) -> None:
     """Show information about a channel."""
     api = ctx.obj.repo_api
-    if "/" not in name:
-        namespace = _resolve_namespace(api, namespace)
-        if not namespace:
-            console.print(
-                "[red]Error:[/red] No resolvable namespaces. Specify one with --namespace or use namespace/channel format."
-            )
-            raise typer.Exit(1)
-        name = f"{namespace}/{name}"
+    ns, channel = _resolve_namespace_and_channel(api, name, namespace)
+    name = f"{ns}/{channel}"
     channel_data = api.get_channel(name)
 
     if full_details and not api.is_subchannel(name):
@@ -263,14 +259,8 @@ def modify_command(
         raise typer.Exit(1)
 
     api = ctx.obj.repo_api
-    if "/" not in name:
-        namespace = _resolve_namespace(api, namespace)
-        if not namespace:
-            console.print(
-                "[red]Error:[/red] No resolvable namespaces. Specify one with --namespace or use namespace/channel format."
-            )
-            raise typer.Exit(1)
-        name = f"{namespace}/{name}"
+    ns, channel = _resolve_namespace_and_channel(api, name, namespace)
+    name = f"{ns}/{channel}"
 
     if privacy:
         api.update_channel(name, privacy=privacy)

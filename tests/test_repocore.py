@@ -171,60 +171,87 @@ class TestRepoCoreNamespaceChannel:
     def test_create_namespace_channel(self):
         client = _make_client()
         mock_response = _mock_response(
-            201, {"org_id": "abc", "namespace": "myns", "subchannel_name": "dev", "channel_path": "myns/dev"}
+            201, {"org_id": "abc", "namespace": "myns", "channel_name": "dev", "channel_path": "myns/dev"}
         )
         client.post = MagicMock(return_value=mock_response)
 
-        result = client.create_namespace_channel("myns", subchannel_name="dev", privacy="public")
+        result = client.create_namespace_channel("dev", namespace="myns", privacy="public")
         assert result["channel_path"] == "myns/dev"
         call_args = client.post.call_args
         assert "namespace-channels" in call_args[0][0]
-        assert call_args[1]["json"] == {"namespace": "myns", "subchannel_name": "dev", "privacy": "public"}
+        assert call_args[1]["json"] == {"subchannel_name": "dev", "namespace": "myns", "privacy": "public"}
 
-    def test_create_namespace_channel_defaults(self):
+    def test_create_namespace_channel_without_namespace(self):
         client = _make_client()
         mock_response = _mock_response(
-            201, {"org_id": "abc", "namespace": "myns", "subchannel_name": "private", "channel_path": "myns/private"}
+            201, {"org_id": "abc", "namespace": "dev", "channel_name": "dev", "channel_path": "dev/dev"}
         )
         client.post = MagicMock(return_value=mock_response)
 
-        client.create_namespace_channel("myns")
+        result = client.create_namespace_channel("dev")
+        assert result["channel_path"] == "dev/dev"
         call_args = client.post.call_args
-        assert call_args[1]["json"] == {"namespace": "myns", "subchannel_name": "private", "privacy": "private"}
+        assert call_args[1]["json"] == {"subchannel_name": "dev", "privacy": "private"}
 
 
-class TestResolveNamespace:
-    def test_explicit_namespace_returned_directly(self):
-        from binstar_client.commands._repo_channels import _resolve_namespace
+class TestResolveNamespaceAndChannel:
+    def test_slash_in_name_extracts_both(self):
+        from binstar_client.commands._repo_channels import _resolve_namespace_and_channel
 
         mock_api = MagicMock()
-        assert _resolve_namespace(mock_api, "explicit") == "explicit"
+        ns, ch = _resolve_namespace_and_channel(mock_api, "myorg/dev")
+        assert ns == "myorg"
+        assert ch == "dev"
         mock_api.list_user_channels.assert_not_called()
 
+    def test_explicit_namespace_flag(self):
+        from binstar_client.commands._repo_channels import _resolve_namespace_and_channel
+
+        mock_api = MagicMock()
+        ns, ch = _resolve_namespace_and_channel(mock_api, "dev", namespace="myorg")
+        assert ns == "myorg"
+        assert ch == "dev"
+        mock_api.list_user_channels.assert_not_called()
+
+    def test_ambiguous_slash_and_flag_exits(self):
+        from click.exceptions import Exit
+
+        from binstar_client.commands._repo_channels import _resolve_namespace_and_channel
+
+        mock_api = MagicMock()
+        with pytest.raises(Exit):
+            _resolve_namespace_and_channel(mock_api, "org-a/dev", namespace="org-b")
+
     def test_single_namespace_auto_resolves(self):
-        from binstar_client.commands._repo_channels import _resolve_namespace
+        from binstar_client.commands._repo_channels import _resolve_namespace_and_channel
 
         mock_api = MagicMock()
         mock_api.list_user_channels.return_value = {"items": [{"name": "myorg"}]}
-        assert _resolve_namespace(mock_api) == "myorg"
+        ns, ch = _resolve_namespace_and_channel(mock_api, "dev")
+        assert ns == "myorg"
+        assert ch == "dev"
 
-    def test_no_namespaces_returns_none(self):
-        from binstar_client.commands._repo_channels import _resolve_namespace
+    def test_no_namespaces_exits(self):
+        from click.exceptions import Exit
+
+        from binstar_client.commands._repo_channels import _resolve_namespace_and_channel
 
         mock_api = MagicMock()
         mock_api.list_user_channels.return_value = {"items": []}
-        assert _resolve_namespace(mock_api) is None
+        with pytest.raises(Exit):
+            _resolve_namespace_and_channel(mock_api, "dev")
 
     def test_multiple_namespaces_prompts(self):
-        from binstar_client.commands._repo_channels import _resolve_namespace
+        from binstar_client.commands._repo_channels import _resolve_namespace_and_channel
 
         mock_api = MagicMock()
         mock_api.list_user_channels.return_value = {"items": [{"name": "org-a"}, {"name": "org-b"}]}
 
         with patch("binstar_client.commands._repo_channels.typer.prompt", return_value="2"):
-            result = _resolve_namespace(mock_api)
+            ns, ch = _resolve_namespace_and_channel(mock_api, "dev")
 
-        assert result == "org-b"
+        assert ns == "org-b"
+        assert ch == "dev"
 
 
 class TestRepoCoreChannelsCLI:
@@ -306,7 +333,7 @@ class TestRepoCoreChannelsCLI:
         assert result.exit_code == 0
         assert "Success" in result.output
         mock_api.create_namespace_channel.assert_called_once_with(
-            namespace="myns", subchannel_name="dev", privacy="public"
+            subchannel_name="dev", namespace="myns", privacy="public"
         )
 
     def test_channels_create_with_namespace_flag(self):
@@ -320,22 +347,22 @@ class TestRepoCoreChannelsCLI:
 
         assert result.exit_code == 0
         mock_api.create_namespace_channel.assert_called_once_with(
-            namespace="myns", subchannel_name="dev", privacy="public"
+            subchannel_name="dev", namespace="myns", privacy="public"
         )
 
-    def test_channels_create_bare_name_becomes_namespace(self):
+    def test_channels_create_bare_name_no_namespace_delegates_to_api(self):
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
         mock_api.list_user_channels.return_value = {"items": []}
-        mock_api.create_namespace_channel.return_value = {"channel_path": "newns/private"}
+        mock_api.create_namespace_channel.return_value = {"channel_path": "newchannel/newchannel"}
 
         with _patch_repo_api(mock_api):
-            result = runner.invoke(app, ["create", "newns"])
+            result = runner.invoke(app, ["create", "newchannel"])
 
         assert result.exit_code == 0
         mock_api.create_namespace_channel.assert_called_once_with(
-            namespace="newns", subchannel_name="private", privacy="private"
+            subchannel_name="newchannel", namespace=None, privacy="private"
         )
 
     def test_channels_create_auto_resolves_namespace(self):
@@ -350,7 +377,7 @@ class TestRepoCoreChannelsCLI:
 
         assert result.exit_code == 0
         mock_api.create_namespace_channel.assert_called_once_with(
-            namespace="myorg", subchannel_name="dev", privacy="public"
+            subchannel_name="dev", namespace="myorg", privacy="public"
         )
 
     def test_channels_remove_with_namespace_resolution(self):
