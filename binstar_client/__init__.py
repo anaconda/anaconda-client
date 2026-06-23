@@ -15,7 +15,7 @@ from tqdm import tqdm
 from . import errors
 from ._version import __version__
 from binstar_client.client import Binstar as Binstar
-from binstar_client.client import HTTPBearerAuth
+from binstar_client.client import HTTPBearerAuth as _HTTPBearerAuth
 from binstar_client.deprecations import DEPRECATE_IN_1_15_0, REMOVE_IN_2_0_0, deprecated
 
 # For backwards compatibility
@@ -45,7 +45,7 @@ deprecated.constant(
     deprecate_in=DEPRECATE_IN_1_15_0,
     remove_in=REMOVE_IN_2_0_0,
     constant="HTTPBearerAuth",
-    value=HTTPBearerAuth,
+    value=_HTTPBearerAuth,
     addendum="Use `binstar_client.client.HTTPBearerAuth` instead",
 )
 
