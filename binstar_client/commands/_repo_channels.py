@@ -116,8 +116,8 @@ def _resolve_namespace_and_channel(
         return (namespace, name)
 
     # Resolve from API
-    data = api.list_user_channels(offset=0, limit=100)
-    namespaces = [ch.get("name", "") for ch in data.get("items", [])]
+    orgs = api.list_user_organizations()
+    namespaces = [org.get("name", "") for org in orgs]
 
     if not namespaces:
         if require_namespace:
@@ -147,16 +147,13 @@ def _resolve_namespace_and_channel(
 def list_command(
     ctx: typer.Context,
     namespace: Optional[str] = typer.Option(None, "--namespace", "-n", help="Filter to a specific namespace"),
-    offset: int = typer.Option(0, "--offset", "-o", help="Offset when displaying results"),
-    limit: int = typer.Option(50, "--limit", "-l", help="Limit when displaying results"),
 ) -> None:
     """List all channels for the current user."""
     api = ctx.obj.repo_api
-    data = api.list_user_channels(offset, limit)
+    orgs = api.list_user_organizations()
 
-    channels = data.get("items", [])
     if namespace:
-        channels = [ch for ch in channels if ch.get("name", "") == namespace]
+        orgs = [org for org in orgs if org.get("name", "") == namespace]
 
     table = Table(title="Channels")
     table.add_column("Namespace / Channel", style="cyan")
@@ -165,31 +162,25 @@ def list_command(
     table.add_column("Artifacts", justify="right")
     table.add_column("Downloads", justify="right")
 
-    for ch in channels:
-        channel_name = ch.get("name", "")
-        table.add_row(
-            channel_name,
-            ch.get("privacy", ""),
-            ch.get("description", "") or "",
-            str(ch.get("artifact_count", 0)),
-            str(ch.get("download_count", 0)),
-        )
-        if ch.get("subchannel_count", 0) > 0:
-            sub_offset = 0
-            while True:
-                subchannels = api.get_channel_subchannels(channel_name, offset=sub_offset, limit=_PAGE_SIZE)
-                items = subchannels.get("items", [])
-                for sub in items:
-                    table.add_row(
-                        f"  {channel_name}/{sub.get('name', '')}",
-                        sub.get("privacy", ""),
-                        sub.get("description", "") or "",
-                        str(sub.get("artifact_count", 0)),
-                        str(sub.get("download_count", 0)),
-                    )
-                if len(items) < _PAGE_SIZE:
-                    break
-                sub_offset += len(items)
+    for org in orgs:
+        org_name = org.get("name", "")
+        table.add_row(org_name, "", "", "", "")
+
+        sub_offset = 0
+        while True:
+            subchannels = api.get_channel_subchannels(org_name, offset=sub_offset, limit=_PAGE_SIZE)
+            items = subchannels.get("items", [])
+            for sub in items:
+                table.add_row(
+                    f"  {org_name}/{sub.get('name', '')}",
+                    sub.get("privacy", ""),
+                    sub.get("description", "") or "",
+                    str(sub.get("artifact_count", 0)),
+                    str(sub.get("download_count", 0)),
+                )
+            if len(items) < _PAGE_SIZE:
+                break
+            sub_offset += len(items)
 
     if console.height and table.row_count > console.height:
         with console.pager():

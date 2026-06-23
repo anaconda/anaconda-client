@@ -20,6 +20,7 @@ UPLOAD_TYPE_MAPPING = {
 logger = logging.getLogger(__name__)
 
 API_PATH = "/api/repo"
+AUTH_API_PATH = "/api/auth"
 
 
 class RepoCoreClient(BaseClient):
@@ -44,6 +45,10 @@ class RepoCoreClient(BaseClient):
     @property
     def _api_base(self):
         return self._base_uri + API_PATH
+
+    @property
+    def _auth_api_base(self):
+        return self._base_uri + AUTH_API_PATH
 
     @property
     def _channels_url(self):
@@ -104,10 +109,10 @@ class RepoCoreClient(BaseClient):
 
         raise RepoCoreError(msg)
 
-    def list_user_channels(self, offset: int = 0, limit: int = 50):
-        url = join(self._api_base, "account", "channels")
-        response = self.get(url, params={"offset": offset, "limit": limit})
-        return self._manage_response(response, "getting user channels")
+    def list_user_organizations(self):
+        url = join(self._auth_api_base, "organizations", "my")
+        response = self.get(url)
+        return self._manage_response(response, "getting user organizations")
 
     def create_channel(self, channel: str, privacy: Optional[str] = None):
         self._validate_channel_name(channel)

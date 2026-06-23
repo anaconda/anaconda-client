@@ -53,16 +53,28 @@ class TestRepoCoreClientValidation:
 
 
 class TestRepoCoreClientAPI:
-    def test_list_user_channels(self):
+    def test_list_user_organizations(self):
         client = _make_client()
-        mock_response = _mock_response(200, {"items": [{"name": "test"}]})
+        orgs = [
+            {"id": "abc-123", "name": "anaconda-dfw", "title": "Anaconda DogFood Wheels", "role": "admin"},
+            {"id": "def-456", "name": "my-team", "title": "My Team", "role": "member"},
+        ]
+        mock_response = _mock_response(200, orgs)
         client.get = MagicMock(return_value=mock_response)
 
-        result = client.list_user_channels(offset=0, limit=10)
-        assert result == {"items": [{"name": "test"}]}
+        result = client.list_user_organizations()
+        assert result == orgs
         client.get.assert_called_once()
-        call_kwargs = client.get.call_args
-        assert "offset" in str(call_kwargs)
+        call_url = client.get.call_args[0][0]
+        assert "/api/auth/organizations/my" in call_url
+
+    def test_list_user_organizations_empty(self):
+        client = _make_client()
+        mock_response = _mock_response(200, [])
+        client.get = MagicMock(return_value=mock_response)
+
+        result = client.list_user_organizations()
+        assert result == []
 
     def test_create_channel(self):
         client = _make_client()
@@ -202,7 +214,7 @@ class TestResolveNamespaceAndChannel:
         ns, ch = _resolve_namespace_and_channel(mock_api, "myorg/dev")
         assert ns == "myorg"
         assert ch == "dev"
-        mock_api.list_user_channels.assert_not_called()
+        mock_api.list_user_organizations.assert_not_called()
 
     def test_explicit_namespace_flag(self):
         from binstar_client.commands._repo_channels import _resolve_namespace_and_channel
@@ -211,7 +223,7 @@ class TestResolveNamespaceAndChannel:
         ns, ch = _resolve_namespace_and_channel(mock_api, "dev", namespace="myorg")
         assert ns == "myorg"
         assert ch == "dev"
-        mock_api.list_user_channels.assert_not_called()
+        mock_api.list_user_organizations.assert_not_called()
 
     def test_ambiguous_slash_and_flag_exits(self):
         from click.exceptions import Exit
@@ -226,7 +238,7 @@ class TestResolveNamespaceAndChannel:
         from binstar_client.commands._repo_channels import _resolve_namespace_and_channel
 
         mock_api = MagicMock()
-        mock_api.list_user_channels.return_value = {"items": [{"name": "myorg"}]}
+        mock_api.list_user_organizations.return_value = [{"name": "myorg"}]
         ns, ch = _resolve_namespace_and_channel(mock_api, "dev")
         assert ns == "myorg"
         assert ch == "dev"
@@ -237,7 +249,7 @@ class TestResolveNamespaceAndChannel:
         from binstar_client.commands._repo_channels import _resolve_namespace_and_channel
 
         mock_api = MagicMock()
-        mock_api.list_user_channels.return_value = {"items": []}
+        mock_api.list_user_organizations.return_value = []
         with pytest.raises(Exit):
             _resolve_namespace_and_channel(mock_api, "dev")
 
@@ -245,7 +257,7 @@ class TestResolveNamespaceAndChannel:
         from binstar_client.commands._repo_channels import _resolve_namespace_and_channel
 
         mock_api = MagicMock()
-        mock_api.list_user_channels.return_value = {"items": [{"name": "org-a"}, {"name": "org-b"}]}
+        mock_api.list_user_organizations.return_value = [{"name": "org-a"}, {"name": "org-b"}]
 
         with patch("binstar_client.commands._repo_channels.typer.prompt", return_value="2"):
             ns, ch = _resolve_namespace_and_channel(mock_api, "dev")
@@ -270,17 +282,21 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_channels.return_value = {
+        mock_api.list_user_organizations.return_value = [
+            {"id": "1", "name": "main", "title": "Main Org", "role": "admin"},
+        ]
+        mock_api.get_channel_subchannels.return_value = {
+            "total_count": 1,
             "items": [
                 {
-                    "name": "main",
+                    "name": "dev",
+                    "parent": "main",
                     "privacy": "public",
                     "description": "",
                     "artifact_count": 10,
                     "download_count": 5,
-                    "subchannel_count": 0,
                 }
-            ]
+            ],
         }
 
         with _patch_repo_api(mock_api):
@@ -288,30 +304,28 @@ class TestRepoCoreChannelsCLI:
 
         assert result.exit_code == 0
         assert "main" in result.output
+        assert "dev" in result.output
 
     def test_channels_list_with_namespace_filter(self):
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_channels.return_value = {
+        mock_api.list_user_organizations.return_value = [
+            {"id": "1", "name": "org-a", "title": "Org A", "role": "admin"},
+            {"id": "2", "name": "org-b", "title": "Org B", "role": "member"},
+        ]
+        mock_api.get_channel_subchannels.return_value = {
+            "total_count": 1,
             "items": [
                 {
-                    "name": "org-a",
+                    "name": "dev",
+                    "parent": "org-a",
                     "privacy": "public",
                     "description": "",
                     "artifact_count": 5,
                     "download_count": 1,
-                    "subchannel_count": 0,
-                },
-                {
-                    "name": "org-b",
-                    "privacy": "private",
-                    "description": "",
-                    "artifact_count": 3,
-                    "download_count": 0,
-                    "subchannel_count": 0,
-                },
-            ]
+                }
+            ],
         }
 
         with _patch_repo_api(mock_api):
@@ -320,6 +334,29 @@ class TestRepoCoreChannelsCLI:
         assert result.exit_code == 0
         assert "org-a" in result.output
         assert "org-b" not in result.output
+
+    def test_channels_list_fetches_subchannels_per_org(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_user_organizations.return_value = [
+            {"id": "1", "name": "org-a", "title": "Org A", "role": "admin"},
+            {"id": "2", "name": "org-b", "title": "Org B", "role": "member"},
+        ]
+        mock_api.get_channel_subchannels.side_effect = [
+            {"total_count": 1, "items": [{"name": "dev", "parent": "org-a", "privacy": "private", "description": "", "artifact_count": 3, "download_count": 1}]},
+            {"total_count": 1, "items": [{"name": "staging", "parent": "org-b", "privacy": "public", "description": "Staging", "artifact_count": 7, "download_count": 2}]},
+        ]
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(app, ["list"])
+
+        assert result.exit_code == 0
+        assert "org-a" in result.output
+        assert "org-b" in result.output
+        assert "dev" in result.output
+        assert "staging" in result.output
+        assert mock_api.get_channel_subchannels.call_count == 2
 
     def test_channels_create_with_slash(self):
         runner = CliRunner()
@@ -354,7 +391,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_channels.return_value = {"items": []}
+        mock_api.list_user_organizations.return_value = []
         mock_api.create_namespace_channel.return_value = {"channel_path": "newchannel/newchannel"}
 
         with _patch_repo_api(mock_api):
@@ -369,7 +406,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_channels.return_value = {"items": [{"name": "myorg"}]}
+        mock_api.list_user_organizations.return_value = [{"name": "myorg"}]
         mock_api.create_namespace_channel.return_value = {"channel_path": "myorg/dev"}
 
         with _patch_repo_api(mock_api):
@@ -384,7 +421,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_channels.return_value = {"items": [{"name": "myorg"}]}
+        mock_api.list_user_organizations.return_value = [{"name": "myorg"}]
 
         with _patch_repo_api(mock_api):
             result = runner.invoke(app, ["remove", "dev"])
@@ -407,7 +444,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_channels.return_value = {"items": []}
+        mock_api.list_user_organizations.return_value = []
 
         with _patch_repo_api(mock_api):
             result = runner.invoke(app, ["remove", "dev"])
@@ -443,7 +480,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_channels.return_value = {"items": [{"name": "myorg"}]}
+        mock_api.list_user_organizations.return_value = [{"name": "myorg"}]
 
         with _patch_repo_api(mock_api):
             result = runner.invoke(app, ["modify", "dev", "--privacy", "private"])
