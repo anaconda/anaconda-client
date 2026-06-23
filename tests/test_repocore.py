@@ -344,8 +344,32 @@ class TestRepoCoreChannelsCLI:
             {"id": "2", "name": "org-b", "title": "Org B", "role": "member"},
         ]
         mock_api.get_channel_subchannels.side_effect = [
-            {"total_count": 1, "items": [{"name": "dev", "parent": "org-a", "privacy": "private", "description": "", "artifact_count": 3, "download_count": 1}]},
-            {"total_count": 1, "items": [{"name": "staging", "parent": "org-b", "privacy": "public", "description": "Staging", "artifact_count": 7, "download_count": 2}]},
+            {
+                "total_count": 1,
+                "items": [
+                    {
+                        "name": "dev",
+                        "parent": "org-a",
+                        "privacy": "private",
+                        "description": "",
+                        "artifact_count": 3,
+                        "download_count": 1,
+                    }
+                ],
+            },
+            {
+                "total_count": 1,
+                "items": [
+                    {
+                        "name": "staging",
+                        "parent": "org-b",
+                        "privacy": "public",
+                        "description": "Staging",
+                        "artifact_count": 7,
+                        "download_count": 2,
+                    }
+                ],
+            },
         ]
 
         with _patch_repo_api(mock_api):
