@@ -9,6 +9,7 @@ import typing
 from requests.auth import AuthBase
 from urllib3.filepost import choose_boundary
 
+from binstar_client.client import NullAuth
 from binstar_client.deprecations import DEPRECATE_IN_1_15_0, REMOVE_IN_2_0_0, deprecated
 
 __all__ = ['NullAuth', 'encode_multipart_formdata_stream', 'stream_multipart']
@@ -30,23 +31,13 @@ def iter_fields(
     return iter(fields)
 
 
-class NullAuth(AuthBase):
-    """force requests to ignore the ``.netrc``
-
-    Some sites do not support regular authentication, but we still
-    want to store credentials in the ``.netrc`` file and submit them
-    as form elements. Without this, requests would otherwise use the
-    .netrc which leads, on some sites, to a 401 error.
-
-    https://github.com/psf/requests/issues/2773
-
-    Use with::
-
-        requests.get(url, auth=NullAuth())
-    """
-
-    def __call__(self, r):
-        return r
+deprecated.constant(
+    deprecate_in=DEPRECATE_IN_1_15_0,
+    remove_in=REMOVE_IN_2_0_0,
+    constant="NullAuth",
+    value=NullAuth,
+    addendum="Use `binstar_client.client.NullAuth` instead",
+)
 
 
 @deprecated(deprecate_in=DEPRECATE_IN_1_15_0, remove_in=REMOVE_IN_2_0_0)

@@ -24,8 +24,8 @@ import typing
 
 import typer
 
-import binstar_client
 from binstar_client import errors
+from binstar_client.client import Binstar
 from binstar_client.deprecations import DEPRECATION_MESSAGE_NOTEBOOKS_PROJECTS_ENVIRONMENTS_REMOVED
 from binstar_client.utils import bool_input, DEFAULT_CONFIG, get_config, get_server_api
 from binstar_client.utils.config import PackageType
@@ -330,7 +330,7 @@ class Uploader:
         self.arguments: typing.Final[argparse.Namespace] = arguments
         self.uploaded_packages: typing.Final[typing.List[UploadedPackage]] = []
 
-        self.__api: typing.Optional[binstar_client.Binstar] = None
+        self.__api: typing.Optional[Binstar] = None
         self.__config: typing.Optional[typing.Mapping[str, typing.Any]] = None
         self.__username: typing.Optional[str] = None
 
@@ -338,7 +338,7 @@ class Uploader:
         self.__release_cache: typing.Final[typing.Dict[ReleaseKey, ReleaseCacheRecord]] = {}
 
     @property
-    def api(self) -> binstar_client.Binstar:  # noqa: D401
+    def api(self) -> Binstar:  # noqa: D401
         """Client used to access anaconda.org API."""
         if self.__api is None:
             self.__api = get_server_api(token=self.arguments.token, site=self.arguments.site, config=self.config)
