@@ -204,13 +204,12 @@ def create_command(
     name: str = typer.Argument(..., help="Channel name to create (or namespace/channel)"),
     namespace: Optional[str] = typer.Option(None, "--namespace", "-n", help="Namespace to create the channel under"),
     private: bool = typer.Option(False, "--private", help="Create as a private channel (default)"),
-    authenticated: bool = typer.Option(False, "--authenticated", help="Create as an authenticated channel"),
     public: bool = typer.Option(False, "--public", help="Create as a public channel"),
 ) -> None:
     """Create a new channel."""
-    flags = sum([private, authenticated, public])
+    flags = sum([private, public])
     if flags > 1:
-        console.print("[red]Error:[/red] --private, --authenticated, and --public are mutually exclusive.")
+        console.print("[red]Error:[/red] --private and --public are mutually exclusive.")
         raise typer.Exit(1)
 
     api = ctx.obj.repo_api
@@ -218,8 +217,6 @@ def create_command(
 
     if public:
         privacy = "public"
-    elif authenticated:
-        privacy = "authenticated"
     else:
         privacy = "private"
 
@@ -314,7 +311,7 @@ def modify_command(
     ),
 ) -> None:
     """Modify channel settings (privacy, indexing behavior)."""
-    valid_privacy = ("public", "authenticated", "private")
+    valid_privacy = ("public", "private")
     valid_indexing = ("default", "frozen")
 
     if privacy and privacy not in valid_privacy:
