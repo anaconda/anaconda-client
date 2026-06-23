@@ -20,6 +20,7 @@ app = typer.Typer(
     help="Manage your Anaconda repository channels",
     invoke_without_command=True,
     no_args_is_help=True,
+    context_settings={"help_option_names": ["-h", "--help"]},
 )
 
 
@@ -52,9 +53,7 @@ def _callback(
     active_legacy = [name for name, val in legacy_actions if val]
 
     if len(active_legacy) > 1:
-        raise typer.BadParameter(
-            f"Invalid value for {active_legacy[1]}: mutually exclusive with {active_legacy[0]}"
-        )
+        raise typer.BadParameter(f"Invalid value for {active_legacy[1]}: mutually exclusive with {active_legacy[0]}")
 
     if active_legacy:
         from binstar_client.commands.channel import main
@@ -74,9 +73,7 @@ def _callback(
         raise typer.Exit(0)
 
     if organization and not active_legacy:
-        raise typer.BadParameter(
-            "one of --copy, --list, --show, --lock, --unlock, or --remove must be provided"
-        )
+        raise typer.BadParameter("one of --copy, --list, --show, --lock, --unlock, or --remove must be provided")
 
     if ctx.invoked_subcommand is None:
         console.print(ctx.get_help())
