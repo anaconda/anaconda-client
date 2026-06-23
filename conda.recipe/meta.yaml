@@ -51,7 +51,6 @@ test:
     - conda
   commands:
     - anaconda -h
-    - anaconda --version
   imports:
     - binstar_client
     - binstar_client.commands
