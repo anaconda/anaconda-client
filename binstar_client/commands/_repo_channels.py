@@ -125,9 +125,12 @@ def _resolve_namespace_and_channel(
                 "[red]Error:[/red] No resolvable namespaces. Specify one with --namespace or use namespace/channel format."
             )
             raise typer.Exit(1)
-        username = api.account.get("user", {}).get("username", "")
+        try:
+            username = api.account.get("user", {}).get("username", "") or ""
+        except Exception:
+            username = ""
         if username:
-            confirm = typer.confirm(f"No organizations found. Use your username '[cyan]{username}[/cyan]' as the namespace?")
+            confirm = typer.confirm(f"No organizations found. Use your username '{username}' as the namespace?")
             if confirm:
                 return (username, name)
             raise typer.Exit(0)

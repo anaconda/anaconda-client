@@ -1,6 +1,6 @@
 """Tests for the repocore client and CLI commands."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
 from typer.testing import CliRunner
@@ -392,7 +392,7 @@ class TestRepoCoreChannelsCLI:
         app = _get_channels_app()
         mock_api = MagicMock()
         mock_api.list_user_organizations.return_value = []
-        mock_api.account = {"user": {"username": "testuser"}}
+        type(mock_api).account = PropertyMock(return_value={"user": {"username": "testuser"}})
         mock_api.create_namespace_channel.return_value = {"channel_path": "testuser/newchannel"}
 
         with _patch_repo_api(mock_api):
