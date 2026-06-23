@@ -387,19 +387,20 @@ class TestRepoCoreChannelsCLI:
             subchannel_name="dev", namespace="myns", privacy="public"
         )
 
-    def test_channels_create_bare_name_no_namespace_delegates_to_api(self):
+    def test_channels_create_bare_name_no_namespace_uses_username(self):
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
         mock_api.list_user_organizations.return_value = []
-        mock_api.create_namespace_channel.return_value = {"channel_path": "newchannel/newchannel"}
+        mock_api.account = {"user": {"username": "testuser"}}
+        mock_api.create_namespace_channel.return_value = {"channel_path": "testuser/newchannel"}
 
         with _patch_repo_api(mock_api):
-            result = runner.invoke(app, ["create", "newchannel"])
+            result = runner.invoke(app, ["create", "newchannel", "--private"], input="y\n")
 
         assert result.exit_code == 0
         mock_api.create_namespace_channel.assert_called_once_with(
-            subchannel_name="newchannel", namespace=None, privacy="private"
+            subchannel_name="newchannel", namespace="testuser", privacy="private"
         )
 
     def test_channels_create_auto_resolves_namespace(self):
@@ -415,6 +416,34 @@ class TestRepoCoreChannelsCLI:
         assert result.exit_code == 0
         mock_api.create_namespace_channel.assert_called_once_with(
             subchannel_name="dev", namespace="myorg", privacy="public"
+        )
+
+    def test_channels_create_prompts_for_privacy(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.create_namespace_channel.return_value = {"channel_path": "myns/dev"}
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(app, ["create", "myns/dev"], input="2\n")
+
+        assert result.exit_code == 0
+        mock_api.create_namespace_channel.assert_called_once_with(
+            subchannel_name="dev", namespace="myns", privacy="public"
+        )
+
+    def test_channels_create_privacy_prompt_defaults_to_private(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.create_namespace_channel.return_value = {"channel_path": "myns/dev"}
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(app, ["create", "myns/dev"], input="\n")
+
+        assert result.exit_code == 0
+        mock_api.create_namespace_channel.assert_called_once_with(
+            subchannel_name="dev", namespace="myns", privacy="private"
         )
 
     def test_channels_remove_with_namespace_resolution(self):

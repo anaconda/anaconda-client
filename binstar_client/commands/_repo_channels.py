@@ -125,6 +125,12 @@ def _resolve_namespace_and_channel(
                 "[red]Error:[/red] No resolvable namespaces. Specify one with --namespace or use namespace/channel format."
             )
             raise typer.Exit(1)
+        username = api.account.get("user", {}).get("username", "")
+        if username:
+            confirm = typer.confirm(f"No organizations found. Use your username '[cyan]{username}[/cyan]' as the namespace?")
+            if confirm:
+                return (username, name)
+            raise typer.Exit(0)
         return (None, name)
 
     if len(namespaces) == 1:
@@ -208,8 +214,22 @@ def create_command(
 
     if public:
         privacy = "public"
-    else:
+    elif private:
         privacy = "private"
+    else:
+        console.print("\nChannel privacy:")
+        console.print("  1. [cyan]private[/cyan]")
+        console.print("  2. [cyan]public[/cyan]")
+        console.print()
+        while True:
+            choice = typer.prompt("Privacy [1-2]", default="1")
+            if choice == "1":
+                privacy = "private"
+                break
+            elif choice == "2":
+                privacy = "public"
+                break
+            console.print("[red]Invalid choice.[/red] Please enter 1 or 2.")
 
     manifest = api.create_namespace_channel(subchannel_name=subchannel, namespace=namespace, privacy=privacy)
     channel_path = manifest["channel_path"]
