@@ -12,7 +12,8 @@ import typer
 from rich.panel import Panel
 
 from anaconda_cli_base.console import Table, console
-from binstar_client.repocore import get_repo_api
+from binstar_client import __version__
+from binstar_client.repocore import RepoCoreClient
 
 app = typer.Typer(
     name="channel",
@@ -84,7 +85,7 @@ def _callback(
     site_value = getattr(ctx.obj, "params", {}).get("at") or getattr(ctx.obj, "params", {}).get("site")
 
     try:
-        ctx.obj.repo_api = get_repo_api(site=site_value)
+        ctx.obj.repo_api = RepoCoreClient(site=site_value, version=__version__)
     except Exception as e:
         console.print(f"[red]Error:[/red] {e}")
         raise typer.Exit(1)
