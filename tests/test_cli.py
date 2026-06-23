@@ -7,7 +7,7 @@ from argparse import Namespace
 from importlib import reload
 from pathlib import Path
 from socket import gethostname
-from typing import Any, Callable, Dict, Generator, List, Optional
+from typing import Any, Callable, Dict, Generator, List, Optional, Union
 
 import pytest
 from pytest import FixtureRequest
@@ -15,6 +15,7 @@ from pytest import LogCaptureFixture
 from pytest import MonkeyPatch
 from typer import Typer
 from typer import rich_utils
+from typer.models import CommandInfo, TyperInfo
 from typer.testing import CliRunner
 
 import anaconda_cli_base.cli
@@ -34,12 +35,15 @@ BASE_COMMANDS = {"login", "logout", "whoami"}
 HIDDEN_SUBCOMMANDS = ALL_SUBCOMMANDS - BASE_COMMANDS - NON_HIDDEN_SUBCOMMANDS
 
 
-def _find_registered_subcommand(typer_app: Typer, name: str) -> Any:
+def _find_registered_subcommand(typer_app: Typer, name: str) -> Optional[Union[CommandInfo, TyperInfo]]:
     # Note: channel is a Typer group (not a flat command) because it nests the notice subcommand.
-    subcmd = next((subcmd for subcmd in typer_app.registered_commands if subcmd.name == name), None)
-    if subcmd is None:
-        subcmd = next((grp for grp in typer_app.registered_groups if grp.name == name), None)
-    return subcmd
+    for subcmd in typer_app.registered_commands:
+        if subcmd.name == name:
+            return subcmd
+    for grp in typer_app.registered_groups:
+        if grp.name == name:
+            return grp
+    return None
 
 
 @pytest.fixture(autouse=True)
