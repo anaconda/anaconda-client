@@ -15,6 +15,8 @@ from anaconda_cli_base.console import Table, console
 from binstar_client import __version__
 from binstar_client.repocore import RepoCoreClient
 
+_PAGE_SIZE = 100
+
 app = typer.Typer(
     name="channel",
     help="Manage your Anaconda repository channels",
@@ -173,17 +175,27 @@ def list_command(
             str(ch.get("download_count", 0)),
         )
         if ch.get("subchannel_count", 0) > 0:
-            subchannels = api.get_channel_subchannels(channel_name)
-            for sub in subchannels.get("items", []):
-                table.add_row(
-                    f"  {channel_name}/{sub.get('name', '')}",
-                    sub.get("privacy", ""),
-                    sub.get("description", "") or "",
-                    str(sub.get("artifact_count", 0)),
-                    str(sub.get("download_count", 0)),
-                )
+            sub_offset = 0
+            while True:
+                subchannels = api.get_channel_subchannels(channel_name, offset=sub_offset, limit=_PAGE_SIZE)
+                items = subchannels.get("items", [])
+                for sub in items:
+                    table.add_row(
+                        f"  {channel_name}/{sub.get('name', '')}",
+                        sub.get("privacy", ""),
+                        sub.get("description", "") or "",
+                        str(sub.get("artifact_count", 0)),
+                        str(sub.get("download_count", 0)),
+                    )
+                if len(items) < _PAGE_SIZE:
+                    break
+                sub_offset += len(items)
 
-    console.print(table)
+    if console.height and table.row_count > console.height:
+        with console.pager():
+            console.print(table)
+    else:
+        console.print(table)
 
 
 @app.command(name="create", help="Create a new channel")

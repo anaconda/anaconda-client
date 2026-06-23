@@ -151,9 +151,9 @@ class RepoCoreClient(BaseClient):
             raise Unauthorized(msg)
         raise RepoCoreError(msg)
 
-    def get_channel_subchannels(self, channel: str):
+    def get_channel_subchannels(self, channel: str, offset: int = 0, limit: int = 50):
         url = join(self._channels_url, channel, "subchannels")
-        response = self.get(url)
+        response = self.get(url, params={"offset": offset, "limit": limit})
         return self._manage_response(response, f"getting channel {channel} subchannels")
 
     def create_namespace_channel(self, subchannel_name: str, namespace: Optional[str] = None, privacy: str = "private"):
