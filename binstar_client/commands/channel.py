@@ -166,76 +166,6 @@ def _run_channel_command(
 
 
 def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, context_settings: dict) -> None:
-    if name == 'channel':
-        channel_typer = typer.Typer(
-            name='channel',
-            help=help_text,
-            no_args_is_help=True,
-            context_settings=context_settings,
-        )
-
-        @channel_typer.callback(invoke_without_command=True, no_args_is_help=False)
-        def channel_callback(
-            ctx: typer.Context,
-            organization: Optional[str] = typer.Option(
-                None,
-                '-o',
-                '--organization',
-                help='Manage an organizations channels',
-            ),
-            copy: Tuple[str, str] = typer.Option(
-                ('', ''),
-                help='Copy a package from one channel to another',
-                show_default=False,
-                callback=_exclusive_action,
-            ),
-            list_: bool = typer.Option(
-                False,
-                '--list',
-                help='List all channels for a user',
-                callback=_exclusive_action,
-            ),
-            show: Optional[str] = typer.Option(
-                None,
-                help='Show all of the files in a channel',
-                callback=_exclusive_action,
-            ),
-            lock: Optional[str] = typer.Option(
-                None,
-                help='Lock a channel',
-                callback=_exclusive_action,
-            ),
-            unlock: Optional[str] = typer.Option(
-                None,
-                help='Unlock a channel',
-                callback=_exclusive_action,
-            ),
-            remove: Optional[str] = typer.Option(
-                None,
-                help='Remove a channel',
-                callback=_exclusive_action,
-            ),
-        ) -> None:
-            if ctx.invoked_subcommand is not None:
-                return
-            parsed_copy = _parse_optional_tuple(copy)
-            _run_channel_command(
-                ctx,
-                'channel',
-                True,
-                organization,
-                parsed_copy,
-                list_,
-                show,
-                lock,
-                unlock,
-                remove,
-            )
-
-        channel_notices.mount_notice_subcommand(channel_typer)
-        app.add_typer(channel_typer, name='channel', hidden=hidden)
-        return
-
     @app.command(
         name=name,
         hidden=hidden,
@@ -288,7 +218,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         _run_channel_command(
             ctx,
             name,
-            False,
+            name == 'channel',
             organization,
             parsed_copy,
             list_,

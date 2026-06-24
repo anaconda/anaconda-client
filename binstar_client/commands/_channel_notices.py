@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import argparse
+import datetime
 import json
 import logging
+import secrets
+import string
 import sys
 from enum import Enum
 from typing import Any, Dict, Optional
@@ -30,6 +33,7 @@ class NoticeLevel(str, Enum):
 
 
 NOTICE_LEVELS = tuple(level.value for level in NoticeLevel)
+DEFAULT_NOTICE_LEVEL = NoticeLevel.INFO.value
 
 
 def resolve_channel(
@@ -57,12 +61,19 @@ def _prompt_or_raise(field_name: str, value: Optional[str], prompt_fn) -> str:
     return prompt_fn()
 
 
-def prompt_notice_id(value: Optional[str] = None) -> str:
-    return _prompt_or_raise(
-        'notice id',
-        value,
-        lambda: input('Notice ID: ').strip(),
-    )
+def generate_notice_id(owner: str) -> str:
+    """Build a default notice id: ``{owner}-notice-{3 random alphanumeric chars}``."""
+    alphabet = string.ascii_lowercase + string.digits
+    suffix = ''.join(secrets.choice(alphabet) for _ in range(3))
+    return f'{owner}-notice-{suffix}'
+
+
+def resolve_notice_id(owner: str, value: Optional[str] = None) -> str:
+    if value:
+        return value
+    notice_id = generate_notice_id(owner)
+    logger.info('Generated notice ID: %s', notice_id)
+    return notice_id
 
 
 def prompt_message(value: Optional[str] = None) -> str:
@@ -73,33 +84,65 @@ def prompt_message(value: Optional[str] = None) -> str:
     )
 
 
-def prompt_level(value: Optional[str] = None) -> str:
+def resolve_level(value: Optional[str] = None) -> str:
     if value:
         if value not in NOTICE_LEVELS:
             raise errors.UserError(f'level must be one of: {", ".join(NOTICE_LEVELS)}')
         return value
     if not _is_interactive():
-        raise errors.UserError('level is required (non-interactive mode)')
-    while True:
-        level = input(f'Level ({"/".join(NOTICE_LEVELS)}): ').strip().lower()
-        if level in NOTICE_LEVELS:
-            return level
-        logger.warning('Invalid level. Choose one of: %s', ', '.join(NOTICE_LEVELS))
+        return DEFAULT_NOTICE_LEVEL
+    level = input(f'Level ({"/".join(NOTICE_LEVELS)}, default: {DEFAULT_NOTICE_LEVEL}): ').strip().lower()
+    if not level:
+        return DEFAULT_NOTICE_LEVEL
+    if level in NOTICE_LEVELS:
+        return level
+    raise errors.UserError(f'level must be one of: {", ".join(NOTICE_LEVELS)}')
 
 
-def prompt_expires_at(value: Optional[str] = None) -> str:
-    if value:
-        parse_date(value)
-        return value
+def expires_at_from_days(days: int) -> str:
+    if days < 1:
+        raise errors.UserError('expires_after must be at least 1 day')
+    expires = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=days)
+    return expires.replace(microsecond=0).strftime('%Y-%m-%dT%H:%M:%SZ')
+
+
+def validate_expires_at(expires_at: str) -> str:
+    """Parse expiry time and ensure it is not in the past."""
+    try:
+        parsed = parse_date(expires_at)
+    except (ValueError, TypeError) as err:
+        raise errors.UserError('Invalid expires_at datetime. Use ISO 8601 format.') from err
+
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=datetime.timezone.utc)
+    else:
+        parsed = parsed.astimezone(datetime.timezone.utc)
+
+    now = datetime.datetime.now(datetime.timezone.utc)
+    if parsed < now:
+        raise errors.UserError('expires_at must be in the future')
+
+    return expires_at
+
+
+def resolve_expires_at(
+    expires_at: Optional[str] = None,
+    expires_after: Optional[int] = None,
+) -> str:
+    if expires_at is not None and expires_after is not None:
+        raise errors.UserError('Use only one of --expires-at or --expires-after')
+    if expires_after is not None:
+        return expires_at_from_days(expires_after)
+    if expires_at:
+        return validate_expires_at(expires_at)
     if not _is_interactive():
-        raise errors.UserError('expires_at is required (non-interactive mode)')
+        raise errors.UserError('expires_at is required (use --expires-at or --expires-after)')
     while True:
         expires_at = input('Expires at (ISO 8601 datetime): ').strip()
         try:
-            parse_date(expires_at)
-            return expires_at
-        except (ValueError, TypeError):
-            logger.warning('Invalid datetime. Use ISO 8601 format.')
+            return validate_expires_at(expires_at)
+        except errors.UserError as err:
+            logger.warning('%s', err)
 
 
 def _render_table(items: list, aliases: tuple, empty_message: str) -> None:
@@ -176,11 +219,12 @@ def do_create(
     message: Optional[str],
     level: Optional[str],
     expires_at: Optional[str],
+    expires_after: Optional[int] = None,
 ) -> None:
-    notice_id = prompt_notice_id(notice_id)
+    notice_id = resolve_notice_id(owner, notice_id)
     message = prompt_message(message)
-    level = prompt_level(level)
-    expires_at = prompt_expires_at(expires_at)
+    level = resolve_level(level)
+    expires_at = resolve_expires_at(expires_at, expires_after)
 
     result = api.create_notice(owner, notice_id, message, level, expires_at)
     logger.info("Created notice '%s' (%s)", result.get('notice_id', notice_id), result.get('status', 'draft'))
@@ -193,18 +237,26 @@ def do_update(
     message: Optional[str],
     level: Optional[str],
     expires_at: Optional[str],
+    expires_after: Optional[int] = None,
 ) -> None:
+    if expires_at is not None and expires_after is not None:
+        raise errors.UserError('Use only one of --expires-at or --expires-after')
+
     fields: Dict[str, str] = {}
     if message is not None:
         fields['message'] = message
     if level is not None:
         fields['level'] = level
-    if expires_at is not None:
-        fields['expires_at'] = expires_at
+    if expires_after is not None:
+        fields['expires_at'] = expires_at_from_days(expires_after)
+    elif expires_at is not None:
+        fields['expires_at'] = validate_expires_at(expires_at)
 
     if not fields:
         if not _is_interactive():
-            raise errors.UserError('At least one of --message, --level, or --expires-at is required')
+            raise errors.UserError(
+                'At least one of --message, --level, --expires-at, or --expires-after is required'
+            )
         optional_message = input('Message (leave blank to skip): ').strip()
         if optional_message:
             fields['message'] = optional_message
@@ -215,8 +267,7 @@ def do_update(
             fields['level'] = optional_level
         optional_expires = input('Expires at (ISO 8601, blank to skip): ').strip()
         if optional_expires:
-            parse_date(optional_expires)
-            fields['expires_at'] = optional_expires
+            fields['expires_at'] = validate_expires_at(optional_expires)
 
     if not fields:
         raise errors.UserError('At least one field is required to update')
@@ -265,9 +316,25 @@ def main(args: argparse.Namespace) -> None:
     elif action == 'get':
         do_get(api, owner, args.notice_id, getattr(args, 'log_level', logging.INFO) == logging.DEBUG)
     elif action in ('create', 'add'):
-        do_create(api, owner, args.notice_id, args.message, args.level, args.expires_at)
+        do_create(
+            api,
+            owner,
+            args.notice_id,
+            args.message,
+            args.level,
+            args.expires_at,
+            getattr(args, 'expires_after', None),
+        )
     elif action == 'update':
-        do_update(api, owner, args.notice_id, args.message, args.level, args.expires_at)
+        do_update(
+            api,
+            owner,
+            args.notice_id,
+            args.message,
+            args.level,
+            args.expires_at,
+            getattr(args, 'expires_after', None),
+        )
     elif action == 'delete':
         do_delete(api, owner, args.notice_id)
     elif action == 'publish':
@@ -309,6 +376,17 @@ def _add_owner_args(parser: argparse.ArgumentParser) -> None:
     )
 
 
+def _add_expiry_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument('--expires-at', dest='expires_at', help='Expiry time (ISO 8601)')
+    parser.add_argument(
+        '--expires-after',
+        dest='expires_after',
+        type=int,
+        metavar='DAYS',
+        help='Expire after this many days from now (mutually exclusive with --expires-at)',
+    )
+
+
 def add_notice_argparse(notice_parser: argparse.ArgumentParser) -> None:
     """Register notice subcommand parsers under the channel command."""
     notice_subparsers = notice_parser.add_subparsers(dest='notice_action', metavar='ACTION')
@@ -332,10 +410,18 @@ def add_notice_argparse(notice_parser: argparse.ArgumentParser) -> None:
     ):
         create_parser = notice_subparsers.add_parser(action_name, help=help_text)
         _add_owner_args(create_parser)
-        create_parser.add_argument('--id', dest='notice_id', help='Unique notice ID')
+        create_parser.add_argument(
+            '--id',
+            dest='notice_id',
+            help='Unique notice ID (auto-generated as CHANNEL-notice-XXX if omitted)',
+        )
         create_parser.add_argument('--message', help='Notice message text')
-        create_parser.add_argument('--level', choices=NOTICE_LEVELS, help='Notice level')
-        create_parser.add_argument('--expires-at', dest='expires_at', help='Expiry time (ISO 8601)')
+        create_parser.add_argument(
+            '--level',
+            choices=NOTICE_LEVELS,
+            help=f'Notice level (default: {DEFAULT_NOTICE_LEVEL})',
+        )
+        _add_expiry_args(create_parser)
         create_parser.set_defaults(main=main)
 
     update_parser = notice_subparsers.add_parser('update', help='Update a notice')
@@ -343,7 +429,7 @@ def add_notice_argparse(notice_parser: argparse.ArgumentParser) -> None:
     update_parser.add_argument('notice_id', help='Notice ID')
     update_parser.add_argument('--message', help='Updated message text')
     update_parser.add_argument('--level', choices=NOTICE_LEVELS, help='Updated level')
-    update_parser.add_argument('--expires-at', dest='expires_at', help='Updated expiry (ISO 8601)')
+    _add_expiry_args(update_parser)
     update_parser.set_defaults(main=main)
 
     for action_name, help_text in (
@@ -431,6 +517,7 @@ def mount_notice_subcommand(parent_app: typer.Typer) -> None:
         message: Optional[str],
         level: Optional[str],
         expires_at: Optional[str],
+        expires_after: Optional[int],
         action: str,
     ) -> None:
         _run_notice_action(
@@ -442,6 +529,7 @@ def mount_notice_subcommand(parent_app: typer.Typer) -> None:
             message=message,
             level=level,
             expires_at=expires_at,
+            expires_after=expires_after,
         )
 
     @notice_app.command('create')
@@ -449,10 +537,24 @@ def mount_notice_subcommand(parent_app: typer.Typer) -> None:
         ctx: typer.Context,
         channel: Optional[str] = typer.Argument(None, help=CHANNEL_HELP),
         organization: Optional[str] = typer.Option(None, '-o', '--organization'),
-        notice_id: Optional[str] = typer.Option(None, '--id'),
+        notice_id: Optional[str] = typer.Option(
+            None,
+            '--id',
+            help='Unique notice ID (auto-generated as CHANNEL-notice-XXX if omitted)',
+        ),
         message: Optional[str] = typer.Option(None, '--message'),
-        level: Optional[NoticeLevel] = typer.Option(None, '--level'),
+        level: Optional[NoticeLevel] = typer.Option(
+            None,
+            '--level',
+            help=f'Notice level (default: {DEFAULT_NOTICE_LEVEL})',
+        ),
         expires_at: Optional[str] = typer.Option(None, '--expires-at'),
+        expires_after: Optional[int] = typer.Option(
+            None,
+            '--expires-after',
+            min=1,
+            help='Expire after this many days from now',
+        ),
     ) -> None:
         _create_handler(
             ctx,
@@ -462,6 +564,7 @@ def mount_notice_subcommand(parent_app: typer.Typer) -> None:
             message,
             level.value if level else None,
             expires_at,
+            expires_after,
             'create',
         )
 
@@ -470,10 +573,24 @@ def mount_notice_subcommand(parent_app: typer.Typer) -> None:
         ctx: typer.Context,
         channel: Optional[str] = typer.Argument(None, help=CHANNEL_HELP),
         organization: Optional[str] = typer.Option(None, '-o', '--organization'),
-        notice_id: Optional[str] = typer.Option(None, '--id'),
+        notice_id: Optional[str] = typer.Option(
+            None,
+            '--id',
+            help='Unique notice ID (auto-generated as CHANNEL-notice-XXX if omitted)',
+        ),
         message: Optional[str] = typer.Option(None, '--message'),
-        level: Optional[NoticeLevel] = typer.Option(None, '--level'),
+        level: Optional[NoticeLevel] = typer.Option(
+            None,
+            '--level',
+            help=f'Notice level (default: {DEFAULT_NOTICE_LEVEL})',
+        ),
         expires_at: Optional[str] = typer.Option(None, '--expires-at'),
+        expires_after: Optional[int] = typer.Option(
+            None,
+            '--expires-after',
+            min=1,
+            help='Expire after this many days from now',
+        ),
     ) -> None:
         _create_handler(
             ctx,
@@ -483,6 +600,7 @@ def mount_notice_subcommand(parent_app: typer.Typer) -> None:
             message,
             level.value if level else None,
             expires_at,
+            expires_after,
             'add',
         )
 
@@ -495,6 +613,12 @@ def mount_notice_subcommand(parent_app: typer.Typer) -> None:
         message: Optional[str] = typer.Option(None, '--message'),
         level: Optional[NoticeLevel] = typer.Option(None, '--level'),
         expires_at: Optional[str] = typer.Option(None, '--expires-at'),
+        expires_after: Optional[int] = typer.Option(
+            None,
+            '--expires-after',
+            min=1,
+            help='Expire after this many days from now',
+        ),
     ) -> None:
         _run_notice_action(
             ctx,
@@ -505,6 +629,7 @@ def mount_notice_subcommand(parent_app: typer.Typer) -> None:
             message=message,
             level=level.value if level else None,
             expires_at=expires_at,
+            expires_after=expires_after,
         )
 
     @notice_app.command('delete')

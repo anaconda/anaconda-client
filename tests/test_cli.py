@@ -36,7 +36,7 @@ HIDDEN_SUBCOMMANDS = ALL_SUBCOMMANDS - BASE_COMMANDS - NON_HIDDEN_SUBCOMMANDS
 
 
 def _find_registered_subcommand(typer_app: Typer, name: str) -> Optional[Union[CommandInfo, TyperInfo]]:
-    # Note: channel is a Typer group (not a flat command) because it nests the notice subcommand.
+    # Note: channel may be a Typer group (repo channels app) or a flat legacy command depending on CLI wiring.
     for subcmd in typer_app.registered_commands:
         if subcmd.name == name:
             return subcmd
