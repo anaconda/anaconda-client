@@ -29,6 +29,8 @@ import typer.colors
 from anaconda_cli_base import console, __version__
 from anaconda_cli_base.cli import app as main_app, ContextExtras
 
+from anaconda_cli_base.exceptions import register_error_handler
+
 from binstar_client import commands as command_module
 from binstar_client.scripts.cli import (
     _add_subparser_modules as add_subparser_modules,
@@ -38,10 +40,9 @@ from binstar_client.utils import logging_utils
 
 logger = logging.getLogger("binstar")
 
-# All subcommands in anaconda-client
+# All subcommands in anaconda-client (legacy click/argparse commands)
 ALL_SUBCOMMANDS = {
     "auth",
-    "channel",
     "config",
     "copy",
     "download",
@@ -74,13 +75,10 @@ NON_HIDDEN_SUBCOMMANDS = {
     "upload",
 }
 # Any subcommands that should emit deprecation warnings, and show as deprecated in the help
-DEPRECATED_SUBCOMMANDS = {
-    "channel",
-}
+DEPRECATED_SUBCOMMANDS: set[str] = set()
 # Subcommands which have typer subcommands defined
 SUBCOMMANDS_WITH_NEW_CLI = {
     "auth",
-    "channel",
     "config",
     "copy",
     "download",
@@ -376,3 +374,18 @@ def load_legacy_subcommands() -> None:
 
 
 load_legacy_subcommands()
+
+# Mount repocore channel command under `anaconda org channel` and `anaconda channel`
+from binstar_client.commands._repo_channels import app as channel_app  # noqa: E402
+from binstar_client.repocore.errors import LoginRequiredError  # noqa: E402
+
+app.add_typer(channel_app)
+if not isinstance(main_app, functools.partial):
+    main_app.add_typer(channel_app)
+
+
+@register_error_handler(LoginRequiredError)
+def _handle_login_required(e: Exception) -> int:
+    from anaconda_auth.cli import _continue_with_login
+
+    return _continue_with_login()
