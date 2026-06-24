@@ -223,9 +223,7 @@ class TestNotices(CLITestCase):
         'binstar_client.commands._channel_notices.generate_notice_id', return_value='myteam-notice-x9z'
     )
     @unittest.mock.patch('binstar_client.commands._channel_notices.input')
-    def test_create_notice_interactive(
-        self, urls, input_mock, _generate_mock, _is_interactive_mock, _bool_input_mock
-    ):
+    def test_create_notice_interactive(self, urls, input_mock, _generate_mock, _is_interactive_mock, _bool_input_mock):
         input_mock.side_effect = [
             'interactive message',
             'warning',
