@@ -1,4 +1,20 @@
-"""Manage conda channel notices."""
+"""Manage conda channel notices.
+
+Notices are channel-level messages shown to conda users. New notices start as
+**draft** (admin-only), become visible after **publish**, and can be **archived**
+or deleted. Use ``notice list`` for admin view; ``notice active`` shows what
+clients see (published, non-expired).
+
+``<channel>`` is the channel owner login (user or organization), e.g. ``user`` or
+``myorg`` — not a repocore namespace path.
+
+example::
+
+    anaconda channel notice create mychannel --message "Maintenance tonight" --expires-after 30
+    anaconda channel notice publish mychannel mychannel-notice-k7m
+    anaconda channel notice active --channel mychannel
+
+"""
 
 from __future__ import annotations
 
@@ -6,6 +22,7 @@ import argparse
 import datetime
 import json
 import logging
+import re
 import secrets
 import string
 import sys
@@ -14,16 +31,25 @@ from typing import Any, Dict, Optional
 
 import click
 import typer
+from anaconda_cli_base.console import Table, console
 from dateutil.parser import parse as parse_date
+from rich.panel import Panel
 
 from binstar_client import errors
-from binstar_client.utils import get_server_api
-from binstar_client.utils import tables
+from binstar_client.utils import bool_input, get_server_api
 
 logger = logging.getLogger('binstar.channel_notices')
 
 CHANNEL_HELP = 'Channel owner login (user or organization account)'
+NOTICE_CLI_PREFIX = 'anaconda channel notice'
 NOTICE_STATUSES = ('draft', 'published', 'archived', 'deleted')
+EXPIRY_PROMPT = 'Expiry (days e.g. 30, or ISO 8601 e.g. 2026-09-16T12:00:00Z): '
+EXPIRY_UPDATE_PROMPT = (
+    'Expiry (days e.g. 30, or ISO 8601 e.g. 2026-09-16T12:00:00Z; blank to keep current): '
+)
+DEFAULT_INTERACTIVE_EXPIRY_DAYS = 30
+MAX_BLANK_EXPIRY_ATTEMPTS = 3
+MESSAGE_MAX_LEN = 256
 
 
 class NoticeLevel(str, Enum):
@@ -53,14 +79,6 @@ def _is_interactive() -> bool:
     return sys.stdin.isatty()
 
 
-def _prompt_or_raise(field_name: str, value: Optional[str], prompt_fn) -> str:
-    if value:
-        return value
-    if not _is_interactive():
-        raise errors.UserError(f'{field_name} is required (non-interactive mode)')
-    return prompt_fn()
-
-
 def generate_notice_id(owner: str) -> str:
     """Build a default notice id: ``{owner}-notice-{3 random alphanumeric chars}``."""
     alphabet = string.ascii_lowercase + string.digits
@@ -76,12 +94,26 @@ def resolve_notice_id(owner: str, value: Optional[str] = None) -> str:
     return notice_id
 
 
+def validate_message(message: str) -> str:
+    message = message.strip()
+    if not message:
+        raise errors.UserError('message is required')
+    if len(message) > MESSAGE_MAX_LEN:
+        raise errors.UserError(f'message must be at most {MESSAGE_MAX_LEN} characters')
+    return message
+
+
 def prompt_message(value: Optional[str] = None) -> str:
-    return _prompt_or_raise(
-        'message',
-        value,
-        lambda: input('Message: ').strip(),
-    )
+    if value is not None:
+        return validate_message(value)
+    if not _is_interactive():
+        raise errors.UserError('message is required (non-interactive mode)')
+    while True:
+        message = input('Message: ').strip()
+        try:
+            return validate_message(message)
+        except errors.UserError as err:
+            logger.warning('%s', err)
 
 
 def resolve_level(value: Optional[str] = None) -> str:
@@ -125,6 +157,43 @@ def validate_expires_at(expires_at: str) -> str:
     return expires_at
 
 
+def parse_expiry_input(value: str) -> str:
+    """Parse days (``30``/``30d``) or ISO 8601 expiry input."""
+    value = value.strip()
+    if not value:
+        raise errors.UserError('expiry is required')
+
+    days_match = re.fullmatch(r'(\d+)d?', value, re.IGNORECASE)
+    if days_match:
+        return expires_at_from_days(int(days_match.group(1)))
+
+    return validate_expires_at(value)
+
+
+def prompt_expiry_interactive() -> str:
+    blank_attempts = 0
+    while True:
+        value = input(EXPIRY_PROMPT).strip()
+        if not value:
+            blank_attempts += 1
+            if blank_attempts >= MAX_BLANK_EXPIRY_ATTEMPTS:
+                if bool_input(
+                    f'Use default notice period of {DEFAULT_INTERACTIVE_EXPIRY_DAYS} days?',
+                    default=True,
+                ):
+                    return expires_at_from_days(DEFAULT_INTERACTIVE_EXPIRY_DAYS)
+                blank_attempts = 0
+            else:
+                logger.warning('expiry is required')
+            continue
+
+        blank_attempts = 0
+        try:
+            return parse_expiry_input(value)
+        except errors.UserError as err:
+            logger.warning('%s', err)
+
+
 def resolve_expires_at(
     expires_at: Optional[str] = None,
     expires_after: Optional[int] = None,
@@ -134,77 +203,130 @@ def resolve_expires_at(
     if expires_after is not None:
         return expires_at_from_days(expires_after)
     if expires_at:
-        return validate_expires_at(expires_at)
+        return parse_expiry_input(expires_at)
     if not _is_interactive():
         raise errors.UserError('expires_at is required (use --expires-at or --expires-after)')
-    while True:
-        expires_at = input('Expires at (ISO 8601 datetime): ').strip()
-        try:
-            return validate_expires_at(expires_at)
-        except errors.UserError as err:
-            logger.warning('%s', err)
+    return prompt_expiry_interactive()
 
 
-def _render_table(items: list, aliases: tuple, empty_message: str) -> None:
-    if not items:
-        logger.info(empty_message)
+def format_publish_command(owner: str, notice_id: str) -> str:
+    return f'{NOTICE_CLI_PREFIX} publish {owner} {notice_id}'
+
+
+def format_active_command(owner: str) -> str:
+    return f'{NOTICE_CLI_PREFIX} active --channel {owner}'
+
+
+def offer_publish_after_create(api, owner: str, notice_id: str, status: str) -> None:
+    if status != 'draft':
         return
 
-    table = tables.SimpleTableWithAliases(aliases=aliases, heading_rows=1)
-    for item in items:
-        table.append_row(item)
+    publish_cmd = format_publish_command(owner, notice_id)
+    if _is_interactive():
+        if bool_input('Do you want to publish this notice to the channel?', default=False):
+            do_publish(api, owner, notice_id)
+            return
 
-    logger.info('')
-    for line in table.render(tables.SIMPLE):
-        logger.info(line)
-    logger.info('')
+    logger.info('Notice is a draft and not visible to channel users yet.')
+    logger.info('To publish, run: %s', publish_cmd)
+
+
+def _print_table(table: Table) -> None:
+    if console.height and table.row_count > console.height:
+        with console.pager():
+            console.print(table)
+    else:
+        console.print(table)
 
 
 def show_admin_notices(items: list) -> None:
-    _render_table(
-        items,
-        (
-            ('notice_id', 'Notice ID'),
-            ('status', 'Status'),
-            ('level', 'Level'),
-            ('message', 'Message'),
-            ('expires_at', 'Expires'),
-        ),
-        'No notices found.',
-    )
+    if not items:
+        console.print('[dim]No notices found.[/dim]')
+        return
+
+    table = Table(title='Channel notices')
+    table.add_column('Notice ID', style='cyan')
+    table.add_column('Status')
+    table.add_column('Level')
+    table.add_column('Message')
+    table.add_column('Expires')
+
+    for item in items:
+        table.add_row(
+            str(item.get('notice_id', '')),
+            str(item.get('status', '')),
+            str(item.get('level', '')),
+            str(item.get('message', '')),
+            str(item.get('expires_at', '')),
+        )
+
+    _print_table(table)
 
 
 def show_active_notices(notices: list) -> None:
-    _render_table(
-        notices,
-        (
-            ('id', 'ID'),
-            ('level', 'Level'),
-            ('message', 'Message'),
-            ('expires_at', 'Expires'),
-        ),
-        'No active notices found.',
-    )
+    if not notices:
+        console.print('[dim]No active notices found.[/dim]')
+        return
+
+    table = Table(title='Active notices')
+    table.add_column('ID', style='cyan')
+    table.add_column('Level')
+    table.add_column('Message')
+    table.add_column('Expires')
+
+    for notice in notices:
+        table.add_row(
+            str(notice.get('id', '')),
+            str(notice.get('level', '')),
+            str(notice.get('message', '')),
+            str(notice.get('expires_at', '')),
+        )
+
+    _print_table(table)
 
 
 def show_notice_detail(notice: Dict[str, Any], verbose: bool = False) -> None:
+    notice_id = notice.get('notice_id', notice.get('id', ''))
+
     if verbose:
-        logger.info(json.dumps(notice, indent=2))
+        console.print(json.dumps(notice, indent=2))
         return
-    logger.info('Notice ID: %s', notice.get('notice_id', notice.get('id')))
-    logger.info('Status: %s', notice.get('status', 'published'))
-    logger.info('Level: %s', notice.get('level'))
-    logger.info('Message: %s', notice.get('message'))
+
+    table = Table(show_header=False, box=None, padding=(0, 2))
+    table.add_column('Field', style='bold cyan')
+    table.add_column('Value')
+
+    fields = [
+        ('Notice ID', notice_id),
+        ('Status', notice.get('status', 'published')),
+        ('Level', notice.get('level', '')),
+        ('Message', notice.get('message', '')),
+    ]
     if notice.get('expires_at'):
-        logger.info('Expires: %s', notice['expires_at'])
+        fields.append(('Expires', notice['expires_at']))
+    if notice.get('created_at'):
+        fields.append(('Created', notice['created_at']))
+    if notice.get('updated_at'):
+        fields.append(('Updated', notice['updated_at']))
+
+    for field, value in fields:
+        table.add_row(field, str(value))
+
+    console.print(Panel(table, title=f'Notice: {notice_id}', border_style='green'))
 
 
 def do_list(api, owner: str, status: Optional[str], offset: int, limit: int) -> None:
     result = api.list_notices(owner, status=status, offset=offset, limit=limit)
-    show_admin_notices(result.get('items', []))
+    items = result.get('items', [])
+    show_admin_notices(items)
     total = result.get('total_count')
     if total is not None:
-        logger.info('Total: %s', total)
+        console.print(f'Total: {total}')
+        if offset + len(items) < total:
+            console.print(
+                f'Showing {offset + 1}–{offset + len(items)} of {total}. '
+                f'Use --offset {offset + len(items)} for more.'
+            )
 
 
 def do_get(api, owner: str, notice_id: str, verbose: bool) -> None:
@@ -227,7 +349,10 @@ def do_create(
     expires_at = resolve_expires_at(expires_at, expires_after)
 
     result = api.create_notice(owner, notice_id, message, level, expires_at)
-    logger.info("Created notice '%s' (%s)", result.get('notice_id', notice_id), result.get('status', 'draft'))
+    created_id = result.get('notice_id', notice_id)
+    status = result.get('status', 'draft')
+    logger.info("Created notice '%s' (%s)", created_id, status)
+    offer_publish_after_create(api, owner, created_id, status)
 
 
 def do_update(
@@ -244,13 +369,13 @@ def do_update(
 
     fields: Dict[str, str] = {}
     if message is not None:
-        fields['message'] = message
+        fields['message'] = validate_message(message)
     if level is not None:
         fields['level'] = level
     if expires_after is not None:
         fields['expires_at'] = expires_at_from_days(expires_after)
     elif expires_at is not None:
-        fields['expires_at'] = validate_expires_at(expires_at)
+        fields['expires_at'] = parse_expiry_input(expires_at)
 
     if not fields:
         if not _is_interactive():
@@ -259,15 +384,15 @@ def do_update(
             )
         optional_message = input('Message (leave blank to skip): ').strip()
         if optional_message:
-            fields['message'] = optional_message
+            fields['message'] = validate_message(optional_message)
         optional_level = input(f'Level ({"/".join(NOTICE_LEVELS)}, blank to skip): ').strip().lower()
         if optional_level:
             if optional_level not in NOTICE_LEVELS:
                 raise errors.UserError(f'level must be one of: {", ".join(NOTICE_LEVELS)}')
             fields['level'] = optional_level
-        optional_expires = input('Expires at (ISO 8601, blank to skip): ').strip()
+        optional_expires = input(EXPIRY_UPDATE_PROMPT).strip()
         if optional_expires:
-            fields['expires_at'] = validate_expires_at(optional_expires)
+            fields['expires_at'] = parse_expiry_input(optional_expires)
 
     if not fields:
         raise errors.UserError('At least one field is required to update')
@@ -276,7 +401,13 @@ def do_update(
     logger.info("Updated notice '%s'", notice_id)
 
 
-def do_delete(api, owner: str, notice_id: str) -> None:
+def do_delete(api, owner: str, notice_id: str, force: bool = False) -> None:
+    if not force:
+        msg = f"Are you sure you want to delete notice '{notice_id}'?"
+        if not bool_input(msg, False):
+            logger.warning("Not deleting notice '%s'", notice_id)
+            return
+
     api.delete_notice(owner, notice_id)
     logger.info("Deleted notice '%s'", notice_id)
 
@@ -284,6 +415,7 @@ def do_delete(api, owner: str, notice_id: str) -> None:
 def do_publish(api, owner: str, notice_id: str) -> None:
     result = api.publish_notice(owner, notice_id)
     logger.info("Published notice '%s' (status: %s)", notice_id, result.get('status', 'published'))
+    logger.info('Verify with: %s', format_active_command(owner))
 
 
 def do_archive(api, owner: str, notice_id: str) -> None:
@@ -336,7 +468,7 @@ def main(args: argparse.Namespace) -> None:
             getattr(args, 'expires_after', None),
         )
     elif action == 'delete':
-        do_delete(api, owner, args.notice_id)
+        do_delete(api, owner, args.notice_id, force=getattr(args, 'force', False))
     elif action == 'publish':
         do_publish(api, owner, args.notice_id)
     elif action == 'archive':
@@ -415,7 +547,10 @@ def add_notice_argparse(notice_parser: argparse.ArgumentParser) -> None:
             dest='notice_id',
             help='Unique notice ID (auto-generated as CHANNEL-notice-XXX if omitted)',
         )
-        create_parser.add_argument('--message', help='Notice message text')
+        create_parser.add_argument(
+            '--message',
+            help=f'Notice message text (max {MESSAGE_MAX_LEN} characters)',
+        )
         create_parser.add_argument(
             '--level',
             choices=NOTICE_LEVELS,
@@ -427,7 +562,10 @@ def add_notice_argparse(notice_parser: argparse.ArgumentParser) -> None:
     update_parser = notice_subparsers.add_parser('update', help='Update a notice')
     _add_owner_args(update_parser)
     update_parser.add_argument('notice_id', help='Notice ID')
-    update_parser.add_argument('--message', help='Updated message text')
+    update_parser.add_argument(
+        '--message',
+        help=f'Updated message text (max {MESSAGE_MAX_LEN} characters)',
+    )
     update_parser.add_argument('--level', choices=NOTICE_LEVELS, help='Updated level')
     _add_expiry_args(update_parser)
     update_parser.set_defaults(main=main)
@@ -440,6 +578,13 @@ def add_notice_argparse(notice_parser: argparse.ArgumentParser) -> None:
         action_parser = notice_subparsers.add_parser(action_name, help=help_text)
         _add_owner_args(action_parser)
         action_parser.add_argument('notice_id', help='Notice ID')
+        if action_name == 'delete':
+            action_parser.add_argument(
+                '-f',
+                '--force',
+                action='store_true',
+                help='Delete without confirmation',
+            )
         action_parser.set_defaults(main=main)
 
     active_parser = notice_subparsers.add_parser('active', help='List active published notices (public)')
@@ -638,8 +783,16 @@ def mount_notice_subcommand(parent_app: typer.Typer) -> None:
         channel: str = typer.Argument(..., help=CHANNEL_HELP),
         notice_id: str = typer.Argument(..., help='Notice ID'),
         organization: Optional[str] = typer.Option(None, '-o', '--organization'),
+        force: bool = typer.Option(False, '-f', '--force', help='Delete without confirmation'),
     ) -> None:
-        _run_notice_action(ctx, 'delete', channel=channel, notice_id=notice_id, organization=organization)
+        _run_notice_action(
+            ctx,
+            'delete',
+            channel=channel,
+            notice_id=notice_id,
+            organization=organization,
+            force=force,
+        )
 
     @notice_app.command('publish')
     def notice_publish(

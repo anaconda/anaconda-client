@@ -1,10 +1,14 @@
 # -*- coding: utf8 -*-
 """Tests for channel notice commands."""
 
+import io
 import json
+import logging
 import unittest.mock
+from contextlib import contextmanager
 
 import freezegun
+from rich.console import Console
 
 from binstar_client.errors import UserError
 from tests.fixture import CLITestCase, main
@@ -31,6 +35,21 @@ ACTIVE_NOTICE = {
 }
 
 
+@contextmanager
+def _patch_notice_console_print():
+    """Route Rich console output into the test logging stream."""
+    import binstar_client.commands._channel_notices as notice_cmd
+
+    def _print(*args, **kwargs):
+        buf = io.StringIO()
+        Console(file=buf, width=200, force_terminal=False).print(*args, **kwargs)
+        logging.getLogger('binstar').info(buf.getvalue().rstrip('\n'))
+
+    with unittest.mock.patch.object(notice_cmd.console, 'print', side_effect=_print):
+        notice_cmd.console.height = None
+        yield
+
+
 class TestNotices(CLITestCase):
     @urlpatch
     def test_list_notices(self, urls):
@@ -39,7 +58,8 @@ class TestNotices(CLITestCase):
             content={'total_count': 1, 'items': [NOTICE_ITEM]},
         )
 
-        main(['--show-traceback', 'channel', 'notice', 'list', 'myteam'])
+        with _patch_notice_console_print():
+            main(['--show-traceback', 'channel', 'notice', 'list', 'myteam'])
 
         urls.assertAllCalled()
         self.assertIn('owner=myteam', list_req.req.url)
@@ -49,7 +69,8 @@ class TestNotices(CLITestCase):
     def test_get_notice(self, urls):
         urls.register(method='GET', path='/myteam/notices/api-notice-1', content=NOTICE_ITEM)
 
-        main(['--show-traceback', 'channel', 'notice', 'get', 'myteam', 'api-notice-1'])
+        with _patch_notice_console_print():
+            main(['--show-traceback', 'channel', 'notice', 'get', 'myteam', 'api-notice-1'])
 
         urls.assertAllCalled()
         self.assertIn('hello from api', self.stream.getvalue())
@@ -86,6 +107,7 @@ class TestNotices(CLITestCase):
         self.assertEqual(body['notice_id'], 'api-notice-1')
         self.assertEqual(body['level'], 'info')
         self.assertIn("Created notice 'api-notice-1'", self.stream.getvalue())
+        self.assertIn('anaconda channel notice publish myteam api-notice-1', self.stream.getvalue())
 
     @urlpatch
     @unittest.mock.patch('binstar_client.commands._channel_notices.generate_notice_id', return_value='myteam-notice-a1b')
@@ -191,10 +213,13 @@ class TestNotices(CLITestCase):
         self.assertIn('expires_at must be in the future', str(ctx.exception))
 
     @urlpatch
+    @unittest.mock.patch('binstar_client.commands._channel_notices.bool_input', return_value=False)
     @unittest.mock.patch('binstar_client.commands._channel_notices._is_interactive', return_value=True)
     @unittest.mock.patch('binstar_client.commands._channel_notices.generate_notice_id', return_value='myteam-notice-x9z')
     @unittest.mock.patch('binstar_client.commands._channel_notices.input')
-    def test_create_notice_interactive(self, urls, input_mock, _generate_mock, _is_interactive_mock):
+    def test_create_notice_interactive(
+        self, urls, input_mock, _generate_mock, _is_interactive_mock, _bool_input_mock
+    ):
         input_mock.side_effect = [
             'interactive message',
             'warning',
@@ -226,6 +251,35 @@ class TestNotices(CLITestCase):
 
         urls.assertAllCalled()
         self.assertIn('Published notice', self.stream.getvalue())
+        self.assertIn('notice active --channel myteam', self.stream.getvalue())
+
+    @urlpatch
+    @unittest.mock.patch('binstar_client.commands._channel_notices.bool_input', return_value=True)
+    def test_delete_notice(self, urls, _bool_input_mock):
+        urls.register(method='DELETE', path='/myteam/notices/api-notice-1', status=204, content=b'')
+
+        main(['--show-traceback', 'channel', 'notice', 'delete', 'myteam', 'api-notice-1'])
+
+        urls.assertAllCalled()
+        self.assertIn("Deleted notice 'api-notice-1'", self.stream.getvalue())
+
+    @urlpatch
+    def test_delete_notice_force(self, urls):
+        urls.register(method='DELETE', path='/myteam/notices/api-notice-1', status=204, content=b'')
+
+        main(['--show-traceback', 'channel', 'notice', 'delete', 'myteam', 'api-notice-1', '--force'])
+
+        urls.assertAllCalled()
+        self.assertIn("Deleted notice 'api-notice-1'", self.stream.getvalue())
+
+    @urlpatch
+    @unittest.mock.patch('binstar_client.commands._channel_notices.bool_input', return_value=False)
+    def test_delete_notice_cancelled(self, urls, _bool_input_mock):
+        urls.register(method='DELETE', path='/myteam/notices/api-notice-1', status=204, content=b'')
+
+        main(['--show-traceback', 'channel', 'notice', 'delete', 'myteam', 'api-notice-1'])
+
+        self.assertIn("Not deleting notice 'api-notice-1'", self.stream.getvalue())
 
     @urlpatch
     def test_archive_notice(self, urls):
@@ -241,22 +295,14 @@ class TestNotices(CLITestCase):
         self.assertIn('Archived notice', self.stream.getvalue())
 
     @urlpatch
-    def test_delete_notice(self, urls):
-        urls.register(method='DELETE', path='/myteam/notices/api-notice-1', status=204, content=b'')
-
-        main(['--show-traceback', 'channel', 'notice', 'delete', 'myteam', 'api-notice-1'])
-
-        urls.assertAllCalled()
-        self.assertIn("Deleted notice 'api-notice-1'", self.stream.getvalue())
-
-    @urlpatch
     def test_active_notices(self, urls):
         active = urls.register(
             method='GET',
             content={'notices': [ACTIVE_NOTICE]},
         )
 
-        main(['--show-traceback', 'channel', 'notice', 'active', '--channel', 'myteam'])
+        with _patch_notice_console_print():
+            main(['--show-traceback', 'channel', 'notice', 'active', '--channel', 'myteam'])
 
         urls.assertAllCalled()
         self.assertIn('/notices/active', active.req.url)
@@ -310,3 +356,164 @@ class TestNotices(CLITestCase):
 
         urls.assertAllCalled()
         self.assertIn('owner=myorg', list_req.req.url)
+
+    @urlpatch
+    def test_create_notice_rejects_empty_message(self, urls):
+        with self.assertRaises(UserError) as ctx:
+            main(
+                [
+                    '--show-traceback',
+                    'channel',
+                    'notice',
+                    'create',
+                    'myteam',
+                    '--message',
+                    '   ',
+                    '--expires-after',
+                    '7',
+                ]
+            )
+
+        self.assertIn('message is required', str(ctx.exception))
+
+    @urlpatch
+    def test_create_notice_rejects_message_over_max_length(self, urls):
+        with self.assertRaises(UserError) as ctx:
+            main(
+                [
+                    '--show-traceback',
+                    'channel',
+                    'notice',
+                    'create',
+                    'myteam',
+                    '--message',
+                    'x' * 257,
+                    '--expires-after',
+                    '7',
+                ]
+            )
+
+        self.assertIn('message must be at most 256 characters', str(ctx.exception))
+
+    @urlpatch
+    @unittest.mock.patch('binstar_client.commands._channel_notices.bool_input', return_value=False)
+    @unittest.mock.patch('binstar_client.commands._channel_notices._is_interactive', return_value=True)
+    @unittest.mock.patch('binstar_client.commands._channel_notices.generate_notice_id', return_value='myteam-notice-d1')
+    @unittest.mock.patch('binstar_client.commands._channel_notices.input')
+    @freezegun.freeze_time('2026-06-01T12:00:00Z')
+    def test_create_notice_interactive_days(self, urls, input_mock, _generate_mock, _is_interactive_mock, _bool_mock):
+        input_mock.side_effect = ['hello', 'info', '30']
+        create = urls.register(
+            method='POST',
+            path='/myteam/notices',
+            status=201,
+            content={**NOTICE_ITEM, 'notice_id': 'myteam-notice-d1', 'status': 'draft'},
+        )
+
+        main(['--show-traceback', 'channel', 'notice', 'create', 'myteam'])
+
+        body = json.loads(create.req.body)
+        self.assertEqual(body['expires_at'], '2026-07-01T12:00:00Z')
+
+    @urlpatch
+    @unittest.mock.patch('binstar_client.commands._channel_notices.bool_input', side_effect=[True, False])
+    @unittest.mock.patch('binstar_client.commands._channel_notices._is_interactive', return_value=True)
+    @unittest.mock.patch('binstar_client.commands._channel_notices.generate_notice_id', return_value='myteam-notice-d2')
+    @unittest.mock.patch('binstar_client.commands._channel_notices.input')
+    @freezegun.freeze_time('2026-06-01T12:00:00Z')
+    def test_create_notice_interactive_blank_then_accept_default(
+        self, urls, input_mock, _generate_mock, _is_interactive_mock, _bool_mock
+    ):
+        input_mock.side_effect = ['hello', 'info', '', '', '']
+        create = urls.register(
+            method='POST',
+            path='/myteam/notices',
+            status=201,
+            content={**NOTICE_ITEM, 'notice_id': 'myteam-notice-d2', 'status': 'draft'},
+        )
+
+        main(['--show-traceback', 'channel', 'notice', 'create', 'myteam'])
+
+        body = json.loads(create.req.body)
+        self.assertEqual(body['expires_at'], '2026-07-01T12:00:00Z')
+
+    @urlpatch
+    @unittest.mock.patch('binstar_client.commands._channel_notices.bool_input', side_effect=[False, False])
+    @unittest.mock.patch('binstar_client.commands._channel_notices._is_interactive', return_value=True)
+    @unittest.mock.patch('binstar_client.commands._channel_notices.generate_notice_id', return_value='myteam-notice-d3')
+    @unittest.mock.patch('binstar_client.commands._channel_notices.input')
+    @freezegun.freeze_time('2026-06-01T12:00:00Z')
+    def test_create_notice_interactive_blank_then_decline_default(
+        self, urls, input_mock, _generate_mock, _is_interactive_mock, _bool_mock
+    ):
+        input_mock.side_effect = ['hello', 'info', '', '', '', '14']
+        create = urls.register(
+            method='POST',
+            path='/myteam/notices',
+            status=201,
+            content={**NOTICE_ITEM, 'notice_id': 'myteam-notice-d3', 'status': 'draft'},
+        )
+
+        main(['--show-traceback', 'channel', 'notice', 'create', 'myteam'])
+
+        body = json.loads(create.req.body)
+        self.assertEqual(body['expires_at'], '2026-06-15T12:00:00Z')
+
+    @urlpatch
+    @unittest.mock.patch('binstar_client.commands._channel_notices.bool_input', return_value=True)
+    @unittest.mock.patch('binstar_client.commands._channel_notices._is_interactive', return_value=True)
+    @unittest.mock.patch('binstar_client.commands._channel_notices.generate_notice_id', return_value='myteam-notice-p1')
+    @unittest.mock.patch('binstar_client.commands._channel_notices.input')
+    def test_create_notice_interactive_publish_yes(
+        self, urls, input_mock, _generate_mock, _is_interactive_mock, _bool_mock
+    ):
+        input_mock.side_effect = ['hello', 'info', '2026-09-16T12:00:00+00:00']
+        urls.register(
+            method='POST',
+            path='/myteam/notices',
+            status=201,
+            content={**NOTICE_ITEM, 'notice_id': 'myteam-notice-p1', 'status': 'draft'},
+        )
+        urls.register(
+            method='POST',
+            path='/myteam/notices/myteam-notice-p1/publish',
+            content={'notice_id': 'myteam-notice-p1', 'status': 'published'},
+        )
+
+        main(['--show-traceback', 'channel', 'notice', 'create', 'myteam'])
+
+        self.assertIn('Published notice', self.stream.getvalue())
+
+    @urlpatch
+    @unittest.mock.patch('binstar_client.commands._channel_notices._is_interactive', return_value=True)
+    @unittest.mock.patch('binstar_client.commands._channel_notices.input')
+    def test_update_interactive_keeps_expiry_when_blank(self, urls, input_mock, _is_interactive_mock):
+        input_mock.side_effect = ['updated message', '', '']
+        update = urls.register(
+            method='PATCH',
+            path='/myteam/notices/api-notice-1',
+            content={**NOTICE_ITEM, 'message': 'updated message'},
+        )
+
+        main(['--show-traceback', 'channel', 'notice', 'update', 'myteam', 'api-notice-1'])
+
+        body = json.loads(update.req.body)
+        self.assertEqual(body['message'], 'updated message')
+        self.assertNotIn('expires_at', body)
+
+    @urlpatch
+    @unittest.mock.patch('binstar_client.commands._channel_notices._is_interactive', return_value=True)
+    @unittest.mock.patch('binstar_client.commands._channel_notices.input')
+    @freezegun.freeze_time('2026-06-01T12:00:00Z')
+    def test_update_interactive_days(self, urls, input_mock, _is_interactive_mock):
+        input_mock.side_effect = ['', '', '14']
+        update = urls.register(
+            method='PATCH',
+            path='/myteam/notices/api-notice-1',
+            content={**NOTICE_ITEM, 'expires_at': '2026-06-15T12:00:00Z'},
+        )
+
+        main(['--show-traceback', 'channel', 'notice', 'update', 'myteam', 'api-notice-1'])
+
+        body = json.loads(update.req.body)
+        self.assertEqual(body['expires_at'], '2026-06-15T12:00:00Z')
