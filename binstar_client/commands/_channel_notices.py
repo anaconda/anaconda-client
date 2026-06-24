@@ -254,9 +254,7 @@ def do_update(
 
     if not fields:
         if not _is_interactive():
-            raise errors.UserError(
-                'At least one of --message, --level, --expires-at, or --expires-after is required'
-            )
+            raise errors.UserError('At least one of --message, --level, --expires-at, or --expires-after is required')
         optional_message = input('Message (leave blank to skip): ').strip()
         if optional_message:
             fields['message'] = optional_message
