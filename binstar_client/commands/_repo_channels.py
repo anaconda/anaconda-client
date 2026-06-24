@@ -1,32 +1,90 @@
-"""Channels subcommand: anaconda org channels <subcommand>."""
+"""Channel subcommand: anaconda channel <subcommand>.
 
-from typing import Optional
+New subcommands (list, create, show, remove, modify) work with repocore private channels.
+Legacy --dashed options (--list, --copy, --show, --lock, --unlock, --remove) are preserved
+for backward compatibility and operate on labels via the old API.
+"""
+
+import argparse
+from typing import Optional, Tuple
 
 import typer
 from rich.panel import Panel
 
 from anaconda_cli_base.console import Table, console
-from binstar_client.repocore import get_repo_api
+from binstar_client import __version__
+from binstar_client.repocore import RepoCoreClient
+
+_PAGE_SIZE = 100
 
 app = typer.Typer(
     name="channel",
     help="Manage your Anaconda repository channels",
+    invoke_without_command=True,
     no_args_is_help=True,
+    context_settings={"help_option_names": ["-h", "--help"]},
 )
 
 
-@app.callback(invoke_without_command=True, no_args_is_help=True)
-def _callback(ctx: typer.Context) -> None:
-    """Initialize repocore API client for channel commands."""
+@app.callback(invoke_without_command=True)
+def _callback(
+    ctx: typer.Context,
+    organization: Optional[str] = typer.Option(None, "-o", "--organization", hidden=True),
+    copy: Tuple[str, str] = typer.Option(("", ""), "--copy", hidden=True, show_default=False),
+    list_: bool = typer.Option(False, "--list", hidden=True),
+    show_legacy: Optional[str] = typer.Option(None, "--show", hidden=True),
+    lock: Optional[str] = typer.Option(None, "--lock", hidden=True),
+    unlock: Optional[str] = typer.Option(None, "--unlock", hidden=True),
+    remove_legacy: Optional[str] = typer.Option(None, "--remove", hidden=True),
+) -> None:
+    """Manage your Anaconda repository channels."""
     from anaconda_cli_base.cli import ContextExtras
 
     if ctx.obj is None:
         ctx.obj = ContextExtras()
 
+    parsed_copy = list(copy) if copy != ("", "") else None
+    legacy_actions = [
+        ("'--list'", list_),
+        ("'--copy'", parsed_copy),
+        ("'--show'", show_legacy),
+        ("'--lock'", lock),
+        ("'--unlock'", unlock),
+        ("'--remove'", remove_legacy),
+    ]
+    active_legacy = [name for name, val in legacy_actions if val]
+
+    if len(active_legacy) > 1:
+        raise typer.BadParameter(f"Invalid value for {active_legacy[1]}: mutually exclusive with {active_legacy[0]}")
+
+    if active_legacy:
+        from binstar_client.commands.channel import main
+
+        args = argparse.Namespace(
+            token=ctx.obj.params.get("token"),
+            site=ctx.obj.params.get("site"),
+            organization=organization,
+            copy=parsed_copy,
+            list=list_,
+            show=show_legacy,
+            lock=lock,
+            unlock=unlock,
+            remove=remove_legacy,
+        )
+        main(args, name="channel", deprecated=True)
+        raise typer.Exit(0)
+
+    if organization and not active_legacy:
+        raise typer.BadParameter("one of --copy, --list, --show, --lock, --unlock, or --remove must be provided")
+
+    if ctx.invoked_subcommand is None:
+        console.print(ctx.get_help())
+        raise typer.Exit(0)
+
     site_value = getattr(ctx.obj, "params", {}).get("at") or getattr(ctx.obj, "params", {}).get("site")
 
     try:
-        ctx.obj.repo_api = get_repo_api(site=site_value)
+        ctx.obj.repo_api = RepoCoreClient(site=site_value, version=__version__)
     except Exception as e:
         console.print(f"[red]Error:[/red] {e}")
         raise typer.Exit(1)
@@ -117,17 +175,27 @@ def list_command(
             str(ch.get("download_count", 0)),
         )
         if ch.get("subchannel_count", 0) > 0:
-            subchannels = api.get_channel_subchannels(channel_name)
-            for sub in subchannels.get("items", []):
-                table.add_row(
-                    f"  {channel_name}/{sub.get('name', '')}",
-                    sub.get("privacy", ""),
-                    sub.get("description", "") or "",
-                    str(sub.get("artifact_count", 0)),
-                    str(sub.get("download_count", 0)),
-                )
+            sub_offset = 0
+            while True:
+                subchannels = api.get_channel_subchannels(channel_name, offset=sub_offset, limit=_PAGE_SIZE)
+                items = subchannels.get("items", [])
+                for sub in items:
+                    table.add_row(
+                        f"  {channel_name}/{sub.get('name', '')}",
+                        sub.get("privacy", ""),
+                        sub.get("description", "") or "",
+                        str(sub.get("artifact_count", 0)),
+                        str(sub.get("download_count", 0)),
+                    )
+                if len(items) < _PAGE_SIZE:
+                    break
+                sub_offset += len(items)
 
-    console.print(table)
+    if console.height and table.row_count > console.height:
+        with console.pager():
+            console.print(table)
+    else:
+        console.print(table)
 
 
 @app.command(name="create", help="Create a new channel")
@@ -136,13 +204,12 @@ def create_command(
     name: str = typer.Argument(..., help="Channel name to create (or namespace/channel)"),
     namespace: Optional[str] = typer.Option(None, "--namespace", "-n", help="Namespace to create the channel under"),
     private: bool = typer.Option(False, "--private", help="Create as a private channel (default)"),
-    authenticated: bool = typer.Option(False, "--authenticated", help="Create as an authenticated channel"),
     public: bool = typer.Option(False, "--public", help="Create as a public channel"),
 ) -> None:
     """Create a new channel."""
-    flags = sum([private, authenticated, public])
+    flags = sum([private, public])
     if flags > 1:
-        console.print("[red]Error:[/red] --private, --authenticated, and --public are mutually exclusive.")
+        console.print("[red]Error:[/red] --private and --public are mutually exclusive.")
         raise typer.Exit(1)
 
     api = ctx.obj.repo_api
@@ -150,8 +217,6 @@ def create_command(
 
     if public:
         privacy = "public"
-    elif authenticated:
-        privacy = "authenticated"
     else:
         privacy = "private"
 
@@ -246,7 +311,7 @@ def modify_command(
     ),
 ) -> None:
     """Modify channel settings (privacy, indexing behavior)."""
-    valid_privacy = ("public", "authenticated", "private")
+    valid_privacy = ("public", "private")
     valid_indexing = ("default", "frozen")
 
     if privacy and privacy not in valid_privacy:
@@ -278,5 +343,4 @@ def modify_command(
 
 from binstar_client.commands import _channel_notices as channel_notices
 
-# Note: notice mounts here so PR #874's `anaconda org channel` app picks it up on merge.
 channel_notices.mount_notice_subcommand(app)

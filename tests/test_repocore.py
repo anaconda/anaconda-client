@@ -500,7 +500,7 @@ class _patch_repo_api:
 
     def __init__(self, mock_api):
         self.mock_api = mock_api
-        self.patcher = patch("binstar_client.commands._repo_channels.get_repo_api", return_value=mock_api)
+        self.patcher = patch("binstar_client.commands._repo_channels.RepoCoreClient", return_value=mock_api)
 
     def __enter__(self):
         self.patcher.start()

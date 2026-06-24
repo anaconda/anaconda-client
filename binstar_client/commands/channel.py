@@ -12,6 +12,7 @@ from typing import Any, List, Optional, Tuple
 import typer
 
 from binstar_client.commands import _channel_notices as channel_notices
+from binstar_client.deprecations import REMOVE_IN_2_0_0
 from binstar_client.utils import get_server_api
 
 logger = logging.getLogger('binstar.channel')
@@ -25,7 +26,9 @@ def main(args, name, deprecated=False):
     owner = channel_notices.resolve_channel(None, aserver_api, organization=args.organization)
 
     if deprecated:
-        logger.warning('channel command is deprecated in favor of label')
+        logger.warning(
+            f'These options are deprecated and will be removed in {REMOVE_IN_2_0_0}. Use "anaconda label" instead.'
+        )
 
     channel_actions = [args.copy, args.list, args.show, args.lock, args.unlock, args.remove]
     if not any(channel_actions):
