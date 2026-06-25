@@ -25,18 +25,18 @@ class NoticesMixin:
             str(key): str(value) for key, value in self.session.headers.items() if str(key).lower() != 'authorization'
         }
 
-    def _notice_url(self, owner, notice_id, action=None):
-        url = f'{self.domain}/{owner}/notices/{notice_id}'
+    def _notice_url(self, channel, notice_id, action=None):
+        url = f'{self.domain}/{channel}/notices/{notice_id}'
         if action:
             url = f'{url}/{action}'
         return url
 
-    def list_active_notices(self, owner=None):
+    def list_active_notices(self, channel=None):
         """List published, non-expired notices (public endpoint)."""
         url = f'{self.domain}/notices/active'
         params = {}
-        if owner:
-            params['owner'] = owner
+        if channel:
+            params['owner'] = channel
 
         request = requests.Request('GET', url, params=params or None, headers=self._anonymous_headers())
         prepared = self.session.prepare_request(request)
@@ -45,10 +45,10 @@ class NoticesMixin:
         self._check_notice_response(res, [200])
         return res.json()
 
-    def list_notices(self, owner, status=None, offset=0, limit=20):
-        """List notices for a channel owner (admin, paginated)."""
+    def list_notices(self, channel, status=None, offset=0, limit=20):
+        """List notices for a channel (admin, paginated)."""
         url = f'{self.domain}/notices'
-        params = {'owner': owner, 'offset': offset, 'limit': limit}
+        params = {'owner': channel, 'offset': offset, 'limit': limit}
         if status:
             params['status'] = status
 
@@ -56,17 +56,16 @@ class NoticesMixin:
         self._check_notice_response(res, [200])
         return res.json()
 
-    def get_notice(self, owner, notice_id):
+    def get_notice(self, channel, notice_id):
         """Get a single notice (admin)."""
-        res = self.session.get(self._notice_url(owner, notice_id))
+        res = self.session.get(self._notice_url(channel, notice_id))
         self._check_notice_response(res, [200])
         return res.json()
 
-    def create_notice(self, owner, notice_id, message, level, expires_at):
-        """Create a draft notice."""
-        url = f'{self.domain}/{owner}/notices'
+    def create_notice(self, channel, message, level, expires_at):
+        """Create a draft notice (server assigns notice_id)."""
+        url = f'{self.domain}/{channel}/notices'
         data, headers = jencode(
-            notice_id=notice_id,
             message=message,
             level=level,
             expires_at=expires_at,
@@ -75,28 +74,28 @@ class NoticesMixin:
         self._check_notice_response(res, [201])
         return res.json()
 
-    def update_notice(self, owner, notice_id, **fields):
+    def update_notice(self, channel, notice_id, **fields):
         """Update a notice (partial)."""
         payload = {key: value for key, value in fields.items() if value is not None}
         data, headers = jencode(**payload)
-        res = self.session.patch(self._notice_url(owner, notice_id), data=data, headers=headers)
+        res = self.session.patch(self._notice_url(channel, notice_id), data=data, headers=headers)
         self._check_notice_response(res, [200])
         return res.json()
 
-    def delete_notice(self, owner, notice_id):
+    def delete_notice(self, channel, notice_id):
         """Soft-delete a notice."""
-        res = self.session.delete(self._notice_url(owner, notice_id))
+        res = self.session.delete(self._notice_url(channel, notice_id))
         self._check_notice_response(res, [204])
 
-    def _lifecycle_notice(self, owner, notice_id, action):
-        res = self.session.post(self._notice_url(owner, notice_id, action))
+    def _lifecycle_notice(self, channel, notice_id, action):
+        res = self.session.post(self._notice_url(channel, notice_id, action))
         self._check_notice_response(res, [200])
         return res.json()
 
-    def publish_notice(self, owner, notice_id):
+    def publish_notice(self, channel, notice_id):
         """Publish a draft notice."""
-        return self._lifecycle_notice(owner, notice_id, 'publish')
+        return self._lifecycle_notice(channel, notice_id, 'publish')
 
-    def archive_notice(self, owner, notice_id):
+    def archive_notice(self, channel, notice_id):
         """Archive a notice."""
-        return self._lifecycle_notice(owner, notice_id, 'archive')
+        return self._lifecycle_notice(channel, notice_id, 'archive')

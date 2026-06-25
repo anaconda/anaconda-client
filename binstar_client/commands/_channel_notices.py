@@ -2,17 +2,17 @@
 
 Notices are channel-level messages shown to conda users. New notices start as
 **draft** (admin-only), become visible after **publish**, and can be **archived**
-or deleted. Use ``notice list`` for admin view; ``notice active`` shows what
-clients see (published, non-expired).
+or deleted. Use ``notice list`` for admin view; ``notice published`` shows what
+conda clients see (published, non-expired).
 
-``<channel>`` is the channel owner login (user or organization), e.g. ``user`` or
+``<channel>`` is the channel login (user or organization account), e.g. ``user`` or
 ``myorg`` — not a repocore namespace path.
 
 example::
 
     anaconda channel notice create mychannel --message "Maintenance tonight" --expires-after 30
-    anaconda channel notice publish mychannel mychannel-notice-k7m
-    anaconda channel notice active --channel mychannel
+    anaconda channel notice publish mychannel 550e8400-e29b-41d4-a716-446655440000
+    anaconda channel notice published mychannel
 
 """
 
@@ -23,9 +23,8 @@ import datetime
 import json
 import logging
 import re
-import secrets
-import string
 import sys
+import uuid
 from enum import Enum
 from typing import Any, Dict, Optional
 
@@ -40,9 +39,9 @@ from binstar_client.utils import bool_input, get_server_api
 
 logger = logging.getLogger('binstar.channel_notices')
 
-CHANNEL_HELP = 'Channel owner login (user or organization account)'
+CHANNEL_HELP = 'Channel login (user or organization account)'
+ORGANIZATION_HELP = 'Organization name'
 NOTICE_CLI_PREFIX = 'anaconda channel notice'
-NOTICE_STATUSES = ('draft', 'published', 'archived', 'deleted')
 EXPIRY_PROMPT = 'Expiry (days e.g. 30, or ISO 8601 e.g. 2026-09-16T12:00:00Z): '
 EXPIRY_UPDATE_PROMPT = (
     'Expiry (days e.g. 30, or ISO 8601 e.g. 2026-09-16T12:00:00Z; blank to keep current): '
@@ -50,6 +49,10 @@ EXPIRY_UPDATE_PROMPT = (
 DEFAULT_INTERACTIVE_EXPIRY_DAYS = 30
 MAX_BLANK_EXPIRY_ATTEMPTS = 3
 MESSAGE_MAX_LEN = 256
+MESSAGE_HELP = f'Text to show in the notice (max {MESSAGE_MAX_LEN} characters)'
+MESSAGE_UPDATE_HELP = f'Updated text to show in the notice (max {MESSAGE_MAX_LEN} characters)'
+EXPIRES_AT_HELP = 'Expiry time in ISO 8601 format (e.g. 2026-09-16T12:00:00Z)'
+EXPIRES_AFTER_HELP = 'Expire after this many days from now (mutually exclusive with --expires-at)'
 
 
 class NoticeLevel(str, Enum):
@@ -58,8 +61,55 @@ class NoticeLevel(str, Enum):
     CRITICAL = 'critical'
 
 
+class NoticeStatus(str, Enum):
+    DRAFT = 'draft'
+    PUBLISHED = 'published'
+    ARCHIVED = 'archived'
+    DELETED = 'deleted'
+
+
+class NoticeAction(str, Enum):
+    LIST = 'list'
+    GET = 'get'
+    CREATE = 'create'
+    UPDATE = 'update'
+    DELETE = 'delete'
+    PUBLISH = 'publish'
+    ARCHIVE = 'archive'
+    LIST_PUBLISHED = 'published'
+
+
 NOTICE_LEVELS = tuple(level.value for level in NoticeLevel)
 DEFAULT_NOTICE_LEVEL = NoticeLevel.INFO.value
+LEVEL_HELP = f'Notice level: {", ".join(NOTICE_LEVELS)} (default: {DEFAULT_NOTICE_LEVEL})'
+LEVEL_UPDATE_HELP = f'Updated notice level: {", ".join(NOTICE_LEVELS)}'
+NOTICE_STATUSES = tuple(status.value for status in NoticeStatus)
+NOTICE_ACTION_HELP: Dict[NoticeAction, str] = {
+    NoticeAction.LIST: 'List notices for a channel',
+    NoticeAction.GET: 'Get a single notice',
+    NoticeAction.CREATE: 'Create a draft notice',
+    NoticeAction.UPDATE: 'Update a notice',
+    NoticeAction.DELETE: 'Delete a notice',
+    NoticeAction.PUBLISH: 'Publish a draft notice',
+    NoticeAction.ARCHIVE: 'Archive a notice',
+    NoticeAction.LIST_PUBLISHED: 'List published notices visible to conda users (public)',
+}
+NOTICE_ID_ACTIONS = (
+    (NoticeAction.DELETE.value, NOTICE_ACTION_HELP[NoticeAction.DELETE]),
+    (NoticeAction.PUBLISH.value, NOTICE_ACTION_HELP[NoticeAction.PUBLISH]),
+    (NoticeAction.ARCHIVE.value, NOTICE_ACTION_HELP[NoticeAction.ARCHIVE]),
+)
+NOTICE_ID_HELP = (
+    'Notice UUID (from create output or run: '
+    f'{NOTICE_CLI_PREFIX} {NoticeAction.LIST.value} <channel>)'
+)
+NOTICE_ID_ACTIONS_REQUIRING_UUID = (
+    NoticeAction.GET,
+    NoticeAction.UPDATE,
+    NoticeAction.DELETE,
+    NoticeAction.PUBLISH,
+    NoticeAction.ARCHIVE,
+)
 
 
 def resolve_channel(
@@ -67,7 +117,7 @@ def resolve_channel(
     api,
     organization: Optional[str] = None,
 ) -> str:
-    """Resolve CLI channel argument to API owner login."""
+    """Resolve CLI channel argument to channel login."""
     if organization:
         return organization
     if channel:
@@ -79,18 +129,11 @@ def _is_interactive() -> bool:
     return sys.stdin.isatty()
 
 
-def generate_notice_id(owner: str) -> str:
-    """Build a default notice id: ``{owner}-notice-{3 random alphanumeric chars}``."""
-    alphabet = string.ascii_lowercase + string.digits
-    suffix = ''.join(secrets.choice(alphabet) for _ in range(3))
-    return f'{owner}-notice-{suffix}'
-
-
-def resolve_notice_id(owner: str, value: Optional[str] = None) -> str:
-    if value:
-        return value
-    notice_id = generate_notice_id(owner)
-    logger.info('Generated notice ID: %s', notice_id)
+def validate_notice_id(notice_id: str) -> str:
+    try:
+        uuid.UUID(notice_id)
+    except ValueError as err:
+        raise errors.UserError('notice_id must be a valid UUID') from err
     return notice_id
 
 
@@ -209,26 +252,30 @@ def resolve_expires_at(
     return prompt_expiry_interactive()
 
 
-def format_publish_command(owner: str, notice_id: str) -> str:
-    return f'{NOTICE_CLI_PREFIX} publish {owner} {notice_id}'
+def format_list_command(channel: str) -> str:
+    return f'{NOTICE_CLI_PREFIX} {NoticeAction.LIST.value} {channel}'
 
 
-def format_active_command(owner: str) -> str:
-    return f'{NOTICE_CLI_PREFIX} active --channel {owner}'
+def format_publish_command(channel: str, notice_id: str) -> str:
+    return f'{NOTICE_CLI_PREFIX} {NoticeAction.PUBLISH.value} {channel} {notice_id}'
 
 
-def offer_publish_after_create(api, owner: str, notice_id: str, status: str) -> None:
-    if status != 'draft':
+def format_published_command(channel: str) -> str:
+    return f'{NOTICE_CLI_PREFIX} {NoticeAction.LIST_PUBLISHED.value} {channel}'
+
+
+def offer_publish_after_create(api, channel: str, notice_id: str, status: str) -> None:
+    if status != NoticeStatus.DRAFT.value:
         return
 
-    publish_cmd = format_publish_command(owner, notice_id)
+    publish_cmd = format_publish_command(channel, notice_id)
     if _is_interactive():
         if bool_input('Do you want to publish this notice to the channel?', default=False):
-            do_publish(api, owner, notice_id)
+            do_publish(api, channel, notice_id)
             return
 
-    logger.info('Notice is a draft and not visible to channel users yet.')
-    logger.info('To publish, run: %s', publish_cmd)
+    console.print('Notice is a draft and not visible to channel users yet.')
+    console.print(f'To publish, run: {publish_cmd}')
 
 
 def _print_table(table: Table) -> None:
@@ -239,12 +286,12 @@ def _print_table(table: Table) -> None:
         console.print(table)
 
 
-def show_admin_notices(items: list) -> None:
+def show_admin_notices(items: list, channel: str) -> None:
     if not items:
         console.print('[dim]No notices found.[/dim]')
         return
 
-    table = Table(title='Channel notices')
+    table = Table(title=f'{channel} Notices')
     table.add_column('Notice ID', style='cyan')
     table.add_column('Status')
     table.add_column('Level')
@@ -263,12 +310,12 @@ def show_admin_notices(items: list) -> None:
     _print_table(table)
 
 
-def show_active_notices(notices: list) -> None:
+def show_published_notices(notices: list, channel: str) -> None:
     if not notices:
-        console.print('[dim]No active notices found.[/dim]')
+        console.print('[dim]No published notices found.[/dim]')
         return
 
-    table = Table(title='Active notices')
+    table = Table(title=f'{channel} Notices')
     table.add_column('ID', style='cyan')
     table.add_column('Level')
     table.add_column('Message')
@@ -298,7 +345,7 @@ def show_notice_detail(notice: Dict[str, Any], verbose: bool = False) -> None:
 
     fields = [
         ('Notice ID', notice_id),
-        ('Status', notice.get('status', 'published')),
+        ('Status', notice.get('status', NoticeStatus.PUBLISHED.value)),
         ('Level', notice.get('level', '')),
         ('Message', notice.get('message', '')),
     ]
@@ -315,10 +362,10 @@ def show_notice_detail(notice: Dict[str, Any], verbose: bool = False) -> None:
     console.print(Panel(table, title=f'Notice: {notice_id}', border_style='green'))
 
 
-def do_list(api, owner: str, status: Optional[str], offset: int, limit: int) -> None:
-    result = api.list_notices(owner, status=status, offset=offset, limit=limit)
+def do_list(api, channel: str, status: Optional[str], offset: int, limit: int) -> None:
+    result = api.list_notices(channel, status=status, offset=offset, limit=limit)
     items = result.get('items', [])
-    show_admin_notices(items)
+    show_admin_notices(items, channel)
     total = result.get('total_count')
     if total is not None:
         console.print(f'Total: {total}')
@@ -329,35 +376,36 @@ def do_list(api, owner: str, status: Optional[str], offset: int, limit: int) -> 
             )
 
 
-def do_get(api, owner: str, notice_id: str, verbose: bool) -> None:
-    notice = api.get_notice(owner, notice_id)
+def do_get(api, channel: str, notice_id: str, verbose: bool) -> None:
+    notice = api.get_notice(channel, notice_id)
     show_notice_detail(notice, verbose=verbose)
 
 
 def do_create(
     api,
-    owner: str,
-    notice_id: Optional[str],
+    channel: str,
     message: Optional[str],
     level: Optional[str],
     expires_at: Optional[str],
     expires_after: Optional[int] = None,
 ) -> None:
-    notice_id = resolve_notice_id(owner, notice_id)
     message = prompt_message(message)
     level = resolve_level(level)
     expires_at = resolve_expires_at(expires_at, expires_after)
 
-    result = api.create_notice(owner, notice_id, message, level, expires_at)
-    created_id = result.get('notice_id', notice_id)
-    status = result.get('status', 'draft')
-    logger.info("Created notice '%s' (%s)", created_id, status)
-    offer_publish_after_create(api, owner, created_id, status)
+    result = api.create_notice(channel, message, level, expires_at)
+    created_id = result.get('notice_id')
+    if not created_id:
+        raise errors.UserError('API did not return a notice_id')
+    status = result.get('status', NoticeStatus.DRAFT.value)
+    console.print(f"Notice '{created_id}' created successfully ({status}).")
+    console.print(f'Find notice IDs with: {format_list_command(channel)}')
+    offer_publish_after_create(api, channel, created_id, status)
 
 
 def do_update(
     api,
-    owner: str,
+    channel: str,
     notice_id: str,
     message: Optional[str],
     level: Optional[str],
@@ -395,82 +443,92 @@ def do_update(
     if not fields:
         raise errors.UserError('At least one field is required to update')
 
-    api.update_notice(owner, notice_id, **fields)
-    logger.info("Updated notice '%s'", notice_id)
+    result = api.update_notice(channel, notice_id, **fields)
+    updated_id = result.get('notice_id', notice_id)
+    console.print(f"Notice '{updated_id}' updated successfully.")
 
 
-def do_delete(api, owner: str, notice_id: str, force: bool = False) -> None:
+def do_delete(api, channel: str, notice_id: str, force: bool = False) -> None:
     if not force:
         msg = f"Are you sure you want to delete notice '{notice_id}'?"
         if not bool_input(msg, False):
-            logger.warning("Not deleting notice '%s'", notice_id)
+            console.print(f"Not deleting notice '{notice_id}'")
             return
 
-    api.delete_notice(owner, notice_id)
-    logger.info("Deleted notice '%s'", notice_id)
+    api.delete_notice(channel, notice_id)
+    console.print(f"Notice '{notice_id}' deleted successfully.")
 
 
-def do_publish(api, owner: str, notice_id: str) -> None:
-    result = api.publish_notice(owner, notice_id)
-    logger.info("Published notice '%s' (status: %s)", notice_id, result.get('status', 'published'))
-    logger.info('Verify with: %s', format_active_command(owner))
+def do_publish(api, channel: str, notice_id: str) -> None:
+    result = api.publish_notice(channel, notice_id)
+    published_id = result.get('notice_id', notice_id)
+    console.print(f"Notice '{published_id}' published successfully.")
+    console.print(f'Verify with: {format_published_command(channel)}')
 
 
-def do_archive(api, owner: str, notice_id: str) -> None:
-    result = api.archive_notice(owner, notice_id)
-    logger.info("Archived notice '%s' (status: %s)", notice_id, result.get('status', 'archived'))
+def do_archive(api, channel: str, notice_id: str) -> None:
+    result = api.archive_notice(channel, notice_id)
+    archived_id = result.get('notice_id', notice_id)
+    console.print(f"Notice '{archived_id}' archived successfully.")
 
 
-def do_active(api, channel: Optional[str]) -> None:
-    result = api.list_active_notices(owner=channel)
-    show_active_notices(result.get('notices', []))
+def do_published(api, channel: str) -> None:
+    result = api.list_active_notices(channel)
+    show_published_notices(result.get('notices', []), channel)
+
+
+def _parse_notice_action(action: str) -> NoticeAction:
+    try:
+        return NoticeAction(action)
+    except ValueError as err:
+        raise NotImplementedError(action) from err
 
 
 def main(args: argparse.Namespace) -> None:
     """Dispatch channel notice subcommands."""
-    action = args.notice_action
+    action = _parse_notice_action(args.notice_action)
     api = get_server_api(args.token, args.site)
 
-    if action == 'active':
-        do_active(api, getattr(args, 'active_channel', None))
-        return
-
-    owner = resolve_channel(
+    channel = resolve_channel(
         getattr(args, 'channel', None),
         api,
         organization=getattr(args, 'organization', None),
     )
 
-    if action == 'list':
-        do_list(api, owner, args.status, args.offset, args.limit)
-    elif action == 'get':
-        do_get(api, owner, args.notice_id, getattr(args, 'log_level', logging.INFO) == logging.DEBUG)
-    elif action in ('create', 'add'):
+    if action in NOTICE_ID_ACTIONS_REQUIRING_UUID:
+        validate_notice_id(args.notice_id)
+
+    if action == NoticeAction.LIST:
+        do_list(api, channel, args.status, args.offset, args.limit)
+    elif action == NoticeAction.GET:
+        do_get(api, channel, args.notice_id, getattr(args, 'log_level', logging.INFO) == logging.DEBUG)
+    elif action == NoticeAction.CREATE:
         do_create(
             api,
-            owner,
-            args.notice_id,
+            channel,
             args.message,
             args.level,
             args.expires_at,
             getattr(args, 'expires_after', None),
         )
-    elif action == 'update':
+    elif action == NoticeAction.UPDATE:
         do_update(
             api,
-            owner,
+            channel,
             args.notice_id,
             args.message,
             args.level,
             args.expires_at,
             getattr(args, 'expires_after', None),
         )
-    elif action == 'delete':
-        do_delete(api, owner, args.notice_id, force=getattr(args, 'force', False))
-    elif action == 'publish':
-        do_publish(api, owner, args.notice_id)
-    elif action == 'archive':
-        do_archive(api, owner, args.notice_id)
+    elif action == NoticeAction.DELETE:
+        do_delete(api, channel, args.notice_id, force=getattr(args, 'force', False))
+    elif action == NoticeAction.PUBLISH:
+        do_publish(api, channel, args.notice_id)
+    elif action == NoticeAction.ARCHIVE:
+        do_archive(api, channel, args.notice_id)
+    elif action == NoticeAction.LIST_PUBLISHED:
+        do_published(api, channel)
     else:
         raise NotImplementedError(action)
 
@@ -492,7 +550,7 @@ def _common_namespace(ctx: typer.Context) -> Dict[str, Any]:
     }
 
 
-def _add_owner_args(parser: argparse.ArgumentParser) -> None:
+def _add_channel_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         'channel',
         nargs='?',
@@ -502,18 +560,18 @@ def _add_owner_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         '-o',
         '--organization',
-        help='Manage notices for an organization channel',
+        help=ORGANIZATION_HELP,
     )
 
 
 def _add_expiry_args(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument('--expires-at', dest='expires_at', help='Expiry time (ISO 8601)')
+    parser.add_argument('--expires-at', dest='expires_at', help=EXPIRES_AT_HELP)
     parser.add_argument(
         '--expires-after',
         dest='expires_after',
         type=int,
         metavar='DAYS',
-        help='Expire after this many days from now (mutually exclusive with --expires-at)',
+        help=EXPIRES_AFTER_HELP,
     )
 
 
@@ -522,61 +580,54 @@ def add_notice_argparse(notice_parser: argparse.ArgumentParser) -> None:
     notice_subparsers = notice_parser.add_subparsers(dest='notice_action', metavar='ACTION')
     notice_subparsers.required = True
 
-    list_parser = notice_subparsers.add_parser('list', help='List notices for a channel')
-    _add_owner_args(list_parser)
+    list_parser = notice_subparsers.add_parser(
+        NoticeAction.LIST.value, help=NOTICE_ACTION_HELP[NoticeAction.LIST]
+    )
+    _add_channel_args(list_parser)
     list_parser.add_argument('--status', choices=NOTICE_STATUSES, help='Filter by status')
     list_parser.add_argument('--offset', type=int, default=0, help='Pagination offset')
     list_parser.add_argument('--limit', type=int, default=20, help='Page size (1-100)')
     list_parser.set_defaults(main=main)
 
-    get_parser = notice_subparsers.add_parser('get', help='Get a single notice')
-    _add_owner_args(get_parser)
-    get_parser.add_argument('notice_id', help='Notice ID')
+    get_parser = notice_subparsers.add_parser(NoticeAction.GET.value, help=NOTICE_ACTION_HELP[NoticeAction.GET])
+    _add_channel_args(get_parser)
+    get_parser.add_argument('notice_id', help=NOTICE_ID_HELP)
     get_parser.set_defaults(main=main)
 
-    for action_name, help_text in (
-        ('create', 'Create a draft notice'),
-        ('add', 'Create a draft notice (alias for create)'),
-    ):
-        create_parser = notice_subparsers.add_parser(action_name, help=help_text)
-        _add_owner_args(create_parser)
-        create_parser.add_argument(
-            '--id',
-            dest='notice_id',
-            help='Unique notice ID (auto-generated as CHANNEL-notice-XXX if omitted)',
-        )
-        create_parser.add_argument(
-            '--message',
-            help=f'Notice message text (max {MESSAGE_MAX_LEN} characters)',
-        )
-        create_parser.add_argument(
-            '--level',
-            choices=NOTICE_LEVELS,
-            help=f'Notice level (default: {DEFAULT_NOTICE_LEVEL})',
-        )
-        _add_expiry_args(create_parser)
-        create_parser.set_defaults(main=main)
+    create_parser = notice_subparsers.add_parser(
+        NoticeAction.CREATE.value, help=NOTICE_ACTION_HELP[NoticeAction.CREATE]
+    )
+    _add_channel_args(create_parser)
+    create_parser.add_argument(
+        '--message',
+        help=MESSAGE_HELP,
+    )
+    create_parser.add_argument(
+        '--level',
+        choices=NOTICE_LEVELS,
+        help=LEVEL_HELP,
+    )
+    _add_expiry_args(create_parser)
+    create_parser.set_defaults(main=main)
 
-    update_parser = notice_subparsers.add_parser('update', help='Update a notice')
-    _add_owner_args(update_parser)
-    update_parser.add_argument('notice_id', help='Notice ID')
+    update_parser = notice_subparsers.add_parser(
+        NoticeAction.UPDATE.value, help=NOTICE_ACTION_HELP[NoticeAction.UPDATE]
+    )
+    _add_channel_args(update_parser)
+    update_parser.add_argument('notice_id', help=NOTICE_ID_HELP)
     update_parser.add_argument(
         '--message',
-        help=f'Updated message text (max {MESSAGE_MAX_LEN} characters)',
+        help=MESSAGE_UPDATE_HELP,
     )
-    update_parser.add_argument('--level', choices=NOTICE_LEVELS, help='Updated level')
+    update_parser.add_argument('--level', choices=NOTICE_LEVELS, help=LEVEL_UPDATE_HELP)
     _add_expiry_args(update_parser)
     update_parser.set_defaults(main=main)
 
-    for action_name, help_text in (
-        ('delete', 'Delete a notice'),
-        ('publish', 'Publish a draft notice'),
-        ('archive', 'Archive a notice'),
-    ):
+    for action_name, help_text in NOTICE_ID_ACTIONS:
         action_parser = notice_subparsers.add_parser(action_name, help=help_text)
-        _add_owner_args(action_parser)
-        action_parser.add_argument('notice_id', help='Notice ID')
-        if action_name == 'delete':
+        _add_channel_args(action_parser)
+        action_parser.add_argument('notice_id', help=NOTICE_ID_HELP)
+        if action_name == NoticeAction.DELETE.value:
             action_parser.add_argument(
                 '-f',
                 '--force',
@@ -585,14 +636,12 @@ def add_notice_argparse(notice_parser: argparse.ArgumentParser) -> None:
             )
         action_parser.set_defaults(main=main)
 
-    active_parser = notice_subparsers.add_parser('active', help='List active published notices (public)')
-    active_parser.add_argument(
-        '--channel',
-        dest='active_channel',
-        default=None,
-        help=CHANNEL_HELP,
+    published_parser = notice_subparsers.add_parser(
+        NoticeAction.LIST_PUBLISHED.value,
+        help=NOTICE_ACTION_HELP[NoticeAction.LIST_PUBLISHED],
     )
-    active_parser.set_defaults(main=main)
+    _add_channel_args(published_parser)
+    published_parser.set_defaults(main=main)
 
 
 def mount_notice_subcommand(parent_app: typer.Typer) -> None:
@@ -609,14 +658,14 @@ def mount_notice_subcommand(parent_app: typer.Typer) -> None:
 
     def _run_notice_action(
         ctx: typer.Context,
-        action: str,
+        action: NoticeAction,
         channel: Optional[str] = None,
         notice_id: Optional[str] = None,
         organization: Optional[str] = None,
         **extra: Any,
     ) -> None:
         args = _ctx_args(ctx)
-        args.notice_action = action
+        args.notice_action = action.value
         args.channel = channel
         args.notice_id = notice_id
         args.organization = organization
@@ -624,18 +673,18 @@ def mount_notice_subcommand(parent_app: typer.Typer) -> None:
             setattr(args, key, value)
         main(args)
 
-    @notice_app.command('list')
+    @notice_app.command(NoticeAction.LIST.value, help=NOTICE_ACTION_HELP[NoticeAction.LIST])
     def notice_list(
         ctx: typer.Context,
         channel: Optional[str] = typer.Argument(None, help=CHANNEL_HELP),
-        organization: Optional[str] = typer.Option(None, '-o', '--organization'),
+        organization: Optional[str] = typer.Option(None, '-o', '--organization', help=ORGANIZATION_HELP),
         status: Optional[str] = typer.Option(None, '--status'),
         offset: int = typer.Option(0, '--offset'),
         limit: int = typer.Option(20, '--limit'),
     ) -> None:
         _run_notice_action(
             ctx,
-            'list',
+            NoticeAction.LIST,
             channel=channel,
             organization=organization,
             status=status,
@@ -643,129 +692,64 @@ def mount_notice_subcommand(parent_app: typer.Typer) -> None:
             limit=limit,
         )
 
-    @notice_app.command('get')
+    @notice_app.command(NoticeAction.GET.value, help=NOTICE_ACTION_HELP[NoticeAction.GET])
     def notice_get(
         ctx: typer.Context,
         channel: str = typer.Argument(..., help=CHANNEL_HELP),
-        notice_id: str = typer.Argument(..., help='Notice ID'),
-        organization: Optional[str] = typer.Option(None, '-o', '--organization'),
+        notice_id: str = typer.Argument(..., help=NOTICE_ID_HELP),
+        organization: Optional[str] = typer.Option(None, '-o', '--organization', help=ORGANIZATION_HELP),
     ) -> None:
-        _run_notice_action(ctx, 'get', channel=channel, notice_id=notice_id, organization=organization)
+        _run_notice_action(ctx, NoticeAction.GET, channel=channel, notice_id=notice_id, organization=organization)
 
-    def _create_handler(
+    @notice_app.command(NoticeAction.CREATE.value, help=NOTICE_ACTION_HELP[NoticeAction.CREATE])
+    def notice_create(
         ctx: typer.Context,
-        channel: Optional[str],
-        organization: Optional[str],
-        notice_id: Optional[str],
-        message: Optional[str],
-        level: Optional[str],
-        expires_at: Optional[str],
-        expires_after: Optional[int],
-        action: str,
+        channel: Optional[str] = typer.Argument(None, help=CHANNEL_HELP),
+        organization: Optional[str] = typer.Option(None, '-o', '--organization', help=ORGANIZATION_HELP),
+        message: Optional[str] = typer.Option(None, '--message', help=MESSAGE_HELP),
+        level: Optional[NoticeLevel] = typer.Option(
+            None,
+            '--level',
+            help=LEVEL_HELP,
+        ),
+        expires_at: Optional[str] = typer.Option(None, '--expires-at', help=EXPIRES_AT_HELP),
+        expires_after: Optional[int] = typer.Option(
+            None,
+            '--expires-after',
+            min=1,
+            help=EXPIRES_AFTER_HELP,
+        ),
     ) -> None:
         _run_notice_action(
             ctx,
-            action,
+            NoticeAction.CREATE,
             channel=channel,
             organization=organization,
-            notice_id=notice_id,
             message=message,
-            level=level,
+            level=level.value if level else None,
             expires_at=expires_at,
             expires_after=expires_after,
         )
 
-    @notice_app.command('create')
-    def notice_create(
-        ctx: typer.Context,
-        channel: Optional[str] = typer.Argument(None, help=CHANNEL_HELP),
-        organization: Optional[str] = typer.Option(None, '-o', '--organization'),
-        notice_id: Optional[str] = typer.Option(
-            None,
-            '--id',
-            help='Unique notice ID (auto-generated as CHANNEL-notice-XXX if omitted)',
-        ),
-        message: Optional[str] = typer.Option(None, '--message'),
-        level: Optional[NoticeLevel] = typer.Option(
-            None,
-            '--level',
-            help=f'Notice level (default: {DEFAULT_NOTICE_LEVEL})',
-        ),
-        expires_at: Optional[str] = typer.Option(None, '--expires-at'),
-        expires_after: Optional[int] = typer.Option(
-            None,
-            '--expires-after',
-            min=1,
-            help='Expire after this many days from now',
-        ),
-    ) -> None:
-        _create_handler(
-            ctx,
-            channel,
-            organization,
-            notice_id,
-            message,
-            level.value if level else None,
-            expires_at,
-            expires_after,
-            'create',
-        )
-
-    @notice_app.command('add')
-    def notice_add(
-        ctx: typer.Context,
-        channel: Optional[str] = typer.Argument(None, help=CHANNEL_HELP),
-        organization: Optional[str] = typer.Option(None, '-o', '--organization'),
-        notice_id: Optional[str] = typer.Option(
-            None,
-            '--id',
-            help='Unique notice ID (auto-generated as CHANNEL-notice-XXX if omitted)',
-        ),
-        message: Optional[str] = typer.Option(None, '--message'),
-        level: Optional[NoticeLevel] = typer.Option(
-            None,
-            '--level',
-            help=f'Notice level (default: {DEFAULT_NOTICE_LEVEL})',
-        ),
-        expires_at: Optional[str] = typer.Option(None, '--expires-at'),
-        expires_after: Optional[int] = typer.Option(
-            None,
-            '--expires-after',
-            min=1,
-            help='Expire after this many days from now',
-        ),
-    ) -> None:
-        _create_handler(
-            ctx,
-            channel,
-            organization,
-            notice_id,
-            message,
-            level.value if level else None,
-            expires_at,
-            expires_after,
-            'add',
-        )
-
-    @notice_app.command('update')
+    @notice_app.command(NoticeAction.UPDATE.value, help=NOTICE_ACTION_HELP[NoticeAction.UPDATE])
     def notice_update(
         ctx: typer.Context,
         channel: str = typer.Argument(..., help=CHANNEL_HELP),
-        notice_id: str = typer.Argument(..., help='Notice ID'),
-        organization: Optional[str] = typer.Option(None, '-o', '--organization'),
-        message: Optional[str] = typer.Option(None, '--message'),
-        level: Optional[NoticeLevel] = typer.Option(None, '--level'),
-        expires_at: Optional[str] = typer.Option(None, '--expires-at'),
+        notice_id: str = typer.Argument(..., help=NOTICE_ID_HELP),
+        organization: Optional[str] = typer.Option(None, '-o', '--organization', help=ORGANIZATION_HELP),
+        message: Optional[str] = typer.Option(None, '--message', help=MESSAGE_UPDATE_HELP),
+        level: Optional[NoticeLevel] = typer.Option(None, '--level', help=LEVEL_UPDATE_HELP),
+        expires_at: Optional[str] = typer.Option(None, '--expires-at', help=EXPIRES_AT_HELP),
         expires_after: Optional[int] = typer.Option(
             None,
             '--expires-after',
             min=1,
-            help='Expire after this many days from now',
+            help=EXPIRES_AFTER_HELP,
         ),
     ) -> None:
         _run_notice_action(
             ctx,
-            'update',
+            NoticeAction.UPDATE,
             channel=channel,
             notice_id=notice_id,
             organization=organization,
@@ -775,44 +759,45 @@ def mount_notice_subcommand(parent_app: typer.Typer) -> None:
             expires_after=expires_after,
         )
 
-    @notice_app.command('delete')
+    @notice_app.command(NoticeAction.DELETE.value, help=NOTICE_ACTION_HELP[NoticeAction.DELETE])
     def notice_delete(
         ctx: typer.Context,
         channel: str = typer.Argument(..., help=CHANNEL_HELP),
-        notice_id: str = typer.Argument(..., help='Notice ID'),
-        organization: Optional[str] = typer.Option(None, '-o', '--organization'),
+        notice_id: str = typer.Argument(..., help=NOTICE_ID_HELP),
+        organization: Optional[str] = typer.Option(None, '-o', '--organization', help=ORGANIZATION_HELP),
         force: bool = typer.Option(False, '-f', '--force', help='Delete without confirmation'),
     ) -> None:
         _run_notice_action(
             ctx,
-            'delete',
+            NoticeAction.DELETE,
             channel=channel,
             notice_id=notice_id,
             organization=organization,
             force=force,
         )
 
-    @notice_app.command('publish')
+    @notice_app.command(NoticeAction.PUBLISH.value, help=NOTICE_ACTION_HELP[NoticeAction.PUBLISH])
     def notice_publish(
         ctx: typer.Context,
         channel: str = typer.Argument(..., help=CHANNEL_HELP),
-        notice_id: str = typer.Argument(..., help='Notice ID'),
-        organization: Optional[str] = typer.Option(None, '-o', '--organization'),
+        notice_id: str = typer.Argument(..., help=NOTICE_ID_HELP),
+        organization: Optional[str] = typer.Option(None, '-o', '--organization', help=ORGANIZATION_HELP),
     ) -> None:
-        _run_notice_action(ctx, 'publish', channel=channel, notice_id=notice_id, organization=organization)
+        _run_notice_action(ctx, NoticeAction.PUBLISH, channel=channel, notice_id=notice_id, organization=organization)
 
-    @notice_app.command('archive')
+    @notice_app.command(NoticeAction.ARCHIVE.value, help=NOTICE_ACTION_HELP[NoticeAction.ARCHIVE])
     def notice_archive(
         ctx: typer.Context,
         channel: str = typer.Argument(..., help=CHANNEL_HELP),
-        notice_id: str = typer.Argument(..., help='Notice ID'),
-        organization: Optional[str] = typer.Option(None, '-o', '--organization'),
+        notice_id: str = typer.Argument(..., help=NOTICE_ID_HELP),
+        organization: Optional[str] = typer.Option(None, '-o', '--organization', help=ORGANIZATION_HELP),
     ) -> None:
-        _run_notice_action(ctx, 'archive', channel=channel, notice_id=notice_id, organization=organization)
+        _run_notice_action(ctx, NoticeAction.ARCHIVE, channel=channel, notice_id=notice_id, organization=organization)
 
-    @notice_app.command('active')
-    def notice_active(
+    @notice_app.command(NoticeAction.LIST_PUBLISHED.value, help=NOTICE_ACTION_HELP[NoticeAction.LIST_PUBLISHED])
+    def notice_published(
         ctx: typer.Context,
-        channel: Optional[str] = typer.Option(None, '--channel', help=CHANNEL_HELP),
+        channel: Optional[str] = typer.Argument(None, help=CHANNEL_HELP),
+        organization: Optional[str] = typer.Option(None, '-o', '--organization', help=ORGANIZATION_HELP),
     ) -> None:
-        _run_notice_action(ctx, 'active', active_channel=channel)
+        _run_notice_action(ctx, NoticeAction.LIST_PUBLISHED, channel=channel, organization=organization)
