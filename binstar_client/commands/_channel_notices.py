@@ -43,9 +43,7 @@ CHANNEL_HELP = 'Channel login (user or organization account)'
 ORGANIZATION_HELP = 'Organization name'
 NOTICE_CLI_PREFIX = 'anaconda channel notice'
 EXPIRY_PROMPT = 'Expiry (days e.g. 30, or ISO 8601 e.g. 2026-09-16T12:00:00Z): '
-EXPIRY_UPDATE_PROMPT = (
-    'Expiry (days e.g. 30, or ISO 8601 e.g. 2026-09-16T12:00:00Z; blank to keep current): '
-)
+EXPIRY_UPDATE_PROMPT = 'Expiry (days e.g. 30, or ISO 8601 e.g. 2026-09-16T12:00:00Z; blank to keep current): '
 DEFAULT_INTERACTIVE_EXPIRY_DAYS = 30
 MAX_BLANK_EXPIRY_ATTEMPTS = 3
 MESSAGE_MAX_LEN = 256
@@ -371,8 +369,7 @@ def do_list(api, channel: str, status: Optional[str], offset: int, limit: int) -
         console.print(f'Total: {total}')
         if offset + len(items) < total:
             console.print(
-                f'Showing {offset + 1}–{offset + len(items)} of {total}. '
-                f'Use --offset {offset + len(items)} for more.'
+                f'Showing {offset + 1}–{offset + len(items)} of {total}. Use --offset {offset + len(items)} for more.'
             )
 
 
