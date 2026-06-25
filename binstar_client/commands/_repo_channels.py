@@ -90,9 +90,30 @@ def _callback(
         raise typer.Exit(1)
 
 
+def _resolve_no_namespaces(api, name: str) -> tuple[Optional[str], str]:
+    """Resolve no namespaces case
+
+    Returns (namespace, channel_name).
+
+    Checks for username:
+      1. If None return empty namespace
+      2. If truthy ask user to confirm creation of new namespace
+    
+    """
+    try:
+        username = api.account.get("user", {}).get("username", "") or ""
+    except Exception:
+        return (None, name)
+    
+    confirm = typer.confirm(f"No namespaces found. Use your username '{username}' as the namespace?")
+    if confirm:
+        return (username, name)
+    raise typer.Exit(0)
+
+
 def _resolve_namespace_and_channel(
     api, name: str, namespace: Optional[str] = None, require_namespace: bool = True
-) -> tuple:
+) -> tuple[Optional[str], str]:
     """Resolve namespace and channel name from the given inputs.
 
     Returns (namespace, channel_name). namespace may be None if require_namespace=False
@@ -103,6 +124,7 @@ def _resolve_namespace_and_channel(
       2. name contains "/" → split into namespace/channel
       3. --namespace provided → use it, name is the channel
       4. Neither → resolve namespace from API via user's top-level channels
+      5. Calls _resolve_no_namespaces if none are present
     """
     if "/" in name and namespace:
         console.print("[red]Error:[/red] Ambiguous: name contains '/' but --namespace was also provided.")
@@ -125,16 +147,8 @@ def _resolve_namespace_and_channel(
                 "[red]Error:[/red] No resolvable namespaces. Specify one with --namespace or use namespace/channel format."
             )
             raise typer.Exit(1)
-        try:
-            username = api.account.get("user", {}).get("username", "") or ""
-        except Exception:
-            username = ""
-        if username:
-            confirm = typer.confirm(f"No organizations found. Use your username '{username}' as the namespace?")
-            if confirm:
-                return (username, name)
-            raise typer.Exit(0)
-        return (None, name)
+        
+        return _resolve_no_namespaces(api, name)
 
     if len(namespaces) == 1:
         return (namespaces[0], name)

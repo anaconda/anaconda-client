@@ -470,6 +470,38 @@ class TestRepoCoreChannelsCLI:
             subchannel_name="dev", namespace="myns", privacy="private"
         )
 
+    def test_channels_create_no_namespaces_no_username(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_user_organizations.return_value = []
+        type(mock_api).account = PropertyMock(side_effect=Exception("No account"))
+        mock_api.create_namespace_channel.return_value = {"channel_path": "newchannel"}
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(app, ["create", "newchannel", "--private"])
+
+        assert result.exit_code == 0
+        mock_api.create_namespace_channel.assert_called_once_with(
+            subchannel_name="newchannel", namespace=None, privacy="private"
+        )
+
+    def test_channels_create_no_namespaces_with_username(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_user_organizations.return_value = []
+        type(mock_api).account = PropertyMock(return_value={"user": {"username": "testuser"}})
+        mock_api.create_namespace_channel.return_value = {"channel_path": "testuser/newchannel"}
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(app, ["create", "newchannel", "--private"], input="y\n")
+
+        assert result.exit_code == 0
+        mock_api.create_namespace_channel.assert_called_once_with(
+            subchannel_name="newchannel", namespace="testuser", privacy="private"
+        )
+
     def test_channels_remove_with_namespace_resolution(self):
         runner = CliRunner()
         app = _get_channels_app()
