@@ -444,9 +444,7 @@ class TestNotices(CLITestCase):
     @unittest.mock.patch('binstar_client.commands._channel_notices.bool_input', return_value=True)
     @unittest.mock.patch('binstar_client.commands._channel_notices._is_interactive', return_value=True)
     @unittest.mock.patch('binstar_client.commands._channel_notices.input')
-    def test_create_notice_interactive_publish_yes(
-        self, urls, input_mock, _is_interactive_mock, _bool_mock
-    ):
+    def test_create_notice_interactive_publish_yes(self, urls, input_mock, _is_interactive_mock, _bool_mock):
         input_mock.side_effect = ['hello', 'info', '2026-09-16T12:00:00+00:00']
         urls.register(
             method='POST',

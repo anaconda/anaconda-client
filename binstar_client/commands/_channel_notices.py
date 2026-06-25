@@ -97,10 +97,7 @@ NOTICE_ID_ACTIONS = (
     (NoticeAction.PUBLISH.value, NOTICE_ACTION_HELP[NoticeAction.PUBLISH]),
     (NoticeAction.ARCHIVE.value, NOTICE_ACTION_HELP[NoticeAction.ARCHIVE]),
 )
-NOTICE_ID_HELP = (
-    'Notice UUID (from create output or run: '
-    f'{NOTICE_CLI_PREFIX} {NoticeAction.LIST.value} <channel>)'
-)
+NOTICE_ID_HELP = f'Notice UUID (from create output or run: {NOTICE_CLI_PREFIX} {NoticeAction.LIST.value} <channel>)'
 NOTICE_ID_ACTIONS_REQUIRING_UUID = (
     NoticeAction.GET,
     NoticeAction.UPDATE,
@@ -577,9 +574,7 @@ def add_notice_argparse(notice_parser: argparse.ArgumentParser) -> None:
     notice_subparsers = notice_parser.add_subparsers(dest='notice_action', metavar='ACTION')
     notice_subparsers.required = True
 
-    list_parser = notice_subparsers.add_parser(
-        NoticeAction.LIST.value, help=NOTICE_ACTION_HELP[NoticeAction.LIST]
-    )
+    list_parser = notice_subparsers.add_parser(NoticeAction.LIST.value, help=NOTICE_ACTION_HELP[NoticeAction.LIST])
     _add_channel_args(list_parser)
     list_parser.add_argument('--status', choices=NOTICE_STATUSES, help='Filter by status')
     list_parser.add_argument('--offset', type=int, default=0, help='Pagination offset')
