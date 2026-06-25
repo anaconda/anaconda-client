@@ -339,3 +339,8 @@ def modify_command(
         api.update_channel(name, indexing_behavior=indexing_behavior)
         state_map = {"frozen": "frozen", "default": "unfrozen"}
         console.print(f"[green]Success![/green] Channel '[cyan]{name}[/cyan]' is now {state_map[indexing_behavior]}.")
+
+
+from binstar_client.commands import _channel_notices as channel_notices
+
+channel_notices.mount_notice_subcommand(app)

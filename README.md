@@ -26,6 +26,8 @@ anaconda whoami
 
 For a complete tutorial on building and uploading Conda packages to [anaconda.org](https://anaconda.org) visit the [documentation page](https://docs.anaconda.org/anacondaorg/).
 
+For channel notices (conda user-facing messages), see [doc/channel_notices.md](doc/channel_notices.md).
+
 ## Local development
 
 Setup conda environment:
