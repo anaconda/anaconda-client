@@ -10,6 +10,11 @@ from typing import Optional
 from anaconda_auth.client import BaseClient
 
 from binstar_client.repocore.errors import InvalidName, LoginRequiredError, RepoCoreError, Unauthorized
+from binstar_client.repocore.models import (
+    Channel,
+    Namespace,
+    NamespaceChannel,
+)
 
 UPLOAD_TYPE_MAPPING = {
     "conda": "conda1",
@@ -19,7 +24,7 @@ UPLOAD_TYPE_MAPPING = {
 
 logger = logging.getLogger(__name__)
 
-API_PATH = "/api/repo"
+REPO_API_PATH = "/api/repo"
 AUTH_API_PATH = "/api/auth"
 
 
@@ -44,7 +49,7 @@ class RepoCoreClient(BaseClient):
 
     @property
     def _api_base(self):
-        return self._base_uri + API_PATH
+        return self._base_uri + REPO_API_PATH
 
     @property
     def _auth_api_base(self):
@@ -109,10 +114,11 @@ class RepoCoreClient(BaseClient):
 
         raise RepoCoreError(msg)
 
-    def list_user_organizations(self):
+    def list_user_organizations(self) -> list[Namespace]:
         url = join(self._auth_api_base, "organizations", "my")
         response = self.get(url)
-        return self._manage_response(response, "getting user organizations")
+        data = self._manage_response(response, "getting user organizations")
+        return [Namespace(**org) for org in data]
 
     def create_channel(self, channel: str, privacy: Optional[str] = None):
         self._validate_channel_name(channel)
@@ -141,10 +147,11 @@ class RepoCoreClient(BaseClient):
             raise Unauthorized(msg)
         raise RepoCoreError(msg)
 
-    def get_channel(self, channel: str):
+    def get_channel(self, channel: str) -> NamespaceChannel:
         url = self._get_channel_url(channel)
         response = self.get(url)
-        return self._manage_response(response, f"getting channel {channel}")
+        data = self._manage_response(response, f"getting channel {channel}")
+        return NamespaceChannel(**data)
 
     def update_channel(self, channel: str, **data):
         url = self._get_channel_url(channel)
@@ -156,21 +163,23 @@ class RepoCoreClient(BaseClient):
             raise Unauthorized(msg)
         raise RepoCoreError(msg)
 
-    def get_channel_subchannels(self, channel: str, offset: int = 0, limit: int = 50):
+    def get_channel_subchannels(self, channel: str, offset: int = 0, limit: int = 50) -> list[Channel]:
         url = join(self._channels_url, channel, "subchannels")
         response = self.get(url, params={"offset": offset, "limit": limit})
-        return self._manage_response(response, f"getting channel {channel} subchannels")
+        data = self._manage_response(response, f"getting channel {channel} subchannels")
+        return [Channel(**item) for item in data.get("items", [])]
 
-    def create_namespace_channel(self, subchannel_name: str, namespace: Optional[str] = None, privacy: str = "private"):
+    def create_namespace_channel(
+        self, channel_name: str, namespace: Optional[str] = None, privacy: str = "private"
+    ):
         url = join(self._api_base, "namespace-channels")
-        data = {"subchannel_name": subchannel_name, "privacy": privacy}
-        # print(f"Namespace: {namespace}\nChannel: {subchannel_name}")
-        # data = {"namespace": namespace, "channel_name": subchannel_name}
+        data = {"channel_name": channel_name, "privacy": privacy}  # TODO: needs confirmation
+
         if namespace:
             data["namespace"] = namespace
         response = self.post(url, json=data)
         return self._manage_response(
-            response, f"creating namespace channel {subchannel_name}", success_codes=[200, 201]
+            response, f"creating namespace channel {channel_name}", success_codes=[200, 201]
         )
 
     def upload_file(self, filepath: str, channel: str, package_type: str, name=None, version=None):
