@@ -309,7 +309,7 @@ def modify_command(
     name: str = typer.Argument(..., help="Channel name to modify"),
     namespace: Optional[str] = typer.Option(None, "--namespace", "-n", help="Namespace the channel belongs to"),
     privacy: Optional[str] = typer.Option(
-        None, "--privacy", help="Set channel privacy: public, authenticated, or private"
+        None, "--privacy", help="Set channel privacy: public or private"
     ),
     indexing_behavior: Optional[str] = typer.Option(
         None, "--indexing-behavior", help="Set indexing behavior: default or frozen"
