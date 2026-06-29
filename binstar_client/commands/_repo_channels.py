@@ -237,7 +237,9 @@ def create_command(
         is_private = choice == "private"
     response = api.create_namespace_channel(channel_name=channel, namespace=namespace, private=is_private)
     privacy_label = "private" if is_private else "public"
-    console.print(f"[green]Success![/green] Channel '[cyan]{response['channel_path']}[/cyan]' created ({privacy_label}).")
+    console.print(
+        f"[green]Success![/green] Channel '[cyan]{response['channel_path']}[/cyan]' created ({privacy_label})."
+    )
 
 
 @app.command(name="remove", help="Remove a channel")
