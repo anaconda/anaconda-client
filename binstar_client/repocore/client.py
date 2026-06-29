@@ -20,6 +20,10 @@ UPLOAD_TYPE_MAPPING = {
     "conda": "conda1",
     "pypi": "bdist_wheel",
     "sdist": "sdist",
+    "env": "env",
+    "ipynb": "ipynb",
+    "project": "project",
+    "gra": "gra",
 }
 
 logger = logging.getLogger(__name__)
@@ -58,6 +62,13 @@ class RepoCoreClient(BaseClient):
     @property
     def _channels_url(self):
         return join(self._api_base, "channels")
+
+    @property
+    def account(self):
+        """Get user account information."""
+        url = join(self._auth_api_base, "account", "me")
+        response = self.get(url)
+        return self._manage_response(response, "getting account information")
 
     def is_subchannel(self, channel: str) -> bool:
         return "/" in channel
