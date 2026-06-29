@@ -184,7 +184,11 @@ def list_command(
 
         sub_offset = 0
         while True:
-            channels = api.get_channel_subchannels(org.name, offset=sub_offset, limit=_PAGE_SIZE)
+            try:
+                channels = api.get_channel_subchannels(org.name, offset=sub_offset, limit=_PAGE_SIZE)
+            except Exception:
+                # Namespace may not have any channels yet in the repo
+                break
             for channel in channels:
                 table.add_row(
                     f"  {org.name}/{channel.name}",
@@ -222,15 +226,16 @@ def create_command(
     namespace, channel = _resolve_namespace_and_channel(api, name, namespace, require_namespace=False)
 
     if public:
-        privacy = "public"
+        is_private = False
     elif private:
-        privacy = "private"
+        is_private = True
     else:
         console.print()
-        privacy = select_from_list("Channel privacy:", ["private", "public"])
-
-    response = api.create_namespace_channel(channel_name=channel, namespace=namespace, privacy=privacy)
-    console.print(f"[green]Success![/green] Channel '[cyan]{response['channel_path']}[/cyan]' created ({privacy}).")
+        choice = select_from_list("Channel privacy:", ["private", "public"])
+        is_private = choice == "private"
+    response = api.create_namespace_channel(channel_name=channel, namespace=namespace, private=is_private)
+    privacy_label = "private" if is_private else "public"
+    console.print(f"[green]Success![/green] Channel '[cyan]{response['channel_path']}[/cyan]' created ({privacy_label}).")
 
 
 @app.command(name="remove", help="Remove a channel")
