@@ -443,7 +443,10 @@ class TestRepoCoreChannelsCLI:
         mock_api = MagicMock()
         mock_api.create_namespace_channel.return_value = {"channel_path": "myns/dev"}
 
-        with _patch_repo_api(mock_api), patch("binstar_client.commands._repo_channels.select_from_list", return_value="public"):
+        with (
+            _patch_repo_api(mock_api),
+            patch("binstar_client.commands._repo_channels.select_from_list", return_value="public"),
+        ):
             result = runner.invoke(app, ["create", "myns/dev"])
 
         assert result.exit_code == 0
@@ -457,7 +460,10 @@ class TestRepoCoreChannelsCLI:
         mock_api = MagicMock()
         mock_api.create_namespace_channel.return_value = {"channel_path": "myns/dev"}
 
-        with _patch_repo_api(mock_api), patch("binstar_client.commands._repo_channels.select_from_list", return_value="private"):
+        with (
+            _patch_repo_api(mock_api),
+            patch("binstar_client.commands._repo_channels.select_from_list", return_value="private"),
+        ):
             result = runner.invoke(app, ["create", "myns/dev"])
 
         assert result.exit_code == 0

@@ -98,7 +98,7 @@ def _resolve_no_namespaces(api, name: str) -> tuple[Optional[str], str]:
     Checks for username:
       1. If None or get user request errors, return empty namespace
       2. If truthy ask user to confirm creation of new namespace
-    
+
     """
     try:
         username = api.account.get("user", {}).get("username", "") or ""
@@ -106,7 +106,9 @@ def _resolve_no_namespaces(api, name: str) -> tuple[Optional[str], str]:
         username = ""
 
     if username:
-        confirm = typer.confirm(f"No namespaces found. A namespace can be created with your username. Use your username '{username}' as the namespace?")
+        confirm = typer.confirm(
+            f"No namespaces found. A namespace can be created with your username. Use your username '{username}' as the namespace?"
+        )
         if confirm:
             return (username, name)
         raise typer.Exit(0)
@@ -313,9 +315,7 @@ def modify_command(
     ctx: typer.Context,
     name: str = typer.Argument(..., help="Channel name to modify"),
     namespace: Optional[str] = typer.Option(None, "--namespace", "-n", help="Namespace the channel belongs to"),
-    privacy: Optional[str] = typer.Option(
-        None, "--privacy", help="Set channel privacy: public or private"
-    ),
+    privacy: Optional[str] = typer.Option(None, "--privacy", help="Set channel privacy: public or private"),
     indexing_behavior: Optional[str] = typer.Option(
         None, "--indexing-behavior", help="Set indexing behavior: default or frozen"
     ),
