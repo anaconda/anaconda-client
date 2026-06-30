@@ -187,7 +187,7 @@ def list_command(
         sub_offset = 0
         while True:
             try:
-                channels = api.get_channel_subchannels(org.name, offset=sub_offset, limit=_PAGE_SIZE)
+                channels = api.get_channels(org.name, offset=sub_offset, limit=_PAGE_SIZE)
             except Exception:
                 # Namespace may not have any channels yet in the repo
                 break
@@ -267,11 +267,11 @@ def show_command(
     api = ctx.obj.repo_api
     ns, channel = _resolve_namespace_and_channel(api, name, namespace)
     name = f"{ns}/{channel}"
-    channel_data = api.get_channel(name)
+    channel_data = api.get_namespace_channel(name)
 
     subchannels_response = None
     if full_details and not api.is_subchannel(name):
-        subchannels_response = api.get_channel_subchannels(name)
+        subchannels_response = api.get_channels(name)
 
     table = Table(show_header=False, box=None, padding=(0, 2))
     table.add_column("Field", style="bold cyan")

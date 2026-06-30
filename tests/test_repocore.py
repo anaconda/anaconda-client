@@ -123,13 +123,13 @@ class TestRepoCoreClientAPI:
         with pytest.raises(Unauthorized):
             client.remove_channel("my-channel")
 
-    def test_get_channel(self):
+    def test_get_namespace_channel(self):
         client = _make_client()
         channel_data = {"name": "test", "privacy": "public", "artifact_count": 5}
         mock_response = _mock_response(200, channel_data)
         client.get = MagicMock(return_value=mock_response)
 
-        result = client.get_channel("test")
+        result = client.get_namespace_channel("test")
         assert isinstance(result, NamespaceChannel)
         assert result.name == "test"
         assert result.privacy == "public"
@@ -296,7 +296,7 @@ class TestRepoCoreChannelsCLI:
         mock_api.list_user_organizations.return_value = [
             Namespace(name="main"),
         ]
-        mock_api.get_channel_subchannels.return_value = [
+        mock_api.get_channels.return_value = [
             Channel(
                 name="dev",
                 privacy="public",
@@ -346,7 +346,7 @@ class TestRepoCoreChannelsCLI:
             Namespace(name="org-a"),
             Namespace(name="org-b"),
         ]
-        mock_api.get_channel_subchannels.side_effect = [
+        mock_api.get_channels.side_effect = [
             [
                 Channel(
                     name="dev",
@@ -375,7 +375,7 @@ class TestRepoCoreChannelsCLI:
         assert "org-b" in result.output
         assert "dev" in result.output
         assert "staging" in result.output
-        assert mock_api.get_channel_subchannels.call_count == 2
+        assert mock_api.get_channels.call_count == 2
 
     def test_channels_create_with_slash(self):
         runner = CliRunner()
@@ -550,7 +550,7 @@ class TestRepoCoreChannelsCLI:
             result = runner.invoke(app, ["show", "dev", "--namespace", "myorg"])
 
         assert result.exit_code == 0
-        mock_api.get_channel.assert_called_once_with("myorg/dev")
+        mock_api.get_namespace_channel.assert_called_once_with("myorg/dev")
 
     def test_channels_modify_with_namespace_resolution(self):
         runner = CliRunner()
