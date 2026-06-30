@@ -377,14 +377,11 @@ load_legacy_subcommands()
 
 # Mount repocore channel command under `anaconda org channel` and `anaconda channel`
 from binstar_client.commands._repo_channels import app as channel_app  # noqa: E402
-from binstar_client.commands._repo_upload import app as upload_app  # noqa: E402
 from binstar_client.repocore.errors import LoginRequiredError  # noqa: E402
 
 app.add_typer(channel_app)
-app.add_typer(upload_app)
 if not isinstance(main_app, functools.partial):
     main_app.add_typer(channel_app)
-    main_app.add_typer(upload_app)
 
 
 @register_error_handler(LoginRequiredError)

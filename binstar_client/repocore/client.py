@@ -23,7 +23,6 @@ UPLOAD_TYPE_MAPPING = {
     "env": "env",
     "ipynb": "ipynb",
     "project": "project",
-    "gra": "gra",
 }
 
 logger = logging.getLogger(__name__)
@@ -189,7 +188,7 @@ class RepoCoreClient(BaseClient):
         response = self.post(url, json=data)
         return self._manage_response(response, f"creating namespace channel {channel_name}", success_codes=[200, 201])
 
-    def upload_file(self, filepath: str, channel: str, package_type: str, name=None, version=None):
+    def upload_file(self, filepath: str, channel: str, package_type: str):
         if package_type not in UPLOAD_TYPE_MAPPING:
             raise RepoCoreError(f"{package_type} upload is not supported")
 

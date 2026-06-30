@@ -1,12 +1,15 @@
 """Channel subcommand: anaconda channel <subcommand>.
 
-New subcommands (list, create, show, remove, modify) work with repocore private channels.
+New subcommands (list, create, show, remove, modify, upload) work with repocore private channels.
 Legacy --dashed options (--list, --copy, --show, --lock, --unlock, --remove) are preserved
 for backward compatibility and operate on labels via the old API.
 """
 
 import argparse
-from typing import Optional, Tuple
+import os
+from enum import Enum
+from glob import glob
+from typing import List, Optional, Tuple
 
 import typer
 from rich.panel import Panel
@@ -14,6 +17,8 @@ from rich.panel import Panel
 from anaconda_cli_base.console import Table, console, select_from_list
 from binstar_client import __version__
 from binstar_client.repocore import RepoCoreClient
+from binstar_client.repocore.errors import RepoCoreError, Unauthorized
+from binstar_client.utils.detect import detect_package_type
 
 _PAGE_SIZE = 100
 
@@ -24,6 +29,16 @@ app = typer.Typer(
     no_args_is_help=True,
     context_settings={"help_option_names": ["-h", "--help"]},
 )
+
+
+class PackageType(str, Enum):
+    """Supported package types for upload."""
+    env = "env"
+    ipynb = "ipynb"
+    conda = "conda"
+    pypi = "pypi"
+    project = "project"
+    sdist = "sdist"
 
 
 @app.callback(invoke_without_command=True)
@@ -351,3 +366,105 @@ def modify_command(
         api.update_channel(name, indexing_behavior=indexing_behavior)
         state_map = {"frozen": "frozen", "default": "unfrozen"}
         console.print(f"[green]Success![/green] Channel '[cyan]{name}[/cyan]' is now {state_map[indexing_behavior]}.")
+
+
+def _windows_glob(item: str) -> List[str]:
+    """Handle glob expansion on Windows."""
+    if os.name == "nt" and "*" in item:
+        return glob(item)
+    return [item]
+
+
+def _determine_package_type(filename: str, package_type: Optional[PackageType] = None) -> str:
+    """Determine the package type from file or explicit argument."""
+    if package_type:
+        return package_type.value
+
+    console.print(f"Detecting file type for [cyan]{filename}[/cyan]...")
+    detected_type = detect_package_type(filename)
+
+    if detected_type is None:
+        console.print(
+            f"[red]Error:[/red] Could not detect package type for '{filename}'.\n"
+            "Please specify package type with --package-type option."
+        )
+        raise typer.Exit(1)
+
+    console.print(f"Detected type: [green]{detected_type}[/green]")
+    return detected_type
+
+
+def _get_default_channel(api: RepoCoreClient) -> Optional[str]:
+    """Get the user's default channel."""
+    try:
+        account = api.account
+        return account.get("default_channel")
+    except Exception:
+        return None
+
+
+@app.command(name="upload", help="Upload packages to channels")
+def upload_command(
+    ctx: typer.Context,
+    files: List[str] = typer.Argument(
+        ...,
+        help="Files to upload",
+    ),
+    channel: Optional[List[str]] = typer.Option(
+        None,
+        "--channel",
+        "-c",
+        help="Target channel(s). Can be specified multiple times.",
+    ),
+    package_type: Optional[PackageType] = typer.Option(
+        None,
+        "--package-type",
+        "-t",
+        help="Package type. Defaults to auto-detect.",
+    ),
+) -> None:
+    """Upload packages to your Anaconda repository."""
+    api = ctx.obj.repo_api
+
+    channels = channel or []
+    if not channels:
+        default_channel = _get_default_channel(api)
+        if not default_channel:
+            console.print(
+                "[red]Error:[/red] No channel specified and user has no default channel.\n"
+                "Please set a default channel in your account or use --channel option."
+            )
+            raise typer.Exit(1)
+        channels = [default_channel]
+        console.print(f"Using default channel: [cyan]{default_channel}[/cyan]")
+
+    for file_pattern in files:
+        for filepath in _windows_glob(file_pattern):
+            if not os.path.exists(filepath):
+                console.print(f"[yellow]Warning:[/yellow] File not found: {filepath}")
+                continue
+
+            pkg_type = _determine_package_type(filepath, package_type)
+
+            for ch in channels:
+                console.print(f"Uploading [cyan]{filepath}[/cyan] to channel [cyan]{ch}[/cyan]...")
+
+                try:
+                    response = api.upload_file(filepath, ch, pkg_type)
+
+                    if response.status_code in [200, 201]:
+                        console.print(f"[green]Success![/green] Uploaded {filepath} to {ch}")
+                    elif response.status_code == 401:
+                        raise Unauthorized()
+                    else:
+                        console.print(
+                            f"[red]Error:[/red] Failed to upload {filepath}\n"
+                            f"Status: {response.status_code}\n"
+                            f"Details: {response.content.decode()}"
+                        )
+                except Unauthorized:
+                    console.print("[red]Error:[/red] Authentication failed. Please run 'anaconda login'.")
+                    raise typer.Exit(1)
+                except RepoCoreError as e:
+                    console.print(f"[red]Error:[/red] {e}")
+                    raise typer.Exit(1)

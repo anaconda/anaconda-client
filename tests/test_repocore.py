@@ -576,6 +576,240 @@ class TestRepoCoreChannelsCLI:
         assert "At least one option is required" in result.output
 
 
+class TestRepoCoreUploadCLI:
+    def test_upload_single_file_with_explicit_channel(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        type(mock_api).account = PropertyMock(return_value={"default_channel": "main"})
+        mock_response = _mock_response(201, {"status": "uploaded"})
+        mock_api.upload_file.return_value = mock_response
+
+        with (
+            _patch_repo_api(mock_api),
+            patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
+            patch("binstar_client.commands._repo_channels.detect_package_type", return_value="conda"),
+        ):
+            result = runner.invoke(app, ["upload", "--channel", "dev", "test-1.0-py39_0.conda"])
+
+        assert result.exit_code == 0
+        assert "Success" in result.output
+        mock_api.upload_file.assert_called_once_with("test-1.0-py39_0.conda", "dev", "conda")
+
+    def test_upload_single_file_with_default_channel(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        type(mock_api).account = PropertyMock(return_value={"default_channel": "main"})
+        mock_response = _mock_response(200, {"status": "uploaded"})
+        mock_api.upload_file.return_value = mock_response
+
+        with (
+            _patch_repo_api(mock_api),
+            patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
+            patch("binstar_client.commands._repo_channels.detect_package_type", return_value="conda"),
+        ):
+            result = runner.invoke(app, ["upload", "test-1.0-py39_0.conda"])
+
+        assert result.exit_code == 0
+        assert "Using default channel: main" in result.output
+        mock_api.upload_file.assert_called_once_with("test-1.0-py39_0.conda", "main", "conda")
+
+    def test_upload_no_default_channel_exits(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        type(mock_api).account = PropertyMock(return_value={})
+
+        with (_patch_repo_api(mock_api), patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True)):
+            result = runner.invoke(app, ["upload", "test-1.0-py39_0.conda"])
+
+        assert result.exit_code == 1
+        assert "No channel specified" in result.output
+
+    def test_upload_multiple_channels(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        type(mock_api).account = PropertyMock(return_value={"default_channel": "main"})
+        mock_response = _mock_response(201, {"status": "uploaded"})
+        mock_api.upload_file.return_value = mock_response
+
+        with (
+            _patch_repo_api(mock_api),
+            patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
+            patch("binstar_client.commands._repo_channels.detect_package_type", return_value="conda"),
+        ):
+            result = runner.invoke(app, ["upload", "--channel", "dev", "--channel", "staging", "test-1.0-py39_0.conda"])
+
+        assert result.exit_code == 0
+        assert mock_api.upload_file.call_count == 2
+        mock_api.upload_file.assert_any_call("test-1.0-py39_0.conda", "dev", "conda")
+        mock_api.upload_file.assert_any_call("test-1.0-py39_0.conda", "staging", "conda")
+
+    def test_upload_explicit_package_type(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        type(mock_api).account = PropertyMock(return_value={"default_channel": "main"})
+        mock_response = _mock_response(200, {"status": "uploaded"})
+        mock_api.upload_file.return_value = mock_response
+
+        with (_patch_repo_api(mock_api), patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True)):
+            result = runner.invoke(app, ["upload", "--channel", "dev", "--package-type", "pypi", "test-1.0-py3-none-any.whl"])
+
+        assert result.exit_code == 0
+        mock_api.upload_file.assert_called_once_with("test-1.0-py3-none-any.whl", "dev", "pypi")
+
+    def test_upload_file_not_found(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+
+        with (_patch_repo_api(mock_api), patch("binstar_client.commands._repo_channels.os.path.exists", return_value=False)):
+            result = runner.invoke(app, ["upload", "nonexistent-1.0-py39_0.conda", "--channel", "dev"])
+
+        assert result.exit_code == 0
+        assert "Warning" in result.output
+        assert "not found" in result.output
+        mock_api.upload_file.assert_not_called()
+
+    def test_upload_auto_detect_fails_exits(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+
+        with (
+            _patch_repo_api(mock_api),
+            patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
+            patch("binstar_client.commands._repo_channels.detect_package_type", return_value=None),
+        ):
+            result = runner.invoke(app, ["upload", "unknown.file", "--channel", "dev"])
+
+        assert result.exit_code == 1
+        assert "Could not detect package type" in result.output
+
+    def test_upload_unauthorized(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.upload_file.side_effect = Unauthorized()
+
+        with (
+            _patch_repo_api(mock_api),
+            patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
+            patch("binstar_client.commands._repo_channels.detect_package_type", return_value="conda"),
+        ):
+            result = runner.invoke(app, ["upload", "test-1.0-py39_0.conda", "--channel", "dev"])
+
+        assert result.exit_code == 1
+        assert "Authentication failed" in result.output
+
+    def test_upload_repocore_error(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.upload_file.side_effect = RepoCoreError("Upload failed")
+
+        with (
+            _patch_repo_api(mock_api),
+            patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
+            patch("binstar_client.commands._repo_channels.detect_package_type", return_value="conda"),
+        ):
+            result = runner.invoke(app, ["upload", "test-1.0-py39_0.conda", "--channel", "dev"])
+
+        assert result.exit_code == 1
+        assert "Error" in result.output
+
+    def test_upload_401_response(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_response = _mock_response(401, None)
+        mock_api.upload_file.return_value = mock_response
+
+        with (
+            _patch_repo_api(mock_api),
+            patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
+            patch("binstar_client.commands._repo_channels.detect_package_type", return_value="conda"),
+        ):
+            result = runner.invoke(app, ["upload", "test-1.0-py39_0.conda", "--channel", "dev"])
+
+        assert result.exit_code == 1
+        assert "Authentication failed" in result.output
+
+    def test_upload_error_response(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_response = _mock_response(500, None)
+        mock_response.content = b"Internal server error"
+        mock_api.upload_file.return_value = mock_response
+
+        with (
+            _patch_repo_api(mock_api),
+            patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
+            patch("binstar_client.commands._repo_channels.detect_package_type", return_value="conda"),
+        ):
+            result = runner.invoke(app, ["upload", "test-1.0-py39_0.conda", "--channel", "dev"])
+
+        assert result.exit_code == 0
+        assert "Failed to upload" in result.output
+        assert "500" in result.output
+
+    def test_upload_windows_glob(self):
+        from binstar_client.commands._repo_channels import _windows_glob
+
+        with patch("binstar_client.commands._repo_channels.os.name", "nt"):
+            with patch("binstar_client.commands._repo_channels.glob", return_value=["pkg1-1.0-py39_0.conda", "pkg2-2.0-py39_0.conda"]):
+                result = _windows_glob("*.conda")
+                assert result == ["pkg1-1.0-py39_0.conda", "pkg2-2.0-py39_0.conda"]
+
+        with patch("binstar_client.commands._repo_channels.os.name", "posix"):
+            result = _windows_glob("*.conda")
+            assert result == ["*.conda"]
+
+    def test_determine_package_type_explicit(self):
+        from binstar_client.commands._repo_channels import PackageType, _determine_package_type
+
+        result = _determine_package_type("test-1.0-py39_0.conda", PackageType.conda)
+        assert result == "conda"
+
+    def test_determine_package_type_auto_detect(self):
+        from binstar_client.commands._repo_channels import _determine_package_type
+
+        with patch("binstar_client.commands._repo_channels.detect_package_type", return_value="pypi"):
+            result = _determine_package_type("test.whl")
+            assert result == "pypi"
+
+    def test_get_default_channel_success(self):
+        from binstar_client.commands._repo_channels import _get_default_channel
+
+        mock_api = MagicMock()
+        type(mock_api).account = PropertyMock(return_value={"default_channel": "main"})
+
+        result = _get_default_channel(mock_api)
+        assert result == "main"
+
+    def test_get_default_channel_no_default(self):
+        from binstar_client.commands._repo_channels import _get_default_channel
+
+        mock_api = MagicMock()
+        type(mock_api).account = PropertyMock(return_value={})
+
+        result = _get_default_channel(mock_api)
+        assert result is None
+
+    def test_get_default_channel_exception(self):
+        from binstar_client.commands._repo_channels import _get_default_channel
+
+        mock_api = MagicMock()
+        type(mock_api).account = PropertyMock(side_effect=Exception("Error"))
+
+        result = _get_default_channel(mock_api)
+        assert result is None
+
+
 # =============================================================================
 # Test helpers
 # =============================================================================
