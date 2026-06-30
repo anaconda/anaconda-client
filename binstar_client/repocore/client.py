@@ -158,7 +158,7 @@ class RepoCoreClient(BaseClient):
             raise Unauthorized(msg)
         raise RepoCoreError(msg)
 
-    def get_channel(self, channel: str) -> NamespaceChannel:
+    def get_namespace_channel(self, channel: str) -> NamespaceChannel:
         url = self._get_channel_url(channel)
         response = self.get(url)
         data = self._manage_response(response, f"getting channel {channel}")
@@ -174,24 +174,20 @@ class RepoCoreClient(BaseClient):
             raise Unauthorized(msg)
         raise RepoCoreError(msg)
 
-    def get_channel_subchannels(self, channel: str, offset: int = 0, limit: int = 50) -> list[Channel]:
+    def get_channels(self, channel: str, offset: int = 0, limit: int = 50) -> list[Channel]:
         url = join(self._channels_url, channel, "subchannels")
         response = self.get(url, params={"offset": offset, "limit": limit})
         data = self._manage_response(response, f"getting channel {channel} subchannels")
         return [Channel(**item) for item in data.get("items", [])]
 
-    def create_namespace_channel(
-        self, channel_name: str, namespace: Optional[str] = None, privacy: str = "private"
-    ):
+    def create_namespace_channel(self, channel_name: str, namespace: Optional[str] = None, private: bool = True):
         url = join(self._api_base, "namespace-channels")
-        data = {"channel_name": channel_name, "privacy": privacy}  # TODO: needs confirmation
+        data = {"channel_name": channel_name, "private": private}
 
         if namespace:
             data["namespace"] = namespace
         response = self.post(url, json=data)
-        return self._manage_response(
-            response, f"creating namespace channel {channel_name}", success_codes=[200, 201]
-        )
+        return self._manage_response(response, f"creating namespace channel {channel_name}", success_codes=[200, 201])
 
     def upload_file(self, filepath: str, channel: str, package_type: str, name=None, version=None):
         if package_type not in UPLOAD_TYPE_MAPPING:
