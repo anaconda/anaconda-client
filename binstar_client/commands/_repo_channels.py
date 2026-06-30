@@ -7,7 +7,6 @@ for backward compatibility and operate on labels via the old API.
 
 import argparse
 import os
-from enum import Enum
 from glob import glob
 from typing import List, Optional, Tuple
 
@@ -18,7 +17,7 @@ from anaconda_cli_base.console import Table, console, select_from_list
 from binstar_client import __version__
 from binstar_client.repocore import RepoCoreClient
 from binstar_client.repocore.errors import RepoCoreError, Unauthorized
-from binstar_client.utils.detect import detect_package_type
+from binstar_client.repocore.package_utils import PackageType, determine_package_type, windows_glob
 
 _PAGE_SIZE = 100
 
@@ -29,16 +28,6 @@ app = typer.Typer(
     no_args_is_help=True,
     context_settings={"help_option_names": ["-h", "--help"]},
 )
-
-
-class PackageType(str, Enum):
-    """Supported package types for upload."""
-    env = "env"
-    ipynb = "ipynb"
-    conda = "conda"
-    pypi = "pypi"
-    project = "project"
-    sdist = "sdist"
 
 
 @app.callback(invoke_without_command=True)
@@ -368,41 +357,6 @@ def modify_command(
         console.print(f"[green]Success![/green] Channel '[cyan]{name}[/cyan]' is now {state_map[indexing_behavior]}.")
 
 
-def _windows_glob(item: str) -> List[str]:
-    """Handle glob expansion on Windows."""
-    if os.name == "nt" and "*" in item:
-        return glob(item)
-    return [item]
-
-
-def _determine_package_type(filename: str, package_type: Optional[PackageType] = None) -> str:
-    """Determine the package type from file or explicit argument."""
-    if package_type:
-        return package_type.value
-
-    console.print(f"Detecting file type for [cyan]{filename}[/cyan]...")
-    detected_type = detect_package_type(filename)
-
-    if detected_type is None:
-        console.print(
-            f"[red]Error:[/red] Could not detect package type for '{filename}'.\n"
-            "Please specify package type with --package-type option."
-        )
-        raise typer.Exit(1)
-
-    console.print(f"Detected type: [green]{detected_type}[/green]")
-    return detected_type
-
-
-def _get_default_channel(api: RepoCoreClient) -> Optional[str]:
-    """Get the user's default channel."""
-    try:
-        account = api.account
-        return account.get("default_channel")
-    except Exception:
-        return None
-
-
 @app.command(name="upload", help="Upload packages to channels")
 def upload_command(
     ctx: typer.Context,
@@ -414,7 +368,13 @@ def upload_command(
         None,
         "--channel",
         "-c",
-        help="Target channel(s). Can be specified multiple times.",
+        help="Target channel(s) in format 'namespace/channel' or 'channel'. Can be specified multiple times.",
+    ),
+    namespace: Optional[str] = typer.Option(
+        None,
+        "--namespace",
+        "-n",
+        help="Namespace for the channel (alternative to namespace/channel format)",
     ),
     package_type: Optional[PackageType] = typer.Option(
         None,
@@ -426,27 +386,33 @@ def upload_command(
     """Upload packages to your Anaconda repository."""
     api = ctx.obj.repo_api
 
+    # Resolve channels with namespaces
     channels = channel or []
     if not channels:
-        default_channel = _get_default_channel(api)
-        if not default_channel:
-            console.print(
-                "[red]Error:[/red] No channel specified and user has no default channel.\n"
-                "Please set a default channel in your account or use --channel option."
-            )
-            raise typer.Exit(1)
-        channels = [default_channel]
-        console.print(f"Using default channel: [cyan]{default_channel}[/cyan]")
+        console.print("[red]Error:[/red] No channel specified. Use --channel option to specify target channel(s).")
+        raise typer.Exit(1)
 
+    # Resolve namespace for each channel
+    resolved_channels = []
+    for ch in channels:
+        ns, channel_name = _resolve_namespace_and_channel(api, ch, namespace, require_namespace=False)
+        if ns:
+            full_channel = f"{ns}/{channel_name}"
+        else:
+            full_channel = channel_name
+        resolved_channels.append(full_channel)
+        console.print(f"Resolved channel: [cyan]{full_channel}[/cyan]")
+
+    # Upload files
     for file_pattern in files:
-        for filepath in _windows_glob(file_pattern):
+        for filepath in windows_glob(file_pattern):
             if not os.path.exists(filepath):
                 console.print(f"[yellow]Warning:[/yellow] File not found: {filepath}")
                 continue
 
-            pkg_type = _determine_package_type(filepath, package_type)
+            pkg_type = determine_package_type(filepath, package_type)
 
-            for ch in channels:
+            for ch in resolved_channels:
                 console.print(f"Uploading [cyan]{filepath}[/cyan] to channel [cyan]{ch}[/cyan]...")
 
                 try:
