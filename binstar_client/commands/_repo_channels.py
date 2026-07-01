@@ -13,7 +13,7 @@ from rich.panel import Panel
 
 from anaconda_cli_base.console import Table, console, select_from_list
 from binstar_client import __version__
-from binstar_client.repocore import RepoCoreClient
+from binstar_client.repocore import RepoCoreClient, ResolvedChannel
 
 _PAGE_SIZE = 100
 
@@ -90,7 +90,7 @@ def _callback(
         raise typer.Exit(1)
 
 
-def _resolve_no_namespace(api, name: str) -> tuple[Optional[str], str]:
+def _resolve_no_namespace(api, name: str) -> ResolvedChannel:
     """Resolve no namespaces case
 
     Returns (namespace, channel_name).
@@ -117,7 +117,7 @@ def _resolve_no_namespace(api, name: str) -> tuple[Optional[str], str]:
 
 def _resolve_namespace_and_channel(
     api, name: str, namespace: Optional[str] = None, require_namespace: bool = True
-) -> tuple[Optional[str], str]:
+) -> ResolvedChannel:
     """Resolve namespace and channel name from the given inputs.
 
     Returns (namespace, channel_name). namespace may be None if require_namespace=False
