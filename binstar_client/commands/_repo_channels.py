@@ -13,6 +13,7 @@ from rich.panel import Panel
 
 from anaconda_cli_base.console import Table, console
 from binstar_client import __version__
+from binstar_client.commands import _channel_notices as channel_notices
 from binstar_client.repocore import RepoCoreClient
 
 _PAGE_SIZE = 100
@@ -340,7 +341,5 @@ def modify_command(
         state_map = {"frozen": "frozen", "default": "unfrozen"}
         console.print(f"[green]Success![/green] Channel '[cyan]{name}[/cyan]' is now {state_map[indexing_behavior]}.")
 
-
-from binstar_client.commands import _channel_notices as channel_notices
 
 channel_notices.mount_notice_subcommand(app)
