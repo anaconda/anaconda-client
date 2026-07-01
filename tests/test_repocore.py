@@ -275,19 +275,19 @@ class TestResolveNamespaceAndChannel:
         assert ch == "dev"
 
     def test_no_namespaces_with_username_confirmed(self):
-        from binstar_client.commands._repo_channels import _resolve_no_namespaces
+        from binstar_client.commands._repo_channels import _resolve_no_namespace
 
         mock_api = MagicMock()
         mock_api.account.get.return_value = {"username": "testuser"}
 
         with patch("binstar_client.commands._repo_channels.typer.confirm", return_value=True):
-            ns, ch = _resolve_no_namespaces(mock_api, "dev")
+            ns, ch = _resolve_no_namespace(mock_api, "dev")
 
         assert ns == "testuser"
         assert ch == "dev"
 
     def test_no_namespaces_with_username_declined(self):
-        from binstar_client.commands._repo_channels import _resolve_no_namespaces
+        from binstar_client.commands._repo_channels import _resolve_no_namespace
         from click.exceptions import Exit
 
         mock_api = MagicMock()
@@ -295,37 +295,37 @@ class TestResolveNamespaceAndChannel:
 
         with patch("binstar_client.commands._repo_channels.typer.confirm", return_value=False):
             with pytest.raises(Exit):
-                _resolve_no_namespaces(mock_api, "dev")
+                _resolve_no_namespace(mock_api, "dev")
 
     def test_no_namespaces_no_username(self):
-        from binstar_client.commands._repo_channels import _resolve_no_namespaces
+        from binstar_client.commands._repo_channels import _resolve_no_namespace
 
         mock_api = MagicMock()
         mock_api.account.get.return_value = {}
 
-        ns, ch = _resolve_no_namespaces(mock_api, "dev")
+        ns, ch = _resolve_no_namespace(mock_api, "dev")
 
         assert ns is None
         assert ch == "dev"
 
     def test_no_namespaces_empty_username(self):
-        from binstar_client.commands._repo_channels import _resolve_no_namespaces
+        from binstar_client.commands._repo_channels import _resolve_no_namespace
 
         mock_api = MagicMock()
         mock_api.account.get.return_value = {"username": ""}
 
-        ns, ch = _resolve_no_namespaces(mock_api, "dev")
+        ns, ch = _resolve_no_namespace(mock_api, "dev")
 
         assert ns is None
         assert ch == "dev"
 
     def test_no_namespaces_api_exception(self):
-        from binstar_client.commands._repo_channels import _resolve_no_namespaces
+        from binstar_client.commands._repo_channels import _resolve_no_namespace
 
         mock_api = MagicMock()
         mock_api.account.get.side_effect = Exception("API Error")
 
-        ns, ch = _resolve_no_namespaces(mock_api, "dev")
+        ns, ch = _resolve_no_namespace(mock_api, "dev")
 
         assert ns is None
         assert ch == "dev"
@@ -663,7 +663,7 @@ class TestRepoCoreChannelsCLI:
         with (
             _patch_repo_api(mock_api),
             patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
-            patch("binstar_client.repocore.package_utils.detect_package_type", return_value="conda"),
+            patch("binstar_client.repocore.package_utils._detect_package_type", return_value="conda"),
         ):
             result = runner.invoke(app, ["upload", "--channel", "dev", "test-1.0-py39_0.conda"])
 
@@ -682,7 +682,7 @@ class TestRepoCoreChannelsCLI:
         with (
             _patch_repo_api(mock_api),
             patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
-            patch("binstar_client.repocore.package_utils.detect_package_type", return_value="conda"),
+            patch("binstar_client.repocore.package_utils._detect_package_type", return_value="conda"),
         ):
             result = runner.invoke(app, ["upload", "test-1.0-py39_0.conda"])
 
@@ -717,7 +717,7 @@ class TestRepoCoreChannelsCLI:
         with (
             _patch_repo_api(mock_api),
             patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
-            patch("binstar_client.repocore.package_utils.detect_package_type", return_value="conda"),
+            patch("binstar_client.repocore.package_utils._detect_package_type", return_value="conda"),
         ):
             result = runner.invoke(app, ["upload", "--channel", "dev", "--channel", "staging", "test-1.0-py39_0.conda"])
 
@@ -771,7 +771,7 @@ class TestRepoCoreChannelsCLI:
         with (
             _patch_repo_api(mock_api),
             patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
-            patch("binstar_client.repocore.package_utils.detect_package_type", return_value=None),
+            patch("binstar_client.repocore.package_utils._detect_package_type", return_value=None),
         ):
             result = runner.invoke(app, ["upload", "unknown.file", "--channel", "dev"])
 
@@ -788,7 +788,7 @@ class TestRepoCoreChannelsCLI:
         with (
             _patch_repo_api(mock_api),
             patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
-            patch("binstar_client.repocore.package_utils.detect_package_type", return_value="conda"),
+            patch("binstar_client.repocore.package_utils._detect_package_type", return_value="conda"),
         ):
             result = runner.invoke(app, ["upload", "test-1.0-py39_0.conda", "--channel", "dev"])
 
@@ -805,7 +805,7 @@ class TestRepoCoreChannelsCLI:
         with (
             _patch_repo_api(mock_api),
             patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
-            patch("binstar_client.repocore.package_utils.detect_package_type", return_value="conda"),
+            patch("binstar_client.repocore.package_utils._detect_package_type", return_value="conda"),
         ):
             result = runner.invoke(app, ["upload", "test-1.0-py39_0.conda", "--channel", "dev"])
 
@@ -823,7 +823,7 @@ class TestRepoCoreChannelsCLI:
         with (
             _patch_repo_api(mock_api),
             patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
-            patch("binstar_client.repocore.package_utils.detect_package_type", return_value="conda"),
+            patch("binstar_client.repocore.package_utils._detect_package_type", return_value="conda"),
         ):
             result = runner.invoke(app, ["upload", "test-1.0-py39_0.conda", "--channel", "dev"])
 
@@ -842,7 +842,7 @@ class TestRepoCoreChannelsCLI:
         with (
             _patch_repo_api(mock_api),
             patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
-            patch("binstar_client.repocore.package_utils.detect_package_type", return_value="conda"),
+            patch("binstar_client.repocore.package_utils._detect_package_type", return_value="conda"),
         ):
             result = runner.invoke(app, ["upload", "test-1.0-py39_0.conda", "--channel", "dev"])
 
@@ -877,7 +877,7 @@ class TestRepoCoreChannelsCLI:
         with (
             patch("binstar_client.commands._repo_channels.RepoCoreClient", return_value=mock_api),
             patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
-            patch("binstar_client.repocore.package_utils.detect_package_type", return_value="conda"),
+            patch("binstar_client.repocore.package_utils._detect_package_type", return_value="conda"),
             patch("binstar_client.commands._repo_channels.console", test_console),
             pytest.raises(Exit),
         ):
@@ -905,7 +905,7 @@ class TestRepoCoreChannelsCLI:
         with (
             _patch_repo_api(mock_api),
             patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
-            patch("binstar_client.repocore.package_utils.detect_package_type", return_value="conda"),
+            patch("binstar_client.repocore.package_utils._detect_package_type", return_value="conda"),
         ):
             result = runner.invoke(app, ["upload", "--channel", "myorg/dev", "test-1.0-py39_0.conda"])
 
@@ -942,12 +942,12 @@ class TestPackageUtils:
     def test_determine_package_type_auto_detect(self):
         from binstar_client.repocore.package_utils import determine_package_type
 
-        with patch("binstar_client.repocore.package_utils.detect_package_type", return_value="pypi"):
+        with patch("binstar_client.repocore.package_utils._detect_package_type", return_value="pypi"):
             result = determine_package_type("test.whl")
             assert result == "pypi"
 
     def test_detect_package_type_conda(self):
-        from binstar_client.repocore.package_utils import detect_package_type
+        from binstar_client.repocore.package_utils import _detect_package_type
         import tempfile
         import tarfile
         import json
@@ -959,34 +959,34 @@ class TestPackageUtils:
                 info.size = len(info_data)
                 tar.addfile(info, __import__('io').BytesIO(info_data.encode()))
 
-            result = detect_package_type(tmp.name)
+            result = _detect_package_type(tmp.name)
             assert result == "conda"
             __import__('os').unlink(tmp.name)
 
     def test_detect_package_type_pypi_wheel(self):
-        from binstar_client.repocore.package_utils import detect_package_type
+        from binstar_client.repocore.package_utils import _detect_package_type
 
-        result = detect_package_type("test-1.0-py3-none-any.whl")
+        result = _detect_package_type("test-1.0-py3-none-any.whl")
         assert result == "pypi"
 
     def test_detect_package_type_ipynb(self):
-        from binstar_client.repocore.package_utils import detect_package_type
+        from binstar_client.repocore.package_utils import _detect_package_type
 
-        result = detect_package_type("notebook.ipynb")
+        result = _detect_package_type("notebook.ipynb")
         assert result == "ipynb"
 
     def test_detect_package_type_environment(self):
-        from binstar_client.repocore.package_utils import detect_package_type
+        from binstar_client.repocore.package_utils import _detect_package_type
 
-        result = detect_package_type("environment.yml")
+        result = _detect_package_type("environment.yml")
         assert result == "env"
-        result = detect_package_type("environment.yaml")
+        result = _detect_package_type("environment.yaml")
         assert result == "env"
 
     def test_detect_package_type_unknown(self):
-        from binstar_client.repocore.package_utils import detect_package_type
+        from binstar_client.repocore.package_utils import _detect_package_type
 
-        result = detect_package_type("unknown.xyz")
+        result = _detect_package_type("unknown.xyz")
         assert result is None
 
     def test_package_type_enum(self):

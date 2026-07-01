@@ -191,7 +191,7 @@ def _is_sbom(filename: str) -> bool:
         return False
 
 
-def detect_package_type(filename: str) -> Optional[str]:
+def _detect_package_type(filename: str) -> Optional[str]:
     """
     Detect package type from filename.
 
@@ -257,7 +257,7 @@ def determine_package_type(filename: str, package_type: Optional[PackageType] = 
         return package_type.value
 
     console.print(f"Detecting file type for [cyan]{filename}[/cyan]...")
-    detected_type = detect_package_type(filename)
+    detected_type = _detect_package_type(filename)
 
     if detected_type is None:
         console.print(
