@@ -61,7 +61,7 @@ def main(arguments: argparse.Namespace) -> None:
 
         files = [f for sublist in arguments.files for f in sublist]
         upload_command(
-            ctx=None,
+            ctx=None,  # type: ignore[arg-type]
             files=files,
             channel=arguments.channels,
             namespace=arguments.user,

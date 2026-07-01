@@ -70,7 +70,7 @@ def _is_project(filename: str) -> bool:
 
     if filename.endswith(".tar.gz") or filename.endswith(".tar.bz2"):
         compression = filename.rsplit(".", maxsplit=1)[1]
-        with tarfile.open(filename, mode="r|%s" % compression) as tf:
+        with tarfile.open(filename, mode=f"r|{compression}") as tf:  # type: ignore[call-overload]
             for name in tf.getnames():
                 if _is_anaconda_project_yaml(name):
                     return True
