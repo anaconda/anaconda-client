@@ -343,10 +343,10 @@ class TestResolveNamespaceAndChannel:
         mock_api.account.get.return_value = {"username": "testuser"}
 
         with patch("binstar_client.commands._repo_channels.typer.confirm", return_value=True):
-            ns, ch = _resolve_no_namespace(mock_api, "dev")
+            resolved = _resolve_no_namespace(mock_api, "dev")
 
-        assert ns == "testuser"
-        assert ch == "dev"
+        assert resolved.namespace == "testuser"
+        assert resolved.channel_name == "dev"
 
     def test_no_namespaces_with_username_declined(self):
         from binstar_client.commands._repo_channels import _resolve_no_namespace
@@ -365,10 +365,10 @@ class TestResolveNamespaceAndChannel:
         mock_api = MagicMock()
         mock_api.account.get.return_value = {}
 
-        ns, ch = _resolve_no_namespace(mock_api, "dev")
+        resolved = _resolve_no_namespace(mock_api, "dev")
 
-        assert ns is None
-        assert ch == "dev"
+        assert resolved.namespace is None
+        assert resolved.channel_name == "dev"
 
     def test_no_namespaces_empty_username(self):
         from binstar_client.commands._repo_channels import _resolve_no_namespace
@@ -376,10 +376,10 @@ class TestResolveNamespaceAndChannel:
         mock_api = MagicMock()
         mock_api.account.get.return_value = {"username": ""}
 
-        ns, ch = _resolve_no_namespace(mock_api, "dev")
+        resolved = _resolve_no_namespace(mock_api, "dev")
 
-        assert ns is None
-        assert ch == "dev"
+        assert resolved.namespace is None
+        assert resolved.channel_name == "dev"
 
     def test_no_namespaces_api_exception(self):
         from binstar_client.commands._repo_channels import _resolve_no_namespace
@@ -387,10 +387,10 @@ class TestResolveNamespaceAndChannel:
         mock_api = MagicMock()
         mock_api.account.get.side_effect = Exception("API Error")
 
-        ns, ch = _resolve_no_namespace(mock_api, "dev")
+        resolved = _resolve_no_namespace(mock_api, "dev")
 
-        assert ns is None
-        assert ch == "dev"
+        assert resolved.namespace is None
+        assert resolved.channel_name == "dev"
 
     def test_no_namespaces_require_false(self):
         from binstar_client.commands._repo_channels import _resolve_namespace_and_channel
@@ -399,10 +399,10 @@ class TestResolveNamespaceAndChannel:
         mock_api.list_user_organizations.return_value = []
         mock_api.account.get.return_value = {}
 
-        ns, ch = _resolve_namespace_and_channel(mock_api, "dev", require_namespace=False)
+        resolved = _resolve_namespace_and_channel(mock_api, "dev", require_namespace=False)
 
-        assert ns is None
-        assert ch == "dev"
+        assert resolved.namespace is None
+        assert resolved.channel_name == "dev"
 
 
 class TestRepoCoreChannelsCLI:
@@ -811,7 +811,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = [MagicMock(name="testorg")]
+        mock_api.list_user_organizations.return_value = [Namespace(name="testorg")]
 
         with (
             _patch_repo_api(mock_api),
@@ -828,7 +828,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = [MagicMock(name="testorg")]
+        mock_api.list_user_organizations.return_value = [Namespace(name="testorg")]
 
         with (
             _patch_repo_api(mock_api),
@@ -844,7 +844,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = [MagicMock(name="testorg")]
+        mock_api.list_user_organizations.return_value = [Namespace(name="testorg")]
         mock_api.upload_file.side_effect = Unauthorized()
 
         with (
@@ -861,7 +861,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = [MagicMock(name="testorg")]
+        mock_api.list_user_organizations.return_value = [Namespace(name="testorg")]
         mock_api.upload_file.side_effect = RepoCoreError("Upload failed")
 
         with (
@@ -878,7 +878,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = [MagicMock(name="testorg")]
+        mock_api.list_user_organizations.return_value = [Namespace(name="testorg")]
         mock_response = _mock_response(401, None)
         mock_api.upload_file.return_value = mock_response
 
@@ -896,7 +896,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = [MagicMock(name="testorg")]
+        mock_api.list_user_organizations.return_value = [Namespace(name="testorg")]
         mock_response = _mock_response(500, None)
         mock_response.content = b"Internal server error"
         mock_api.upload_file.return_value = mock_response

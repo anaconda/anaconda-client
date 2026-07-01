@@ -70,22 +70,16 @@ def _is_project(filename: str) -> bool:
 
     if filename.endswith(".tar.gz") or filename.endswith(".tar.bz2"):
         compression = filename.rsplit(".", maxsplit=1)[1]
-        try:
-            with tarfile.open(filename, mode=f"r|{compression}") as tf:
-                for name in tf.getnames():
-                    if _is_anaconda_project_yaml(name):
-                        return True
-        except Exception:
-            pass
+        with tarfile.open(filename, mode="r|%s" % compression) as tf:
+            for name in tf.getnames():
+                if _is_anaconda_project_yaml(name):
+                    return True
 
     if filename.endswith(".zip"):
-        try:
-            with zipfile.ZipFile(filename) as zf:
-                for name in zf.namelist():
-                    if _is_anaconda_project_yaml(name):
-                        return True
-        except Exception:
-            pass
+        with zipfile.ZipFile(filename) as zf:
+            for name in zf.namelist():
+                if _is_anaconda_project_yaml(name):
+                    return True
 
     logger.debug("Not a project")
     return False

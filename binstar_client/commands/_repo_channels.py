@@ -119,6 +119,77 @@ def _resolve_no_namespace(api, name: str) -> ResolvedChannel:
     return ResolvedChannel(namespace=None, channel_name=name)
 
 
+def _resolve_channels_with_namespaces(
+    api, channels: List[str], namespace: Optional[str], from_deprecated_channel_flag: bool
+) -> List[str]:
+    """Resolve channel names to fully qualified namespace/channel format.
+
+    Returns list of resolved channel paths like 'namespace/channel' or 'channel'.
+    """
+    resolved_channels = []
+    for ch in channels:
+        try:
+            resolved = _resolve_namespace_and_channel(api, ch, namespace, require_namespace=False)
+        except (typer.Exit, SystemExit):
+            if from_deprecated_channel_flag:
+                console.print("-c/--channel no longer equals labels, did you mean --label?")
+            raise
+        if resolved.namespace:
+            full_channel = f"{resolved.namespace}/{resolved.channel_name}"
+        else:
+            full_channel = resolved.channel_name
+        resolved_channels.append(full_channel)
+        console.print(f"Resolved channel: [cyan]{full_channel}[/cyan]")
+    return resolved_channels
+
+
+def _upload_file_to_channel(api, filepath: str, channel: str, pkg_type: str, from_deprecated_channel_flag: bool) -> None:
+    """Upload a single file to a single channel."""
+    console.print(f"Uploading [cyan]{filepath}[/cyan] to channel [cyan]{channel}[/cyan]...")
+
+    try:
+        response = api.upload_file(filepath, channel, pkg_type)
+
+        if response.status_code in [200, 201]:
+            console.print(f"[green]Success![/green] Uploaded {filepath} to {channel}")
+        elif response.status_code == 401:
+            raise Unauthorized()
+        elif response.status_code == 404:
+            msg = f"[red]Error:[/red] Channel '{channel}' not found (404)."
+            if from_deprecated_channel_flag:
+                msg += "\n-c/--channel no longer equals labels, did you mean --label?"
+            console.print(msg)
+            raise typer.Exit(1)
+        else:
+            console.print(
+                f"[red]Error:[/red] Failed to upload {filepath}\n"
+                f"Status: {response.status_code}\n"
+                f"Details: {response.content.decode()}"
+            )
+    except Unauthorized:
+        console.print("[red]Error:[/red] Authentication failed. Please run 'anaconda login'.")
+        raise typer.Exit(1)
+    except RepoCoreError as e:
+        console.print(f"[red]Error:[/red] {e}")
+        raise typer.Exit(1)
+
+
+def _process_and_upload_files(
+    api, file_patterns: List[str], resolved_channels: List[str], package_type: Optional[PackageType], from_deprecated_channel_flag: bool
+) -> None:
+    """Process file patterns and upload each file to all resolved channels."""
+    for file_pattern in file_patterns:
+        for filepath in windows_glob(file_pattern):
+            if not os.path.exists(filepath):
+                console.print(f"[yellow]Warning:[/yellow] File not found: {filepath}")
+                continue
+
+            pkg_type = determine_package_type(filepath, package_type)
+
+            for ch in resolved_channels:
+                _upload_file_to_channel(api, filepath, ch, pkg_type, from_deprecated_channel_flag)
+
+
 def _resolve_namespace_and_channel(
     api, name: str, namespace: Optional[str] = None, require_namespace: bool = True
 ) -> ResolvedChannel:
@@ -397,62 +468,10 @@ def upload_command(
 
     api = ctx.obj.repo_api
 
-    # Resolve channels with namespaces
     channels = channel or []
     if not channels:
         console.print("[red]Error:[/red] No channel specified. Use --channel option to specify target channel(s).")
         raise typer.Exit(1)
 
-    # Resolve namespace for each channel
-    resolved_channels = []
-    for ch in channels:
-        try:
-            ns, channel_name = _resolve_namespace_and_channel(api, ch, namespace, require_namespace=False)
-        except (typer.Exit, SystemExit):
-            if from_deprecated_channel_flag:
-                console.print("-c/--channel no longer equals labels, did you mean --label?")
-            raise
-        if ns:
-            full_channel = f"{ns}/{channel_name}"
-        else:
-            full_channel = channel_name
-        resolved_channels.append(full_channel)
-        console.print(f"Resolved channel: [cyan]{full_channel}[/cyan]")
-
-    # Upload files
-    for file_pattern in files:
-        for filepath in windows_glob(file_pattern):
-            if not os.path.exists(filepath):
-                console.print(f"[yellow]Warning:[/yellow] File not found: {filepath}")
-                continue
-
-            pkg_type = determine_package_type(filepath, package_type)
-
-            for ch in resolved_channels:
-                console.print(f"Uploading [cyan]{filepath}[/cyan] to channel [cyan]{ch}[/cyan]...")
-
-                try:
-                    response = api.upload_file(filepath, ch, pkg_type)
-
-                    if response.status_code in [200, 201]:
-                        console.print(f"[green]Success![/green] Uploaded {filepath} to {ch}")
-                    elif response.status_code == 401:
-                        raise Unauthorized()
-                    elif response.status_code == 404:
-                        msg = f"[red]Error:[/red] Channel '{ch}' not found (404)."
-                        if from_deprecated_channel_flag:
-                            msg += "\n-c/--channel no longer equals labels, did you mean --label?"
-                        console.print(msg)
-                        raise typer.Exit(1)
-                    else:
-                        console.print(
-                            f"[red]Error:[/red] Failed to upload {filepath}\n"
-                            f"Status: {response.status_code}\n"
-                            f"Details: {response.content.decode()}"
-                        )
-                except Unauthorized:
-                    console.print("[red]Error:[/red] Authentication failed. Please run 'anaconda login'.")
-                    raise typer.Exit(1)
-                except RepoCoreError as e:
-                    console.print(f"[red]Error:[/red] {e}")
-                    raise typer.Exit(1)
+    resolved_channels = _resolve_channels_with_namespaces(api, channels, namespace, from_deprecated_channel_flag)
+    _process_and_upload_files(api, files, resolved_channels, package_type, from_deprecated_channel_flag)
