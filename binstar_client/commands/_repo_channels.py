@@ -234,7 +234,9 @@ def create_command(
     else:
         console.print()
         privacy = select_from_list("Channel privacy:", ["private", "public"])
-    response = api.create_namespace_channel(channel_name=resolved.channel_name, namespace=resolved.namespace, privacy=privacy)
+    response = api.create_namespace_channel(
+        channel_name=resolved.channel_name, namespace=resolved.namespace, privacy=privacy
+    )
     console.print(f"[green]Success![/green] Channel '[cyan]{response['channel_path']}[/cyan]' created ({privacy}).")
 
 
