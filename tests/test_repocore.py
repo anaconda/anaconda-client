@@ -388,7 +388,9 @@ class TestRepoCoreChannelsCLI:
 
         assert result.exit_code == 0
         assert "Success" in result.output
-        mock_api.create_namespace_channel.assert_called_once_with(channel_name="dev", namespace="myns", private="public")
+        mock_api.create_namespace_channel.assert_called_once_with(
+            channel_name="dev", namespace="myns", private="public"
+        )
 
     def test_channels_create_with_namespace_flag(self):
         runner = CliRunner()
@@ -400,7 +402,9 @@ class TestRepoCoreChannelsCLI:
             result = runner.invoke(app, ["create", "dev", "--namespace", "myns", "--public"])
 
         assert result.exit_code == 0
-        mock_api.create_namespace_channel.assert_called_once_with(channel_name="dev", namespace="myns", private="public")
+        mock_api.create_namespace_channel.assert_called_once_with(
+            channel_name="dev", namespace="myns", private="public"
+        )
 
     def test_channels_create_bare_name_no_namespace_uses_username(self):
         runner = CliRunner()
@@ -429,7 +433,9 @@ class TestRepoCoreChannelsCLI:
             result = runner.invoke(app, ["create", "dev", "--public"])
 
         assert result.exit_code == 0
-        mock_api.create_namespace_channel.assert_called_once_with(channel_name="dev", namespace="myorg", private="public")
+        mock_api.create_namespace_channel.assert_called_once_with(
+            channel_name="dev", namespace="myorg", private="public"
+        )
 
     def test_channels_create_prompts_for_privacy(self):
         runner = CliRunner()
@@ -444,7 +450,9 @@ class TestRepoCoreChannelsCLI:
             result = runner.invoke(app, ["create", "myns/dev"])
 
         assert result.exit_code == 0
-        mock_api.create_namespace_channel.assert_called_once_with(channel_name="dev", namespace="myns", private="public")
+        mock_api.create_namespace_channel.assert_called_once_with(
+            channel_name="dev", namespace="myns", private="public"
+        )
 
     def test_channels_create_privacy_prompt_defaults_to_private(self):
         runner = CliRunner()
@@ -459,7 +467,9 @@ class TestRepoCoreChannelsCLI:
             result = runner.invoke(app, ["create", "myns/dev"])
 
         assert result.exit_code == 0
-        mock_api.create_namespace_channel.assert_called_once_with(channel_name="dev", namespace="myns", private="private")
+        mock_api.create_namespace_channel.assert_called_once_with(
+            channel_name="dev", namespace="myns", private="private"
+        )
 
     def test_channels_create_no_namespaces_no_username(self):
         runner = CliRunner()
