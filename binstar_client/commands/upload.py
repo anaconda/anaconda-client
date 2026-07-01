@@ -57,8 +57,6 @@ def main(arguments: argparse.Namespace) -> None:
 
         from binstar_client.commands._repo_channels import upload_command
 
-        logger.info('Detected deprecated -c flag, delegating to "anaconda channel upload"')
-
         files = [f for sublist in arguments.files for f in sublist]
         upload_command(
             ctx=None,  # type: ignore[arg-type]
