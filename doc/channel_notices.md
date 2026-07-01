@@ -48,7 +48,7 @@ Typical workflow:
 
 1. **Create** a draft notice (note the printed UUID).
 2. **Publish** it (or confirm when prompted interactively).
-3. **Verify** with `notice published` (what conda clients fetch from `notices.json`).
+3. **Verify** with `notice list <channel> --status published`.
 4. **Archive** or **delete** when no longer needed.
 
 Publish and archive are idempotent (re-running returns success, not conflict).
@@ -61,6 +61,7 @@ Publish and archive are idempotent (re-running returns success, not conflict).
 anaconda channel notice list user
 anaconda channel notice list myorg
 anaconda channel notice list user --status draft
+anaconda channel notice list user --status published
 anaconda channel notice list user --offset 20 --limit 20
 ```
 
@@ -125,14 +126,6 @@ anaconda channel notice delete user 550e8400-e29b-41d4-a716-446655440000 --force
 
 Prompts for confirmation unless `--force` is passed.
 
-### `published` — conda client view
-
-```bash
-anaconda channel notice published user
-```
-
-Fetches `GET /{channel}/notices.json` (no authentication). On `api.anaconda.org`, this uses `conda.anaconda.org`; on other configured sites it uses the same domain as your API. Returns published notices only; may include expired entries (conda filters client-side). Returns an empty result when the endpoint responds with 404 (no published notices).
-
 ## Interactive create
 
 When run without required flags in a terminal:
@@ -159,8 +152,8 @@ anaconda channel notice create mychannel \
 # Publish (use the UUID printed by create, or list to find it)
 anaconda channel notice publish mychannel 550e8400-e29b-41d4-a716-446655440000
 
-# Confirm what conda clients see
-anaconda channel notice published mychannel
+# List published notices
+anaconda channel notice list mychannel --status published
 
 # List drafts for an organization
 anaconda channel notice list myorg --status draft
@@ -168,4 +161,4 @@ anaconda channel notice list myorg --status draft
 
 ## API
 
-Admin commands use your configured API site (`--site` / login default). The `published` subcommand fetches `/{owner}/notices.json` from `conda.anaconda.org` when the API site is `api.anaconda.org`; otherwise it uses the configured domain (public, no token).
+Admin commands use your configured API site (`--site` / login default) via `GET /{owner}/notices`, `POST /{owner}/notices`, and related endpoints. Authentication uses your normal `anaconda login` token.

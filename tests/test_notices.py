@@ -28,14 +28,6 @@ NOTICE_ITEM = {
     'expires_at': '2026-09-16T12:00:00+00:00',
 }
 
-ACTIVE_NOTICE = {
-    'id': NOTICE_UUID,
-    'message': 'hello from api',
-    'level': 'info',
-    'created_at': '2026-06-01T12:00:00+00:00',
-    'expires_at': '2026-09-16T12:00:00+00:00',
-}
-
 
 @contextmanager
 def _patch_notice_console_print():
@@ -241,7 +233,7 @@ class TestNotices(CLITestCase):
 
         urls.assertAllCalled()
         self.assertIn(f"Notice '{NOTICE_UUID}' published successfully", self.stream.getvalue())
-        self.assertIn('notice published myteam', self.stream.getvalue())
+        self.assertIn('list myteam --status published', self.stream.getvalue())
 
     @urlpatch
     def test_publish_notice_force(self, urls):
@@ -344,57 +336,6 @@ class TestNotices(CLITestCase):
             main(['--show-traceback', 'channel', 'notice', 'archive', 'myteam', NOTICE_UUID])
 
         self.assertIn(f"Not archiving notice '{NOTICE_UUID}'", self.stream.getvalue())
-
-    @urlpatch
-    def test_published_notices(self, urls):
-        published = urls.register(
-            method='GET',
-            url='https://conda.anaconda.org/myteam/notices.json',
-            content={'notices': [ACTIVE_NOTICE]},
-        )
-
-        with _patch_notice_console_print():
-            main(['--show-traceback', 'channel', 'notice', 'published', 'myteam'])
-
-        urls.assertAllCalled()
-        self.assertIn('conda.anaconda.org/myteam/notices.json', published.req.url)
-        self.assertNotIn('Authorization', published.req.headers)
-        self.assertIn('myteam Notices', self.stream.getvalue())
-        self.assertIn(NOTICE_UUID, self.stream.getvalue())
-
-    @urlpatch
-    @unittest.mock.patch(
-        'binstar_client.utils.config.get_config',
-        return_value={'url': 'https://example.com/api'},
-    )
-    def test_published_notices_custom_domain(self, urls, _get_config_mock):
-        published = urls.register(
-            method='GET',
-            url='https://example.com/api/myteam/notices.json',
-            content={'notices': [ACTIVE_NOTICE]},
-        )
-
-        with _patch_notice_console_print():
-            main(['--show-traceback', 'channel', 'notice', 'published', 'myteam'])
-
-        urls.assertAllCalled()
-        self.assertIn('example.com/api/myteam/notices.json', published.req.url)
-        self.assertIn(NOTICE_UUID, self.stream.getvalue())
-
-    @urlpatch
-    def test_published_notices_empty_404(self, urls):
-        urls.register(
-            method='GET',
-            url='https://conda.anaconda.org/myteam/notices.json',
-            status=404,
-            content={'error': 'not found'},
-        )
-
-        with _patch_notice_console_print():
-            main(['--show-traceback', 'channel', 'notice', 'published', 'myteam'])
-
-        urls.assertAllCalled()
-        self.assertIn('No published notices found', self.stream.getvalue())
 
     @urlpatch
     def test_validation_error(self, urls):

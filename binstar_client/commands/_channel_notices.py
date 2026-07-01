@@ -2,8 +2,7 @@
 
 Notices are channel-level messages shown to conda users. New notices start as
 **draft** (admin-only), become visible after **publish**, and can be **archived**
-or deleted. Use ``notice list`` for admin view; ``notice published`` shows what
-conda clients fetch from ``notices.json`` (published only; may include expired).
+or deleted. Use ``notice list`` for the admin view (filter with ``--status``).
 
 ``<channel>`` is the channel login (user or organization account), e.g. ``user`` or
 ``myorg`` — not a repocore namespace path.
@@ -12,7 +11,7 @@ example::
 
     anaconda channel notice create mychannel --message "Maintenance tonight" --expires-after 30
     anaconda channel notice publish mychannel 550e8400-e29b-41d4-a716-446655440000
-    anaconda channel notice published mychannel
+    anaconda channel notice list mychannel --status published
 
 """
 
@@ -80,7 +79,6 @@ class NoticeAction(str, Enum):
     DELETE = 'delete'
     PUBLISH = 'publish'
     ARCHIVE = 'archive'
-    LIST_PUBLISHED = 'published'
 
 
 NOTICE_LEVELS = tuple(level.value for level in NoticeLevel)
@@ -99,7 +97,6 @@ NOTICE_ACTION_HELP: Dict[NoticeAction, str] = {
     NoticeAction.DELETE: 'Delete a notice',
     NoticeAction.PUBLISH: 'Publish a draft notice',
     NoticeAction.ARCHIVE: 'Archive a notice',
-    NoticeAction.LIST_PUBLISHED: 'List published notices from conda notices.json (public)',
 }
 NOTICE_ID_ACTIONS = (
     (NoticeAction.DELETE.value, NOTICE_ACTION_HELP[NoticeAction.DELETE]),
@@ -278,10 +275,6 @@ def format_publish_command(channel: str, notice_id: str) -> str:
     return f'{NOTICE_CLI_PREFIX} {NoticeAction.PUBLISH.value} {channel} {notice_id}'
 
 
-def format_published_command(channel: str) -> str:
-    return f'{NOTICE_CLI_PREFIX} {NoticeAction.LIST_PUBLISHED.value} {channel}'
-
-
 def offer_publish_after_create(api, channel: str, notice_id: str, status: str) -> None:
     if status != NoticeStatus.DRAFT.value:
         return
@@ -323,28 +316,6 @@ def show_admin_notices(items: list, channel: str) -> None:
             str(item.get('level', '')),
             str(item.get('message', '')),
             str(item.get('expires_at', '')),
-        )
-
-    _print_table(table)
-
-
-def show_published_notices(notices: list, channel: str) -> None:
-    if not notices:
-        console.print('[dim]No published notices found.[/dim]')
-        return
-
-    table = Table(title=f'{channel} Notices')
-    table.add_column('ID', style='cyan')
-    table.add_column('Level')
-    table.add_column('Message')
-    table.add_column('Expires')
-
-    for notice in notices:
-        table.add_row(
-            str(notice.get('id', '')),
-            str(notice.get('level', '')),
-            str(notice.get('message', '')),
-            str(notice.get('expires_at', '')),
         )
 
     _print_table(table)
@@ -498,7 +469,7 @@ def do_publish(api, channel: str, notice_id: str, force: bool = False) -> None:
     result = api.publish_notice(channel, notice_id)
     published_id = result.get('notice_id', notice_id)
     console.print(f"Notice '{published_id}' published successfully.")
-    console.print(f'Verify with: {format_published_command(channel)}')
+    console.print(f'Verify with: {format_list_command(channel)} --status published')
 
 
 def do_archive(api, channel: str, notice_id: str, force: bool = False) -> None:
@@ -511,11 +482,6 @@ def do_archive(api, channel: str, notice_id: str, force: bool = False) -> None:
     result = api.archive_notice(channel, notice_id)
     archived_id = result.get('notice_id', notice_id)
     console.print(f"Notice '{archived_id}' archived successfully.")
-
-
-def do_published(api, channel: str) -> None:
-    result = api.fetch_conda_notices(channel)
-    show_published_notices(result.get('notices', []), channel)
 
 
 def _parse_notice_action(action: str) -> NoticeAction:
@@ -570,8 +536,6 @@ def main(args: argparse.Namespace) -> None:
         do_publish(api, channel, args.notice_id, force=getattr(args, 'force', False))
     elif action == NoticeAction.ARCHIVE:
         do_archive(api, channel, args.notice_id, force=getattr(args, 'force', False))
-    elif action == NoticeAction.LIST_PUBLISHED:
-        do_published(api, channel)
     else:
         raise NotImplementedError(action)
 
@@ -681,13 +645,6 @@ def add_notice_argparse(notice_parser: argparse.ArgumentParser) -> None:
                 help='Run without confirmation',
             )
         action_parser.set_defaults(main=main)
-
-    published_parser = notice_subparsers.add_parser(
-        NoticeAction.LIST_PUBLISHED.value,
-        help=NOTICE_ACTION_HELP[NoticeAction.LIST_PUBLISHED],
-    )
-    _add_channel_args(published_parser)
-    published_parser.set_defaults(main=main)
 
 
 def mount_notice_subcommand(parent_app: typer.Typer) -> None:
@@ -860,11 +817,3 @@ def mount_notice_subcommand(parent_app: typer.Typer) -> None:
             organization=organization,
             force=force,
         )
-
-    @notice_app.command(NoticeAction.LIST_PUBLISHED.value, help=NOTICE_ACTION_HELP[NoticeAction.LIST_PUBLISHED])
-    def notice_published(
-        ctx: typer.Context,
-        channel: Optional[str] = typer.Argument(None, help=CHANNEL_HELP),
-        organization: Optional[str] = typer.Option(None, '-o', '--organization', help=ORGANIZATION_HELP),
-    ) -> None:
-        _run_notice_action(ctx, NoticeAction.LIST_PUBLISHED, channel=channel, organization=organization)
