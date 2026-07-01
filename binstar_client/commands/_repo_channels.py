@@ -315,9 +315,9 @@ def modify_command(
     ctx: typer.Context,
     name: str = typer.Argument(..., help="Channel name to modify"),
     namespace: Optional[str] = typer.Option(None, "--namespace", "-n", help="Namespace the channel belongs to"),
-    privacy: Optional[str] = typer.Option(None, "--privacy", help="Set channel privacy: public or private"),
+    privacy: Optional[str] = typer.Option(None, "--privacy", "-p", help="Set channel privacy: public or private"),
     indexing_behavior: Optional[str] = typer.Option(
-        None, "--indexing-behavior", help="Set indexing behavior: default or frozen"
+        None, "--indexing-behavior", "-i", help="Set indexing behavior: default or frozen"
     ),
 ) -> None:
     """Modify channel settings (privacy, indexing behavior)."""
