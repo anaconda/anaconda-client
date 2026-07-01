@@ -15,7 +15,7 @@ from rich.panel import Panel
 
 from anaconda_cli_base.console import Table, console, select_from_list
 from binstar_client import __version__
-from binstar_client.repocore import RepoCoreClient
+from binstar_client.repocore import RepoCoreClient, ResolvedChannel
 from binstar_client.repocore.errors import RepoCoreError, Unauthorized
 from binstar_client.repocore.package_utils import PackageType, determine_package_type, windows_glob
 
@@ -94,10 +94,10 @@ def _callback(
         raise typer.Exit(1)
 
 
-def _resolve_no_namespace(api, name: str) -> tuple[Optional[str], str]:
+def _resolve_no_namespace(api, name: str) -> ResolvedChannel:
     """Resolve no namespaces case
 
-    Returns (namespace, channel_name).
+    Returns ResolvedChannel with namespace and channel_name.
 
     Checks for username:
       1. If None or get user request errors, return empty namespace
@@ -105,7 +105,7 @@ def _resolve_no_namespace(api, name: str) -> tuple[Optional[str], str]:
 
     """
     try:
-        username = api.account.get("user", {}).get("username", "") or ""
+        username = (api.account.get("user") or {}).get("username") or ""
     except Exception:
         username = ""
 
@@ -114,17 +114,17 @@ def _resolve_no_namespace(api, name: str) -> tuple[Optional[str], str]:
             f"No namespaces found. A namespace can be created with your username. Use your username '{username}' as the namespace?"
         )
         if confirm:
-            return (username, name)
+            return ResolvedChannel(namespace=username, channel_name=name)
         raise typer.Exit(0)
-    return (None, name)  # return for errored or empty username
+    return ResolvedChannel(namespace=None, channel_name=name)
 
 
 def _resolve_namespace_and_channel(
     api, name: str, namespace: Optional[str] = None, require_namespace: bool = True
-) -> tuple[Optional[str], str]:
+) -> ResolvedChannel:
     """Resolve namespace and channel name from the given inputs.
 
-    Returns (namespace, channel_name). namespace may be None if require_namespace=False
+    Returns ResolvedChannel with namespace and channel_name. namespace may be None if require_namespace=False
     and no namespaces are available (lets create delegate to the API).
 
     Resolution order:
@@ -140,10 +140,10 @@ def _resolve_namespace_and_channel(
 
     if "/" in name:
         parts = name.split("/", 1)
-        return (parts[0], parts[1])
+        return ResolvedChannel(namespace=parts[0], channel_name=parts[1])
 
     if namespace:
-        return (namespace, name)
+        return ResolvedChannel(namespace=namespace, channel_name=name)
 
     # Resolve from API
     orgs = api.list_user_organizations()
@@ -159,11 +159,11 @@ def _resolve_namespace_and_channel(
         return _resolve_no_namespace(api, name)
 
     if len(namespaces) == 1:
-        return (namespaces[0], name)
+        return ResolvedChannel(namespace=namespaces[0], channel_name=name)
 
     console.print()
     selected_namespace = select_from_list("Select namespace:", namespaces)
-    return (selected_namespace, name)
+    return ResolvedChannel(namespace=selected_namespace, channel_name=name)
 
 
 @app.command(name="list", help="List all channels")
@@ -229,7 +229,7 @@ def create_command(
         raise typer.Exit(1)
 
     api = ctx.obj.repo_api
-    namespace, channel = _resolve_namespace_and_channel(api, name, namespace, require_namespace=False)
+    resolved = _resolve_namespace_and_channel(api, name, namespace, require_namespace=False)
 
     if public:
         privacy = "public"
@@ -238,7 +238,9 @@ def create_command(
     else:
         console.print()
         privacy = select_from_list("Channel privacy:", ["private", "public"])
-    response = api.create_namespace_channel(channel_name=channel, namespace=namespace, private=privacy)
+    response = api.create_namespace_channel(
+        channel_name=resolved.channel_name, namespace=resolved.namespace, privacy=privacy
+    )
     console.print(f"[green]Success![/green] Channel '[cyan]{response['channel_path']}[/cyan]' created ({privacy}).")
 
 
@@ -250,8 +252,8 @@ def remove_command(
 ) -> None:
     """Remove a channel."""
     api = ctx.obj.repo_api
-    ns, channel = _resolve_namespace_and_channel(api, name, namespace)
-    qualified = f"{ns}/{channel}"
+    resolved = _resolve_namespace_and_channel(api, name, namespace)
+    qualified = f"{resolved.namespace}/{resolved.channel_name}"
     api.remove_channel(qualified)
     console.print(f"[green]Success![/green] Channel '[cyan]{qualified}[/cyan]' removed.")
 
@@ -265,8 +267,8 @@ def show_command(
 ) -> None:
     """Show information about a channel."""
     api = ctx.obj.repo_api
-    ns, channel = _resolve_namespace_and_channel(api, name, namespace)
-    name = f"{ns}/{channel}"
+    resolved = _resolve_namespace_and_channel(api, name, namespace)
+    name = f"{resolved.namespace}/{resolved.channel_name}"
     channel_data = api.get_namespace_channel(name)
 
     subchannels_response = None
@@ -339,8 +341,8 @@ def modify_command(
         raise typer.Exit(1)
 
     api = ctx.obj.repo_api
-    ns, channel = _resolve_namespace_and_channel(api, name, namespace)
-    name = f"{ns}/{channel}"
+    resolved = _resolve_namespace_and_channel(api, name, namespace)
+    name = f"{resolved.namespace}/{resolved.channel_name}"
 
     if privacy:
         api.update_channel(name, privacy=privacy)

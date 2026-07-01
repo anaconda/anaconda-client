@@ -50,3 +50,10 @@ class NamespaceChannel(BaseModel):
         if v is None:
             return []
         return [o for o in v if o]
+
+
+class ResolvedChannel(BaseModel):
+    """Resolved namespace and channel name."""
+
+    namespace: Optional[str]
+    channel_name: str
