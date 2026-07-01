@@ -90,7 +90,7 @@ def _callback(
         raise typer.Exit(1)
 
 
-def _resolve_no_namespaces(api, name: str) -> tuple[Optional[str], str]:
+def _resolve_no_namespace(api, name: str) -> tuple[Optional[str], str]:
     """Resolve no namespaces case
 
     Returns (namespace, channel_name).
@@ -128,7 +128,7 @@ def _resolve_namespace_and_channel(
       2. name contains "/" → split into namespace/channel
       3. --namespace provided → use it, name is the channel
       4. Neither → resolve namespace from API via user's top-level channels
-      5. Calls _resolve_no_namespaces if none are present
+      5. Calls _resolve_no_namespace if none are present
     """
     if "/" in name and namespace:
         console.print("[red]Error:[/red] Ambiguous: name contains '/' but --namespace was also provided.")
@@ -152,7 +152,7 @@ def _resolve_namespace_and_channel(
             )
             raise typer.Exit(1)
 
-        return _resolve_no_namespaces(api, name)
+        return _resolve_no_namespace(api, name)
 
     if len(namespaces) == 1:
         return (namespaces[0], name)
@@ -228,17 +228,15 @@ def create_command(
     namespace, channel = _resolve_namespace_and_channel(api, name, namespace, require_namespace=False)
 
     if public:
-        is_private = False
+        privacy = "public"
     elif private:
-        is_private = True
+        privacy = "private"
     else:
         console.print()
-        choice = select_from_list("Channel privacy:", ["private", "public"])
-        is_private = choice == "private"
-    response = api.create_namespace_channel(channel_name=channel, namespace=namespace, private=is_private)
-    privacy_label = "private" if is_private else "public"
+        privacy = select_from_list("Channel privacy:", ["private", "public"])
+    response = api.create_namespace_channel(channel_name=channel, namespace=namespace, private=privacy)
     console.print(
-        f"[green]Success![/green] Channel '[cyan]{response['channel_path']}[/cyan]' created ({privacy_label})."
+        f"[green]Success![/green] Channel '[cyan]{response['channel_path']}[/cyan]' created ({privacy})."
     )
 
 
