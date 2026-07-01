@@ -22,6 +22,7 @@ logger = logging.getLogger("binstar.repocore.package_utils")
 
 class PackageType(str, Enum):
     """Supported package types for upload."""
+
     env = "env"
     ipynb = "ipynb"
     conda = "conda"

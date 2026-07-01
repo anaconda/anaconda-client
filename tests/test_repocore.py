@@ -687,7 +687,10 @@ class TestRepoCoreChannelsCLI:
         mock_api = MagicMock()
         type(mock_api).account = PropertyMock(return_value={})
 
-        with (_patch_repo_api(mock_api), patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True)):
+        with (
+            _patch_repo_api(mock_api),
+            patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
+        ):
             result = runner.invoke(app, ["upload", "test-1.0-py39_0.conda"])
 
         assert result.exit_code == 1
@@ -721,8 +724,13 @@ class TestRepoCoreChannelsCLI:
         mock_response = _mock_response(200, {"status": "uploaded"})
         mock_api.upload_file.return_value = mock_response
 
-        with (_patch_repo_api(mock_api), patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True)):
-            result = runner.invoke(app, ["upload", "--channel", "dev", "--package-type", "pypi", "test-1.0-py3-none-any.whl"])
+        with (
+            _patch_repo_api(mock_api),
+            patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
+        ):
+            result = runner.invoke(
+                app, ["upload", "--channel", "dev", "--package-type", "pypi", "test-1.0-py3-none-any.whl"]
+            )
 
         assert result.exit_code == 0
         mock_api.upload_file.assert_called_once_with("test-1.0-py3-none-any.whl", "dev", "pypi")
@@ -733,7 +741,10 @@ class TestRepoCoreChannelsCLI:
         mock_api = MagicMock()
         mock_api.list_user_organizations.return_value = [MagicMock(name="testorg")]
 
-        with (_patch_repo_api(mock_api), patch("binstar_client.commands._repo_channels.os.path.exists", return_value=False)):
+        with (
+            _patch_repo_api(mock_api),
+            patch("binstar_client.commands._repo_channels.os.path.exists", return_value=False),
+        ):
             result = runner.invoke(app, ["upload", "nonexistent-1.0-py39_0.conda", "--channel", "dev"])
 
         assert result.exit_code == 0
@@ -861,6 +872,7 @@ class TestRepoCoreChannelsCLI:
             pytest.raises(Exit),
         ):
             from binstar_client.commands._repo_channels import upload_command
+
             upload_command(
                 ctx=None,
                 files=["test-1.0-py39_0.conda"],
@@ -897,7 +909,10 @@ class TestPackageUtils:
         from binstar_client.repocore.package_utils import windows_glob
 
         with patch("binstar_client.repocore.package_utils.os.name", "nt"):
-            with patch("binstar_client.repocore.package_utils.glob", return_value=["pkg1-1.0-py39_0.conda", "pkg2-2.0-py39_0.conda"]):
+            with patch(
+                "binstar_client.repocore.package_utils.glob",
+                return_value=["pkg1-1.0-py39_0.conda", "pkg2-2.0-py39_0.conda"],
+            ):
                 result = windows_glob("*.conda")
                 assert result == ["pkg1-1.0-py39_0.conda", "pkg2-2.0-py39_0.conda"]
 

@@ -388,10 +388,13 @@ def upload_command(
     if ctx is None:
         from anaconda_cli_base.cli import ContextExtras
         from binstar_client import __version__
+
         ctx_obj = ContextExtras()
         ctx_obj.repo_api = RepoCoreClient(version=__version__)
+
         class FakeContext:
             obj = ctx_obj
+
         ctx = FakeContext()
 
     api = ctx.obj.repo_api
