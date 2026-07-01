@@ -7,7 +7,7 @@ from argparse import Namespace
 from importlib import reload
 from pathlib import Path
 from socket import gethostname
-from typing import Any, Callable, Dict, Generator, List, Optional
+from typing import Any, Callable, Dict, Generator, List, Optional, Union
 
 import pytest
 from pytest import FixtureRequest
@@ -15,6 +15,7 @@ from pytest import LogCaptureFixture
 from pytest import MonkeyPatch
 from typer import Typer
 from typer import rich_utils
+from typer.models import CommandInfo, TyperInfo
 from typer.testing import CliRunner
 
 import anaconda_cli_base.cli
@@ -32,6 +33,17 @@ from binstar_client.utils.spec import parse_specs, group_spec
 
 BASE_COMMANDS = {"login", "logout", "whoami"}
 HIDDEN_SUBCOMMANDS = ALL_SUBCOMMANDS - BASE_COMMANDS - NON_HIDDEN_SUBCOMMANDS
+
+
+def _find_registered_subcommand(typer_app: Typer, name: str) -> Optional[Union[CommandInfo, TyperInfo]]:
+    # Note: channel may be a Typer group (repo channels app) or a flat legacy command depending on CLI wiring.
+    for subcmd in typer_app.registered_commands:
+        if subcmd.name == name:
+            return subcmd
+    for grp in typer_app.registered_groups:
+        if grp.name == name:
+            return grp
+    return None
 
 
 @pytest.fixture(autouse=True)
@@ -205,7 +217,7 @@ def test_org_subcommands(cmd: str, monkeypatch: MonkeyPatch, assert_binstar_args
     assert org is not None
 
     assert org.typer_instance
-    subcmd = next((subcmd for subcmd in org.typer_instance.registered_commands if subcmd.name == cmd), None)
+    subcmd = _find_registered_subcommand(org.typer_instance, cmd)
     assert subcmd is not None
     assert subcmd.hidden is False
 
@@ -225,7 +237,7 @@ def test_hidden_commands(cmd: str, monkeypatch: MonkeyPatch, assert_binstar_args
     args = [cmd, "-h"]
     monkeypatch.setattr(sys, "argv", ["/path/to/anaconda"] + args)
 
-    subcmd = next((subcmd for subcmd in anaconda_cli_base.cli.app.registered_commands if subcmd.name == cmd), None)
+    subcmd = _find_registered_subcommand(anaconda_cli_base.cli.app, cmd)
     assert subcmd is not None
     assert subcmd.hidden is True
     assert subcmd.help is not None

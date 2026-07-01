@@ -508,3 +508,9 @@ class _patch_repo_api:
 
     def __exit__(self, *args):
         self.patcher.stop()
+
+
+def test_repo_channels_registers_notice_subcommand():
+    channels_app = _get_channels_app()
+    notice_group = next((grp for grp in channels_app.registered_groups if grp.name == 'notice'), None)
+    assert notice_group is not None
