@@ -320,3 +320,20 @@ class Test(CLITestCase):
 
         with self.assertRaises(errors.BinstarError):
             main(['--show-traceback', 'upload', '--private', data_dir('foo-0.1-0.tar.bz2')])
+
+    def test_upload_channel_and_user_flags_errors(self):
+        with self.assertRaises(SystemExit) as ctx:
+            main(['--show-traceback', 'upload', '-c', 'mychannel', '-u', 'myorg', data_dir('foo-0.1-0.tar.bz2')])
+        self.assertEqual(ctx.exception.code, 1)
+
+    @unittest.mock.patch('binstar_client.commands._repo_channels.upload_command')
+    def test_upload_channel_flag_delegates_to_channel_upload(self, mock_upload_command):
+        main(['--show-traceback', 'upload', '-c', 'mychannel', data_dir('foo-0.1-0.tar.bz2')])
+        mock_upload_command.assert_called_once_with(
+            ctx=None,
+            files=[data_dir('foo-0.1-0.tar.bz2')],
+            channel=['mychannel'],
+            namespace=None,
+            package_type=None,
+            from_deprecated_channel_flag=True,
+        )

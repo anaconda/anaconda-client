@@ -382,8 +382,18 @@ def upload_command(
         "-t",
         help="Package type. Defaults to auto-detect.",
     ),
+    from_deprecated_channel_flag: bool = False,
 ) -> None:
     """Upload packages to your Anaconda repository."""
+    if ctx is None:
+        from anaconda_cli_base.cli import ContextExtras
+        from binstar_client import __version__
+        ctx_obj = ContextExtras()
+        ctx_obj.repo_api = RepoCoreClient(version=__version__)
+        class FakeContext:
+            obj = ctx_obj
+        ctx = FakeContext()
+
     api = ctx.obj.repo_api
 
     # Resolve channels with namespaces
@@ -395,7 +405,12 @@ def upload_command(
     # Resolve namespace for each channel
     resolved_channels = []
     for ch in channels:
-        ns, channel_name = _resolve_namespace_and_channel(api, ch, namespace, require_namespace=False)
+        try:
+            ns, channel_name = _resolve_namespace_and_channel(api, ch, namespace, require_namespace=False)
+        except (typer.Exit, SystemExit):
+            if from_deprecated_channel_flag:
+                console.print("-c/--channel no longer equals labels, did you mean --label?")
+            raise
         if ns:
             full_channel = f"{ns}/{channel_name}"
         else:
@@ -422,6 +437,12 @@ def upload_command(
                         console.print(f"[green]Success![/green] Uploaded {filepath} to {ch}")
                     elif response.status_code == 401:
                         raise Unauthorized()
+                    elif response.status_code == 404:
+                        msg = f"[red]Error:[/red] Channel '{ch}' not found (404)."
+                        if from_deprecated_channel_flag:
+                            msg += "\n-c/--channel no longer equals labels, did you mean --label?"
+                        console.print(msg)
+                        raise typer.Exit(1)
                     else:
                         console.print(
                             f"[red]Error:[/red] Failed to upload {filepath}\n"

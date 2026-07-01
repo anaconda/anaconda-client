@@ -354,6 +354,7 @@ class TestRepoCoreChannelsCLI:
         assert "remove" in result.output
         assert "show" in result.output
         assert "modify" in result.output
+        assert "upload" in result.output
 
     def test_channels_list(self):
         runner = CliRunner()
@@ -839,6 +840,56 @@ class TestRepoCoreChannelsCLI:
 
         assert result.exit_code == 1
         assert "No channel specified" in result.output
+
+    def test_upload_404_with_deprecated_flag_shows_label_hint(self):
+        from click.exceptions import Exit
+
+        mock_api = MagicMock()
+        mock_response = _mock_response(404, None)
+        mock_api.upload_file.return_value = mock_response
+
+        from io import StringIO
+        from rich.console import Console
+
+        output = StringIO()
+        test_console = Console(file=output, no_color=True)
+        with (
+            patch("binstar_client.commands._repo_channels.RepoCoreClient", return_value=mock_api),
+            patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
+            patch("binstar_client.repocore.package_utils.detect_package_type", return_value="conda"),
+            patch("binstar_client.commands._repo_channels.console", test_console),
+            pytest.raises(Exit),
+        ):
+            from binstar_client.commands._repo_channels import upload_command
+            upload_command(
+                ctx=None,
+                files=["test-1.0-py39_0.conda"],
+                channel=["myorg/dev"],
+                namespace=None,
+                package_type=None,
+                from_deprecated_channel_flag=True,
+            )
+
+        printed = output.getvalue()
+        assert "did you mean --label" in printed
+
+    def test_upload_404_without_deprecated_flag_no_label_hint(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_response = _mock_response(404, None)
+        mock_api.upload_file.return_value = mock_response
+
+        with (
+            _patch_repo_api(mock_api),
+            patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
+            patch("binstar_client.repocore.package_utils.detect_package_type", return_value="conda"),
+        ):
+            result = runner.invoke(app, ["upload", "--channel", "myorg/dev", "test-1.0-py39_0.conda"])
+
+        assert result.exit_code == 1
+        assert "not found" in result.output
+        assert "did you mean --label" not in result.output
 
 
 class TestPackageUtils:

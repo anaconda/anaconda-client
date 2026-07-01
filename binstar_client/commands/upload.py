@@ -47,6 +47,29 @@ logger = logging.getLogger('binstar.upload')
 
 def main(arguments: argparse.Namespace) -> None:
     """Entrypoint of the :code:`upload` command."""
+    if arguments.channels:
+        if arguments.user:
+            logger.error(
+                '-c/--channel no longer equals labels, did you mean --label? '
+                '-c/--channel cannot be used with -u/--user.'
+            )
+            raise SystemExit(1)
+
+        from binstar_client.commands._repo_channels import upload_command
+
+        logger.info('Detected deprecated -c flag, delegating to "anaconda channel upload"')
+
+        files = [f for sublist in arguments.files for f in sublist]
+        upload_command(
+            ctx=None,
+            files=files,
+            channel=arguments.channels,
+            namespace=arguments.user,
+            package_type=arguments.package_type,
+            from_deprecated_channel_flag=True,
+        )
+        return
+
     uploader: Uploader = Uploader(arguments=arguments)
     uploader.api.check_server()
     _ = uploader.username
@@ -679,7 +702,7 @@ def add_parser(subparsers: typing.Any) -> None:
         '--channel',
         action='append',
         default=[],
-        dest='labels',
+        dest='channels',
         help=label_help.format(deprecation='[DEPRECATED]\n', label='channel'),
         metavar='CHANNELS',
     )
@@ -687,6 +710,7 @@ def add_parser(subparsers: typing.Any) -> None:
         '-l',
         '--label',
         action='append',
+        default=[],
         dest='labels',
         help=label_help.format(deprecation='', label='label'),
     )
@@ -946,8 +970,6 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         ),
     ) -> None:
         """Upload one or more files to anaconda.org."""
-        labels += channels  # Support for deprecated --channels option
-
         # TODO: These should be mutually exclusive
         if interactive:
             mode = 'interactive'
@@ -976,6 +998,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             disable_ssl_warnings=ctx.obj.params.get('disable_ssl_warnings'),
             show_traceback=ctx.obj.params.get('show_traceback'),
             log_level=log_level,
+            channels=channels,
             labels=labels,
             no_progress=not progress,
             user=user,
