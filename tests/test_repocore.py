@@ -1013,17 +1013,21 @@ class TestPackageUtils:
         import tempfile
         import tarfile
         import json
+        import os
 
         with tempfile.NamedTemporaryFile(suffix=".tar.bz2", delete=False) as tmp:
+            tmp_name = tmp.name
             with tarfile.open(tmp.name, "w:bz2") as tar:
                 info_data = json.dumps({"name": "test", "version": "1.0"})
                 info = tarfile.TarInfo(name="info/index.json")
                 info.size = len(info_data)
                 tar.addfile(info, __import__('io').BytesIO(info_data.encode()))
 
-            result = _detect_package_type(tmp.name)
+        try:
+            result = _detect_package_type(tmp_name)
             assert result == "conda"
-            __import__('os').unlink(tmp.name)
+        finally:
+            os.unlink(tmp_name)
 
     def test_detect_package_type_pypi_wheel(self):
         from binstar_client.repocore.package_utils import _detect_package_type
