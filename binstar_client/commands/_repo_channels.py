@@ -101,7 +101,7 @@ def _resolve_no_namespace(api, name: str) -> tuple[Optional[str], str]:
 
     """
     try:
-        username = api.account.get("user", {}).get("username", "") or ""
+        username = (api.account.get("user") or {}).get("username") or ""
     except Exception:
         username = ""
 
@@ -234,7 +234,7 @@ def create_command(
     else:
         console.print()
         privacy = select_from_list("Channel privacy:", ["private", "public"])
-    response = api.create_namespace_channel(channel_name=channel, namespace=namespace, private=privacy)
+    response = api.create_namespace_channel(channel_name=channel, namespace=namespace, privacy=privacy)
     console.print(f"[green]Success![/green] Channel '[cyan]{response['channel_path']}[/cyan]' created ({privacy}).")
 
 
