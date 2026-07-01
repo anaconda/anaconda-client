@@ -57,6 +57,7 @@ class TestNotices(CLITestCase):
     def test_list_notices(self, urls):
         list_req = urls.register(
             method='GET',
+            path='/myteam/notices',
             content={'total_count': 1, 'items': [NOTICE_ITEM]},
         )
 
@@ -64,7 +65,7 @@ class TestNotices(CLITestCase):
             main(['--show-traceback', 'channel', 'notice', 'list', 'myteam'])
 
         urls.assertAllCalled()
-        self.assertIn('owner=myteam', list_req.req.url)
+        self.assertIn('/myteam/notices', list_req.req.url)
         self.assertIn('myteam Notices', self.stream.getvalue())
         self.assertIn(NOTICE_UUID, self.stream.getvalue())
 
@@ -84,6 +85,16 @@ class TestNotices(CLITestCase):
             main(['--show-traceback', 'channel', 'notice', 'get', 'myteam', 'bad-id'])
 
         self.assertIn('notice_id must be a valid UUID', str(ctx.exception))
+
+    @urlpatch
+    def test_delete_missing_notice_id(self, urls):
+        with _patch_notice_console_print():
+            with self.assertRaises(UserError) as ctx:
+                main(['--show-traceback', 'channel', 'notice', 'delete', 'myteam'])
+
+        self.assertIn("Missing argument 'NOTICE_ID'", str(ctx.exception))
+        self.assertIn('anaconda channel notice list myteam', self.stream.getvalue())
+        self.assertIn('Note: Find notice IDs with', self.stream.getvalue())
 
     @urlpatch
     def test_create_notice(self, urls):
@@ -147,7 +158,7 @@ class TestNotices(CLITestCase):
         body = json.loads(create.req.body)
         self.assertNotIn('notice_id', body)
         self.assertEqual(body['level'], 'info')
-        self.assertEqual(body['expires_at'], '2026-07-01T12:00:00Z')
+        self.assertEqual(body['expires_at'], '2026-07-01T12:00:00+00:00')
 
     @urlpatch
     def test_create_notice_expires_options_conflict(self, urls):
@@ -217,11 +228,12 @@ class TestNotices(CLITestCase):
         self.assertIn(f"Notice '{NOTICE_UUID}' created successfully", self.stream.getvalue())
 
     @urlpatch
-    def test_publish_notice(self, urls):
+    @unittest.mock.patch('binstar_client.commands._channel_notices.bool_input', return_value=True)
+    def test_publish_notice(self, urls, _bool_input_mock):
         urls.register(
             method='POST',
             path=f'/myteam/notices/{NOTICE_UUID}/publish',
-            content={'notice_id': NOTICE_UUID, 'status': 'published', 'previous_status': 'draft'},
+            content={'notice_id': NOTICE_UUID, 'status': 'published'},
         )
 
         with _patch_notice_console_print():
@@ -230,6 +242,34 @@ class TestNotices(CLITestCase):
         urls.assertAllCalled()
         self.assertIn(f"Notice '{NOTICE_UUID}' published successfully", self.stream.getvalue())
         self.assertIn('notice published myteam', self.stream.getvalue())
+
+    @urlpatch
+    def test_publish_notice_force(self, urls):
+        urls.register(
+            method='POST',
+            path=f'/myteam/notices/{NOTICE_UUID}/publish',
+            content={'notice_id': NOTICE_UUID, 'status': 'published'},
+        )
+
+        with _patch_notice_console_print():
+            main(['--show-traceback', 'channel', 'notice', 'publish', 'myteam', NOTICE_UUID, '--force'])
+
+        urls.assertAllCalled()
+        self.assertIn(f"Notice '{NOTICE_UUID}' published successfully", self.stream.getvalue())
+
+    @urlpatch
+    @unittest.mock.patch('binstar_client.commands._channel_notices.bool_input', return_value=False)
+    def test_publish_notice_cancelled(self, urls, _bool_input_mock):
+        urls.register(
+            method='POST',
+            path=f'/myteam/notices/{NOTICE_UUID}/publish',
+            content={'notice_id': NOTICE_UUID, 'status': 'published'},
+        )
+
+        with _patch_notice_console_print():
+            main(['--show-traceback', 'channel', 'notice', 'publish', 'myteam', NOTICE_UUID])
+
+        self.assertIn(f"Not publishing notice '{NOTICE_UUID}'", self.stream.getvalue())
 
     @urlpatch
     @unittest.mock.patch('binstar_client.commands._channel_notices.bool_input', return_value=True)
@@ -263,11 +303,12 @@ class TestNotices(CLITestCase):
         self.assertIn(f"Not deleting notice '{NOTICE_UUID}'", self.stream.getvalue())
 
     @urlpatch
-    def test_archive_notice(self, urls):
+    @unittest.mock.patch('binstar_client.commands._channel_notices.bool_input', return_value=True)
+    def test_archive_notice(self, urls, _bool_input_mock):
         urls.register(
             method='POST',
             path=f'/myteam/notices/{NOTICE_UUID}/archive',
-            content={'notice_id': NOTICE_UUID, 'status': 'archived', 'previous_status': 'published'},
+            content={'notice_id': NOTICE_UUID, 'status': 'archived'},
         )
 
         with _patch_notice_console_print():
@@ -277,9 +318,38 @@ class TestNotices(CLITestCase):
         self.assertIn(f"Notice '{NOTICE_UUID}' archived successfully", self.stream.getvalue())
 
     @urlpatch
+    def test_archive_notice_force(self, urls):
+        urls.register(
+            method='POST',
+            path=f'/myteam/notices/{NOTICE_UUID}/archive',
+            content={'notice_id': NOTICE_UUID, 'status': 'archived'},
+        )
+
+        with _patch_notice_console_print():
+            main(['--show-traceback', 'channel', 'notice', 'archive', 'myteam', NOTICE_UUID, '--force'])
+
+        urls.assertAllCalled()
+        self.assertIn(f"Notice '{NOTICE_UUID}' archived successfully", self.stream.getvalue())
+
+    @urlpatch
+    @unittest.mock.patch('binstar_client.commands._channel_notices.bool_input', return_value=False)
+    def test_archive_notice_cancelled(self, urls, _bool_input_mock):
+        urls.register(
+            method='POST',
+            path=f'/myteam/notices/{NOTICE_UUID}/archive',
+            content={'notice_id': NOTICE_UUID, 'status': 'archived'},
+        )
+
+        with _patch_notice_console_print():
+            main(['--show-traceback', 'channel', 'notice', 'archive', 'myteam', NOTICE_UUID])
+
+        self.assertIn(f"Not archiving notice '{NOTICE_UUID}'", self.stream.getvalue())
+
+    @urlpatch
     def test_published_notices(self, urls):
         published = urls.register(
             method='GET',
+            url='https://conda.anaconda.org/myteam/notices.json',
             content={'notices': [ACTIVE_NOTICE]},
         )
 
@@ -287,11 +357,41 @@ class TestNotices(CLITestCase):
             main(['--show-traceback', 'channel', 'notice', 'published', 'myteam'])
 
         urls.assertAllCalled()
-        self.assertIn('/notices/active', published.req.url)
-        self.assertIn('owner=myteam', published.req.url)
+        self.assertIn('conda.anaconda.org/myteam/notices.json', published.req.url)
         self.assertNotIn('Authorization', published.req.headers)
         self.assertIn('myteam Notices', self.stream.getvalue())
         self.assertIn(NOTICE_UUID, self.stream.getvalue())
+
+    @urlpatch
+    def test_published_notices_custom_domain(self, urls):
+        self.get_config.return_value = {'url': 'https://example.com/api'}
+        published = urls.register(
+            method='GET',
+            url='https://example.com/api/myteam/notices.json',
+            content={'notices': [ACTIVE_NOTICE]},
+        )
+
+        with _patch_notice_console_print():
+            main(['--show-traceback', 'channel', 'notice', 'published', 'myteam'])
+
+        urls.assertAllCalled()
+        self.assertIn('example.com/api/myteam/notices.json', published.req.url)
+        self.assertIn(NOTICE_UUID, self.stream.getvalue())
+
+    @urlpatch
+    def test_published_notices_empty_404(self, urls):
+        urls.register(
+            method='GET',
+            url='https://conda.anaconda.org/myteam/notices.json',
+            status=404,
+            content={'error': 'not found'},
+        )
+
+        with _patch_notice_console_print():
+            main(['--show-traceback', 'channel', 'notice', 'published', 'myteam'])
+
+        urls.assertAllCalled()
+        self.assertIn('No published notices found', self.stream.getvalue())
 
     @urlpatch
     def test_validation_error(self, urls):
@@ -330,13 +430,14 @@ class TestNotices(CLITestCase):
     def test_list_with_organization(self, urls):
         list_req = urls.register(
             method='GET',
+            path='/myorg/notices',
             content={'total_count': 0, 'items': []},
         )
 
         main(['--show-traceback', 'channel', 'notice', 'list', '-o', 'myorg'])
 
         urls.assertAllCalled()
-        self.assertIn('owner=myorg', list_req.req.url)
+        self.assertIn('/myorg/notices', list_req.req.url)
 
     @urlpatch
     def test_create_notice_rejects_empty_message(self, urls):
@@ -394,7 +495,7 @@ class TestNotices(CLITestCase):
             main(['--show-traceback', 'channel', 'notice', 'create', 'myteam'])
 
         body = json.loads(create.req.body)
-        self.assertEqual(body['expires_at'], '2026-07-01T12:00:00Z')
+        self.assertEqual(body['expires_at'], '2026-07-01T12:00:00+00:00')
 
     @urlpatch
     @unittest.mock.patch('binstar_client.commands._channel_notices.bool_input', side_effect=[True, False])
@@ -416,7 +517,7 @@ class TestNotices(CLITestCase):
             main(['--show-traceback', 'channel', 'notice', 'create', 'myteam'])
 
         body = json.loads(create.req.body)
-        self.assertEqual(body['expires_at'], '2026-07-01T12:00:00Z')
+        self.assertEqual(body['expires_at'], '2026-07-01T12:00:00+00:00')
 
     @urlpatch
     @unittest.mock.patch('binstar_client.commands._channel_notices.bool_input', side_effect=[False, False])
@@ -438,15 +539,13 @@ class TestNotices(CLITestCase):
             main(['--show-traceback', 'channel', 'notice', 'create', 'myteam'])
 
         body = json.loads(create.req.body)
-        self.assertEqual(body['expires_at'], '2026-06-15T12:00:00Z')
+        self.assertEqual(body['expires_at'], '2026-06-15T12:00:00+00:00')
 
     @urlpatch
     @unittest.mock.patch('binstar_client.commands._channel_notices.bool_input', return_value=True)
     @unittest.mock.patch('binstar_client.commands._channel_notices._is_interactive', return_value=True)
     @unittest.mock.patch('binstar_client.commands._channel_notices.input')
-    def test_create_notice_interactive_publish_yes(
-        self, urls, input_mock, _is_interactive_mock, _bool_mock
-    ):
+    def test_create_notice_interactive_publish_yes(self, urls, input_mock, _is_interactive_mock, _bool_mock):
         input_mock.side_effect = ['hello', 'info', '2026-09-16T12:00:00+00:00']
         urls.register(
             method='POST',
@@ -469,7 +568,7 @@ class TestNotices(CLITestCase):
     @unittest.mock.patch('binstar_client.commands._channel_notices._is_interactive', return_value=True)
     @unittest.mock.patch('binstar_client.commands._channel_notices.input')
     def test_update_interactive_keeps_expiry_when_blank(self, urls, input_mock, _is_interactive_mock):
-        input_mock.side_effect = ['updated message', '', '']
+        input_mock.side_effect = ['updated message', '', '', '']
         update = urls.register(
             method='PATCH',
             path=f'/myteam/notices/{NOTICE_UUID}',
@@ -487,7 +586,7 @@ class TestNotices(CLITestCase):
     @unittest.mock.patch('binstar_client.commands._channel_notices.input')
     @freezegun.freeze_time('2026-06-01T12:00:00Z')
     def test_update_interactive_days(self, urls, input_mock, _is_interactive_mock):
-        input_mock.side_effect = ['', '', '14']
+        input_mock.side_effect = ['', '', '', '14']
         update = urls.register(
             method='PATCH',
             path=f'/myteam/notices/{NOTICE_UUID}',
@@ -497,4 +596,29 @@ class TestNotices(CLITestCase):
         main(['--show-traceback', 'channel', 'notice', 'update', 'myteam', NOTICE_UUID])
 
         body = json.loads(update.req.body)
-        self.assertEqual(body['expires_at'], '2026-06-15T12:00:00Z')
+        self.assertEqual(body['expires_at'], '2026-06-15T12:00:00+00:00')
+
+    @urlpatch
+    def test_update_notice_status(self, urls):
+        update = urls.register(
+            method='PATCH',
+            path=f'/myteam/notices/{NOTICE_UUID}',
+            content={**NOTICE_ITEM, 'status': 'published'},
+        )
+
+        main(
+            [
+                '--show-traceback',
+                'channel',
+                'notice',
+                'update',
+                'myteam',
+                NOTICE_UUID,
+                '--status',
+                'published',
+            ]
+        )
+
+        urls.assertAllCalled()
+        body = json.loads(update.req.body)
+        self.assertEqual(body['status'], 'published')

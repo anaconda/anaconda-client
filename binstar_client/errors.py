@@ -60,7 +60,7 @@ def error_class_for_status_code(status_code: int) -> type:
         return NotFound
     if status_code == 409:
         return Conflict
-    if status_code == 422:
+    if status_code in (400, 422):
         return UserError
     if status_code >= 500:
         return ServerError

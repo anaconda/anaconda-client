@@ -48,8 +48,10 @@ Typical workflow:
 
 1. **Create** a draft notice (note the printed UUID).
 2. **Publish** it (or confirm when prompted interactively).
-3. **Verify** with `notice published` (what end users see).
+3. **Verify** with `notice published` (what conda clients fetch from `notices.json`).
 4. **Archive** or **delete** when no longer needed.
+
+Publish and archive are idempotent (re-running returns success, not conflict).
 
 ## Subcommands
 
@@ -62,7 +64,7 @@ anaconda channel notice list user --status draft
 anaconda channel notice list user --offset 20 --limit 20
 ```
 
-Shows all notices for the channel owner, including drafts. Use `--status` to filter.
+Calls `GET /{channel}/notices`. Shows all notices for the channel owner, including drafts. Use `--status` to filter (`draft`, `published`, or `archived`).
 
 ### `get` — single notice details
 
@@ -84,9 +86,9 @@ anaconda channel notice create mychannel \
 | `--message` | Notice text (required, max 256 characters) |
 | `--level` | `info` (default), `warning`, or `critical` |
 | `--expires-after DAYS` | Expire N days from now |
-| `--expires-at` | Exact expiry (ISO 8601, e.g. `2026-09-16T12:00:00Z`) |
+| `--expires-at` | Exact expiry (ISO 8601, e.g. `2026-09-16T12:00:00+00:00`) |
 
-`--expires-after` and `--expires-at` are mutually exclusive.
+`--expires-after` and `--expires-at` are mutually exclusive. Do not send `notice_id` — the server assigns a UUID.
 
 After create, the CLI prints the server-assigned UUID and a `list` command to find notice IDs. Interactive sessions ask whether to publish immediately. Non-interactive runs also print the exact publish command to run next.
 
@@ -95,15 +97,18 @@ After create, the CLI prints the server-assigned UUID and a `list` command to fi
 ```bash
 anaconda channel notice update user 550e8400-e29b-41d4-a716-446655440000 --message "Updated text"
 anaconda channel notice update user 550e8400-e29b-41d4-a716-446655440000 --expires-after 14
+anaconda channel notice update user 550e8400-e29b-41d4-a716-446655440000 --status published
 ```
 
-At least one of `--message`, `--level`, `--expires-at`, or `--expires-after` is required (non-interactive).
+At least one of `--message`, `--level`, `--expires-at`, `--expires-after`, or `--status` is required (non-interactive). `--status` accepts `draft`, `published`, or `archived`.
 
 ### `publish` — make a draft visible
 
 ```bash
 anaconda channel notice publish user 550e8400-e29b-41d4-a716-446655440000
 ```
+
+Idempotent — publishing an already-published notice succeeds.
 
 ### `archive` — stop showing a published notice
 
@@ -120,13 +125,13 @@ anaconda channel notice delete user 550e8400-e29b-41d4-a716-446655440000 --force
 
 Prompts for confirmation unless `--force` is passed.
 
-### `published` — public view (what conda clients see)
+### `published` — conda client view
 
 ```bash
 anaconda channel notice published user
 ```
 
-No authentication required. Returns published, non-expired notices only.
+Fetches `GET /{channel}/notices.json` (no authentication). On `api.anaconda.org`, this uses `conda.anaconda.org`; on other configured sites it uses the same domain as your API. Returns published notices only; may include expired entries (conda filters client-side). Returns an empty result when the endpoint responds with 404 (no published notices).
 
 ## Interactive create
 
@@ -139,7 +144,7 @@ anaconda channel notice create mychannel
 You are prompted for message, level, and expiry. Expiry accepts:
 
 - Days: `30` or `30d`
-- ISO 8601: `2026-09-16T12:00:00Z`
+- ISO 8601: `2026-09-16T12:00:00+00:00`
 
 After three blank expiry attempts, you are offered a default period of 30 days.
 
@@ -154,7 +159,7 @@ anaconda channel notice create mychannel \
 # Publish (use the UUID printed by create, or list to find it)
 anaconda channel notice publish mychannel 550e8400-e29b-41d4-a716-446655440000
 
-# Confirm what users see
+# Confirm what conda clients see
 anaconda channel notice published mychannel
 
 # List drafts for an organization
@@ -163,4 +168,4 @@ anaconda channel notice list myorg --status draft
 
 ## API
 
-These commands call the dot-org admin REST API (`/notices`, `/{owner}/notices`, etc.). Authentication uses your normal `anaconda login` token. Point at a specific site with `--site` / `-s` when needed.
+Admin commands use your configured API site (`--site` / login default). The `published` subcommand fetches `/{owner}/notices.json` from `conda.anaconda.org` when the API site is `api.anaconda.org`; otherwise it uses the configured domain (public, no token).

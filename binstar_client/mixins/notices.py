@@ -16,6 +16,14 @@ def notice_error_message(data: dict, fallback: str) -> str:
     return data.get('error', fallback)
 
 
+def conda_notices_base_url(api_domain: str) -> str:
+    """Base URL for notices.json — prod maps the API host to the conda CDN."""
+    domain = api_domain.rstrip('/')
+    if 'api.anaconda.org' in domain:
+        return 'https://conda.anaconda.org'
+    return domain
+
+
 class NoticesMixin:
     def _check_notice_response(self, res, allowed=None):
         self._check_response(res, allowed, parse_error=notice_error_message)
@@ -31,24 +39,23 @@ class NoticesMixin:
             url = f'{url}/{action}'
         return url
 
-    def list_active_notices(self, channel=None):
-        """List published, non-expired notices (public endpoint)."""
-        url = f'{self.domain}/notices/active'
-        params = {}
-        if channel:
-            params['owner'] = channel
-
-        request = requests.Request('GET', url, params=params or None, headers=self._anonymous_headers())
+    def fetch_conda_notices(self, channel):
+        """Fetch published notices (replaces GET /notices/active)."""
+        base = conda_notices_base_url(self.domain)
+        url = f'{base}/{channel}/notices.json'
+        request = requests.Request('GET', url, headers=self._anonymous_headers())
         prepared = self.session.prepare_request(request)
         prepared.headers.pop('Authorization', None)
         res = self.session.send(prepared)
+        if res.status_code == 404:
+            return {'notices': []}
         self._check_notice_response(res, [200])
         return res.json()
 
     def list_notices(self, channel, status=None, offset=0, limit=20):
         """List notices for a channel (admin, paginated)."""
-        url = f'{self.domain}/notices'
-        params = {'owner': channel, 'offset': offset, 'limit': limit}
+        url = f'{self.domain}/{channel}/notices'
+        params = {'offset': offset, 'limit': limit}
         if status:
             params['status'] = status
 
