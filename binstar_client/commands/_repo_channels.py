@@ -143,7 +143,9 @@ def _resolve_channels_with_namespaces(
     return resolved_channels
 
 
-def _upload_file_to_channel(api, filepath: str, channel: str, pkg_type: str, from_deprecated_channel_flag: bool) -> None:
+def _upload_file_to_channel(
+    api, filepath: str, channel: str, pkg_type: str, from_deprecated_channel_flag: bool
+) -> None:
     """Upload a single file to a single channel."""
     console.print(f"Uploading [cyan]{filepath}[/cyan] to channel [cyan]{channel}[/cyan]...")
 
@@ -175,7 +177,11 @@ def _upload_file_to_channel(api, filepath: str, channel: str, pkg_type: str, fro
 
 
 def _process_and_upload_files(
-    api, file_patterns: List[str], resolved_channels: List[str], package_type: Optional[PackageType], from_deprecated_channel_flag: bool
+    api,
+    file_patterns: List[str],
+    resolved_channels: List[str],
+    package_type: Optional[PackageType],
+    from_deprecated_channel_flag: bool,
 ) -> None:
     """Process file patterns and upload each file to all resolved channels."""
     for file_pattern in file_patterns:
