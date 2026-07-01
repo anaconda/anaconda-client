@@ -57,7 +57,7 @@ class TestNotices(CLITestCase):
     def test_list_notices(self, urls):
         list_req = urls.register(
             method='GET',
-            path='/myteam/notices',
+            path='/myteam/notices?offset=0&limit=20',
             content={'total_count': 1, 'items': [NOTICE_ITEM]},
         )
 
@@ -363,8 +363,11 @@ class TestNotices(CLITestCase):
         self.assertIn(NOTICE_UUID, self.stream.getvalue())
 
     @urlpatch
-    def test_published_notices_custom_domain(self, urls):
-        self.get_config.return_value = {'url': 'https://example.com/api'}
+    @unittest.mock.patch(
+        'binstar_client.utils.config.get_config',
+        return_value={'url': 'https://example.com/api'},
+    )
+    def test_published_notices_custom_domain(self, urls, _get_config_mock):
         published = urls.register(
             method='GET',
             url='https://example.com/api/myteam/notices.json',
@@ -430,7 +433,7 @@ class TestNotices(CLITestCase):
     def test_list_with_organization(self, urls):
         list_req = urls.register(
             method='GET',
-            path='/myorg/notices',
+            path='/myorg/notices?offset=0&limit=20',
             content={'total_count': 0, 'items': []},
         )
 
