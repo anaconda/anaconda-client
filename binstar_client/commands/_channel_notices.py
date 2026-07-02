@@ -147,10 +147,10 @@ def validate_message(message: str) -> str:
     return message
 
 
-def prompt_message(value: Optional[str] = None) -> str:
+def prompt_message(value: Optional[str] = None, *, interactive: bool) -> str:
     if value is not None:
         return validate_message(value)
-    if not _is_interactive():
+    if not interactive:
         raise errors.UserError('message is required (non-interactive mode)')
     while True:
         message = input('Message: ').strip()
@@ -160,12 +160,12 @@ def prompt_message(value: Optional[str] = None) -> str:
             logger.warning('%s', err)
 
 
-def resolve_level(value: Optional[str] = None) -> str:
+def resolve_level(value: Optional[str] = None, *, interactive: bool) -> str:
     if value:
         if value not in NOTICE_LEVELS:
             raise errors.UserError(f'level must be one of: {", ".join(NOTICE_LEVELS)}')
         return value
-    if not _is_interactive():
+    if not interactive:
         return DEFAULT_NOTICE_LEVEL
     level = input(f'Level ({"/".join(NOTICE_LEVELS)}, default: {DEFAULT_NOTICE_LEVEL}): ').strip().lower()
     if not level:
@@ -241,6 +241,8 @@ def prompt_expiry_interactive() -> str:
 def resolve_expires_at(
     expires_at: Optional[str] = None,
     expires_after: Optional[int] = None,
+    *,
+    interactive: bool,
 ) -> str:
     if expires_at is not None and expires_after is not None:
         raise errors.UserError('Use only one of --expires-at or --expires-after')
@@ -248,7 +250,7 @@ def resolve_expires_at(
         return expires_at_from_days(expires_after)
     if expires_at:
         return parse_expiry_input(expires_at)
-    if not _is_interactive():
+    if not interactive:
         raise errors.UserError('expires_at is required (use --expires-at or --expires-after)')
     return prompt_expiry_interactive()
 
@@ -275,12 +277,19 @@ def format_publish_command(channel: str, notice_id: str) -> str:
     return f'{NOTICE_CLI_PREFIX} {NoticeAction.PUBLISH.value} {channel} {notice_id}'
 
 
-def offer_publish_after_create(api, channel: str, notice_id: str, status: str) -> None:
+def offer_publish_after_create(
+    api,
+    channel: str,
+    notice_id: str,
+    status: str,
+    *,
+    interactive: bool,
+) -> None:
     if status != NoticeStatus.DRAFT.value:
         return
 
     publish_cmd = format_publish_command(channel, notice_id)
-    if _is_interactive():
+    if interactive:
         if bool_input('Do you want to publish this notice to the channel?', default=False):
             do_publish(api, channel, notice_id, force=True)
             return
@@ -377,9 +386,10 @@ def do_create(
     expires_at: Optional[str],
     expires_after: Optional[int] = None,
 ) -> None:
-    message = prompt_message(message)
-    level = resolve_level(level)
-    expires_at = resolve_expires_at(expires_at, expires_after)
+    interactive = _is_interactive()
+    message = prompt_message(message, interactive=interactive)
+    level = resolve_level(level, interactive=interactive)
+    expires_at = resolve_expires_at(expires_at, expires_after, interactive=interactive)
 
     result = api.create_notice(channel, message, level, expires_at)
     created_id = result.get('notice_id')
@@ -388,7 +398,7 @@ def do_create(
     status = result.get('status', NoticeStatus.DRAFT.value)
     console.print(f"Notice '{created_id}' created successfully ({status}).")
     console.print(f'Find notice IDs with: {format_list_command(channel)}')
-    offer_publish_after_create(api, channel, created_id, status)
+    offer_publish_after_create(api, channel, created_id, status, interactive=interactive)
 
 
 def do_update(
@@ -404,6 +414,7 @@ def do_update(
     if expires_at is not None and expires_after is not None:
         raise errors.UserError('Use only one of --expires-at or --expires-after')
 
+    interactive = _is_interactive()
     fields: Dict[str, str] = {}
     if message is not None:
         fields['message'] = validate_message(message)
@@ -419,7 +430,7 @@ def do_update(
         fields['expires_at'] = parse_expiry_input(expires_at)
 
     if not fields:
-        if not _is_interactive():
+        if not interactive:
             raise errors.UserError(
                 'At least one of --message, --level, --expires-at, --expires-after, or --status is required'
             )
