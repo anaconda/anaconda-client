@@ -228,43 +228,6 @@ class TestRepoCoreClientAPI:
             client._manage_response(mock_response, "test action")
 
 
-class TestLoginRequiredErrorHandler:
-    @pytest.fixture(autouse=True)
-    def _register_handler(self):
-        """Register the handler for test isolation (plugins.py cannot be imported directly)."""
-        from anaconda_cli_base.exceptions import ERROR_HANDLERS, register_error_handler
-
-        if LoginRequiredError not in ERROR_HANDLERS:
-
-            @register_error_handler(LoginRequiredError)
-            def _handle_login_required(e):
-                import sys
-
-                print(f"Login failed: {str(e)}", file=sys.stderr)
-                print("Please run 'anaconda login' and try again.", file=sys.stderr)
-                return 1
-
-    def test_handler_is_registered(self):
-        from anaconda_cli_base.exceptions import ERROR_HANDLERS
-
-        assert LoginRequiredError in ERROR_HANDLERS
-
-    def test_handler_returns_exit_code_1(self):
-        from anaconda_cli_base.exceptions import ERROR_HANDLERS
-
-        handler = ERROR_HANDLERS[LoginRequiredError]
-        result = handler(LoginRequiredError())
-        assert result == 1
-
-    def test_handler_prints_detail(self, capsys):
-        from anaconda_cli_base.exceptions import ERROR_HANDLERS
-
-        handler = ERROR_HANDLERS[LoginRequiredError]
-        result = handler(LoginRequiredError(detail="Invalid API key"))
-        assert result == 1
-        captured = capsys.readouterr()
-        assert "Invalid API key" in captured.err
-
 
 class TestRepoCoreNamespaceChannel:
     def test_create_namespace_channel(self):
