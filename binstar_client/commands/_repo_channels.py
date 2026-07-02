@@ -11,10 +11,10 @@ from typing import Optional, Tuple
 import typer
 from rich.panel import Panel
 
-from anaconda_cli_base.console import Table, console
+from anaconda_cli_base.console import Table, console, select_from_list
 from binstar_client import __version__
 from binstar_client.commands import _channel_notices as channel_notices
-from binstar_client.repocore import RepoCoreClient
+from binstar_client.repocore import RepoCoreClient, ResolvedChannel
 
 _PAGE_SIZE = 100
 
@@ -91,12 +91,37 @@ def _callback(
         raise typer.Exit(1)
 
 
+def _resolve_no_namespace(api, name: str) -> ResolvedChannel:
+    """Resolve no namespaces case
+
+    Returns ResolvedChannel with namespace and channel_name.
+
+    Checks for username:
+      1. If None or get user request errors, return empty namespace
+      2. If truthy ask user to confirm creation of new namespace
+
+    """
+    try:
+        username = (api.account.get("user") or {}).get("username") or ""
+    except Exception:
+        username = ""
+
+    if username:
+        confirm = typer.confirm(
+            f"No namespaces found. A namespace can be created with your username. Use your username '{username}' as the namespace?"
+        )
+        if confirm:
+            return ResolvedChannel(namespace=username, channel_name=name)
+        raise typer.Exit(0)
+    return ResolvedChannel(namespace=None, channel_name=name)
+
+
 def _resolve_namespace_and_channel(
     api, name: str, namespace: Optional[str] = None, require_namespace: bool = True
-) -> tuple:
+) -> ResolvedChannel:
     """Resolve namespace and channel name from the given inputs.
 
-    Returns (namespace, channel_name). namespace may be None if require_namespace=False
+    Returns ResolvedChannel with namespace and channel_name. namespace may be None if require_namespace=False
     and no namespaces are available (lets create delegate to the API).
 
     Resolution order:
@@ -104,6 +129,7 @@ def _resolve_namespace_and_channel(
       2. name contains "/" → split into namespace/channel
       3. --namespace provided → use it, name is the channel
       4. Neither → resolve namespace from API via user's top-level channels
+      5. Calls _resolve_no_namespace if none are present
     """
     if "/" in name and namespace:
         console.print("[red]Error:[/red] Ambiguous: name contains '/' but --namespace was also provided.")
@@ -111,14 +137,14 @@ def _resolve_namespace_and_channel(
 
     if "/" in name:
         parts = name.split("/", 1)
-        return (parts[0], parts[1])
+        return ResolvedChannel(namespace=parts[0], channel_name=parts[1])
 
     if namespace:
-        return (namespace, name)
+        return ResolvedChannel(namespace=namespace, channel_name=name)
 
     # Resolve from API
-    data = api.list_user_channels(offset=0, limit=100)
-    namespaces = [ch.get("name", "") for ch in data.get("items", [])]
+    orgs = api.list_user_organizations()
+    namespaces = [org.name for org in orgs]
 
     if not namespaces:
         if require_namespace:
@@ -126,38 +152,28 @@ def _resolve_namespace_and_channel(
                 "[red]Error:[/red] No resolvable namespaces. Specify one with --namespace or use namespace/channel format."
             )
             raise typer.Exit(1)
-        return (None, name)
+
+        return _resolve_no_namespace(api, name)
 
     if len(namespaces) == 1:
-        return (namespaces[0], name)
+        return ResolvedChannel(namespace=namespaces[0], channel_name=name)
 
-    console.print("\nMultiple namespaces available:")
-    for i, ns in enumerate(namespaces, 1):
-        console.print(f"  {i}. [cyan]{ns}[/cyan]")
     console.print()
-
-    options = {str(i): ns for i, ns in enumerate(namespaces, 1)}
-    while True:
-        choice = typer.prompt(f"Namespace [1-{len(namespaces)}]")
-        if choice in options:
-            return (options[choice], name)
-        console.print(f"[red]Invalid choice.[/red] Please enter 1-{len(namespaces)}.")
+    selected_namespace = select_from_list("Select namespace:", namespaces)
+    return ResolvedChannel(namespace=selected_namespace, channel_name=name)
 
 
 @app.command(name="list", help="List all channels")
 def list_command(
     ctx: typer.Context,
     namespace: Optional[str] = typer.Option(None, "--namespace", "-n", help="Filter to a specific namespace"),
-    offset: int = typer.Option(0, "--offset", "-o", help="Offset when displaying results"),
-    limit: int = typer.Option(50, "--limit", "-l", help="Limit when displaying results"),
 ) -> None:
     """List all channels for the current user."""
     api = ctx.obj.repo_api
-    data = api.list_user_channels(offset, limit)
+    orgs = api.list_user_organizations()
 
-    channels = data.get("items", [])
     if namespace:
-        channels = [ch for ch in channels if ch.get("name", "") == namespace]
+        orgs = [org for org in orgs if org.name == namespace]
 
     table = Table(title="Channels")
     table.add_column("Namespace / Channel", style="cyan")
@@ -166,31 +182,27 @@ def list_command(
     table.add_column("Artifacts", justify="right")
     table.add_column("Downloads", justify="right")
 
-    for ch in channels:
-        channel_name = ch.get("name", "")
-        table.add_row(
-            channel_name,
-            ch.get("privacy", ""),
-            ch.get("description", "") or "",
-            str(ch.get("artifact_count", 0)),
-            str(ch.get("download_count", 0)),
-        )
-        if ch.get("subchannel_count", 0) > 0:
-            sub_offset = 0
-            while True:
-                subchannels = api.get_channel_subchannels(channel_name, offset=sub_offset, limit=_PAGE_SIZE)
-                items = subchannels.get("items", [])
-                for sub in items:
-                    table.add_row(
-                        f"  {channel_name}/{sub.get('name', '')}",
-                        sub.get("privacy", ""),
-                        sub.get("description", "") or "",
-                        str(sub.get("artifact_count", 0)),
-                        str(sub.get("download_count", 0)),
-                    )
-                if len(items) < _PAGE_SIZE:
-                    break
-                sub_offset += len(items)
+    for org in orgs:
+        table.add_row(org.name, "", "", "", "")
+
+        sub_offset = 0
+        while True:
+            try:
+                channels = api.get_channels(org.name, offset=sub_offset, limit=_PAGE_SIZE)
+            except Exception:
+                # Namespace may not have any channels yet in the repo
+                break
+            for channel in channels:
+                table.add_row(
+                    f"  {org.name}/{channel.name}",
+                    channel.privacy,
+                    channel.description,
+                    str(channel.artifact_count),
+                    str(channel.download_count),
+                )
+            if len(channels) < _PAGE_SIZE:
+                break
+            sub_offset += len(channels)
 
     if console.height and table.row_count > console.height:
         with console.pager():
@@ -214,16 +226,19 @@ def create_command(
         raise typer.Exit(1)
 
     api = ctx.obj.repo_api
-    namespace, subchannel = _resolve_namespace_and_channel(api, name, namespace, require_namespace=False)
+    resolved = _resolve_namespace_and_channel(api, name, namespace, require_namespace=False)
 
     if public:
         privacy = "public"
-    else:
+    elif private:
         privacy = "private"
-
-    manifest = api.create_namespace_channel(subchannel_name=subchannel, namespace=namespace, privacy=privacy)
-    channel_path = manifest["channel_path"]
-    console.print(f"[green]Success![/green] Channel '[cyan]{channel_path}[/cyan]' created ({privacy}).")
+    else:
+        console.print()
+        privacy = select_from_list("Channel privacy:", ["private", "public"])
+    response = api.create_namespace_channel(
+        channel_name=resolved.channel_name, namespace=resolved.namespace, privacy=privacy
+    )
+    console.print(f"[green]Success![/green] Channel '[cyan]{response['channel_path']}[/cyan]' created ({privacy}).")
 
 
 @app.command(name="remove", help="Remove a channel")
@@ -234,8 +249,8 @@ def remove_command(
 ) -> None:
     """Remove a channel."""
     api = ctx.obj.repo_api
-    ns, channel = _resolve_namespace_and_channel(api, name, namespace)
-    qualified = f"{ns}/{channel}"
+    resolved = _resolve_namespace_and_channel(api, name, namespace)
+    qualified = f"{resolved.namespace}/{resolved.channel_name}"
     api.remove_channel(qualified)
     console.print(f"[green]Success![/green] Channel '[cyan]{qualified}[/cyan]' removed.")
 
@@ -249,54 +264,51 @@ def show_command(
 ) -> None:
     """Show information about a channel."""
     api = ctx.obj.repo_api
-    ns, channel = _resolve_namespace_and_channel(api, name, namespace)
-    name = f"{ns}/{channel}"
-    channel_data = api.get_channel(name)
+    resolved = _resolve_namespace_and_channel(api, name, namespace)
+    name = f"{resolved.namespace}/{resolved.channel_name}"
+    channel_data = api.get_namespace_channel(name)
 
+    subchannels_response = None
     if full_details and not api.is_subchannel(name):
-        channel_data["subchannels"] = api.get_channel_subchannels(name)
+        subchannels_response = api.get_channels(name)
 
     table = Table(show_header=False, box=None, padding=(0, 2))
     table.add_column("Field", style="bold cyan")
     table.add_column("Value")
 
     fields = [
-        ("Name", channel_data.get("name", "")),
-        ("Description", channel_data.get("description", "") or ""),
-        ("Privacy", channel_data.get("privacy", "")),
-        ("Artifacts", str(channel_data.get("artifact_count", 0))),
-        ("Downloads", str(channel_data.get("download_count", 0))),
-        ("Mirrors", str(channel_data.get("mirror_count", 0))),
-        ("Subchannels", str(channel_data.get("subchannel_count", 0))),
-        ("Indexing", channel_data.get("indexing_behavior", "")),
-        ("Created", channel_data.get("created", "")),
-        ("Updated", channel_data.get("updated", "")),
+        ("Name", channel_data.name),
+        ("Description", channel_data.description),
+        ("Privacy", channel_data.privacy),
+        ("Artifacts", str(channel_data.artifact_count)),
+        ("Downloads", str(channel_data.download_count)),
+        ("Mirrors", str(channel_data.mirror_count)),
+        ("Indexing", channel_data.indexing_behavior),
+        ("Created", channel_data.created),
+        ("Updated", channel_data.updated),
     ]
 
-    owners = [o for o in channel_data.get("owners", []) if o]
-    if owners:
-        fields.append(("Owners", ", ".join(owners)))
+    if channel_data.owners:
+        fields.append(("Owners", ", ".join(channel_data.owners)))
 
     for field, value in fields:
         table.add_row(field, str(value))
 
     console.print(Panel(table, title=f"Channel: {name}", border_style="green"))
 
-    if full_details and "subchannels" in channel_data:
-        subchannels = channel_data["subchannels"].get("items", [])
-        if subchannels:
-            console.print("\n[bold]Subchannels:[/bold]")
-            sub_table = Table()
-            sub_table.add_column("Name", style="cyan")
-            sub_table.add_column("Privacy")
-            sub_table.add_column("Artifacts", justify="right")
-            for sub in subchannels:
-                sub_table.add_row(
-                    sub.get("name", ""),
-                    sub.get("privacy", ""),
-                    str(sub.get("artifact_count", 0)),
-                )
-            console.print(sub_table)
+    if subchannels_response:
+        console.print("\n[bold]Subchannels:[/bold]")
+        sub_table = Table()
+        sub_table.add_column("Name", style="cyan")
+        sub_table.add_column("Privacy")
+        sub_table.add_column("Artifacts", justify="right")
+        for sub in subchannels_response:
+            sub_table.add_row(
+                sub.name,
+                sub.privacy,
+                str(sub.artifact_count),
+            )
+        console.print(sub_table)
 
 
 @app.command(name="modify", help="Modify channel settings")
@@ -304,11 +316,9 @@ def modify_command(
     ctx: typer.Context,
     name: str = typer.Argument(..., help="Channel name to modify"),
     namespace: Optional[str] = typer.Option(None, "--namespace", "-n", help="Namespace the channel belongs to"),
-    privacy: Optional[str] = typer.Option(
-        None, "--privacy", help="Set channel privacy: public, authenticated, or private"
-    ),
+    privacy: Optional[str] = typer.Option(None, "--privacy", "-p", help="Set channel privacy: public or private"),
     indexing_behavior: Optional[str] = typer.Option(
-        None, "--indexing-behavior", help="Set indexing behavior: default or frozen"
+        None, "--indexing-behavior", "-i", help="Set indexing behavior: default or frozen"
     ),
 ) -> None:
     """Modify channel settings (privacy, indexing behavior)."""
@@ -328,8 +338,8 @@ def modify_command(
         raise typer.Exit(1)
 
     api = ctx.obj.repo_api
-    ns, channel = _resolve_namespace_and_channel(api, name, namespace)
-    name = f"{ns}/{channel}"
+    resolved = _resolve_namespace_and_channel(api, name, namespace)
+    name = f"{resolved.namespace}/{resolved.channel_name}"
 
     if privacy:
         api.update_channel(name, privacy=privacy)
