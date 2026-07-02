@@ -381,11 +381,21 @@ from binstar_client.repocore.errors import LoginRequiredError  # noqa: E402
 
 app.add_typer(channel_app)
 if not isinstance(main_app, functools.partial):
-    main_app.add_typer(channel_app)
+    main_app.add_typer(channel_app, help="Manage your Anaconda repository channels (alias for 'anaconda org channel')")
 
 
 @register_error_handler(LoginRequiredError)
 def _handle_login_required(e: Exception) -> int:
-    from anaconda_auth.cli import _continue_with_login
+    import sys
 
-    return _continue_with_login()
+    detail = getattr(e, "detail", None)
+    if isinstance(detail, dict):
+        msg = detail.get("message") or detail.get("detail") or str(detail)
+    elif detail:
+        msg = str(detail)
+    else:
+        msg = "authentication required"
+    print(f"Login failed: {msg}", file=sys.stderr)
+    print("Please run 'anaconda login' and try again.", file=sys.stderr)
+
+    return 1

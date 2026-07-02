@@ -208,9 +208,9 @@ class TestRepoCoreClientAPI:
 
     def test_manage_response_401_raises_login_required(self):
         client = _make_client()
-        mock_response = _mock_response(401, {"error": {"code": "auth_required"}})
+        mock_response = _mock_response(401, {"error": {"code": "auth_required", "message": "Invalid token"}})
 
-        with pytest.raises(LoginRequiredError, match="Authentication required"):
+        with pytest.raises(LoginRequiredError, match="Invalid token"):
             client._manage_response(mock_response, "test action")
 
     def test_manage_response_403(self):
@@ -229,28 +229,48 @@ class TestRepoCoreClientAPI:
 
 
 class TestLoginRequiredErrorHandler:
-    def test_handler_is_registered(self):
+    @pytest.fixture(autouse=True)
+    def _register_handler(self):
+        """Register the handler matching plugins.py logic for test isolation."""
         from anaconda_cli_base.exceptions import ERROR_HANDLERS, register_error_handler
 
-        # Ensure registration (normally done by plugins.py at CLI startup)
         if LoginRequiredError not in ERROR_HANDLERS:
 
             @register_error_handler(LoginRequiredError)
-            def _handler(e):
-                from anaconda_auth.cli import _continue_with_login
+            def _handle_login_required(e):
+                import sys
 
-                return _continue_with_login()
+                detail = getattr(e, "detail", None)
+                if isinstance(detail, dict):
+                    msg = detail.get("message") or detail.get("detail") or str(detail)
+                elif detail:
+                    msg = str(detail)
+                else:
+                    msg = "authentication required"
+                print(f"Login failed: {msg}", file=sys.stderr)
+                print("Please run 'anaconda login' and try again.", file=sys.stderr)
+                return 1
+
+    def test_handler_is_registered(self):
+        from anaconda_cli_base.exceptions import ERROR_HANDLERS
 
         assert LoginRequiredError in ERROR_HANDLERS
 
-    def test_handler_calls_continue_with_login(self):
+    def test_handler_returns_exit_code_1(self):
         from anaconda_cli_base.exceptions import ERROR_HANDLERS
 
         handler = ERROR_HANDLERS[LoginRequiredError]
-        with patch("anaconda_auth.cli._continue_with_login", return_value=1) as mock_login:
-            result = handler(LoginRequiredError())
-            mock_login.assert_called_once()
-            assert result == 1
+        result = handler(LoginRequiredError())
+        assert result == 1
+
+    def test_handler_prints_detail(self, capsys):
+        from anaconda_cli_base.exceptions import ERROR_HANDLERS
+
+        handler = ERROR_HANDLERS[LoginRequiredError]
+        result = handler(LoginRequiredError(detail="Invalid API key"))
+        assert result == 1
+        captured = capsys.readouterr()
+        assert "Invalid API key" in captured.err
 
 
 class TestRepoCoreNamespaceChannel:

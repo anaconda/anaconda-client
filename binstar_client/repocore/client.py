@@ -102,7 +102,10 @@ class RepoCoreClient(BaseClient):
         try:
             data = response.json()
             if isinstance(data, dict):
-                return data.get("message") or data.get("detail") or data.get("error", "")
+                error = data.get("error")
+                if isinstance(error, dict):
+                    return error.get("message") or error.get("detail") or str(error)
+                return data.get("message") or data.get("detail") or error or ""
         except (ValueError, KeyError):
             pass
         return f"Error {action} (status {response.status_code})"
@@ -118,7 +121,7 @@ class RepoCoreClient(BaseClient):
         msg = self._extract_error_message(response, action)
 
         if response.status_code == 401:
-            raise LoginRequiredError()
+            raise LoginRequiredError(detail=msg)
         if response.status_code == 403:
             raise Unauthorized(msg)
 
