@@ -104,8 +104,8 @@ class RepoCoreClient(BaseClient):
             if isinstance(data, dict):
                 error = data.get("error")
                 if isinstance(error, dict):
-                    return error.get("message") or error.get("detail") or str(error)
-                return data.get("message") or data.get("detail") or error or ""
+                    error = error.get("message") or error.get("detail") or ""
+                return data.get("message") or data.get("detail") or str(error or "")
         except (ValueError, KeyError):
             pass
         return f"Error {action} (status {response.status_code})"

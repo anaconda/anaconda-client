@@ -231,7 +231,7 @@ class TestRepoCoreClientAPI:
 class TestLoginRequiredErrorHandler:
     @pytest.fixture(autouse=True)
     def _register_handler(self):
-        """Register the handler matching plugins.py logic for test isolation."""
+        """Register the handler for test isolation (plugins.py cannot be imported directly)."""
         from anaconda_cli_base.exceptions import ERROR_HANDLERS, register_error_handler
 
         if LoginRequiredError not in ERROR_HANDLERS:
@@ -240,14 +240,7 @@ class TestLoginRequiredErrorHandler:
             def _handle_login_required(e):
                 import sys
 
-                detail = getattr(e, "detail", None)
-                if isinstance(detail, dict):
-                    msg = detail.get("message") or detail.get("detail") or str(detail)
-                elif detail:
-                    msg = str(detail)
-                else:
-                    msg = "authentication required"
-                print(f"Login failed: {msg}", file=sys.stderr)
+                print(f"Login failed: {str(e)}", file=sys.stderr)
                 print("Please run 'anaconda login' and try again.", file=sys.stderr)
                 return 1
 

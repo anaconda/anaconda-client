@@ -388,13 +388,7 @@ if not isinstance(main_app, functools.partial):
 def _handle_login_required(e: Exception) -> int:
     import sys
 
-    detail = getattr(e, "detail", None)
-    if isinstance(detail, dict):
-        msg = detail.get("message") or detail.get("detail") or str(detail)
-    elif detail:
-        msg = str(detail)
-    else:
-        msg = "authentication required"
+    msg = str(e)
     print(f"Login failed: {msg}", file=sys.stderr)
     print("Please run 'anaconda login' and try again.", file=sys.stderr)
 
