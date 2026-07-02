@@ -228,7 +228,6 @@ class TestRepoCoreClientAPI:
             client._manage_response(mock_response, "test action")
 
 
-
 class TestRepoCoreNamespaceChannel:
     def test_create_namespace_channel(self):
         client = _make_client()
