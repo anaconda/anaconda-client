@@ -27,7 +27,6 @@ import uuid
 from enum import Enum
 from typing import Any, Dict, Optional
 
-import click
 import typer
 from anaconda_cli_base.console import Table, console
 from dateutil.parser import parse as parse_date
@@ -39,7 +38,7 @@ from binstar_client.utils import bool_input, get_server_api
 logger = logging.getLogger('binstar.channel_notices')
 
 CHANNEL_HELP = 'Channel login (user or organization account)'
-ORGANIZATION_HELP = 'Organization name'
+NAMESPACE_HELP = 'Organization namespace (owner login)'
 NOTICE_CLI_PREFIX = 'anaconda channel notice'
 EXPIRY_PROMPT = 'Expiry (days e.g. 30, or ISO 8601 e.g. 2026-09-16T12:00:00Z): '
 EXPIRY_UPDATE_PROMPT = 'Expiry (days e.g. 30, or ISO 8601 e.g. 2026-09-16T12:00:00Z; blank to keep current): '
@@ -113,17 +112,18 @@ NOTICE_ID_ACTIONS_REQUIRING_UUID = (
 )
 
 
-def resolve_channel(
+def resolve_notice_owner(
     channel: Optional[str],
-    api,
-    organization: Optional[str] = None,
+    namespace: Optional[str],
 ) -> str:
-    """Resolve CLI channel argument to channel login."""
-    if organization:
-        return organization
+    """Resolve CLI channel/namespace arguments to owner login for the notices API."""
+    if channel and namespace:
+        raise errors.UserError('Cannot specify both channel and --namespace')
     if channel:
         return channel
-    return api.user()['login']
+    if namespace:
+        return namespace
+    raise errors.UserError('channel or --namespace is required')
 
 
 def _is_interactive() -> bool:
@@ -507,10 +507,9 @@ def main(args: argparse.Namespace) -> None:
     action = _parse_notice_action(args.notice_action)
     api = get_server_api(args.token, args.site)
 
-    channel = resolve_channel(
+    channel = resolve_notice_owner(
         getattr(args, 'channel', None),
-        api,
-        organization=getattr(args, 'organization', None),
+        getattr(args, 'namespace', None),
     )
 
     if action in NOTICE_ID_ACTIONS_REQUIRING_UUID:
@@ -551,21 +550,11 @@ def main(args: argparse.Namespace) -> None:
         raise NotImplementedError(action)
 
 
-def _common_namespace(ctx: typer.Context) -> Dict[str, Any]:
-    organization = None
-    current: Optional[click.Context] = ctx
-    while current is not None:
-        org = current.params.get('organization')
-        if org:
-            organization = org
-            break
-        current = current.parent
-
-    return {
-        'token': ctx.obj.params.get('token'),
-        'site': ctx.obj.params.get('site'),
-        'organization': organization,
-    }
+def _ctx_args(ctx: typer.Context) -> argparse.Namespace:
+    return argparse.Namespace(
+        token=ctx.obj.params.get('token'),
+        site=ctx.obj.params.get('site'),
+    )
 
 
 def _add_channel_args(parser: argparse.ArgumentParser) -> None:
@@ -576,9 +565,9 @@ def _add_channel_args(parser: argparse.ArgumentParser) -> None:
         help=CHANNEL_HELP,
     )
     parser.add_argument(
-        '-o',
-        '--organization',
-        help=ORGANIZATION_HELP,
+        '-n',
+        '--namespace',
+        help=NAMESPACE_HELP,
     )
 
 
@@ -667,26 +656,23 @@ def mount_notice_subcommand(parent_app: typer.Typer) -> None:
     )
     parent_app.add_typer(notice_app, name='notice')
 
-    def _ctx_args(ctx: typer.Context) -> argparse.Namespace:
-        return argparse.Namespace(**_common_namespace(ctx))
-
     def _run_notice_action(
         ctx: typer.Context,
         action: NoticeAction,
         channel: Optional[str] = None,
         notice_id: Optional[str] = None,
-        organization: Optional[str] = None,
+        namespace: Optional[str] = None,
         **extra: Any,
     ) -> None:
         args = _ctx_args(ctx)
         args.notice_action = action.value
         args.channel = channel
         args.notice_id = notice_id
-        args.organization = organization
+        args.namespace = namespace
         for key, value in extra.items():
             setattr(args, key, value)
         if action in NOTICE_ID_ACTIONS_REQUIRING_UUID and not notice_id:
-            print_missing_notice_id_hint(channel or organization)
+            print_missing_notice_id_hint(channel or namespace)
             raise typer.Exit(2)
         main(args)
 
@@ -694,7 +680,7 @@ def mount_notice_subcommand(parent_app: typer.Typer) -> None:
     def notice_list(
         ctx: typer.Context,
         channel: Optional[str] = typer.Argument(None, help=CHANNEL_HELP),
-        organization: Optional[str] = typer.Option(None, '-o', '--organization', help=ORGANIZATION_HELP),
+        namespace: Optional[str] = typer.Option(None, '-n', '--namespace', help=NAMESPACE_HELP),
         status: Optional[str] = typer.Option(None, '--status', help='Filter by status'),
         offset: int = typer.Option(0, '--offset'),
         limit: int = typer.Option(20, '--limit'),
@@ -703,7 +689,7 @@ def mount_notice_subcommand(parent_app: typer.Typer) -> None:
             ctx,
             NoticeAction.LIST,
             channel=channel,
-            organization=organization,
+            namespace=namespace,
             status=status,
             offset=offset,
             limit=limit,
@@ -712,17 +698,17 @@ def mount_notice_subcommand(parent_app: typer.Typer) -> None:
     @notice_app.command(NoticeAction.GET.value, help=NOTICE_ACTION_HELP[NoticeAction.GET])
     def notice_get(
         ctx: typer.Context,
-        channel: str = typer.Argument(..., help=CHANNEL_HELP),
+        channel: Optional[str] = typer.Argument(None, help=CHANNEL_HELP),
         notice_id: Optional[str] = typer.Argument(None, help=NOTICE_ID_HELP),
-        organization: Optional[str] = typer.Option(None, '-o', '--organization', help=ORGANIZATION_HELP),
+        namespace: Optional[str] = typer.Option(None, '-n', '--namespace', help=NAMESPACE_HELP),
     ) -> None:
-        _run_notice_action(ctx, NoticeAction.GET, channel=channel, notice_id=notice_id, organization=organization)
+        _run_notice_action(ctx, NoticeAction.GET, channel=channel, notice_id=notice_id, namespace=namespace)
 
     @notice_app.command(NoticeAction.CREATE.value, help=NOTICE_ACTION_HELP[NoticeAction.CREATE])
     def notice_create(
         ctx: typer.Context,
         channel: Optional[str] = typer.Argument(None, help=CHANNEL_HELP),
-        organization: Optional[str] = typer.Option(None, '-o', '--organization', help=ORGANIZATION_HELP),
+        namespace: Optional[str] = typer.Option(None, '-n', '--namespace', help=NAMESPACE_HELP),
         message: Optional[str] = typer.Option(None, '--message', help=MESSAGE_HELP),
         level: Optional[NoticeLevel] = typer.Option(
             None,
@@ -741,7 +727,7 @@ def mount_notice_subcommand(parent_app: typer.Typer) -> None:
             ctx,
             NoticeAction.CREATE,
             channel=channel,
-            organization=organization,
+            namespace=namespace,
             message=message,
             level=level.value if level else None,
             expires_at=expires_at,
@@ -751,9 +737,9 @@ def mount_notice_subcommand(parent_app: typer.Typer) -> None:
     @notice_app.command(NoticeAction.UPDATE.value, help=NOTICE_ACTION_HELP[NoticeAction.UPDATE])
     def notice_update(
         ctx: typer.Context,
-        channel: str = typer.Argument(..., help=CHANNEL_HELP),
+        channel: Optional[str] = typer.Argument(None, help=CHANNEL_HELP),
         notice_id: Optional[str] = typer.Argument(None, help=NOTICE_ID_HELP),
-        organization: Optional[str] = typer.Option(None, '-o', '--organization', help=ORGANIZATION_HELP),
+        namespace: Optional[str] = typer.Option(None, '-n', '--namespace', help=NAMESPACE_HELP),
         message: Optional[str] = typer.Option(None, '--message', help=MESSAGE_UPDATE_HELP),
         level: Optional[NoticeLevel] = typer.Option(None, '--level', help=LEVEL_UPDATE_HELP),
         status: Optional[NoticeUpdateStatus] = typer.Option(None, '--status', help=STATUS_UPDATE_HELP),
@@ -770,7 +756,7 @@ def mount_notice_subcommand(parent_app: typer.Typer) -> None:
             NoticeAction.UPDATE,
             channel=channel,
             notice_id=notice_id,
-            organization=organization,
+            namespace=namespace,
             message=message,
             level=level.value if level else None,
             status=status.value if status else None,
@@ -781,9 +767,9 @@ def mount_notice_subcommand(parent_app: typer.Typer) -> None:
     @notice_app.command(NoticeAction.DELETE.value, help=NOTICE_ACTION_HELP[NoticeAction.DELETE])
     def notice_delete(
         ctx: typer.Context,
-        channel: str = typer.Argument(..., help=CHANNEL_HELP),
+        channel: Optional[str] = typer.Argument(None, help=CHANNEL_HELP),
         notice_id: Optional[str] = typer.Argument(None, help=NOTICE_ID_HELP),
-        organization: Optional[str] = typer.Option(None, '-o', '--organization', help=ORGANIZATION_HELP),
+        namespace: Optional[str] = typer.Option(None, '-n', '--namespace', help=NAMESPACE_HELP),
         force: bool = typer.Option(False, '-f', '--force', help='Delete without confirmation'),
     ) -> None:
         _run_notice_action(
@@ -791,16 +777,16 @@ def mount_notice_subcommand(parent_app: typer.Typer) -> None:
             NoticeAction.DELETE,
             channel=channel,
             notice_id=notice_id,
-            organization=organization,
+            namespace=namespace,
             force=force,
         )
 
     @notice_app.command(NoticeAction.PUBLISH.value, help=NOTICE_ACTION_HELP[NoticeAction.PUBLISH])
     def notice_publish(
         ctx: typer.Context,
-        channel: str = typer.Argument(..., help=CHANNEL_HELP),
+        channel: Optional[str] = typer.Argument(None, help=CHANNEL_HELP),
         notice_id: Optional[str] = typer.Argument(None, help=NOTICE_ID_HELP),
-        organization: Optional[str] = typer.Option(None, '-o', '--organization', help=ORGANIZATION_HELP),
+        namespace: Optional[str] = typer.Option(None, '-n', '--namespace', help=NAMESPACE_HELP),
         force: bool = typer.Option(False, '-f', '--force', help='Publish without confirmation'),
     ) -> None:
         _run_notice_action(
@@ -808,16 +794,16 @@ def mount_notice_subcommand(parent_app: typer.Typer) -> None:
             NoticeAction.PUBLISH,
             channel=channel,
             notice_id=notice_id,
-            organization=organization,
+            namespace=namespace,
             force=force,
         )
 
     @notice_app.command(NoticeAction.ARCHIVE.value, help=NOTICE_ACTION_HELP[NoticeAction.ARCHIVE])
     def notice_archive(
         ctx: typer.Context,
-        channel: str = typer.Argument(..., help=CHANNEL_HELP),
+        channel: Optional[str] = typer.Argument(None, help=CHANNEL_HELP),
         notice_id: Optional[str] = typer.Argument(None, help=NOTICE_ID_HELP),
-        organization: Optional[str] = typer.Option(None, '-o', '--organization', help=ORGANIZATION_HELP),
+        namespace: Optional[str] = typer.Option(None, '-n', '--namespace', help=NAMESPACE_HELP),
         force: bool = typer.Option(False, '-f', '--force', help='Archive without confirmation'),
     ) -> None:
         _run_notice_action(
@@ -825,6 +811,6 @@ def mount_notice_subcommand(parent_app: typer.Typer) -> None:
             NoticeAction.ARCHIVE,
             channel=channel,
             notice_id=notice_id,
-            organization=organization,
+            namespace=namespace,
             force=force,
         )

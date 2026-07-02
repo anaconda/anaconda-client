@@ -371,17 +371,33 @@ class TestNotices(CLITestCase):
         self.assertIn('req-123', str(ctx.exception))
 
     @urlpatch
-    def test_list_with_organization(self, urls):
+    def test_list_with_namespace(self, urls):
         list_req = urls.register(
             method='GET',
             path='/myorg/notices?offset=0&limit=20',
             content={'total_count': 0, 'items': []},
         )
 
-        main(['--show-traceback', 'channel', 'notice', 'list', '-o', 'myorg'])
+        main(['--show-traceback', 'channel', 'notice', 'list', '-n', 'myorg'])
 
         urls.assertAllCalled()
         self.assertIn('/myorg/notices', list_req.req.url)
+
+    def test_resolve_notice_owner_rejects_both_channel_and_namespace(self):
+        from binstar_client.commands._channel_notices import resolve_notice_owner
+
+        with self.assertRaises(UserError) as ctx:
+            resolve_notice_owner('myorg', 'myorg')
+
+        self.assertIn('Cannot specify both channel and --namespace', str(ctx.exception))
+
+    def test_resolve_notice_owner_requires_channel_or_namespace(self):
+        from binstar_client.commands._channel_notices import resolve_notice_owner
+
+        with self.assertRaises(UserError) as ctx:
+            resolve_notice_owner(None, None)
+
+        self.assertIn('channel or --namespace is required', str(ctx.exception))
 
     @urlpatch
     def test_create_notice_rejects_empty_message(self, urls):

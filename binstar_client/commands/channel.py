@@ -23,7 +23,7 @@ def main(args, name, deprecated=False):
         return channel_notices.main(args)
 
     aserver_api = get_server_api(args.token, args.site)
-    owner = channel_notices.resolve_channel(None, aserver_api, organization=args.organization)
+    owner = args.organization or aserver_api.user()['login']
 
     if deprecated:
         logger.warning(
@@ -87,7 +87,6 @@ def _add_parser(subparsers, name, deprecated=False):
             formatter_class=argparse.RawDescriptionHelpFormatter,
             description=channel_notices.__doc__,
         )
-        notice_parser.add_argument('-o', '--organization', help='Manage notices for an organization channel')
         channel_notices.add_notice_argparse(notice_parser)
 
     group = subparser.add_mutually_exclusive_group(required=(name != 'channel'))

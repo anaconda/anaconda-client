@@ -18,11 +18,19 @@ ANACONDA_CLIENT_FORCE_STANDALONE=1 binstar channel notice <subcommand> ...
 
 `<channel>` is the **owner login** (user or organization account), for example `user` or `myorg`. It is not a repocore namespace path such as `myorg/dev`.
 
-Use `-o` / `--organization` when managing notices for an organization you belong to without passing the channel as a positional argument:
+Pass the owner login as a positional argument:
 
 ```bash
-anaconda channel notice list -o myorg
+anaconda channel notice list myorg
 ```
+
+Or use `-n` / `--namespace` instead of the positional channel:
+
+```bash
+anaconda channel notice list --namespace myorg
+```
+
+Either a positional channel or `--namespace` is required.
 
 ## Notice IDs
 
