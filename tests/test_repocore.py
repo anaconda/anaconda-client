@@ -14,7 +14,6 @@ from binstar_client.repocore import (
 )
 from binstar_client.repocore.errors import (
     InvalidName,
-    LoginRequiredError,
     RepoCoreError,
     Unauthorized,
 )
@@ -206,11 +205,11 @@ class TestRepoCoreClientAPI:
         call_args = client.put.call_args
         assert call_args[1]["json"] == {"privacy": "private"}
 
-    def test_manage_response_401_raises_login_required(self):
+    def test_manage_response_401_raises_unauthorized(self):
         client = _make_client()
         mock_response = _mock_response(401, {"error": {"code": "auth_required", "message": "Invalid token"}})
 
-        with pytest.raises(LoginRequiredError, match="Invalid token"):
+        with pytest.raises(Unauthorized, match="Invalid token"):
             client._manage_response(mock_response, "test action")
 
     def test_manage_response_403(self):
@@ -830,7 +829,7 @@ class TestRepoCoreChannelsCLI:
             result = runner.invoke(app, ["upload", "test-1.0-py39_0.conda", "--channel", "dev"])
 
         assert result.exit_code == 1
-        assert "Authentication failed" in result.output
+        assert "does not allow you to perform this operation" in result.output
 
     def test_upload_repocore_error(self):
         runner = CliRunner()
@@ -865,7 +864,7 @@ class TestRepoCoreChannelsCLI:
             result = runner.invoke(app, ["upload", "test-1.0-py39_0.conda", "--channel", "dev"])
 
         assert result.exit_code == 1
-        assert "Authentication failed" in result.output
+        assert "does not allow you to perform this operation" in result.output
 
     def test_upload_error_response(self):
         runner = CliRunner()

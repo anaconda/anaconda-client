@@ -29,7 +29,6 @@ import typer.colors
 from anaconda_cli_base import console, __version__
 from anaconda_cli_base.cli import app as main_app, ContextExtras
 
-from anaconda_cli_base.exceptions import register_error_handler
 
 from binstar_client import commands as command_module
 from binstar_client.scripts.cli import (
@@ -377,19 +376,6 @@ load_legacy_subcommands()
 
 # Mount repocore channel command under `anaconda org channel` and `anaconda channel`
 from binstar_client.commands._repo_channels import app as channel_app  # noqa: E402
-from binstar_client.repocore.errors import LoginRequiredError  # noqa: E402
-
 app.add_typer(channel_app)
 if not isinstance(main_app, functools.partial):
     main_app.add_typer(channel_app, help="Manage your Anaconda repository channels (alias for 'anaconda org channel')")
-
-
-@register_error_handler(LoginRequiredError)
-def _handle_login_required(e: Exception) -> int:
-    import sys
-
-    msg = str(e)
-    print(f"Login failed: {msg}", file=sys.stderr)
-    print("Please run 'anaconda login' and try again.", file=sys.stderr)
-
-    return 1
