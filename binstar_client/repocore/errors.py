@@ -18,6 +18,7 @@ class LoginRequiredError(RepoCoreError):
     def __init__(self):
         super().__init__("Authentication required. Please run 'anaconda login' and try again.")
 
+
 class InvalidName(RepoCoreError):
     pass
 
