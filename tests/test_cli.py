@@ -372,9 +372,7 @@ class CLICase:
             "--label some-label --label another", dict(labels=["some-label", "another"]), id="labels-long-multiple"
         ),  # noqa: E501
         CLICase("-l some-label --label another", dict(labels=["some-label", "another"]), id="labels-mixed-multiple"),  # noqa: E501
-        CLICase(
-            "-c some-label --channel another", dict(labels=["some-label", "another"]), id="channels-mixed-multiple"
-        ),  # noqa: E501
+        # Note: -c/--channel now delegates to new channel upload, so it's no longer tested here
         CLICase("--no-progress", dict(no_progress=True), id="no-progress"),
         CLICase("-u username", dict(user="username"), id="username-short"),
         CLICase("--user username", dict(user="username"), id="username-long"),
