@@ -60,7 +60,17 @@ def main(arguments: argparse.Namespace) -> None:
 
         files = [f for sublist in arguments.files for f in sublist]
         package_type_str = getattr(arguments, 'package_type', None)
-        package_type_enum = RepoPackageType(package_type_str) if package_type_str else None
+        package_type_enum = None
+        if package_type_str:
+            try:
+                package_type_enum = RepoPackageType(package_type_str)
+            except ValueError:
+                valid_types = "', '".join([pt.value for pt in RepoPackageType])
+                message = (
+                    f"Invalid value for '--package-type' / '-t': '{package_type_str}' is not one of '{valid_types}'."
+                )
+                logger.error(message)
+                raise errors.UserError(message)
         upload_command(
             ctx=None,  # type: ignore[arg-type]
             files=files,

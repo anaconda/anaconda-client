@@ -342,13 +342,9 @@ class Test(CLITestCase):
     def test_upload_channel_flag_with_package_type_converts_to_enum(self, mock_upload_command):
         from binstar_client.repocore.package_utils import PackageType
 
-        main([
-            '--show-traceback',
-            'upload',
-            '-c', 'mychannel',
-            '--package-type', 'conda',
-            data_dir('foo-0.1-0.tar.bz2')
-        ])
+        main(
+            ['--show-traceback', 'upload', '-c', 'mychannel', '--package-type', 'conda', data_dir('foo-0.1-0.tar.bz2')]
+        )
 
         mock_upload_command.assert_called_once()
         call_kwargs = mock_upload_command.call_args[1]
@@ -356,3 +352,22 @@ class Test(CLITestCase):
         assert isinstance(call_kwargs['package_type'], PackageType)
         assert call_kwargs['channel'] == ['mychannel']
         assert call_kwargs['from_deprecated_channel_flag'] is True
+
+    def test_upload_channel_flag_with_invalid_package_type_raises_user_error(self):
+        with self.assertRaises(errors.UserError) as ctx:
+            main(
+                [
+                    '--show-traceback',
+                    'upload',
+                    '-c',
+                    'mychannel',
+                    '--package-type',
+                    'invalid_type',
+                    data_dir('foo-0.1-0.tar.bz2'),
+                ]
+            )
+
+        error_message = str(ctx.exception)
+        self.assertIn("Invalid value for '--package-type'", error_message)
+        self.assertIn('invalid_type', error_message)
+        self.assertIn('is not one of', error_message)
