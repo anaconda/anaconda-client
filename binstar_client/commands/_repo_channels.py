@@ -432,7 +432,7 @@ def modify_command(
         state_map = {"frozen": "frozen", "default": "unfrozen"}
         console.print(f"[green]Success![/green] Channel '[cyan]{name}[/cyan]' is now {state_map[indexing_behavior]}.")
 
-        
+
 @app.command(name="upload", help="Upload packages to channels")
 def upload_command(
     ctx: typer.Context,
@@ -483,5 +483,5 @@ def upload_command(
     resolved_channels = _resolve_channels_with_namespaces(api, channels, namespace, from_deprecated_channel_flag)
     _process_and_upload_files(api, files, resolved_channels, package_type, from_deprecated_channel_flag)
 
-    
+
 channel_notices.mount_notice_subcommand(app)
