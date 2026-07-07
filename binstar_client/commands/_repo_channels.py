@@ -168,8 +168,8 @@ def _upload_file_to_channel(
                 f"Status: {response.status_code}\n"
                 f"Details: {response.content.decode()}"
             )
-    except Unauthorized:
-        console.print("[red]Error:[/red] Authentication failed. Please run 'anaconda login'.")
+    except Unauthorized as e:
+        console.print(f"[red]Error:[/red] {e}")
         raise typer.Exit(1)
     except RepoCoreError as e:
         console.print(f"[red]Error:[/red] {e}")

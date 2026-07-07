@@ -14,7 +14,6 @@ from binstar_client.repocore import (
 )
 from binstar_client.repocore.errors import (
     InvalidName,
-    LoginRequiredError,
     RepoCoreError,
     Unauthorized,
 )
@@ -206,11 +205,11 @@ class TestRepoCoreClientAPI:
         call_args = client.put.call_args
         assert call_args[1]["json"] == {"privacy": "private"}
 
-    def test_manage_response_401_raises_login_required(self):
+    def test_manage_response_401_raises_unauthorized(self):
         client = _make_client()
-        mock_response = _mock_response(401, {"error": {"code": "auth_required"}})
+        mock_response = _mock_response(401, {"error": {"code": "auth_required", "message": "Invalid token"}})
 
-        with pytest.raises(LoginRequiredError, match="Authentication required"):
+        with pytest.raises(Unauthorized, match="Invalid token"):
             client._manage_response(mock_response, "test action")
 
     def test_manage_response_403(self):
@@ -226,31 +225,6 @@ class TestRepoCoreClientAPI:
 
         with pytest.raises(RepoCoreError):
             client._manage_response(mock_response, "test action")
-
-
-class TestLoginRequiredErrorHandler:
-    def test_handler_is_registered(self):
-        from anaconda_cli_base.exceptions import ERROR_HANDLERS, register_error_handler
-
-        # Ensure registration (normally done by plugins.py at CLI startup)
-        if LoginRequiredError not in ERROR_HANDLERS:
-
-            @register_error_handler(LoginRequiredError)
-            def _handler(e):
-                from anaconda_auth.cli import _continue_with_login
-
-                return _continue_with_login()
-
-        assert LoginRequiredError in ERROR_HANDLERS
-
-    def test_handler_calls_continue_with_login(self):
-        from anaconda_cli_base.exceptions import ERROR_HANDLERS
-
-        handler = ERROR_HANDLERS[LoginRequiredError]
-        with patch("anaconda_auth.cli._continue_with_login", return_value=1) as mock_login:
-            result = handler(LoginRequiredError())
-            mock_login.assert_called_once()
-            assert result == 1
 
 
 class TestRepoCoreNamespaceChannel:
@@ -855,7 +829,7 @@ class TestRepoCoreChannelsCLI:
             result = runner.invoke(app, ["upload", "test-1.0-py39_0.conda", "--channel", "dev"])
 
         assert result.exit_code == 1
-        assert "Authentication failed" in result.output
+        assert "does not allow you to perform this operation" in result.output
 
     def test_upload_repocore_error(self):
         runner = CliRunner()
@@ -890,7 +864,7 @@ class TestRepoCoreChannelsCLI:
             result = runner.invoke(app, ["upload", "test-1.0-py39_0.conda", "--channel", "dev"])
 
         assert result.exit_code == 1
-        assert "Authentication failed" in result.output
+        assert "does not allow you to perform this operation" in result.output
 
     def test_upload_error_response(self):
         runner = CliRunner()
