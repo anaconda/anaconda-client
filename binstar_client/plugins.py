@@ -376,6 +376,7 @@ load_legacy_subcommands()
 
 # Mount repocore channel command under `anaconda org channel` and `anaconda channel`
 from binstar_client.commands._repo_channels import app as channel_app  # noqa: E402
+
 app.add_typer(channel_app)
 if not isinstance(main_app, functools.partial):
     main_app.add_typer(channel_app, help="Manage your Anaconda repository channels (alias for 'anaconda org channel')")
