@@ -582,3 +582,11 @@ class TestNotices(CLITestCase):
         urls.assertAllCalled()
         body = json.loads(update.req.body)
         self.assertEqual(body['status'], 'published')
+
+    def test_update_notice_rejects_draft_status(self):
+        from binstar_client.commands._channel_notices import validate_update_status
+
+        with self.assertRaises(UserError) as ctx:
+            validate_update_status('draft')
+
+        self.assertIn('Cannot set status to draft', str(ctx.exception))

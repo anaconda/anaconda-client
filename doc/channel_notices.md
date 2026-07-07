@@ -109,7 +109,7 @@ anaconda channel notice update user 550e8400-e29b-41d4-a716-446655440000 --expir
 anaconda channel notice update user 550e8400-e29b-41d4-a716-446655440000 --status published
 ```
 
-At least one of `--message`, `--level`, `--expires-at`, `--expires-after`, or `--status` is required (non-interactive). `--status` accepts `draft`, `published`, or `archived`.
+At least one of `--message`, `--level`, `--expires-at`, `--expires-after`, or `--status` is required (non-interactive). `--status` accepts `published` or `archived` only; use `publish`, `archive`, or `delete` for lifecycle changes.
 
 ### `publish` — make a draft visible
 

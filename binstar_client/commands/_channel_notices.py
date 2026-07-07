@@ -64,8 +64,13 @@ class NoticeStatus(str, Enum):
     DELETED = 'deleted'
 
 
-class NoticeUpdateStatus(str, Enum):
+class NoticeListFilterStatus(str, Enum):
     DRAFT = 'draft'
+    PUBLISHED = 'published'
+    ARCHIVED = 'archived'
+
+
+class NoticeUpdateStatus(str, Enum):
     PUBLISHED = 'published'
     ARCHIVED = 'archived'
 
@@ -85,9 +90,11 @@ DEFAULT_NOTICE_LEVEL = NoticeLevel.INFO.value
 LEVEL_HELP = f'Notice level: {", ".join(NOTICE_LEVELS)} (default: {DEFAULT_NOTICE_LEVEL})'
 LEVEL_UPDATE_HELP = f'Updated notice level: {", ".join(NOTICE_LEVELS)}'
 NOTICE_STATUSES = tuple(status.value for status in NoticeStatus)
-LIST_FILTER_STATUSES = tuple(status.value for status in NoticeUpdateStatus)
-UPDATE_STATUS_VALUES = LIST_FILTER_STATUSES
-STATUS_UPDATE_HELP = f'Updated status: {", ".join(UPDATE_STATUS_VALUES)}'
+LIST_FILTER_STATUSES = tuple(status.value for status in NoticeListFilterStatus)
+UPDATE_STATUS_VALUES = tuple(status.value for status in NoticeUpdateStatus)
+STATUS_UPDATE_HELP = (
+    f'Updated status: {", ".join(UPDATE_STATUS_VALUES)} (use publish, archive, or delete for lifecycle changes)'
+)
 NOTICE_ACTION_HELP: Dict[NoticeAction, str] = {
     NoticeAction.LIST: 'List notices for a channel',
     NoticeAction.GET: 'Get a single notice',
@@ -136,6 +143,14 @@ def validate_notice_id(notice_id: str) -> str:
     except ValueError as err:
         raise errors.UserError('notice_id must be a valid UUID') from err
     return notice_id
+
+
+def validate_update_status(status: str) -> str:
+    if status == NoticeStatus.DRAFT.value:
+        raise errors.UserError('Cannot set status to draft; draft is only the initial state after create')
+    if status not in UPDATE_STATUS_VALUES:
+        raise errors.UserError(f'status must be one of: {", ".join(UPDATE_STATUS_VALUES)}')
+    return status
 
 
 def validate_message(message: str) -> str:
@@ -421,9 +436,7 @@ def do_update(
     if level is not None:
         fields['level'] = level
     if status is not None:
-        if status not in UPDATE_STATUS_VALUES:
-            raise errors.UserError(f'status must be one of: {", ".join(UPDATE_STATUS_VALUES)}')
-        fields['status'] = status
+        fields['status'] = validate_update_status(status)
     if expires_after is not None:
         fields['expires_at'] = expires_at_from_days(expires_after)
     elif expires_at is not None:
@@ -444,9 +457,7 @@ def do_update(
             fields['level'] = optional_level
         optional_status = input(f'Status ({"/".join(UPDATE_STATUS_VALUES)}, blank to skip): ').strip().lower()
         if optional_status:
-            if optional_status not in UPDATE_STATUS_VALUES:
-                raise errors.UserError(f'status must be one of: {", ".join(UPDATE_STATUS_VALUES)}')
-            fields['status'] = optional_status
+            fields['status'] = validate_update_status(optional_status)
         optional_expires = input(EXPIRY_UPDATE_PROMPT).strip()
         if optional_expires:
             fields['expires_at'] = parse_expiry_input(optional_expires)
