@@ -342,13 +342,9 @@ class Test(CLITestCase):
     def test_upload_channel_flag_with_package_type_converts_to_enum(self, mock_upload_command):
         from binstar_client.repocore.package_utils import PackageType
 
-        main([
-            '--show-traceback',
-            'upload',
-            '-c', 'mychannel',
-            '--package-type', 'conda',
-            data_dir('foo-0.1-0.tar.bz2')
-        ])
+        main(
+            ['--show-traceback', 'upload', '-c', 'mychannel', '--package-type', 'conda', data_dir('foo-0.1-0.tar.bz2')]
+        )
 
         mock_upload_command.assert_called_once()
         call_kwargs = mock_upload_command.call_args[1]
