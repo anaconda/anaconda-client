@@ -337,3 +337,22 @@ class Test(CLITestCase):
             package_type=None,
             from_deprecated_channel_flag=True,
         )
+
+    @unittest.mock.patch('binstar_client.commands._repo_channels.upload_command')
+    def test_upload_channel_flag_with_package_type_converts_to_enum(self, mock_upload_command):
+        from binstar_client.repocore.package_utils import PackageType
+
+        main([
+            '--show-traceback',
+            'upload',
+            '-c', 'mychannel',
+            '--package-type', 'conda',
+            data_dir('foo-0.1-0.tar.bz2')
+        ])
+
+        mock_upload_command.assert_called_once()
+        call_kwargs = mock_upload_command.call_args[1]
+        assert call_kwargs['package_type'] == PackageType.conda
+        assert isinstance(call_kwargs['package_type'], PackageType)
+        assert call_kwargs['channel'] == ['mychannel']
+        assert call_kwargs['from_deprecated_channel_flag'] is True
