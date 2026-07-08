@@ -25,7 +25,7 @@ import re
 import sys
 import uuid
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Literal, Optional, overload
 
 import typer
 from anaconda_cli_base.console import Table, console, select_from_list
@@ -174,6 +174,14 @@ def prompt_message(value: Optional[str] = None, *, interactive: bool) -> str:
             return validate_message(message)
         except errors.UserError as err:
             logger.warning('%s', err)
+
+
+@overload
+def prompt_notice_level(*, optional: Literal[False] = False) -> str: ...
+
+
+@overload
+def prompt_notice_level(*, optional: Literal[True]) -> Optional[str]: ...
 
 
 def prompt_notice_level(*, optional: bool = False) -> Optional[str]:
