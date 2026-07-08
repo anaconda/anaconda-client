@@ -74,7 +74,7 @@ def _add_parser(subparsers, name, deprecated=False):
         name,
         help='{}Manage your Anaconda repository {}s'.format(deprecated_warn, name),
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description=__doc__,
+        description=f'Manage your Anaconda repository {name}s.',
     )
 
     subparser.add_argument('-o', '--organization', help='Manage an organizations {}s'.format(name))

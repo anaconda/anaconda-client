@@ -9,7 +9,7 @@ from typing import Optional
 
 from anaconda_auth.client import BaseClient
 
-from binstar_client.repocore.errors import InvalidName, LoginRequiredError, RepoCoreError, Unauthorized
+from binstar_client.repocore.errors import InvalidName, RepoCoreError, Unauthorized
 from binstar_client.repocore.models import (
     Channel,
     Namespace,
@@ -102,7 +102,10 @@ class RepoCoreClient(BaseClient):
         try:
             data = response.json()
             if isinstance(data, dict):
-                return data.get("message") or data.get("detail") or data.get("error", "")
+                error = data.get("error")
+                if isinstance(error, dict):
+                    error = error.get("message") or error.get("detail") or ""
+                return data.get("message") or data.get("detail") or str(error or "")
         except (ValueError, KeyError):
             pass
         return f"Error {action} (status {response.status_code})"
@@ -117,9 +120,7 @@ class RepoCoreClient(BaseClient):
 
         msg = self._extract_error_message(response, action)
 
-        if response.status_code == 401:
-            raise LoginRequiredError()
-        if response.status_code == 403:
+        if response.status_code in (401, 403):
             raise Unauthorized(msg)
 
         raise RepoCoreError(msg)
