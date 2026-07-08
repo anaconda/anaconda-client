@@ -11,6 +11,7 @@ from typing import Any, List, Optional, Tuple
 
 import typer
 
+from binstar_client.commands import _channel_notices as channel_notices
 from binstar_client.deprecations import REMOVE_IN_2_0_0
 from binstar_client.utils import get_server_api
 
@@ -18,18 +19,22 @@ logger = logging.getLogger('binstar.channel')
 
 
 def main(args, name, deprecated=False):
-    aserver_api = get_server_api(args.token, args.site)
+    if getattr(args, 'channel_subcommand', None) == 'notice':
+        return channel_notices.main(args)
 
-    if args.organization:
-        owner = args.organization
-    else:
-        current_user = aserver_api.user()
-        owner = current_user['login']
+    aserver_api = get_server_api(args.token, args.site)
+    owner = args.organization or aserver_api.user()['login']
 
     if deprecated:
         logger.warning(
             f'These options are deprecated and will be removed in {REMOVE_IN_2_0_0}. Use "anaconda label" instead.'
         )
+
+    channel_actions = [args.copy, args.list, args.show, args.lock, args.unlock, args.remove]
+    if not any(channel_actions):
+        from binstar_client.errors import UserError
+
+        raise UserError('one of --copy, --list, --show, --lock, --unlock, or --remove must be provided')
 
     if args.copy:
         aserver_api.copy_channel(args.copy[0], owner, args.copy[1])
@@ -74,7 +79,17 @@ def _add_parser(subparsers, name, deprecated=False):
 
     subparser.add_argument('-o', '--organization', help='Manage an organizations {}s'.format(name))
 
-    group = subparser.add_mutually_exclusive_group(required=True)
+    if name == 'channel':
+        channel_subparsers = subparser.add_subparsers(dest='channel_subcommand', metavar='SUBCOMMAND')
+        notice_parser = channel_subparsers.add_parser(
+            'notice',
+            help='Manage conda channel notices',
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+            description=channel_notices.__doc__,
+        )
+        channel_notices.add_notice_argparse(notice_parser)
+
+    group = subparser.add_mutually_exclusive_group(required=(name != 'channel'))
 
     group.add_argument('--copy', nargs=2, metavar=name.upper())
     group.add_argument('--list', action='store_true', help='{}list all {}s for a user'.format(deprecated_warn, name))
@@ -122,6 +137,36 @@ def _exclusive_action(ctx: typer.Context, param: typer.CallbackParam, value: Any
     return value
 
 
+def _run_channel_command(
+    ctx: typer.Context,
+    name: str,
+    deprecated: bool,
+    organization: Optional[str],
+    copy: Optional[List[str]],
+    list_: bool,
+    show: Optional[str],
+    lock: Optional[str],
+    unlock: Optional[str],
+    remove: Optional[str],
+) -> None:
+    if not any([copy, list_, show, lock, unlock, remove]):
+        raise typer.BadParameter('one of --copy, --list, --show, --lock, --unlock, or --remove must be provided')
+
+    args = argparse.Namespace(
+        token=ctx.obj.params.get('token'),
+        site=ctx.obj.params.get('site'),
+        organization=organization,
+        copy=copy,
+        list=list_,
+        show=show,
+        lock=lock,
+        unlock=unlock,
+        remove=remove,
+    )
+
+    main(args, name=name, deprecated=deprecated)
+
+
 def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, context_settings: dict) -> None:
     @app.command(
         name=name,
@@ -130,7 +175,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         context_settings=context_settings,
         no_args_is_help=True,
     )
-    def channel(
+    def label(
         ctx: typer.Context,
         organization: Optional[str] = typer.Option(
             None,
@@ -172,19 +217,15 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
         ),
     ) -> None:
         parsed_copy = _parse_optional_tuple(copy)
-        if not any([parsed_copy, list_, show, lock, unlock, remove]):
-            raise typer.BadParameter('one of --copy, --list, --show, --lock, --unlock, or --remove must be provided')
-
-        args = argparse.Namespace(
-            token=ctx.obj.params.get('token'),
-            site=ctx.obj.params.get('site'),
-            organization=organization,
-            copy=parsed_copy,
-            list=list_,
-            show=show,
-            lock=lock,
-            unlock=unlock,
-            remove=remove,
+        _run_channel_command(
+            ctx,
+            name,
+            name == 'channel',
+            organization,
+            parsed_copy,
+            list_,
+            show,
+            lock,
+            unlock,
+            remove,
         )
-
-        main(args, name='channel', deprecated=True)
