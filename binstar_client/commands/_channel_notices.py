@@ -28,7 +28,7 @@ from enum import Enum
 from typing import Any, Dict, Optional
 
 import typer
-from anaconda_cli_base.console import Table, console
+from anaconda_cli_base.console import Table, console, select_from_list
 from dateutil.parser import parse as parse_date
 from rich.panel import Panel
 
@@ -87,6 +87,7 @@ class NoticeAction(str, Enum):
 
 NOTICE_LEVELS = tuple(level.value for level in NoticeLevel)
 DEFAULT_NOTICE_LEVEL = NoticeLevel.INFO.value
+LEVEL_SKIP_CHOICE = '(skip)'
 LEVEL_HELP = f'Notice level: {", ".join(NOTICE_LEVELS)} (default: {DEFAULT_NOTICE_LEVEL})'
 LEVEL_UPDATE_HELP = f'Updated notice level: {", ".join(NOTICE_LEVELS)}'
 NOTICE_STATUSES = tuple(status.value for status in NoticeStatus)
@@ -101,8 +102,8 @@ NOTICE_ACTION_HELP: Dict[NoticeAction, str] = {
     NoticeAction.CREATE: 'Create a draft notice',
     NoticeAction.UPDATE: 'Update a notice',
     NoticeAction.DELETE: 'Delete a notice',
-    NoticeAction.PUBLISH: 'Publish a draft notice',
-    NoticeAction.ARCHIVE: 'Archive a notice',
+    NoticeAction.PUBLISH: 'Publish a draft or archived notice (make it visible to channel users)',
+    NoticeAction.ARCHIVE: 'Archive a published or archived notice (stop showing it to channel users)',
 }
 NOTICE_ID_ACTIONS = (
     (NoticeAction.DELETE.value, NOTICE_ACTION_HELP[NoticeAction.DELETE]),
@@ -175,6 +176,13 @@ def prompt_message(value: Optional[str] = None, *, interactive: bool) -> str:
             logger.warning('%s', err)
 
 
+def prompt_notice_level(*, optional: bool = False) -> Optional[str]:
+    if optional:
+        level = select_from_list('Level (or skip):', [LEVEL_SKIP_CHOICE, *NOTICE_LEVELS])
+        return None if level == LEVEL_SKIP_CHOICE else level
+    return select_from_list('Level:', list(NOTICE_LEVELS))
+
+
 def resolve_level(value: Optional[str] = None, *, interactive: bool) -> str:
     if value:
         if value not in NOTICE_LEVELS:
@@ -182,12 +190,7 @@ def resolve_level(value: Optional[str] = None, *, interactive: bool) -> str:
         return value
     if not interactive:
         return DEFAULT_NOTICE_LEVEL
-    level = input(f'Level ({"/".join(NOTICE_LEVELS)}, default: {DEFAULT_NOTICE_LEVEL}): ').strip().lower()
-    if not level:
-        return DEFAULT_NOTICE_LEVEL
-    if level in NOTICE_LEVELS:
-        return level
-    raise errors.UserError(f'level must be one of: {", ".join(NOTICE_LEVELS)}')
+    return prompt_notice_level(optional=False)
 
 
 def expires_at_from_days(days: int) -> str:
@@ -450,10 +453,8 @@ def do_update(
         optional_message = input('Message (leave blank to skip): ').strip()
         if optional_message:
             fields['message'] = validate_message(optional_message)
-        optional_level = input(f'Level ({"/".join(NOTICE_LEVELS)}, blank to skip): ').strip().lower()
+        optional_level = prompt_notice_level(optional=True)
         if optional_level:
-            if optional_level not in NOTICE_LEVELS:
-                raise errors.UserError(f'level must be one of: {", ".join(NOTICE_LEVELS)}')
             fields['level'] = optional_level
         optional_status = input(f'Status ({"/".join(UPDATE_STATUS_VALUES)}, blank to skip): ').strip().lower()
         if optional_status:

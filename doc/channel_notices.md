@@ -111,19 +111,21 @@ anaconda channel notice update user 550e8400-e29b-41d4-a716-446655440000 --statu
 
 At least one of `--message`, `--level`, `--expires-at`, `--expires-after`, or `--status` is required (non-interactive). `--status` accepts `published` or `archived` only; use `publish`, `archive`, or `delete` for lifecycle changes.
 
-### `publish` — make a draft visible
+### `publish` — make a notice visible to channel users
 
 ```bash
 anaconda channel notice publish user 550e8400-e29b-41d4-a716-446655440000
 ```
 
-Idempotent — publishing an already-published notice succeeds.
+Publishes a **draft** or **archived** notice so conda clients can see it. Idempotent — re-publishing an already-published notice also succeeds.
 
-### `archive` — stop showing a published notice
+### `archive` — stop showing a notice to channel users
 
 ```bash
 anaconda channel notice archive user 550e8400-e29b-41d4-a716-446655440000
 ```
+
+Archives a **published** notice (or no-ops if already **archived**). Removes it from the public channel view while retaining it in admin history.
 
 ### `delete` — soft-delete
 
