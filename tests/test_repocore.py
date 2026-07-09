@@ -652,7 +652,7 @@ class TestRepoCoreChannelsCLI:
             artifact_count=0,
             download_count=0,
             mirror_count=0,
-            subchannel_count=0,
+            channel_count=0,
             indexing_behavior="default",
             created="2025-01-01",
             updated="2025-06-01",

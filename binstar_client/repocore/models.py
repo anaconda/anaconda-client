@@ -36,7 +36,7 @@ class NamespaceChannel(BaseModel):
     artifact_count: int = 0
     download_count: int = 0
     mirror_count: int = 0
-    subchannel_count: int = 0
+    channel_count: int = 0
     indexing_behavior: str = "default"
     created: str = ""
     updated: str = ""

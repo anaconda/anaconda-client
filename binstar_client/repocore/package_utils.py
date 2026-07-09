@@ -87,7 +87,9 @@ def _is_project(filename: str) -> bool:
 
 def _is_conda(filename: str) -> bool:
     """Check if file is a conda package."""
-    logger.debug("Testing if conda package ..")
+    logger.debug('Testing if %s is a conda package ..', filename)
+    if filename.endswith('.conda'):
+        return '.conda'
 
     if filename.endswith(".tar.bz2"):
         try:
