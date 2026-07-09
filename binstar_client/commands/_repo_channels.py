@@ -15,6 +15,7 @@ from rich.panel import Panel
 
 from anaconda_cli_base.console import Table, console, select_from_list
 from binstar_client import __version__
+from binstar_client.commands import _channel_notices as channel_notices
 from binstar_client.repocore import RepoCoreClient, ResolvedChannel
 from binstar_client.repocore.errors import RepoCoreError, Unauthorized
 from binstar_client.repocore.package_utils import PackageType, determine_package_type, windows_glob
@@ -481,3 +482,6 @@ def upload_command(
 
     resolved_channels = _resolve_channels_with_namespaces(api, channels, namespace, from_deprecated_channel_flag)
     _process_and_upload_files(api, files, resolved_channels, package_type, from_deprecated_channel_flag)
+
+
+channel_notices.mount_notice_subcommand(app)
