@@ -151,7 +151,7 @@ def _upload_file_to_channel(
 
     try:
         response = api.upload_file(filepath, channel, pkg_type)
-        print(response)
+
         if response.status_code in [200, 201]:
             console.print(f"[green]Success![/green] Uploaded {filepath} to {channel}")
         elif response.status_code == 401:
