@@ -11,7 +11,15 @@ class RepoCoreError(Exception):
 
     def __str__(self):
         message = super().__str__()
-        return re.sub(r'\b[Ss]ubchannel\b', lambda m: 'Channel' if m.group()[0].isupper() else 'channel', message)
+        return re.sub(
+            r'\S*[Ss]ubchannel\S*',
+            lambda m: (
+                m.group()
+                if '/' in m.group()
+                else re.sub(r'[Ss]ubchannel', lambda s: 'Channel' if s.group()[0].isupper() else 'channel', m.group())
+            ),
+            message,
+        )
 
 
 class Unauthorized(RepoCoreError):

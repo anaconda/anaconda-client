@@ -865,6 +865,18 @@ class TestRepoCoreChannelsCLI:
         assert result.exit_code == 1
         assert "The channel does not exist and Channel is invalid" in result.output
 
+        mock_api.upload_file.side_effect = RepoCoreError("Subchannel rhett/subchannel not found")
+
+        with (
+            _patch_repo_api(mock_api),
+            patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
+            patch("binstar_client.repocore.package_utils._detect_package_type", return_value="conda"),
+        ):
+            result = runner.invoke(app, ["upload", "test-1.0-py39_0.conda", "--channel", "dev"])
+
+        assert result.exit_code == 1
+        assert "Channel rhett/subchannel not found" in result.output
+
     def test_upload_401_response(self):
         runner = CliRunner()
         app = _get_channels_app()
