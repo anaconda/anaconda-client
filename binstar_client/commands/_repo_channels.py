@@ -484,4 +484,43 @@ def upload_command(
     _process_and_upload_files(api, files, resolved_channels, package_type, from_deprecated_channel_flag)
 
 
+@app.command(name="share", help="Share a channel with a user")
+def share_command(
+    ctx: typer.Context,
+    user_email: str = typer.Argument(..., help="Email of the user to share with"),
+    channel: Optional[List[str]] = typer.Option(
+        None,
+        "--channel",
+        "-c",
+        help="Channel(s) to share in format 'namespace/channel' or 'channel'. Can be specified multiple times.",
+    ),
+    namespace: Optional[str] = typer.Option(
+        None,
+        "--namespace",
+        "-n",
+        help="Namespace for the channel (alternative to namespace/channel format)",
+    ),
+) -> None:
+    """Share a channel with a user."""
+    api = ctx.obj.repo_api
+
+    channels = channel or []
+    if not channels:
+        console.print("[red]Error:[/red] No channel specified. Use --channel option to specify channel(s) to share.")
+        raise typer.Exit(1)
+
+    resolved_channels = _resolve_channels_with_namespaces(api, channels, namespace, False)
+
+    for ch in resolved_channels:
+        try:
+            api.share_channel(ch, user_email)
+            console.print(f"[green]Success![/green] Shared channel '[cyan]{ch}[/cyan]' with {user_email}")
+        except NotImplementedError as e:
+            console.print(f"[yellow]Note:[/yellow] {e}")
+            raise typer.Exit(1)
+        except RepoCoreError as e:
+            console.print(f"[red]Error:[/red] Failed to share channel {ch}: {e}")
+            raise typer.Exit(1)
+
+
 channel_notices.mount_notice_subcommand(app)

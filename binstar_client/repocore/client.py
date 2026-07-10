@@ -151,6 +151,7 @@ class RepoCoreClient(BaseClient):
     def remove_channel(self, channel: str):
         url = self._get_channel_url(channel)
         response = self.delete(url)
+        print(response.status_code)
         if response.status_code in [200, 202, 204]:
             return None
         msg = self._extract_error_message(response, f"removing channel {channel}")
@@ -207,3 +208,7 @@ class RepoCoreClient(BaseClient):
             response = self.post(url, files=multipart_form_data)
 
         return response
+
+    def share_channel(self, channel: str, user_email: str):
+        """Share a channel with a user. API implementation pending."""
+        raise NotImplementedError("Channel sharing API not yet implemented")
