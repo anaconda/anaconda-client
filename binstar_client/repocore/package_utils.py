@@ -23,13 +23,21 @@ logger = logging.getLogger("binstar.repocore.package_utils")
 class PackageType(str, Enum):
     """Supported package types for upload."""
 
-    env = "env"
-    ipynb = "ipynb"
     conda = "conda"
     pypi = "pypi"
-    project = "project"
     sdist = "sdist"
-    gra = "gra"
+
+    def __init__(self, package_type: str):
+        upload_type_mapping = {
+            "conda": "conda1",
+            "pypi": "bdist_wheel",
+            "sdist": "sdist",
+        }
+        self._upload_type = upload_type_mapping[package_type]
+
+    @property
+    def upload_type(self) -> str:
+        return self._upload_type
 
 
 def _is_environment(filename: str) -> bool:

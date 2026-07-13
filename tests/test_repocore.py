@@ -1064,10 +1064,6 @@ class TestPackageUtils:
         assert PackageType.conda.value == "conda"
         assert PackageType.pypi.value == "pypi"
         assert PackageType.sdist.value == "sdist"
-        assert PackageType.env.value == "env"
-        assert PackageType.ipynb.value == "ipynb"
-        assert PackageType.project.value == "project"
-        assert PackageType.gra.value == "gra"
 
 
 # =============================================================================

@@ -15,15 +15,7 @@ from binstar_client.repocore.models import (
     Namespace,
     NamespaceChannel,
 )
-
-UPLOAD_TYPE_MAPPING = {
-    "conda": "conda1",
-    "pypi": "bdist_wheel",
-    "sdist": "sdist",
-    "env": "env",
-    "ipynb": "ipynb",
-    "project": "project",
-}
+from binstar_client.repocore.package_utils import PackageType
 
 logger = logging.getLogger(__name__)
 
@@ -190,10 +182,12 @@ class RepoCoreClient(BaseClient):
         return self._manage_response(response, f"creating namespace channel {channel_name}", success_codes=[200, 201])
 
     def upload_file(self, filepath: str, channel: str, package_type: str):
-        if package_type not in UPLOAD_TYPE_MAPPING:
+        try:
+            pkg_type = PackageType(package_type)
+        except ValueError:
             raise RepoCoreError(f"{package_type} upload is not supported")
 
-        artifact_type = UPLOAD_TYPE_MAPPING[package_type]
+        artifact_type = pkg_type.upload_type
         url = join(self._channels_url, channel, "artifacts")
         statinfo = os.stat(filepath)
         filename = basename(filepath)
