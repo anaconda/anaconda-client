@@ -1,11 +1,25 @@
 """Repocore-specific exceptions."""
 
+import re
+
 
 class RepoCoreError(Exception):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if not hasattr(self, "message"):
             self.message = args[0] if args else None
+
+    def __str__(self):
+        message = super().__str__()
+        return re.sub(
+            r'\S*[Ss]ubchannel\S*',
+            lambda m: (
+                m.group()
+                if '/' in m.group()
+                else re.sub(r'[Ss]ubchannel', lambda s: 'Channel' if s.group()[0].isupper() else 'channel', m.group())
+            ),
+            message,
+        )
 
 
 class Unauthorized(RepoCoreError):
