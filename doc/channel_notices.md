@@ -30,6 +30,12 @@ Or use `-n` / `--namespace` instead of the positional channel:
 anaconda channel notice list --namespace myorg
 ```
 
+For lifecycle commands (`get`, `update`, `publish`, `archive`, `delete`), you can pass the notice UUID as the only positional argument when using `--namespace`:
+
+```bash
+anaconda channel notice archive -n myorg 550e8400-e29b-41d4-a716-446655440000
+```
+
 Either a positional channel or `--namespace` is required.
 
 ## Notice IDs

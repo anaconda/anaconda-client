@@ -134,8 +134,29 @@ def resolve_notice_owner(
     raise errors.UserError('channel or --namespace is required')
 
 
+def _coerce_notice_id_args(
+    channel: Optional[str],
+    notice_id: Optional[str],
+    namespace: Optional[str],
+) -> tuple[Optional[str], Optional[str]]:
+    """When --namespace is set, a lone positional UUID is the notice_id, not channel."""
+    if namespace and channel and not notice_id:
+        try:
+            uuid.UUID(channel)
+        except ValueError:
+            return channel, notice_id
+        return None, channel
+    return channel, notice_id
+
+
 def _is_interactive() -> bool:
     return sys.stdin.isatty()
+
+
+def _prompt_input(label: str) -> str:
+    """Prompt with a bold label, matching select_from_list header styling."""
+    text = label.rstrip(': ').rstrip()
+    return console.input(f'[bold]{text}:[/bold] ').strip()
 
 
 def validate_notice_id(notice_id: str) -> str:
@@ -169,7 +190,7 @@ def prompt_message(value: Optional[str] = None, *, interactive: bool) -> str:
     if not interactive:
         raise errors.UserError('message is required (non-interactive mode)')
     while True:
-        message = input('Message: ').strip()
+        message = _prompt_input('Message')
         try:
             return validate_message(message)
         except errors.UserError as err:
@@ -189,6 +210,13 @@ def prompt_notice_level(*, optional: bool = False) -> Optional[str]:
         level = select_from_list('Level (or skip):', [LEVEL_SKIP_CHOICE, *NOTICE_LEVELS])
         return None if level == LEVEL_SKIP_CHOICE else level
     return select_from_list('Level:', list(NOTICE_LEVELS))
+
+
+def prompt_update_status() -> Optional[str]:
+    status = select_from_list('Status (or skip):', [LEVEL_SKIP_CHOICE, *UPDATE_STATUS_VALUES])
+    if status == LEVEL_SKIP_CHOICE:
+        return None
+    return validate_update_status(status)
 
 
 def resolve_level(value: Optional[str] = None, *, interactive: bool) -> str:
@@ -243,7 +271,7 @@ def parse_expiry_input(value: str) -> str:
 def prompt_expiry_interactive() -> str:
     blank_attempts = 0
     while True:
-        value = input(EXPIRY_PROMPT).strip()
+        value = _prompt_input(EXPIRY_PROMPT.rstrip(': '))
         if not value:
             blank_attempts += 1
             if blank_attempts >= MAX_BLANK_EXPIRY_ATTEMPTS:
@@ -458,16 +486,16 @@ def do_update(
             raise errors.UserError(
                 'At least one of --message, --level, --expires-at, --expires-after, or --status is required'
             )
-        optional_message = input('Message (leave blank to skip): ').strip()
+        optional_message = _prompt_input('Message (leave blank to skip)')
         if optional_message:
             fields['message'] = validate_message(optional_message)
         optional_level = prompt_notice_level(optional=True)
         if optional_level:
             fields['level'] = optional_level
-        optional_status = input(f'Status ({"/".join(UPDATE_STATUS_VALUES)}, blank to skip): ').strip().lower()
+        optional_status = prompt_update_status()
         if optional_status:
-            fields['status'] = validate_update_status(optional_status)
-        optional_expires = input(EXPIRY_UPDATE_PROMPT).strip()
+            fields['status'] = optional_status
+        optional_expires = _prompt_input(EXPIRY_UPDATE_PROMPT.rstrip(': '))
         if optional_expires:
             fields['expires_at'] = parse_expiry_input(optional_expires)
 
@@ -525,10 +553,17 @@ def _parse_notice_action(action: str) -> NoticeAction:
 def main(args: argparse.Namespace) -> None:
     """Dispatch channel notice subcommands."""
     action = _parse_notice_action(args.notice_action)
+    channel, notice_id = _coerce_notice_id_args(
+        getattr(args, 'channel', None),
+        getattr(args, 'notice_id', None),
+        getattr(args, 'namespace', None),
+    )
+    args.channel = channel
+    args.notice_id = notice_id
     api = get_server_api(args.token, args.site)
 
     channel = resolve_notice_owner(
-        getattr(args, 'channel', None),
+        channel,
         getattr(args, 'namespace', None),
     )
 
@@ -686,6 +721,7 @@ def mount_notice_subcommand(parent_app: typer.Typer) -> None:
     ) -> None:
         args = _ctx_args(ctx)
         args.notice_action = action.value
+        channel, notice_id = _coerce_notice_id_args(channel, notice_id, namespace)
         args.channel = channel
         args.notice_id = notice_id
         args.namespace = namespace

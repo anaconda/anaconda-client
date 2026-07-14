@@ -205,7 +205,7 @@ class TestNotices(CLITestCase):
     @urlpatch
     @unittest.mock.patch('binstar_client.commands._channel_notices.bool_input', return_value=False)
     @unittest.mock.patch('binstar_client.commands._channel_notices._is_interactive', return_value=True)
-    @unittest.mock.patch('binstar_client.commands._channel_notices.input')
+    @unittest.mock.patch('binstar_client.commands._channel_notices._prompt_input')
     def test_create_notice_interactive(self, urls, input_mock, _is_interactive_mock, _bool_input_mock):
         input_mock.side_effect = [
             'interactive message',
@@ -316,6 +316,52 @@ class TestNotices(CLITestCase):
 
         urls.assertAllCalled()
         self.assertIn(f"Notice '{NOTICE_UUID}' archived successfully", self.stream.getvalue())
+
+    @urlpatch
+    @unittest.mock.patch('binstar_client.commands._channel_notices.bool_input', return_value=True)
+    def test_archive_with_namespace_and_notice_id_only(self, urls, _bool_input_mock):
+        archive = urls.register(
+            method='POST',
+            path=f'/myorg/notices/{NOTICE_UUID}/archive',
+            content={'notice_id': NOTICE_UUID, 'status': 'archived'},
+        )
+
+        with _patch_notice_console_print():
+            main(['--show-traceback', 'channel', 'notice', 'archive', '-n', 'myorg', NOTICE_UUID, '--force'])
+
+        urls.assertAllCalled()
+        self.assertIn(f'/myorg/notices/{NOTICE_UUID}/archive', archive.req.url)
+        self.assertIn(f"Notice '{NOTICE_UUID}' archived successfully", self.stream.getvalue())
+
+    @urlpatch
+    @unittest.mock.patch('binstar_client.commands._channel_notices.bool_input', return_value=True)
+    def test_publish_with_namespace_and_notice_id_only(self, urls, _bool_input_mock):
+        publish = urls.register(
+            method='POST',
+            path=f'/myorg/notices/{NOTICE_UUID}/publish',
+            content={'notice_id': NOTICE_UUID, 'status': 'published'},
+        )
+
+        with _patch_notice_console_print():
+            main(['--show-traceback', 'channel', 'notice', 'publish', '-n', 'myorg', NOTICE_UUID, '--force'])
+
+        urls.assertAllCalled()
+        self.assertIn(f'/myorg/notices/{NOTICE_UUID}/publish', publish.req.url)
+        self.assertIn(f"Notice '{NOTICE_UUID}' published successfully", self.stream.getvalue())
+
+    def test_coerce_notice_id_args_with_namespace(self):
+        from binstar_client.commands._channel_notices import _coerce_notice_id_args
+
+        channel, notice_id = _coerce_notice_id_args(NOTICE_UUID, None, 'myorg')
+        self.assertIsNone(channel)
+        self.assertEqual(notice_id, NOTICE_UUID)
+
+    def test_coerce_notice_id_args_without_namespace(self):
+        from binstar_client.commands._channel_notices import _coerce_notice_id_args
+
+        channel, notice_id = _coerce_notice_id_args('myorg', NOTICE_UUID, None)
+        self.assertEqual(channel, 'myorg')
+        self.assertEqual(notice_id, NOTICE_UUID)
 
     @urlpatch
     def test_archive_notice_force(self, urls):
@@ -460,7 +506,7 @@ class TestNotices(CLITestCase):
     @urlpatch
     @unittest.mock.patch('binstar_client.commands._channel_notices.bool_input', return_value=False)
     @unittest.mock.patch('binstar_client.commands._channel_notices._is_interactive', return_value=True)
-    @unittest.mock.patch('binstar_client.commands._channel_notices.input')
+    @unittest.mock.patch('binstar_client.commands._channel_notices._prompt_input')
     @freezegun.freeze_time('2026-06-01T12:00:00Z')
     def test_create_notice_interactive_days(self, urls, input_mock, _is_interactive_mock, _bool_mock):
         input_mock.side_effect = ['hello', '30']
@@ -480,7 +526,7 @@ class TestNotices(CLITestCase):
     @urlpatch
     @unittest.mock.patch('binstar_client.commands._channel_notices.bool_input', side_effect=[True, False])
     @unittest.mock.patch('binstar_client.commands._channel_notices._is_interactive', return_value=True)
-    @unittest.mock.patch('binstar_client.commands._channel_notices.input')
+    @unittest.mock.patch('binstar_client.commands._channel_notices._prompt_input')
     @freezegun.freeze_time('2026-06-01T12:00:00Z')
     def test_create_notice_interactive_blank_then_accept_default(
         self, urls, input_mock, _is_interactive_mock, _bool_mock
@@ -502,7 +548,7 @@ class TestNotices(CLITestCase):
     @urlpatch
     @unittest.mock.patch('binstar_client.commands._channel_notices.bool_input', side_effect=[False, False])
     @unittest.mock.patch('binstar_client.commands._channel_notices._is_interactive', return_value=True)
-    @unittest.mock.patch('binstar_client.commands._channel_notices.input')
+    @unittest.mock.patch('binstar_client.commands._channel_notices._prompt_input')
     @freezegun.freeze_time('2026-06-01T12:00:00Z')
     def test_create_notice_interactive_blank_then_decline_default(
         self, urls, input_mock, _is_interactive_mock, _bool_mock
@@ -524,7 +570,7 @@ class TestNotices(CLITestCase):
     @urlpatch
     @unittest.mock.patch('binstar_client.commands._channel_notices.bool_input', return_value=True)
     @unittest.mock.patch('binstar_client.commands._channel_notices._is_interactive', return_value=True)
-    @unittest.mock.patch('binstar_client.commands._channel_notices.input')
+    @unittest.mock.patch('binstar_client.commands._channel_notices._prompt_input')
     def test_create_notice_interactive_publish_yes(self, urls, input_mock, _is_interactive_mock, _bool_mock):
         input_mock.side_effect = ['hello', '2026-09-16T12:00:00+00:00']
         urls.register(
@@ -546,9 +592,9 @@ class TestNotices(CLITestCase):
 
     @urlpatch
     @unittest.mock.patch('binstar_client.commands._channel_notices._is_interactive', return_value=True)
-    @unittest.mock.patch('binstar_client.commands._channel_notices.input')
+    @unittest.mock.patch('binstar_client.commands._channel_notices._prompt_input')
     def test_update_interactive_keeps_expiry_when_blank(self, urls, input_mock, _is_interactive_mock):
-        input_mock.side_effect = ['updated message', '', '']
+        input_mock.side_effect = ['updated message', '']
         update = urls.register(
             method='PATCH',
             path=f'/myteam/notices/{NOTICE_UUID}',
@@ -564,10 +610,10 @@ class TestNotices(CLITestCase):
 
     @urlpatch
     @unittest.mock.patch('binstar_client.commands._channel_notices._is_interactive', return_value=True)
-    @unittest.mock.patch('binstar_client.commands._channel_notices.input')
+    @unittest.mock.patch('binstar_client.commands._channel_notices._prompt_input')
     @freezegun.freeze_time('2026-06-01T12:00:00Z')
     def test_update_interactive_days(self, urls, input_mock, _is_interactive_mock):
-        input_mock.side_effect = ['', '', '14']
+        input_mock.side_effect = ['', '14']
         update = urls.register(
             method='PATCH',
             path=f'/myteam/notices/{NOTICE_UUID}',
