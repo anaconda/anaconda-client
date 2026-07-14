@@ -69,7 +69,7 @@ def main(arguments: argparse.Namespace) -> None:
                 message = (
                     f"Invalid value for '--package-type' / '-t': '{package_type_str}' is not one of '{valid_types}'."
                 )
-                raise errors.UserError(message)
+                raise ValueError(message)
         upload_command(
             ctx=None,  # type: ignore[arg-type]
             files=files,

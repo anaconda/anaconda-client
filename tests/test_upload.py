@@ -354,7 +354,7 @@ class Test(CLITestCase):
         assert call_kwargs['from_deprecated_channel_flag'] is True
 
     def test_upload_channel_flag_with_invalid_package_type_raises_user_error(self):
-        with self.assertRaises(errors.UserError) as ctx:
+        with self.assertRaises(ValueError) as ctx:
             main(
                 [
                     '--show-traceback',
