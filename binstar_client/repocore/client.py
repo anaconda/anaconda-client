@@ -200,4 +200,4 @@ class RepoCoreClient(BaseClient):
             ]
             response = self.post(url, files=multipart_form_data)
 
-        return response
+        return self._manage_response(response, f"uploading {filename}", success_codes=[200, 201])
