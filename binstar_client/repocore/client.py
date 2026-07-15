@@ -11,6 +11,7 @@ import logging
 import os
 import re
 from os.path import basename
+from posixpath import join
 from typing import Optional
 
 from anaconda_auth.client import BaseClient
@@ -63,7 +64,7 @@ class RepoCoreClient(BaseClient):
 
     @property
     def _channels_url(self):
-        return f"{self._api_base}/channels"
+        return join(self._api_base, "channels")
 
     def _channel_url(self, channel: str) -> str:
         """Build the URL for a channel path.
@@ -71,19 +72,19 @@ class RepoCoreClient(BaseClient):
         The channel path can contain slashes (e.g. 'org/main' or 'org/main/stage')
         and is used directly in the URL path.
         """
-        return f"{self._channels_url}/{channel}"
+        return join(self._channels_url, channel)
 
     def _channel_resource_url(self, channel: str, resource: str) -> str:
         """Build a URL for a resource under a channel using the /-/ separator.
 
         Example: /api/repo/v2/channels/org/main/-/artifacts
         """
-        return f"{self._channel_url(channel)}/{RESOURCE_SEPARATOR}/{resource}"
+        return join(self._channel_url(channel), RESOURCE_SEPARATOR, resource)
 
     @property
     def account(self):
         """Get user account information."""
-        url = f"{self._auth_api_base}/account/me"
+        url = join(self._auth_api_base, "account", "me")
         response = self.get(url)
         return self._manage_response(response, "getting account information")
 
@@ -138,7 +139,7 @@ class RepoCoreClient(BaseClient):
         raise RepoCoreError(msg)
 
     def list_user_organizations(self) -> list[Namespace]:
-        url = f"{self._auth_api_base}/organizations/my"
+        url = join(self._auth_api_base, "organizations", "my")
         response = self.get(url)
         data = self._manage_response(response, "getting user organizations")
         return [Namespace(**org) for org in data]
