@@ -1,4 +1,11 @@
-"""Repocore API client for Anaconda repository channel management."""
+"""Repocore API client for Anaconda repository channel management.
+
+Uses the v2 API with /-/ as the hard boundary between channel identity and resources:
+    /api/repo/v2/channels/<channel-path>
+    /api/repo/v2/channels/<channel-path>/-/artifacts
+    /api/repo/v2/channels/<channel-path>/-/cves
+    /api/repo/v2/channels/<channel-path>/-/policies
+"""
 
 import logging
 import os
@@ -19,15 +26,20 @@ from binstar_client.repocore.package_utils import PackageType
 
 logger = logging.getLogger(__name__)
 
-REPO_API_PATH = "/api/repo"
+REPO_API_PATH = "/api/repo/v2"
 AUTH_API_PATH = "/api/auth"
+
+RESOURCE_SEPARATOR = "-"
 
 
 class RepoCoreClient(BaseClient):
-    """HTTP client for the repocore (PSM) API.
+    """HTTP client for the repocore (PSM) v2 API.
 
     Extends anaconda_auth.BaseClient which handles domain resolution,
     Bearer token injection, and login-required prompting automatically.
+
+    URL scheme uses /-/ as the boundary between channel path and resources:
+        /api/repo/v2/channels/<channel-path>/-/artifacts
     """
 
     def __init__(self, site=None, ssl_verify=None, version=None):
@@ -54,6 +66,21 @@ class RepoCoreClient(BaseClient):
     def _channels_url(self):
         return join(self._api_base, "channels")
 
+    def _channel_url(self, channel: str) -> str:
+        """Build the URL for a channel path.
+
+        The channel path can contain slashes (e.g. 'org/main' or 'org/main/stage')
+        and is used directly in the URL path.
+        """
+        return join(self._channels_url, channel)
+
+    def _channel_resource_url(self, channel: str, resource: str) -> str:
+        """Build a URL for a resource under a channel using the /-/ separator.
+
+        Example: /api/repo/v2/channels/org/main/-/artifacts
+        """
+        return join(self._channel_url(channel), RESOURCE_SEPARATOR, resource)
+
     @property
     def account(self):
         """Get user account information."""
@@ -63,12 +90,6 @@ class RepoCoreClient(BaseClient):
 
     def is_subchannel(self, channel: str) -> bool:
         return "/" in channel
-
-    def _get_channel_url(self, channel: str) -> str:
-        if self.is_subchannel(channel):
-            parent, sub = channel.split("/", 1)
-            return join(self._channels_url, parent, "subchannels", sub)
-        return join(self._channels_url, channel)
 
     def _validate_channel_name(self, name: str):
         if self.is_subchannel(name):
@@ -126,13 +147,8 @@ class RepoCoreClient(BaseClient):
     def create_channel(self, channel: str, privacy: Optional[str] = None):
         self._validate_channel_name(channel)
 
-        if self.is_subchannel(channel):
-            parent, subchannel = channel.split("/")
-            url = join(self._channels_url, parent, "subchannels")
-            data = {"name": subchannel}
-        else:
-            url = self._channels_url
-            data = {"name": channel}
+        url = self._channels_url
+        data = {"name": channel}
 
         if privacy:
             data["privacy"] = privacy
@@ -141,7 +157,7 @@ class RepoCoreClient(BaseClient):
         return self._manage_response(response, f"creating channel {channel}", success_codes=[201])
 
     def remove_channel(self, channel: str):
-        url = self._get_channel_url(channel)
+        url = self._channel_url(channel)
         response = self.delete(url)
         if response.status_code in [200, 202, 204]:
             return None
@@ -151,13 +167,13 @@ class RepoCoreClient(BaseClient):
         raise RepoCoreError(msg)
 
     def get_namespace_channel(self, channel: str) -> NamespaceChannel:
-        url = self._get_channel_url(channel)
+        url = self._channel_url(channel)
         response = self.get(url)
         data = self._manage_response(response, f"getting channel {channel}")
         return NamespaceChannel(**data)
 
     def update_channel(self, channel: str, **data):
-        url = self._get_channel_url(channel)
+        url = self._channel_url(channel)
         response = self.put(url, json=data)
         if response.status_code in [200, 204]:
             return None
@@ -167,17 +183,18 @@ class RepoCoreClient(BaseClient):
         raise RepoCoreError(msg)
 
     def get_channels(self, channel: str, offset: int = 0, limit: int = 50) -> list[Channel]:
-        url = join(self._channels_url, channel, "subchannels")
+        url = self._channel_url(channel)
         response = self.get(url, params={"offset": offset, "limit": limit})
         data = self._manage_response(response, f"getting channel {channel} subchannels")
         return [Channel(**item) for item in data.get("items", [])]
 
     def create_namespace_channel(self, channel_name: str, namespace: Optional[str] = None, privacy: str = "private"):
-        url = join(self._api_base, "namespace-channels")
+        url = self._channels_url
         data = {"channel_name": channel_name, "privacy": privacy}
 
         if namespace:
             data["namespace"] = namespace
+
         response = self.post(url, json=data)
         return self._manage_response(response, f"creating namespace channel {channel_name}", success_codes=[200, 201])
 
@@ -188,7 +205,7 @@ class RepoCoreClient(BaseClient):
             raise RepoCoreError(f"{package_type} upload is not supported")
 
         artifact_type = pkg_type.upload_type
-        url = join(self._channels_url, channel, "artifacts")
+        url = self._channel_resource_url(channel, "artifacts")
         statinfo = os.stat(filepath)
         filename = basename(filepath)
 

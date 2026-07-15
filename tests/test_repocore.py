@@ -107,15 +107,15 @@ class TestRepoCoreClientValidation:
         with pytest.raises(InvalidName):
             client._validate_channel_name("main/INVALID")
 
-    def test_get_channel_url_normal(self):
+    def test_channel_url_normal(self):
         client = _make_client()
-        url = client._get_channel_url("my-channel")
-        assert url.endswith("/channels/my-channel")
+        url = client._channel_url("my-channel")
+        assert url.endswith("/api/repo/v2/channels/my-channel")
 
-    def test_get_channel_url_subchannel(self):
+    def test_channel_url_subchannel(self):
         client = _make_client()
-        url = client._get_channel_url("main/stage")
-        assert "/channels/main/subchannels/stage" in url
+        url = client._channel_url("main/stage")
+        assert url.endswith("/api/repo/v2/channels/main/stage")
 
 
 class TestRepoCoreClientAPI:
@@ -159,14 +159,14 @@ class TestRepoCoreClientAPI:
 
     def test_create_subchannel(self):
         client = _make_client()
-        mock_response = _mock_response(201, {"name": "stage"})
+        mock_response = _mock_response(201, {"name": "main/stage"})
         client.post = MagicMock(return_value=mock_response)
 
         result = client.create_channel("main/stage")
-        assert result == {"name": "stage"}
+        assert result == {"name": "main/stage"}
         call_args = client.post.call_args
-        assert "subchannels" in call_args[0][0]
-        assert call_args[1]["json"] == {"name": "stage"}
+        assert call_args[0][0].endswith("/api/repo/v2/channels")
+        assert call_args[1]["json"] == {"name": "main/stage"}
 
     def test_remove_channel(self):
         client = _make_client()
@@ -236,7 +236,7 @@ class TestRepoCoreNamespaceChannel:
         result = client.create_namespace_channel("dev", namespace="myns", privacy="public")
         assert result == {"channel_path": "myns/dev"}
         call_args = client.post.call_args
-        assert "namespace-channels" in call_args[0][0]
+        assert call_args[0][0].endswith("/api/repo/v2/channels")
         assert call_args[1]["json"] == {"channel_name": "dev", "namespace": "myns", "privacy": "public"}
 
     def test_create_namespace_channel_without_namespace(self):
@@ -247,6 +247,7 @@ class TestRepoCoreNamespaceChannel:
         result = client.create_namespace_channel("dev")
         assert result == {"channel_path": "dev/dev"}
         call_args = client.post.call_args
+        assert call_args[0][0].endswith("/api/repo/v2/channels")
         assert call_args[1]["json"] == {"channel_name": "dev", "privacy": "private"}
 
 
