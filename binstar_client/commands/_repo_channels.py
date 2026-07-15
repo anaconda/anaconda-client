@@ -295,7 +295,10 @@ def create_command(
     response = api.create_namespace_channel(
         channel_name=resolved.channel_name, namespace=resolved.namespace, privacy=privacy
     )
-    console.print(f"[green]Success![/green] Channel '[cyan]{response['channel_path']}[/cyan]' created ({privacy}).")
+    if response.created:
+        console.print(f"[green]Success![/green] Channel '[cyan]{response.channel_path}[/cyan]' created ({privacy}).")
+    else:
+        console.print(f"Channel '[cyan]{response.channel_path}[/cyan]' already exists.")
 
 
 @app.command(name="remove", help="Remove a channel")

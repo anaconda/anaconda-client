@@ -52,6 +52,17 @@ class NamespaceChannel(BaseModel):
         return [o for o in v if o]
 
 
+class ChannelCreationResponse(BaseModel):
+    """Response from creating a namespace channel."""
+
+    channel_path: str
+    status_code: int
+
+    @property
+    def created(self) -> bool:
+        return self.status_code == 201
+
+
 class ResolvedChannel(BaseModel):
     """Resolved namespace and channel name."""
 

@@ -7,6 +7,7 @@ from typer.testing import CliRunner
 
 from binstar_client.repocore import (
     Channel,
+    ChannelCreationResponse,
     Namespace,
     NamespaceChannel,
     RepoCoreClient,
@@ -234,7 +235,9 @@ class TestRepoCoreNamespaceChannel:
         client.post = MagicMock(return_value=mock_response)
 
         result = client.create_namespace_channel("dev", namespace="myns", privacy="public")
-        assert result == {"channel_path": "myns/dev"}
+        assert result.channel_path == "myns/dev"
+        assert result.status_code == 201
+        assert result.created is True
         call_args = client.post.call_args
         assert "namespace-channels" in call_args[0][0]
         assert call_args[1]["json"] == {"channel_name": "dev", "namespace": "myns", "privacy": "public"}
@@ -245,9 +248,21 @@ class TestRepoCoreNamespaceChannel:
         client.post = MagicMock(return_value=mock_response)
 
         result = client.create_namespace_channel("dev")
-        assert result == {"channel_path": "dev/dev"}
+        assert result.channel_path == "dev/dev"
+        assert result.status_code == 201
+        assert result.created is True
         call_args = client.post.call_args
         assert call_args[1]["json"] == {"channel_name": "dev", "privacy": "private"}
+
+    def test_create_namespace_channel_already_exists(self):
+        client = _make_client()
+        mock_response = _mock_response(200, {"channel_path": "myns/dev"})
+        client.post = MagicMock(return_value=mock_response)
+
+        result = client.create_namespace_channel("dev", namespace="myns")
+        assert result.channel_path == "myns/dev"
+        assert result.status_code == 200
+        assert result.created is False
 
 
 class TestResolveNamespaceAndChannel:
@@ -484,7 +499,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.create_namespace_channel.return_value = {"channel_path": "myns/dev"}
+        mock_api.create_namespace_channel.return_value = ChannelCreationResponse(channel_path="myns/dev", status_code=201)
 
         with _patch_repo_api(mock_api):
             result = runner.invoke(app, ["create", "myns/dev", "--public"])
@@ -499,7 +514,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.create_namespace_channel.return_value = {"channel_path": "myns/dev"}
+        mock_api.create_namespace_channel.return_value = ChannelCreationResponse(channel_path="myns/dev", status_code=201)
 
         with _patch_repo_api(mock_api):
             result = runner.invoke(app, ["create", "dev", "--namespace", "myns", "--public"])
@@ -515,7 +530,7 @@ class TestRepoCoreChannelsCLI:
         mock_api = MagicMock()
         mock_api.list_user_organizations.return_value = []
         type(mock_api).account = PropertyMock(return_value={"user": {"username": "testuser"}})
-        mock_api.create_namespace_channel.return_value = {"channel_path": "testuser/newchannel"}
+        mock_api.create_namespace_channel.return_value = ChannelCreationResponse(channel_path="testuser/newchannel", status_code=201)
 
         with _patch_repo_api(mock_api):
             result = runner.invoke(app, ["create", "newchannel", "--private"], input="y\n")
@@ -530,7 +545,7 @@ class TestRepoCoreChannelsCLI:
         app = _get_channels_app()
         mock_api = MagicMock()
         mock_api.list_user_organizations.return_value = [Namespace(name="myorg")]
-        mock_api.create_namespace_channel.return_value = {"channel_path": "myorg/dev"}
+        mock_api.create_namespace_channel.return_value = ChannelCreationResponse(channel_path="myorg/dev", status_code=201)
 
         with _patch_repo_api(mock_api):
             result = runner.invoke(app, ["create", "dev", "--public"])
@@ -544,7 +559,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.create_namespace_channel.return_value = {"channel_path": "myns/dev"}
+        mock_api.create_namespace_channel.return_value = ChannelCreationResponse(channel_path="myns/dev", status_code=201)
 
         with (
             _patch_repo_api(mock_api),
@@ -561,7 +576,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.create_namespace_channel.return_value = {"channel_path": "myns/dev"}
+        mock_api.create_namespace_channel.return_value = ChannelCreationResponse(channel_path="myns/dev", status_code=201)
 
         with (
             _patch_repo_api(mock_api),
@@ -580,7 +595,7 @@ class TestRepoCoreChannelsCLI:
         mock_api = MagicMock()
         mock_api.list_user_organizations.return_value = []
         type(mock_api).account = PropertyMock(side_effect=Exception("No account"))
-        mock_api.create_namespace_channel.return_value = {"channel_path": "newchannel"}
+        mock_api.create_namespace_channel.return_value = ChannelCreationResponse(channel_path="newchannel", status_code=201)
 
         with _patch_repo_api(mock_api):
             result = runner.invoke(app, ["create", "newchannel", "--private"])
@@ -596,7 +611,7 @@ class TestRepoCoreChannelsCLI:
         mock_api = MagicMock()
         mock_api.list_user_organizations.return_value = []
         type(mock_api).account = PropertyMock(return_value={"user": {"username": "testuser"}})
-        mock_api.create_namespace_channel.return_value = {"channel_path": "testuser/newchannel"}
+        mock_api.create_namespace_channel.return_value = ChannelCreationResponse(channel_path="testuser/newchannel", status_code=201)
 
         with _patch_repo_api(mock_api):
             result = runner.invoke(app, ["create", "newchannel", "--private"], input="y\n")
