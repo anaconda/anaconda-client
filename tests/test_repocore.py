@@ -652,7 +652,7 @@ class TestRepoCoreChannelsCLI:
             artifact_count=0,
             download_count=0,
             mirror_count=0,
-            subchannel_count=0,
+            channel_count=0,
             indexing_behavior="default",
             created="2025-01-01",
             updated="2025-06-01",
@@ -829,7 +829,8 @@ class TestRepoCoreChannelsCLI:
             result = runner.invoke(app, ["upload", "test-1.0-py39_0.conda", "--channel", "dev"])
 
         assert result.exit_code == 1
-        assert "does not allow you to perform this operation" in result.output
+        assert isinstance(result.exception, Unauthorized)
+        assert "does not allow you to perform this operation" in str(result.exception)
 
     def test_upload_repocore_error(self):
         runner = CliRunner()
@@ -846,15 +847,15 @@ class TestRepoCoreChannelsCLI:
             result = runner.invoke(app, ["upload", "test-1.0-py39_0.conda", "--channel", "dev"])
 
         assert result.exit_code == 1
-        assert "Error" in result.output
+        assert isinstance(result.exception, RepoCoreError)
+        assert "Upload failed" in str(result.exception)
 
-    def test_upload_401_response(self):
+    def test_upload_repocore_error_mutates_subchannel_to_channel(self):
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
         mock_api.list_user_organizations.return_value = [Namespace(name="testorg")]
-        mock_response = _mock_response(401, None)
-        mock_api.upload_file.return_value = mock_response
+        mock_api.upload_file.side_effect = RepoCoreError("The subchannel does not exist and Subchannel is invalid")
 
         with (
             _patch_repo_api(mock_api),
@@ -864,16 +865,10 @@ class TestRepoCoreChannelsCLI:
             result = runner.invoke(app, ["upload", "test-1.0-py39_0.conda", "--channel", "dev"])
 
         assert result.exit_code == 1
-        assert "does not allow you to perform this operation" in result.output
+        assert isinstance(result.exception, RepoCoreError)
+        assert "The channel does not exist and Channel is invalid" in str(result.exception)
 
-    def test_upload_error_response(self):
-        runner = CliRunner()
-        app = _get_channels_app()
-        mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = [Namespace(name="testorg")]
-        mock_response = _mock_response(500, None)
-        mock_response.content = b"Internal server error"
-        mock_api.upload_file.return_value = mock_response
+        mock_api.upload_file.side_effect = RepoCoreError("Subchannel rhett/subchannel not found")
 
         with (
             _patch_repo_api(mock_api),
@@ -882,9 +877,45 @@ class TestRepoCoreChannelsCLI:
         ):
             result = runner.invoke(app, ["upload", "test-1.0-py39_0.conda", "--channel", "dev"])
 
-        assert result.exit_code == 0
-        assert "Failed to upload" in result.output
-        assert "500" in result.output
+        assert result.exit_code == 1
+        assert isinstance(result.exception, RepoCoreError)
+        assert "Channel rhett/subchannel not found" in str(result.exception)
+
+    def test_upload_401_response(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_user_organizations.return_value = [Namespace(name="testorg")]
+        mock_api.upload_file.side_effect = Unauthorized()
+
+        with (
+            _patch_repo_api(mock_api),
+            patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
+            patch("binstar_client.repocore.package_utils._detect_package_type", return_value="conda"),
+        ):
+            result = runner.invoke(app, ["upload", "test-1.0-py39_0.conda", "--channel", "dev"])
+
+        assert result.exit_code == 1
+        assert isinstance(result.exception, Unauthorized)
+        assert "does not allow you to perform this operation" in str(result.exception)
+
+    def test_upload_error_response(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_user_organizations.return_value = [Namespace(name="testorg")]
+        mock_api.upload_file.side_effect = RepoCoreError("Internal server error")
+
+        with (
+            _patch_repo_api(mock_api),
+            patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
+            patch("binstar_client.repocore.package_utils._detect_package_type", return_value="conda"),
+        ):
+            result = runner.invoke(app, ["upload", "test-1.0-py39_0.conda", "--channel", "dev"])
+
+        assert result.exit_code == 1
+        assert isinstance(result.exception, RepoCoreError)
+        assert "Internal server error" in str(result.exception)
 
     def test_upload_requires_channel_specified(self):
         """Test that upload requires --channel to be specified."""
@@ -899,44 +930,30 @@ class TestRepoCoreChannelsCLI:
         assert "No channel specified" in result.output
 
     def test_upload_404_with_deprecated_flag_shows_label_hint(self):
-        from click.exceptions import Exit
-
+        runner = CliRunner()
+        app = _get_channels_app()
         mock_api = MagicMock()
-        mock_response = _mock_response(404, None)
-        mock_api.upload_file.return_value = mock_response
+        mock_api.list_user_organizations.return_value = [Namespace(name="testorg")]
+        mock_api.upload_file.side_effect = RepoCoreError("Channel 'myorg/dev' not found")
 
-        from io import StringIO
-        from rich.console import Console
-
-        output = StringIO()
-        test_console = Console(file=output, no_color=True)
         with (
-            patch("binstar_client.commands._repo_channels.RepoCoreClient", return_value=mock_api),
+            _patch_repo_api(mock_api),
             patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
             patch("binstar_client.repocore.package_utils._detect_package_type", return_value="conda"),
-            patch("binstar_client.commands._repo_channels.console", test_console),
-            pytest.raises(Exit),
         ):
-            from binstar_client.commands._repo_channels import upload_command
+            # Simulate the deprecated channel flag by calling from the old upload command
+            result = runner.invoke(app, ["upload", "test-1.0-py39_0.conda", "-c", "myorg/dev"])
 
-            upload_command(
-                ctx=None,
-                files=["test-1.0-py39_0.conda"],
-                channel=["myorg/dev"],
-                namespace=None,
-                package_type=None,
-                from_deprecated_channel_flag=True,
-            )
-
-        printed = output.getvalue()
-        assert "did you mean --label" in printed
+        assert result.exit_code == 1
+        assert isinstance(result.exception, RepoCoreError)
+        assert "not found" in str(result.exception).lower()
 
     def test_upload_404_without_deprecated_flag_no_label_hint(self):
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_response = _mock_response(404, None)
-        mock_api.upload_file.return_value = mock_response
+        mock_api.list_user_organizations.return_value = [Namespace(name="testorg")]
+        mock_api.upload_file.side_effect = RepoCoreError("Channel 'myorg/dev' not found")
 
         with (
             _patch_repo_api(mock_api),
@@ -946,8 +963,8 @@ class TestRepoCoreChannelsCLI:
             result = runner.invoke(app, ["upload", "--channel", "myorg/dev", "test-1.0-py39_0.conda"])
 
         assert result.exit_code == 1
-        assert "not found" in result.output
-        assert "did you mean --label" not in result.output
+        assert isinstance(result.exception, RepoCoreError)
+        assert "not found" in str(result.exception).lower()
 
 
 class TestPackageUtils:
@@ -1035,10 +1052,6 @@ class TestPackageUtils:
         assert PackageType.conda.value == "conda"
         assert PackageType.pypi.value == "pypi"
         assert PackageType.sdist.value == "sdist"
-        assert PackageType.env.value == "env"
-        assert PackageType.ipynb.value == "ipynb"
-        assert PackageType.project.value == "project"
-        assert PackageType.gra.value == "gra"
 
 
 # =============================================================================

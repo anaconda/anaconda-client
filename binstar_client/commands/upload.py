@@ -56,14 +56,26 @@ def main(arguments: argparse.Namespace) -> None:
             raise SystemExit(1)
 
         from binstar_client.commands._repo_channels import upload_command
+        from binstar_client.repocore.package_utils import PackageType as RepoPackageType
 
         files = [f for sublist in arguments.files for f in sublist]
+        package_type_str = getattr(arguments, 'package_type', None)
+        package_type_enum = None
+        if package_type_str:
+            try:
+                package_type_enum = RepoPackageType(package_type_str)
+            except ValueError:
+                valid_types = "', '".join([pt.value for pt in RepoPackageType])
+                message = (
+                    f"Invalid value for '--package-type' / '-t': '{package_type_str}' is not one of '{valid_types}'."
+                )
+                raise ValueError(message)
         upload_command(
             ctx=None,  # type: ignore[arg-type]
             files=files,
             channel=arguments.channels,
             namespace=arguments.user,
-            package_type=arguments.package_type,
+            package_type=package_type_enum,
             from_deprecated_channel_flag=True,
         )
         return
