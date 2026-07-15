@@ -482,7 +482,7 @@ class TestNotices(CLITestCase):
                 ]
             )
 
-        self.assertIn('message is required', str(ctx.exception))
+        self.assertIn('Message is required', str(ctx.exception))
 
     @urlpatch
     def test_create_notice_rejects_message_over_max_length(self, urls):
@@ -495,13 +495,13 @@ class TestNotices(CLITestCase):
                     'create',
                     'myteam',
                     '--message',
-                    'x' * 257,
+                    'x' * 601,
                     '--expires-after',
                     '7',
                 ]
             )
 
-        self.assertIn('message must be at most 256 characters', str(ctx.exception))
+        self.assertIn('Message must be at most 600 characters', str(ctx.exception))
 
     @urlpatch
     @unittest.mock.patch('binstar_client.commands._channel_notices.bool_input', return_value=False)

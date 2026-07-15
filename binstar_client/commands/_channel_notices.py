@@ -44,7 +44,7 @@ EXPIRY_PROMPT = 'Expiry (days e.g. 30, or ISO 8601 e.g. 2026-09-16T12:00:00Z): '
 EXPIRY_UPDATE_PROMPT = 'Expiry (days e.g. 30, or ISO 8601 e.g. 2026-09-16T12:00:00Z; blank to keep current): '
 DEFAULT_INTERACTIVE_EXPIRY_DAYS = 30
 MAX_BLANK_EXPIRY_ATTEMPTS = 3
-MESSAGE_MAX_LEN = 256
+MESSAGE_MAX_LEN = 600
 MESSAGE_HELP = f'Text to show in the notice (max {MESSAGE_MAX_LEN} characters)'
 MESSAGE_UPDATE_HELP = f'Updated text to show in the notice (max {MESSAGE_MAX_LEN} characters)'
 EXPIRES_AT_HELP = 'Expiry time in ISO 8601 format (e.g. 2026-09-16T12:00:00Z)'
@@ -159,6 +159,13 @@ def _prompt_input(label: str) -> str:
     return console.input(f'[bold]{text}:[/bold] ').strip()
 
 
+def _show_validation_error(message: str) -> None:
+    """Show an interactive validation error with clear visual separation."""
+    console.print('-------')
+    console.print(message)
+    console.print('-------')
+
+
 def validate_notice_id(notice_id: str) -> str:
     try:
         uuid.UUID(notice_id)
@@ -178,9 +185,9 @@ def validate_update_status(status: str) -> str:
 def validate_message(message: str) -> str:
     message = message.strip()
     if not message:
-        raise errors.UserError('message is required')
+        raise errors.UserError('Message is required')
     if len(message) > MESSAGE_MAX_LEN:
-        raise errors.UserError(f'message must be at most {MESSAGE_MAX_LEN} characters')
+        raise errors.UserError(f'Message must be at most {MESSAGE_MAX_LEN} characters')
     return message
 
 
@@ -194,7 +201,7 @@ def prompt_message(value: Optional[str] = None, *, interactive: bool) -> str:
         try:
             return validate_message(message)
         except errors.UserError as err:
-            logger.warning('%s', err)
+            _show_validation_error(str(err))
 
 
 @overload
@@ -282,14 +289,14 @@ def prompt_expiry_interactive() -> str:
                     return expires_at_from_days(DEFAULT_INTERACTIVE_EXPIRY_DAYS)
                 blank_attempts = 0
             else:
-                logger.warning('expiry is required')
+                _show_validation_error('Expiry is required')
             continue
 
         blank_attempts = 0
         try:
             return parse_expiry_input(value)
         except errors.UserError as err:
-            logger.warning('%s', err)
+            _show_validation_error(str(err))
 
 
 def resolve_expires_at(

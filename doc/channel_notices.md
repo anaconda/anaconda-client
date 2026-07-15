@@ -101,7 +101,7 @@ anaconda channel notice create mychannel \
 
 | Option | Description |
 |--------|-------------|
-| `--message` | Notice text (required, max 256 characters) |
+| `--message` | Notice text (required, max 600 characters) |
 | `--level` | `info` (default), `warning`, or `critical` |
 | `--expires-after DAYS` | Expire N days from now |
 | `--expires-at` | Exact expiry (ISO 8601, e.g. `2026-09-16T12:00:00+00:00`) |
