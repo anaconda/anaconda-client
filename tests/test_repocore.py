@@ -633,13 +633,17 @@ class TestRepoCoreChannelsCLI:
         mock_api = MagicMock()
         mock_api.list_user_organizations.return_value = []
         type(mock_api).account = PropertyMock(side_effect=Exception("No account"))
+        mock_api.create_namespace_channel.return_value = ChannelCreationResponse(
+            channel_path="newchannel", status_code=201
+        )
 
         with _patch_repo_api(mock_api):
             result = runner.invoke(app, ["create", "newchannel", "--private"])
 
-        assert result.exit_code == 1
-        assert "Namespace is required" in result.output
-        mock_api.create_namespace_channel.assert_not_called()
+        assert result.exit_code == 0
+        mock_api.create_namespace_channel.assert_called_once_with(
+            channel_name="newchannel", namespace=None, privacy="private"
+        )
 
     def test_channels_create_no_namespaces_with_username(self):
         runner = CliRunner()

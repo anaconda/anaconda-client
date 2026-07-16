@@ -285,12 +285,6 @@ def create_command(
     api = ctx.obj.repo_api
     resolved = _resolve_namespace_and_channel(api, name, namespace, require_namespace=False)
 
-    if not resolved.namespace:
-        console.print(
-            "[red]Error:[/red] Namespace is required. Specify one with --namespace or use namespace/channel format."
-        )
-        raise typer.Exit(1)
-
     if public:
         privacy = "public"
     elif private:
