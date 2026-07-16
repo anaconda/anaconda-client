@@ -14,23 +14,32 @@ Notices are nested under the `channel` command (same group as repocore channel m
 ANACONDA_CLIENT_FORCE_STANDALONE=1 binstar channel notice <subcommand> ...
 ```
 
-## Channel argument
+## Channel / namespace
 
-`<channel>` is the **owner login** (user or organization account), for example `user` or `myorg`. It is not a repocore namespace path such as `myorg/dev`.
+The **owner login** identifies whose notices you manage (user or organization account), for example `myorg` or `myuser`. This is not a repocore path such as `myorg/dev`.
 
-Pass the owner login as a positional argument:
+Specify the owner in one of two ways:
+
+| Form | Example |
+|------|---------|
+| Positional `<channel>` | `anaconda channel notice list myorg` |
+| `--namespace` / `-n` | `anaconda channel notice list --namespace myorg` |
+
+`-n` is a short alias for `--namespace`; both are equivalent. Examples below use `--namespace`; substitute `-n` anywhere it appears.
+
+For commands that take a notice UUID (`get`, `update`, `publish`, `archive`, `delete`), you can combine `--namespace` with the UUID as the only positional argument:
 
 ```bash
-anaconda channel notice list myorg
+anaconda channel notice archive --namespace myorg 550e8400-e29b-41d4-a716-446655440000
 ```
 
-Or use `-n` / `--namespace` instead of the positional channel:
+Or pass owner and UUID as two positionals (no namespace flag):
 
 ```bash
-anaconda channel notice list --namespace myorg
+anaconda channel notice archive myorg 550e8400-e29b-41d4-a716-446655440000
 ```
 
-Either a positional channel or `--namespace` is required.
+Either a positional owner or `--namespace` / `-n` is required.
 
 ## Notice IDs
 
@@ -92,7 +101,7 @@ anaconda channel notice create mychannel \
 
 | Option | Description |
 |--------|-------------|
-| `--message` | Notice text (required, max 256 characters) |
+| `--message` | Notice text (required, max 600 characters) |
 | `--level` | `info` (default), `warning`, or `critical` |
 | `--expires-after DAYS` | Expire N days from now |
 | `--expires-at` | Exact expiry (ISO 8601, e.g. `2026-09-16T12:00:00+00:00`) |

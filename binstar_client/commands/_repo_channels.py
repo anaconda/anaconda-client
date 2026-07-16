@@ -149,32 +149,8 @@ def _upload_file_to_channel(
 ) -> None:
     """Upload a single file to a single channel."""
     console.print(f"Uploading [cyan]{filepath}[/cyan] to channel [cyan]{channel}[/cyan]...")
-
-    try:
-        response = api.upload_file(filepath, channel, pkg_type)
-
-        if response.status_code in [200, 201]:
-            console.print(f"[green]Success![/green] Uploaded {filepath} to {channel}")
-        elif response.status_code == 401:
-            raise Unauthorized()
-        elif response.status_code == 404:
-            msg = f"[red]Error:[/red] Channel '{channel}' not found (404)."
-            if from_deprecated_channel_flag:
-                msg += "\n-c/--channel no longer equals labels, did you mean --label?"
-            console.print(msg)
-            raise typer.Exit(1)
-        else:
-            console.print(
-                f"[red]Error:[/red] Failed to upload {filepath}\n"
-                f"Status: {response.status_code}\n"
-                f"Details: {response.content.decode()}"
-            )
-    except Unauthorized as e:
-        console.print(f"[red]Error:[/red] {e}")
-        raise typer.Exit(1)
-    except RepoCoreError as e:
-        console.print(f"[red]Error:[/red] {e}")
-        raise typer.Exit(1)
+    api.upload_file(filepath, channel, pkg_type)
+    console.print(f"[green]Success![/green] Uploaded {filepath} to {channel}")
 
 
 def _process_and_upload_files(
@@ -323,7 +299,10 @@ def create_command(
     response = api.create_namespace_channel(
         channel_name=resolved.channel_name, namespace=resolved.namespace, privacy=privacy
     )
-    console.print(f"[green]Success![/green] Channel '[cyan]{response['channel_path']}[/cyan]' created ({privacy}).")
+    if response.created:
+        console.print(f"[green]Success![/green] Channel '[cyan]{response.channel_path}[/cyan]' created ({privacy}).")
+    else:
+        console.print(f"Channel '[cyan]{response.channel_path}[/cyan]' already exists.")
 
 
 @app.command(name="remove", help="Remove a channel")

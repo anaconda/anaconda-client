@@ -36,7 +36,7 @@ class NamespaceChannel(BaseModel):
     artifact_count: int = 0
     download_count: int = 0
     mirror_count: int = 0
-    subchannel_count: int = 0
+    channel_count: int = 0
     indexing_behavior: str = "default"
     created: str = ""
     updated: str = ""
@@ -50,6 +50,17 @@ class NamespaceChannel(BaseModel):
         if v is None:
             return []
         return [o for o in v if o]
+
+
+class ChannelCreationResponse(BaseModel):
+    """Response from creating a namespace channel."""
+
+    channel_path: str
+    status_code: int
+
+    @property
+    def created(self) -> bool:
+        return self.status_code == 201
 
 
 class ResolvedChannel(BaseModel):
