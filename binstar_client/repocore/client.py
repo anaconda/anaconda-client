@@ -115,7 +115,7 @@ class RepoCoreClient(BaseClient):
           3. Extract error message
           4. If status code is 401 or 403, raise Unauthorized error with extracted msg
           5. If status code is any other, raise RepoCoreError with extracted msg
-        
+
         """
         if response.status_code in success_codes:
             if response.status_code in empty_success_codes:  # No Content responses
@@ -216,9 +216,6 @@ class RepoCoreClient(BaseClient):
         data = {"action": action, "user": user}
         if action == "share":
             data["grant"] = grant
-
-        print(f"Request url: {url}")
-        print(f"Request data: {data}")
 
         response = self.post(url, json=data)
         channel_path = f"{namespace}/{channel_name}"

@@ -264,6 +264,31 @@ class TestRepoCoreNamespaceChannel:
         assert result.status_code == 200
         assert result.created is False
 
+    def test_share_channel_role_mapping(self):
+        client = _make_client()
+        mock_response = _mock_response(200, {})
+        client.post = MagicMock(return_value=mock_response)
+
+        client.share_channel("myns", "dev", "testuser", action="share", grant="read")
+        call_args = client.post.call_args
+        assert call_args[1]["json"] == {"action": "share", "user": "testuser", "grant": "read"}
+        assert "grant" in call_args[1]["json"]
+
+        client.share_channel("myns", "dev", "testuser", action="share", grant="write")
+        call_args = client.post.call_args
+        assert call_args[1]["json"] == {"action": "share", "user": "testuser", "grant": "write"}
+        assert "grant" in call_args[1]["json"]
+
+    def test_share_channel_unshare_no_grant(self):
+        client = _make_client()
+        mock_response = _mock_response(200, {})
+        client.post = MagicMock(return_value=mock_response)
+
+        client.share_channel("myns", "dev", "testuser", action="unshare", grant="read")
+        call_args = client.post.call_args
+        assert call_args[1]["json"] == {"action": "unshare", "user": "testuser"}
+        assert "grant" not in call_args[1]["json"]
+
 
 class TestResolveNamespaceAndChannel:
     def test_slash_in_name_extracts_both(self):
@@ -353,17 +378,6 @@ class TestResolveNamespaceAndChannel:
 
         mock_api = MagicMock()
         mock_api.account.get.return_value = {}
-
-        resolved = _resolve_no_namespace(mock_api, "dev")
-
-        assert resolved.namespace is None
-        assert resolved.channel_name == "dev"
-
-    def test_no_namespaces_empty_username(self):
-        from binstar_client.commands._repo_channels import _resolve_no_namespace
-
-        mock_api = MagicMock()
-        mock_api.account.get.return_value = {"username": ""}
 
         resolved = _resolve_no_namespace(mock_api, "dev")
 
@@ -601,23 +615,31 @@ class TestRepoCoreChannelsCLI:
             channel_name="dev", namespace="myns", privacy="private"
         )
 
+    def test_channels_create_privacy_flags_mutually_exclusive(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(app, ["create", "myns/dev", "--private", "--public"])
+
+        assert result.exit_code == 1
+        assert "mutually exclusive" in result.output
+        mock_api.create_namespace_channel.assert_not_called()
+
     def test_channels_create_no_namespaces_no_username(self):
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
         mock_api.list_user_organizations.return_value = []
         type(mock_api).account = PropertyMock(side_effect=Exception("No account"))
-        mock_api.create_namespace_channel.return_value = ChannelCreationResponse(
-            channel_path="newchannel", status_code=201
-        )
 
         with _patch_repo_api(mock_api):
             result = runner.invoke(app, ["create", "newchannel", "--private"])
 
-        assert result.exit_code == 0
-        mock_api.create_namespace_channel.assert_called_once_with(
-            channel_name="newchannel", namespace=None, privacy="private"
-        )
+        assert result.exit_code == 1
+        assert "Namespace is required" in result.output
+        mock_api.create_namespace_channel.assert_not_called()
 
     def test_channels_create_no_namespaces_with_username(self):
         runner = CliRunner()
@@ -959,6 +981,149 @@ class TestRepoCoreChannelsCLI:
 
         assert result.exit_code == 1
         assert "No channel specified" in result.output
+
+    def test_share_unshare_option(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_user_organizations.return_value = [Namespace(name="myorg")]
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(app, ["share", "testuser", "--channel", "myorg/dev", "--unshare"])
+
+        assert result.exit_code == 0
+        mock_api.share_channel.assert_called_once_with("myorg", "dev", "testuser", action="unshare", grant="read")
+
+    def test_share_role_not_provided_prompts_user(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_user_organizations.return_value = [Namespace(name="myorg")]
+
+        with (
+            _patch_repo_api(mock_api),
+            patch("binstar_client.commands._repo_channels.select_from_list", return_value="viewer"),
+        ):
+            result = runner.invoke(app, ["share", "testuser", "--channel", "myorg/dev"])
+
+        assert result.exit_code == 0
+        mock_api.share_channel.assert_called_once_with("myorg", "dev", "testuser", action="share", grant="read")
+
+    def test_share_single_channel_success(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_user_organizations.return_value = [Namespace(name="myorg")]
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(app, ["share", "testuser", "--channel", "myorg/dev", "--role", "viewer"])
+
+        assert result.exit_code == 0
+        assert "Success" in result.output
+        assert "myorg/dev" in result.output
+        assert "testuser" in result.output
+        mock_api.share_channel.assert_called_once()
+
+    def test_share_multi_channel_success(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_user_organizations.return_value = [Namespace(name="myorg")]
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(
+                app, ["share", "testuser", "--channel", "myorg/dev", "--channel", "myorg/staging", "--role", "viewer"]
+            )
+
+        assert result.exit_code == 0
+        assert mock_api.share_channel.call_count == 2
+        mock_api.share_channel.assert_any_call("myorg", "dev", "testuser", action="share", grant="read")
+        mock_api.share_channel.assert_any_call("myorg", "staging", "testuser", action="share", grant="read")
+
+    def test_share_channel_not_namespace_format_prompts_for_namespace_single(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_user_organizations.return_value = [
+            Namespace(name="org-a"),
+            Namespace(name="org-b"),
+        ]
+
+        with (
+            _patch_repo_api(mock_api),
+            patch("binstar_client.commands._repo_channels.select_from_list", return_value="org-a"),
+        ):
+            result = runner.invoke(app, ["share", "testuser", "--channel", "dev", "--role", "viewer"])
+
+        assert result.exit_code == 0
+        mock_api.share_channel.assert_called_once_with("org-a", "dev", "testuser", action="share", grant="read")
+
+    def test_share_channel_not_namespace_format_prompts_for_namespace_multi(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_user_organizations.return_value = [
+            Namespace(name="org-a"),
+            Namespace(name="org-b"),
+        ]
+
+        with (
+            _patch_repo_api(mock_api),
+            patch(
+                "binstar_client.commands._repo_channels.select_from_list",
+                side_effect=["org-a", "org-b"],
+            ),
+        ):
+            result = runner.invoke(
+                app, ["share", "testuser", "--channel", "dev", "--channel", "staging", "--role", "viewer"]
+            )
+
+        assert result.exit_code == 0
+        assert mock_api.share_channel.call_count == 2
+        mock_api.share_channel.assert_any_call("org-a", "dev", "testuser", action="share", grant="read")
+        mock_api.share_channel.assert_any_call("org-b", "staging", "testuser", action="share", grant="read")
+
+    def test_share_namespace_option_provides_namespace(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(
+                app,
+                [
+                    "share",
+                    "testuser",
+                    "--channel",
+                    "dev",
+                    "--channel",
+                    "staging",
+                    "--namespace",
+                    "myorg",
+                    "--role",
+                    "viewer",
+                ],
+            )
+
+        assert result.exit_code == 0
+        assert mock_api.share_channel.call_count == 2
+        mock_api.share_channel.assert_any_call("myorg", "dev", "testuser", action="share", grant="read")
+        mock_api.share_channel.assert_any_call("myorg", "staging", "testuser", action="share", grant="read")
+        mock_api.list_user_organizations.assert_not_called()
+
+    def test_share_namespace_with_slash_format_throws_ambiguous(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(
+                app, ["share", "testuser", "--channel", "org-a/dev", "--namespace", "org-b", "--role", "viewer"]
+            )
+
+        assert result.exit_code == 1
+        assert "Ambiguous" in result.output
+        mock_api.share_channel.assert_not_called()
 
     def test_upload_404_with_deprecated_flag_shows_label_hint(self):
         runner = CliRunner()
