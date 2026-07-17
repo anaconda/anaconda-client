@@ -453,9 +453,11 @@ def do_list(api, channel: str, status: Optional[str], offset: int, limit: int) -
     show_admin_notices(items, channel)
     total = result.get('total_count')
     if total is not None:
-        console.print(f'Showing {len(items)} notice(s) on this page (total: {total})')
         if offset + len(items) < total:
+            console.print(f'Showing {offset + 1}–{offset + len(items)} of {total} notices')
             console.print(f'Use --offset {offset + len(items)} for more.')
+        else:
+            console.print(f'{total} notice(s)')
 
 
 def do_get(api, channel: str, notice_id: str, verbose: bool) -> None:

@@ -691,7 +691,22 @@ class TestNotices(CLITestCase):
         urls.assertAllCalled()
         self.assertIn('status=deleted', list_req.req.url)
         self.assertIn('8699dc07-c7d7-4988-be88-25ee3a2c3b10', self.stream.getvalue())
-        self.assertIn('Showing 1 notice(s) on this page (total: 1)', self.stream.getvalue())
+        self.assertIn('1 notice(s)', self.stream.getvalue())
+
+    @urlpatch
+    def test_list_notices_shows_pagination_hint_when_more_pages(self, urls):
+        urls.register(
+            method='GET',
+            path='/myteam/notices?offset=0&limit=20',
+            content={'total_count': 25, 'items': [NOTICE_ITEM] * 20},
+        )
+
+        with _patch_notice_console_print():
+            main(['--show-traceback', 'channel', 'notice', 'list', 'myteam'])
+
+        output = self.stream.getvalue()
+        self.assertIn('Showing 1–20 of 25 notices', output)
+        self.assertIn('Use --offset 20 for more.', output)
 
     @urlpatch
     def test_list_notices_renders_ansi_message_safely(self, urls):
@@ -722,4 +737,4 @@ class TestNotices(CLITestCase):
         self.assertIn('07625e4d-d844-46fa-845c-d7f91e5e561c', output)
         self.assertIn('2032-12-12T14:52:29+00:00', output)
         self.assertIn('Updated', output)
-        self.assertIn('Showing 2 notice(s) on this page (total: 2)', output)
+        self.assertIn('2 notice(s)', output)
