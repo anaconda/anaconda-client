@@ -998,16 +998,13 @@ class TestRepoCoreChannelsCLI:
         assert result.exit_code == 0
         mock_api.share_channel.assert_called_once_with("myorg", "dev", "testuser", action="unshare", grant="read")
 
-    def test_share_role_not_provided_prompts_user(self):
+    def test_share_role_defaults_to_viewer(self):
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
         mock_api.list_user_organizations.return_value = [Namespace(name="myorg")]
 
-        with (
-            _patch_repo_api(mock_api),
-            patch("binstar_client.commands._repo_channels.select_from_list", return_value="viewer"),
-        ):
+        with _patch_repo_api(mock_api):
             result = runner.invoke(app, ["share", "testuser", "--channel", "myorg/dev"])
 
         assert result.exit_code == 0

@@ -479,11 +479,11 @@ def share_command(
         "-n",
         help="Namespace for the channel (alternative to namespace/channel format)",
     ),
-    role: Optional[str] = typer.Option(
-        None,
+    role: str = typer.Option(
+        "viewer",
         "--role",
         "-r",
-        help="Role to grant: viewer (read) or collaborator (write).",
+        help="Role to grant: viewer (read) or collaborator (write). Defaults to viewer.",
     ),
     unshare: bool = typer.Option(False, "--unshare", help="Unshare the channel instead of sharing"),
 ) -> None:
@@ -495,13 +495,9 @@ def share_command(
         console.print("[red]Error:[/red] No channel specified. Use --channel option to specify channel(s) to share.")
         raise typer.Exit(1)
 
-    if role and role not in ("viewer", "collaborator"):
+    if role not in ("viewer", "collaborator"):
         console.print("[red]Error:[/red] --role must be either 'viewer' or 'collaborator'.")
         raise typer.Exit(1)
-
-    if not role and not unshare:
-        console.print()
-        role = select_from_list("Select role:", ["viewer", "collaborator"])
 
     grant = "write" if role == "collaborator" else "read"
 
