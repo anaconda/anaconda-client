@@ -18,7 +18,7 @@ from tests.urlmock import urlpatch
 NOTICE_UUID = '550e8400-e29b-41d4-a716-446655440000'
 
 NOTICE_ITEM = {
-    'notice_id': NOTICE_UUID,
+    'id': NOTICE_UUID,
     'owner_id': '507f1f77bcf86cd799439011',
     'message': 'hello from api',
     'level': 'info',
@@ -85,7 +85,7 @@ class TestNotices(CLITestCase):
         with self.assertRaises(UserError) as ctx:
             main(['--show-traceback', 'channel', 'notice', 'get', 'myteam', 'bad-id'])
 
-        self.assertIn('notice_id must be a valid UUID', str(ctx.exception))
+        self.assertIn('Notice ID must be a valid UUID', str(ctx.exception))
 
     @urlpatch
     def test_delete_missing_notice_id(self, urls):
@@ -93,9 +93,9 @@ class TestNotices(CLITestCase):
             with self.assertRaises(UserError) as ctx:
                 main(['--show-traceback', 'channel', 'notice', 'delete', 'myteam'])
 
-        self.assertIn("Missing argument 'NOTICE_ID'", str(ctx.exception))
+        self.assertIn("Missing argument 'Notice ID'", str(ctx.exception))
         self.assertIn('anaconda channel notice list myteam', self.stream.getvalue())
-        self.assertIn('Note: Find notice IDs with', self.stream.getvalue())
+        self.assertIn('Note: Find Notice IDs with', self.stream.getvalue())
 
     @urlpatch
     def test_create_notice(self, urls):
@@ -130,6 +130,35 @@ class TestNotices(CLITestCase):
         self.assertIn(f"Notice '{NOTICE_UUID}' created successfully", self.stream.getvalue())
         self.assertIn('anaconda channel notice list myteam', self.stream.getvalue())
         self.assertIn(f'anaconda channel notice publish myteam {NOTICE_UUID}', self.stream.getvalue())
+
+    @urlpatch
+    def test_create_notice_accepts_id_field(self, urls):
+        """API returns `id` on create."""
+        urls.register(
+            method='POST',
+            path='/myteam/notices',
+            status=201,
+            content={**NOTICE_ITEM, 'status': 'draft'},
+        )
+
+        with _patch_notice_console_print():
+            main(
+                [
+                    '--show-traceback',
+                    'channel',
+                    'notice',
+                    'create',
+                    'myteam',
+                    '--message',
+                    'hello from api',
+                    '--level',
+                    'info',
+                    '--expires-at',
+                    '2026-09-16T12:00:00+00:00',
+                ]
+            )
+
+        self.assertIn(f"Notice '{NOTICE_UUID}' created successfully", self.stream.getvalue())
 
     @urlpatch
     @freezegun.freeze_time('2026-06-01T12:00:00Z')
@@ -233,7 +262,7 @@ class TestNotices(CLITestCase):
         urls.register(
             method='POST',
             path=f'/myteam/notices/{NOTICE_UUID}/publish',
-            content={'notice_id': NOTICE_UUID, 'status': 'published'},
+            content={'id': NOTICE_UUID, 'status': 'published'},
         )
 
         with _patch_notice_console_print():
@@ -248,7 +277,7 @@ class TestNotices(CLITestCase):
         urls.register(
             method='POST',
             path=f'/myteam/notices/{NOTICE_UUID}/publish',
-            content={'notice_id': NOTICE_UUID, 'status': 'published'},
+            content={'id': NOTICE_UUID, 'status': 'published'},
         )
 
         with _patch_notice_console_print():
@@ -263,7 +292,7 @@ class TestNotices(CLITestCase):
         urls.register(
             method='POST',
             path=f'/myteam/notices/{NOTICE_UUID}/publish',
-            content={'notice_id': NOTICE_UUID, 'status': 'published'},
+            content={'id': NOTICE_UUID, 'status': 'published'},
         )
 
         with _patch_notice_console_print():
@@ -308,7 +337,7 @@ class TestNotices(CLITestCase):
         urls.register(
             method='POST',
             path=f'/myteam/notices/{NOTICE_UUID}/archive',
-            content={'notice_id': NOTICE_UUID, 'status': 'archived'},
+            content={'id': NOTICE_UUID, 'status': 'archived'},
         )
 
         with _patch_notice_console_print():
@@ -323,7 +352,7 @@ class TestNotices(CLITestCase):
         archive = urls.register(
             method='POST',
             path=f'/myorg/notices/{NOTICE_UUID}/archive',
-            content={'notice_id': NOTICE_UUID, 'status': 'archived'},
+            content={'id': NOTICE_UUID, 'status': 'archived'},
         )
 
         with _patch_notice_console_print():
@@ -339,7 +368,7 @@ class TestNotices(CLITestCase):
         publish = urls.register(
             method='POST',
             path=f'/myorg/notices/{NOTICE_UUID}/publish',
-            content={'notice_id': NOTICE_UUID, 'status': 'published'},
+            content={'id': NOTICE_UUID, 'status': 'published'},
         )
 
         with _patch_notice_console_print():
@@ -368,7 +397,7 @@ class TestNotices(CLITestCase):
         urls.register(
             method='POST',
             path=f'/myteam/notices/{NOTICE_UUID}/archive',
-            content={'notice_id': NOTICE_UUID, 'status': 'archived'},
+            content={'id': NOTICE_UUID, 'status': 'archived'},
         )
 
         with _patch_notice_console_print():
@@ -383,7 +412,7 @@ class TestNotices(CLITestCase):
         urls.register(
             method='POST',
             path=f'/myteam/notices/{NOTICE_UUID}/archive',
-            content={'notice_id': NOTICE_UUID, 'status': 'archived'},
+            content={'id': NOTICE_UUID, 'status': 'archived'},
         )
 
         with _patch_notice_console_print():
@@ -582,7 +611,7 @@ class TestNotices(CLITestCase):
         urls.register(
             method='POST',
             path=f'/myteam/notices/{NOTICE_UUID}/publish',
-            content={'notice_id': NOTICE_UUID, 'status': 'published'},
+            content={'id': NOTICE_UUID, 'status': 'published'},
         )
 
         with _patch_notice_console_print(), _patch_level_picker('info'):
@@ -677,7 +706,7 @@ class TestNotices(CLITestCase):
         deleted_item = {
             **NOTICE_ITEM,
             'status': 'deleted',
-            'notice_id': '8699dc07-c7d7-4988-be88-25ee3a2c3b10',
+            'id': '8699dc07-c7d7-4988-be88-25ee3a2c3b10',
         }
         list_req = urls.register(
             method='GET',
@@ -712,14 +741,14 @@ class TestNotices(CLITestCase):
     def test_list_notices_renders_ansi_message_safely(self, urls):
         ansi_notice = {
             **NOTICE_ITEM,
-            'notice_id': '6268dc4d-1e12-492c-9cdd-10463e998812',
+            'id': '6268dc4d-1e12-492c-9cdd-10463e998812',
             'message': '\x1b[A\x1b[A',
             'expires_at': '2032-12-12T14:52:29+00:00',
             'status': 'published',
         }
         normal_notice = {
             **NOTICE_ITEM,
-            'notice_id': '07625e4d-d844-46fa-845c-d7f91e5e561c',
+            'id': '07625e4d-d844-46fa-845c-d7f91e5e561c',
             'message': 'Updated',
             'status': 'published',
         }

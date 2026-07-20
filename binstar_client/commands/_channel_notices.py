@@ -115,7 +115,7 @@ NOTICE_ID_ACTIONS = (
     (NoticeAction.PUBLISH.value, NOTICE_ACTION_HELP[NoticeAction.PUBLISH]),
     (NoticeAction.ARCHIVE.value, NOTICE_ACTION_HELP[NoticeAction.ARCHIVE]),
 )
-NOTICE_ID_HELP = f'Notice UUID (from create output or run: {NOTICE_CLI_PREFIX} {NoticeAction.LIST.value} <channel>)'
+NOTICE_ID_HELP = f'Notice ID (UUID from create output or run: {NOTICE_CLI_PREFIX} {NoticeAction.LIST.value} <channel>)'
 NOTICE_ID_ACTIONS_REQUIRING_UUID = (
     NoticeAction.GET,
     NoticeAction.UPDATE,
@@ -144,7 +144,7 @@ def _coerce_notice_id_args(
     notice_id: Optional[str],
     namespace: Optional[str],
 ) -> tuple[Optional[str], Optional[str]]:
-    """When --namespace is set, a lone positional UUID is the notice_id, not channel."""
+    """When --namespace is set, a lone positional UUID is the Notice ID, not channel."""
     if namespace and channel and not notice_id:
         try:
             uuid.UUID(channel)
@@ -177,6 +177,12 @@ def _format_list_cell(value: object) -> str:
     return escape(_sanitize_notice_text(str(value or '')))
 
 
+def _notice_id_from_payload(payload: Dict[str, Any], default: str = '') -> str:
+    """Read notice UUID from API payload field ``id``."""
+    value = payload.get('id', default)
+    return str(value) if value else ''
+
+
 def _show_validation_error(message: str) -> None:
     """Show an interactive validation error with clear visual separation."""
     console.print('-------')
@@ -188,7 +194,7 @@ def validate_notice_id(notice_id: str) -> str:
     try:
         uuid.UUID(notice_id)
     except ValueError as err:
-        raise errors.UserError('notice_id must be a valid UUID') from err
+        raise errors.UserError('Notice ID must be a valid UUID') from err
     return notice_id
 
 
@@ -347,14 +353,14 @@ def format_list_command(channel: str) -> str:
 def print_missing_notice_id_hint(channel: Optional[str] = None) -> None:
     channel_arg = channel or '<channel>'
     list_cmd = format_list_command(channel_arg)
-    console.print("[bold red]Error:[/bold red] Missing argument 'NOTICE_ID'.")
-    console.print(f'Note: Find notice IDs with: [cyan]{list_cmd}[/cyan]')
+    console.print("[bold red]Error:[/bold red] Missing argument 'Notice ID'.")
+    console.print(f'Note: Find Notice IDs with: [cyan]{list_cmd}[/cyan]')
 
 
 def require_notice_id(notice_id: Optional[str], channel: Optional[str] = None) -> str:
     if not notice_id:
         print_missing_notice_id_hint(channel)
-        raise errors.UserError("Missing argument 'NOTICE_ID'.")
+        raise errors.UserError("Missing argument 'Notice ID'.")
     return notice_id
 
 
@@ -405,7 +411,7 @@ def show_admin_notices(items: list, channel: str) -> None:
 
     for item in items:
         table.add_row(
-            _format_list_cell(item.get('notice_id', '')),
+            _format_list_cell(_notice_id_from_payload(item)),
             _format_list_cell(item.get('status', '')),
             _format_list_cell(item.get('level', '')),
             _format_list_cell(item.get('message', '')),
@@ -416,7 +422,7 @@ def show_admin_notices(items: list, channel: str) -> None:
 
 
 def show_notice_detail(notice: Dict[str, Any], verbose: bool = False) -> None:
-    notice_id = notice.get('notice_id', notice.get('id', ''))
+    notice_id = _notice_id_from_payload(notice)
 
     if verbose:
         console.print(json.dumps(notice, indent=2))
@@ -479,12 +485,12 @@ def do_create(
     expires_at = resolve_expires_at(expires_at, expires_after, interactive=interactive)
 
     result = api.create_notice(channel, message, level, expires_at)
-    created_id = result.get('notice_id')
+    created_id = _notice_id_from_payload(result)
     if not created_id:
-        raise errors.UserError('API did not return a notice_id')
+        raise errors.UserError('API did not return a Notice ID')
     status = result.get('status', NoticeStatus.DRAFT.value)
     console.print(f"Notice '{created_id}' created successfully ({status}).")
-    console.print(f'Find notice IDs with: {format_list_command(channel)}')
+    console.print(f'Find Notice IDs with: {format_list_command(channel)}')
     offer_publish_after_create(api, channel, created_id, status, interactive=interactive)
 
 
@@ -536,7 +542,7 @@ def do_update(
         raise errors.UserError('At least one field is required to update')
 
     result = api.update_notice(channel, notice_id, **fields)
-    updated_id = result.get('notice_id', notice_id)
+    updated_id = _notice_id_from_payload(result, notice_id)
     console.print(f"Notice '{updated_id}' updated successfully.")
 
 
@@ -559,7 +565,7 @@ def do_publish(api, channel: str, notice_id: str, force: bool = False) -> None:
             return
 
     result = api.publish_notice(channel, notice_id)
-    published_id = result.get('notice_id', notice_id)
+    published_id = _notice_id_from_payload(result, notice_id)
     console.print(f"Notice '{published_id}' published successfully.")
     console.print(f'Verify with: {format_list_command(channel)} --status published')
 
@@ -572,7 +578,7 @@ def do_archive(api, channel: str, notice_id: str, force: bool = False) -> None:
             return
 
     result = api.archive_notice(channel, notice_id)
-    archived_id = result.get('notice_id', notice_id)
+    archived_id = _notice_id_from_payload(result, notice_id)
     console.print(f"Notice '{archived_id}' archived successfully.")
 
 
