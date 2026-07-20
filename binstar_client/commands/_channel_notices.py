@@ -168,7 +168,7 @@ def _sanitize_notice_text(text: str) -> str:
     """Remove terminal control sequences and normalize whitespace for display/storage."""
     text = _ANSI_ESCAPE_RE.sub('', text)
     text = _CONTROL_CHAR_RE.sub('', text)
-    text = text.replace('\r\n', ' ').replace('\n', ' ').replace('\r', ' ')
+    text = re.sub(r'\r\n|\r|\n', ' ', text)
     return ' '.join(text.split())
 
 
