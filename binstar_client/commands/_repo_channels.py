@@ -167,6 +167,10 @@ def _process_and_upload_files(
                 console.print(f"[yellow]Warning:[/yellow] File not found: {filepath}")
                 continue
 
+            if os.path.getsize(filepath) == 0:
+                console.print(f"[red]Error:[/red] File is empty (0 bytes): {filepath}")
+                raise typer.Exit(1)
+
             pkg_type = determine_package_type(filepath, package_type)
 
             for ch in resolved_channels:
