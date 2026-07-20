@@ -42,7 +42,7 @@ class NoticesMixin:
         return res.json()
 
     def create_notice(self, channel, message, level, expires_at):
-        """Create a draft notice (server assigns notice_id)."""
+        """Create a draft notice (server assigns id)."""
         url = f'{self.domain}/{channel}/notices'
         data, headers = jencode(
             message=message,

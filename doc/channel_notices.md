@@ -47,7 +47,7 @@ The server assigns a UUID when you create a notice. The CLI prints the new ID on
 
 ```text
 Notice '550e8400-e29b-41d4-a716-446655440000' created successfully (draft).
-Find notice IDs with: anaconda channel notice list mychannel
+Find Notice IDs with: anaconda channel notice list mychannel
 ```
 
 Use `list` to look up IDs for existing notices. Commands that target a single notice (`get`, `update`, `publish`, `archive`, `delete`) require a valid UUID.
@@ -79,10 +79,11 @@ anaconda channel notice list user
 anaconda channel notice list myorg
 anaconda channel notice list user --status draft
 anaconda channel notice list user --status published
+anaconda channel notice list user --status deleted
 anaconda channel notice list user --offset 20 --limit 20
 ```
 
-Calls `GET /{channel}/notices`. Shows all notices for the channel owner, including drafts. Use `--status` to filter (`draft`, `published`, or `archived`).
+Calls `GET /{channel}/notices`. By default, lists non-deleted notices (draft, published, archived). Soft-deleted notices are excluded unless you pass `--status deleted`. Use `--status` to filter (`draft`, `published`, `archived`, or `deleted`).
 
 ### `get` — single notice details
 
@@ -106,9 +107,9 @@ anaconda channel notice create mychannel \
 | `--expires-after DAYS` | Expire N days from now |
 | `--expires-at` | Exact expiry (ISO 8601, e.g. `2026-09-16T12:00:00+00:00`) |
 
-`--expires-after` and `--expires-at` are mutually exclusive. Do not send `notice_id` — the server assigns a UUID.
+`--expires-after` and `--expires-at` are mutually exclusive. Do not send `id` — the server assigns a UUID.
 
-After create, the CLI prints the server-assigned UUID and a `list` command to find notice IDs. Interactive sessions ask whether to publish immediately. Non-interactive runs also print the exact publish command to run next.
+After create, the CLI prints the server-assigned UUID and a `list` command to find Notice IDs. Interactive sessions ask whether to publish immediately. Non-interactive runs also print the exact publish command to run next.
 
 ### `update` — partial update
 
