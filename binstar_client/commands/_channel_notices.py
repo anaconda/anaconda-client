@@ -30,6 +30,7 @@ from typing import Any, Dict, Literal, Optional, overload
 import typer
 from anaconda_cli_base.console import Table, console, select_from_list
 from dateutil.parser import parse as parse_date
+from rich.markup import escape
 from rich.panel import Panel
 
 from binstar_client import errors
@@ -49,6 +50,8 @@ MESSAGE_HELP = f'Text to show in the notice (max {MESSAGE_MAX_LEN} characters)'
 MESSAGE_UPDATE_HELP = f'Updated text to show in the notice (max {MESSAGE_MAX_LEN} characters)'
 EXPIRES_AT_HELP = 'Expiry time in ISO 8601 format (e.g. 2026-09-16T12:00:00Z)'
 EXPIRES_AFTER_HELP = 'Expire after this many days from now (mutually exclusive with --expires-at)'
+_CONTROL_CHAR_RE = re.compile(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]')
+_ANSI_ESCAPE_RE = re.compile(r'\x1b\[[0-9;]*[A-Za-z]|\x1b\].*?(?:\x07|\x1b\\)')
 
 
 class NoticeLevel(str, Enum):
@@ -68,6 +71,7 @@ class NoticeListFilterStatus(str, Enum):
     DRAFT = 'draft'
     PUBLISHED = 'published'
     ARCHIVED = 'archived'
+    DELETED = 'deleted'
 
 
 class NoticeUpdateStatus(str, Enum):
@@ -92,6 +96,7 @@ LEVEL_HELP = f'Notice level: {", ".join(NOTICE_LEVELS)} (default: {DEFAULT_NOTIC
 LEVEL_UPDATE_HELP = f'Updated notice level: {", ".join(NOTICE_LEVELS)}'
 NOTICE_STATUSES = tuple(status.value for status in NoticeStatus)
 LIST_FILTER_STATUSES = tuple(status.value for status in NoticeListFilterStatus)
+LIST_STATUS_HELP = f'Filter by status: {", ".join(LIST_FILTER_STATUSES)}'
 UPDATE_STATUS_VALUES = tuple(status.value for status in NoticeUpdateStatus)
 STATUS_UPDATE_HELP = (
     f'Updated status: {", ".join(UPDATE_STATUS_VALUES)} (use publish, archive, or delete for lifecycle changes)'
@@ -159,6 +164,19 @@ def _prompt_input(label: str) -> str:
     return console.input(f'[bold]{text}:[/bold] ').strip()
 
 
+def _sanitize_notice_text(text: str) -> str:
+    """Remove terminal control sequences and normalize whitespace for display/storage."""
+    text = _ANSI_ESCAPE_RE.sub('', text)
+    text = _CONTROL_CHAR_RE.sub('', text)
+    text = re.sub(r'\r\n|\r|\n', ' ', text)
+    return ' '.join(text.split())
+
+
+def _format_list_cell(value: object) -> str:
+    """Format a table cell safely for terminal output."""
+    return escape(_sanitize_notice_text(str(value or '')))
+
+
 def _show_validation_error(message: str) -> None:
     """Show an interactive validation error with clear visual separation."""
     console.print('-------')
@@ -183,12 +201,18 @@ def validate_update_status(status: str) -> str:
 
 
 def validate_message(message: str) -> str:
-    message = message.strip()
+    message = _sanitize_notice_text(message.strip())
     if not message:
         raise errors.UserError('Message is required')
     if len(message) > MESSAGE_MAX_LEN:
         raise errors.UserError(f'Message must be at most {MESSAGE_MAX_LEN} characters')
     return message
+
+
+def validate_list_status(status: str) -> str:
+    if status not in LIST_FILTER_STATUSES:
+        raise errors.UserError(f'status must be one of: {", ".join(LIST_FILTER_STATUSES)}')
+    return status
 
 
 def prompt_message(value: Optional[str] = None, *, interactive: bool) -> str:
@@ -376,16 +400,16 @@ def show_admin_notices(items: list, channel: str) -> None:
     table.add_column('Notice ID', style='cyan')
     table.add_column('Status')
     table.add_column('Level')
-    table.add_column('Message')
+    table.add_column('Message', overflow='fold')
     table.add_column('Expires')
 
     for item in items:
         table.add_row(
-            str(item.get('notice_id', '')),
-            str(item.get('status', '')),
-            str(item.get('level', '')),
-            str(item.get('message', '')),
-            str(item.get('expires_at', '')),
+            _format_list_cell(item.get('notice_id', '')),
+            _format_list_cell(item.get('status', '')),
+            _format_list_cell(item.get('level', '')),
+            _format_list_cell(item.get('message', '')),
+            _format_list_cell(item.get('expires_at', '')),
         )
 
     _print_table(table)
@@ -416,22 +440,24 @@ def show_notice_detail(notice: Dict[str, Any], verbose: bool = False) -> None:
         fields.append(('Updated', notice['updated_at']))
 
     for field, value in fields:
-        table.add_row(field, str(value))
+        table.add_row(field, _format_list_cell(value))
 
     console.print(Panel(table, title=f'Notice: {notice_id}', border_style='green'))
 
 
 def do_list(api, channel: str, status: Optional[str], offset: int, limit: int) -> None:
+    if status is not None:
+        validate_list_status(status)
     result = api.list_notices(channel, status=status, offset=offset, limit=limit)
     items = result.get('items', [])
     show_admin_notices(items, channel)
     total = result.get('total_count')
     if total is not None:
-        console.print(f'Total: {total}')
         if offset + len(items) < total:
-            console.print(
-                f'Showing {offset + 1}–{offset + len(items)} of {total}. Use --offset {offset + len(items)} for more.'
-            )
+            console.print(f'Showing {offset + 1}–{offset + len(items)} of {total} notices')
+            console.print(f'Use --offset {offset + len(items)} for more.')
+        else:
+            console.print(f'{total} notice(s)')
 
 
 def do_get(api, channel: str, notice_id: str, verbose: bool) -> None:
@@ -651,7 +677,7 @@ def add_notice_argparse(notice_parser: argparse.ArgumentParser) -> None:
 
     list_parser = notice_subparsers.add_parser(NoticeAction.LIST.value, help=NOTICE_ACTION_HELP[NoticeAction.LIST])
     _add_channel_args(list_parser)
-    list_parser.add_argument('--status', choices=LIST_FILTER_STATUSES, help='Filter by status')
+    list_parser.add_argument('--status', choices=LIST_FILTER_STATUSES, help=LIST_STATUS_HELP)
     list_parser.add_argument('--offset', type=int, default=0, help='Pagination offset')
     list_parser.add_argument('--limit', type=int, default=20, help='Page size (1-100)')
     list_parser.set_defaults(main=main)
@@ -744,7 +770,7 @@ def mount_notice_subcommand(parent_app: typer.Typer) -> None:
         ctx: typer.Context,
         channel: Optional[str] = typer.Argument(None, help=CHANNEL_HELP),
         namespace: Optional[str] = typer.Option(None, '-n', '--namespace', help=NAMESPACE_HELP),
-        status: Optional[str] = typer.Option(None, '--status', help='Filter by status'),
+        status: Optional[str] = typer.Option(None, '--status', help=LIST_STATUS_HELP, metavar='STATUS'),
         offset: int = typer.Option(0, '--offset'),
         limit: int = typer.Option(20, '--limit'),
     ) -> None:

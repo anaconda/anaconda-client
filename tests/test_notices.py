@@ -658,3 +658,83 @@ class TestNotices(CLITestCase):
             validate_update_status('draft')
 
         self.assertIn('Cannot set status to draft', str(ctx.exception))
+
+    def test_validate_message_strips_newlines(self):
+        from binstar_client.commands._channel_notices import validate_message
+
+        self.assertEqual(validate_message('hello\nworld'), 'hello world')
+
+    def test_validate_message_rejects_ansi_arrow_keys(self):
+        from binstar_client.commands._channel_notices import validate_message
+
+        with self.assertRaises(UserError) as ctx:
+            validate_message('\x1b[A\x1b[A')
+
+        self.assertIn('Message is required', str(ctx.exception))
+
+    @urlpatch
+    def test_list_deleted_notices(self, urls):
+        deleted_item = {
+            **NOTICE_ITEM,
+            'status': 'deleted',
+            'notice_id': '8699dc07-c7d7-4988-be88-25ee3a2c3b10',
+        }
+        list_req = urls.register(
+            method='GET',
+            path='/myteam/notices?offset=0&limit=20&status=deleted',
+            content={'total_count': 1, 'items': [deleted_item]},
+        )
+
+        with _patch_notice_console_print():
+            main(['--show-traceback', 'channel', 'notice', 'list', 'myteam', '--status', 'deleted'])
+
+        urls.assertAllCalled()
+        self.assertIn('status=deleted', list_req.req.url)
+        self.assertIn('8699dc07-c7d7-4988-be88-25ee3a2c3b10', self.stream.getvalue())
+        self.assertIn('1 notice(s)', self.stream.getvalue())
+
+    @urlpatch
+    def test_list_notices_shows_pagination_hint_when_more_pages(self, urls):
+        urls.register(
+            method='GET',
+            path='/myteam/notices?offset=0&limit=20',
+            content={'total_count': 25, 'items': [NOTICE_ITEM] * 20},
+        )
+
+        with _patch_notice_console_print():
+            main(['--show-traceback', 'channel', 'notice', 'list', 'myteam'])
+
+        output = self.stream.getvalue()
+        self.assertIn('Showing 1–20 of 25 notices', output)
+        self.assertIn('Use --offset 20 for more.', output)
+
+    @urlpatch
+    def test_list_notices_renders_ansi_message_safely(self, urls):
+        ansi_notice = {
+            **NOTICE_ITEM,
+            'notice_id': '6268dc4d-1e12-492c-9cdd-10463e998812',
+            'message': '\x1b[A\x1b[A',
+            'expires_at': '2032-12-12T14:52:29+00:00',
+            'status': 'published',
+        }
+        normal_notice = {
+            **NOTICE_ITEM,
+            'notice_id': '07625e4d-d844-46fa-845c-d7f91e5e561c',
+            'message': 'Updated',
+            'status': 'published',
+        }
+        urls.register(
+            method='GET',
+            path='/myteam/notices?offset=0&limit=20',
+            content={'total_count': 2, 'items': [ansi_notice, normal_notice]},
+        )
+
+        with _patch_notice_console_print():
+            main(['--show-traceback', 'channel', 'notice', 'list', 'myteam'])
+
+        output = self.stream.getvalue()
+        self.assertIn('6268dc4d-1e12-492c-9cdd-10463e998812', output)
+        self.assertIn('07625e4d-d844-46fa-845c-d7f91e5e561c', output)
+        self.assertIn('2032-12-12T14:52:29+00:00', output)
+        self.assertIn('Updated', output)
+        self.assertIn('2 notice(s)', output)

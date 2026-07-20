@@ -79,10 +79,11 @@ anaconda channel notice list user
 anaconda channel notice list myorg
 anaconda channel notice list user --status draft
 anaconda channel notice list user --status published
+anaconda channel notice list user --status deleted
 anaconda channel notice list user --offset 20 --limit 20
 ```
 
-Calls `GET /{channel}/notices`. Shows all notices for the channel owner, including drafts. Use `--status` to filter (`draft`, `published`, or `archived`).
+Calls `GET /{channel}/notices`. By default, lists non-deleted notices (draft, published, archived). Soft-deleted notices are excluded unless you pass `--status deleted`. Use `--status` to filter (`draft`, `published`, `archived`, or `deleted`).
 
 ### `get` — single notice details
 
