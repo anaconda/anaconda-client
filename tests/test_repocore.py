@@ -855,6 +855,24 @@ class TestRepoCoreChannelsCLI:
         assert "not found" in result.output
         mock_api.upload_file.assert_not_called()
 
+    def test_upload_zero_byte_file(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_user_organizations.return_value = [Namespace(name="testorg")]
+
+        with (
+            _patch_repo_api(mock_api),
+            patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
+            patch("binstar_client.commands._repo_channels.os.path.getsize", return_value=0),
+        ):
+            result = runner.invoke(app, ["upload", "empty-1.0-py39_0.conda", "--channel", "dev"])
+
+        assert result.exit_code == 1
+        assert "Error" in result.output
+        assert "empty (0 bytes)" in result.output
+        mock_api.upload_file.assert_not_called()
+
     def test_upload_auto_detect_fails_exits(self):
         runner = CliRunner()
         app = _get_channels_app()
@@ -906,6 +924,7 @@ class TestRepoCoreChannelsCLI:
         assert result.exit_code == 1
         assert isinstance(result.exception, RepoCoreError)
         assert "Upload failed" in str(result.exception)
+        assert "Channel rhett/subchannel not found" in str(result.exception)
 
     def test_upload_repocore_error_mutates_subchannel_to_channel(self):
         runner = CliRunner()
