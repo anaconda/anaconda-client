@@ -1159,7 +1159,6 @@ class TestRepoCoreChannelsCLI:
         mock_api.share_channel.assert_not_called()
 
 
-
 class TestPackageUtils:
     def test_windows_glob_on_windows(self):
         from binstar_client.repocore.package_utils import windows_glob
