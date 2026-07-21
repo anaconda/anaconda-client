@@ -189,7 +189,7 @@ def _resolve_namespace_and_channel(
       5. Calls _resolve_no_namespace if none are present
     """
     if "/" in name and namespace:
-        console.print("[red]Error:[/red] Ambiguous: name contains '/' but --namespace was also provided.")
+        console.print(f"[red]Error:[/red] Ambiguous: '{name}' contains '/' but --namespace was also provided.")
         raise typer.Exit(1)
 
     if "/" in name:
@@ -216,7 +216,7 @@ def _resolve_namespace_and_channel(
         return ResolvedChannel(namespace=namespaces[0], channel_name=name)
 
     console.print()
-    selected_namespace = select_from_list("Select namespace:", namespaces)
+    selected_namespace = select_from_list(f"Select namespace for channel '{name}':", namespaces)
     return ResolvedChannel(namespace=selected_namespace, channel_name=name)
 
 
@@ -461,6 +461,53 @@ def upload_command(
 
     resolved_channels = _resolve_channels_with_namespaces(api, channels, namespace, from_deprecated_channel_flag)
     _process_and_upload_files(api, files, resolved_channels, package_type, from_deprecated_channel_flag)
+
+
+@app.command(name="share", help="Share a channel with a user")
+def share_command(
+    ctx: typer.Context,
+    user: str = typer.Argument(..., help="User ID, email, or username to share with"),
+    channel: Optional[List[str]] = typer.Option(
+        None,
+        "--channel",
+        "-c",
+        help="Channel(s) to share in format 'namespace/channel' or 'channel'. Can be specified multiple times.",
+    ),
+    namespace: Optional[str] = typer.Option(
+        None,
+        "--namespace",
+        "-n",
+        help="Namespace for the channel (alternative to namespace/channel format)",
+    ),
+    role: str = typer.Option(
+        "viewer",
+        "--role",
+        "-r",
+        help="Role to grant: viewer (read) or collaborator (write). Defaults to viewer.",
+    ),
+    unshare: bool = typer.Option(False, "--unshare", help="Unshare the channel instead of sharing"),
+) -> None:
+    """Share a channel with a user."""
+    api = ctx.obj.repo_api
+
+    channels = channel or []
+    if not channels:
+        console.print("[red]Error:[/red] No channel specified. Use --channel option to specify channel(s) to share.")
+        raise typer.Exit(1)
+
+    if role not in ("viewer", "collaborator"):
+        console.print("[red]Error:[/red] --role must be either 'viewer' or 'collaborator'.")
+        raise typer.Exit(1)
+
+    grant = "write" if role == "collaborator" else "read"
+
+    resolved_channels = _resolve_channels_with_namespaces(api, channels, namespace, False)
+
+    action = "unshare" if unshare else "share"
+    for ch in resolved_channels:
+        namespace, channel_name = ch.split("/", 1)
+        api.share_channel(namespace, channel_name, user, action=action, grant=grant)
+        console.print(f"[green]Success![/green] {action.capitalize()}d channel '[cyan]{ch}[/cyan]' with {user}")
 
 
 channel_notices.mount_notice_subcommand(app)
