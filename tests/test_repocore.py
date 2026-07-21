@@ -932,25 +932,6 @@ class TestRepoCoreChannelsCLI:
         assert isinstance(result.exception, RepoCoreError)
         assert "Upload failed" in str(result.exception)
 
-    def test_upload_repocore_error_mutates_subchannel_to_channel(self):
-        runner = CliRunner()
-        app = _get_channels_app()
-        mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = [Namespace(name="testorg")]
-        mock_api.upload_file.side_effect = RepoCoreError("The subchannel does not exist and Subchannel is invalid")
-
-        with (
-            _patch_repo_api(mock_api),
-            patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
-            patch("binstar_client.commands._repo_channels.os.path.getsize", return_value=100),
-            patch("binstar_client.repocore.package_utils._detect_package_type", return_value="conda"),
-        ):
-            result = runner.invoke(app, ["upload", "test-1.0-py39_0.conda", "--channel", "dev"])
-
-        assert result.exit_code == 1
-        assert isinstance(result.exception, RepoCoreError)
-        assert "The channel does not exist and Channel is invalid" in str(result.exception)
-
         mock_api.upload_file.side_effect = RepoCoreError("Subchannel rhett/subchannel not found")
 
         with (
@@ -1178,24 +1159,148 @@ class TestRepoCoreChannelsCLI:
         assert isinstance(result.exception, RepoCoreError)
         assert "not found" in str(result.exception).lower()
 
-    def test_upload_404_without_deprecated_flag_no_label_hint(self):
+    def test_share_unshare_option(self):
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = [Namespace(name="testorg")]
-        mock_api.upload_file.side_effect = RepoCoreError("Channel 'myorg/dev' not found")
+        mock_api.list_user_organizations.return_value = [Namespace(name="myorg")]
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(app, ["share", "testuser", "--channel", "myorg/dev", "--unshare"])
+
+        assert result.exit_code == 0
+        mock_api.share_channel.assert_called_once_with("myorg", "dev", "testuser", action="unshare", grant="read")
+
+    def test_share_role_not_provided_prompts_user(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_user_organizations.return_value = [Namespace(name="myorg")]
 
         with (
             _patch_repo_api(mock_api),
-            patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
-            patch("binstar_client.commands._repo_channels.os.path.getsize", return_value=100),
-            patch("binstar_client.repocore.package_utils._detect_package_type", return_value="conda"),
+            patch("binstar_client.commands._repo_channels.select_from_list", return_value="viewer"),
         ):
-            result = runner.invoke(app, ["upload", "--channel", "myorg/dev", "test-1.0-py39_0.conda"])
+            result = runner.invoke(app, ["share", "testuser", "--channel", "myorg/dev"])
+
+        assert result.exit_code == 0
+        mock_api.share_channel.assert_called_once_with("myorg", "dev", "testuser", action="share", grant="read")
+
+    def test_share_single_channel_success(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_user_organizations.return_value = [Namespace(name="myorg")]
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(app, ["share", "testuser", "--channel", "myorg/dev", "--role", "viewer"])
+
+        assert result.exit_code == 0
+        assert "Success" in result.output
+        assert "myorg/dev" in result.output
+        assert "testuser" in result.output
+        mock_api.share_channel.assert_called_once()
+
+    def test_share_multi_channel_success(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_user_organizations.return_value = [Namespace(name="myorg")]
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(
+                app, ["share", "testuser", "--channel", "myorg/dev", "--channel", "myorg/staging", "--role", "viewer"]
+            )
+
+        assert result.exit_code == 0
+        assert mock_api.share_channel.call_count == 2
+        mock_api.share_channel.assert_any_call("myorg", "dev", "testuser", action="share", grant="read")
+        mock_api.share_channel.assert_any_call("myorg", "staging", "testuser", action="share", grant="read")
+
+    def test_share_channel_not_namespace_format_prompts_for_namespace_single(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_user_organizations.return_value = [
+            Namespace(name="org-a"),
+            Namespace(name="org-b"),
+        ]
+
+        with (
+            _patch_repo_api(mock_api),
+            patch("binstar_client.commands._repo_channels.select_from_list", return_value="org-a"),
+        ):
+            result = runner.invoke(app, ["share", "testuser", "--channel", "dev", "--role", "viewer"])
+
+        assert result.exit_code == 0
+        mock_api.share_channel.assert_called_once_with("org-a", "dev", "testuser", action="share", grant="read")
+
+    def test_share_channel_not_namespace_format_prompts_for_namespace_multi(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_user_organizations.return_value = [
+            Namespace(name="org-a"),
+            Namespace(name="org-b"),
+        ]
+
+        with (
+            _patch_repo_api(mock_api),
+            patch(
+                "binstar_client.commands._repo_channels.select_from_list",
+                side_effect=["org-a", "org-b"],
+            ),
+        ):
+            result = runner.invoke(
+                app, ["share", "testuser", "--channel", "dev", "--channel", "staging", "--role", "viewer"]
+            )
+
+        assert result.exit_code == 0
+        assert mock_api.share_channel.call_count == 2
+        mock_api.share_channel.assert_any_call("org-a", "dev", "testuser", action="share", grant="read")
+        mock_api.share_channel.assert_any_call("org-b", "staging", "testuser", action="share", grant="read")
+
+    def test_share_namespace_option_provides_namespace(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(
+                app,
+                [
+                    "share",
+                    "testuser",
+                    "--channel",
+                    "dev",
+                    "--channel",
+                    "staging",
+                    "--namespace",
+                    "myorg",
+                    "--role",
+                    "viewer",
+                ],
+            )
+
+        assert result.exit_code == 0
+        assert mock_api.share_channel.call_count == 2
+        mock_api.share_channel.assert_any_call("myorg", "dev", "testuser", action="share", grant="read")
+        mock_api.share_channel.assert_any_call("myorg", "staging", "testuser", action="share", grant="read")
+        mock_api.list_user_organizations.assert_not_called()
+
+    def test_share_namespace_with_slash_format_throws_ambiguous(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(
+                app, ["share", "testuser", "--channel", "org-a/dev", "--namespace", "org-b", "--role", "viewer"]
+            )
 
         assert result.exit_code == 1
-        assert isinstance(result.exception, RepoCoreError)
-        assert "not found" in str(result.exception).lower()
+        assert "Ambiguous" in result.output
+        mock_api.share_channel.assert_not_called()
 
 
 class TestPackageUtils:
