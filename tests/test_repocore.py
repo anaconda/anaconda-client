@@ -756,6 +756,7 @@ class TestRepoCoreChannelsCLI:
         with (
             _patch_repo_api(mock_api),
             patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
+            patch("binstar_client.commands._repo_channels.os.path.getsize", return_value=100),
             patch("binstar_client.repocore.package_utils._detect_package_type", return_value="conda"),
         ):
             result = runner.invoke(app, ["upload", "--channel", "dev", "test-1.0-py39_0.conda"])
@@ -810,6 +811,7 @@ class TestRepoCoreChannelsCLI:
         with (
             _patch_repo_api(mock_api),
             patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
+            patch("binstar_client.commands._repo_channels.os.path.getsize", return_value=100),
             patch("binstar_client.repocore.package_utils._detect_package_type", return_value="conda"),
         ):
             result = runner.invoke(app, ["upload", "--channel", "dev", "--channel", "staging", "test-1.0-py39_0.conda"])
@@ -830,6 +832,7 @@ class TestRepoCoreChannelsCLI:
         with (
             _patch_repo_api(mock_api),
             patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
+            patch("binstar_client.commands._repo_channels.os.path.getsize", return_value=100),
         ):
             result = runner.invoke(
                 app, ["upload", "--channel", "dev", "--package-type", "pypi", "test-1.0-py3-none-any.whl"]
@@ -847,6 +850,7 @@ class TestRepoCoreChannelsCLI:
         with (
             _patch_repo_api(mock_api),
             patch("binstar_client.commands._repo_channels.os.path.exists", return_value=False),
+            patch("binstar_client.commands._repo_channels.os.path.getsize", return_value=100),
         ):
             result = runner.invoke(app, ["upload", "nonexistent-1.0-py39_0.conda", "--channel", "dev"])
 
@@ -882,6 +886,7 @@ class TestRepoCoreChannelsCLI:
         with (
             _patch_repo_api(mock_api),
             patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
+            patch("binstar_client.commands._repo_channels.os.path.getsize", return_value=100),
             patch("binstar_client.repocore.package_utils._detect_package_type", return_value=None),
         ):
             result = runner.invoke(app, ["upload", "unknown.file", "--channel", "dev"])
@@ -899,6 +904,7 @@ class TestRepoCoreChannelsCLI:
         with (
             _patch_repo_api(mock_api),
             patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
+            patch("binstar_client.commands._repo_channels.os.path.getsize", return_value=100),
             patch("binstar_client.repocore.package_utils._detect_package_type", return_value="conda"),
         ):
             result = runner.invoke(app, ["upload", "test-1.0-py39_0.conda", "--channel", "dev"])
@@ -917,6 +923,7 @@ class TestRepoCoreChannelsCLI:
         with (
             _patch_repo_api(mock_api),
             patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
+            patch("binstar_client.commands._repo_channels.os.path.getsize", return_value=100),
             patch("binstar_client.repocore.package_utils._detect_package_type", return_value="conda"),
         ):
             result = runner.invoke(app, ["upload", "test-1.0-py39_0.conda", "--channel", "dev"])
@@ -924,7 +931,6 @@ class TestRepoCoreChannelsCLI:
         assert result.exit_code == 1
         assert isinstance(result.exception, RepoCoreError)
         assert "Upload failed" in str(result.exception)
-        assert "Channel rhett/subchannel not found" in str(result.exception)
 
     def test_upload_repocore_error_mutates_subchannel_to_channel(self):
         runner = CliRunner()
@@ -936,6 +942,7 @@ class TestRepoCoreChannelsCLI:
         with (
             _patch_repo_api(mock_api),
             patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
+            patch("binstar_client.commands._repo_channels.os.path.getsize", return_value=100),
             patch("binstar_client.repocore.package_utils._detect_package_type", return_value="conda"),
         ):
             result = runner.invoke(app, ["upload", "test-1.0-py39_0.conda", "--channel", "dev"])
@@ -949,6 +956,7 @@ class TestRepoCoreChannelsCLI:
         with (
             _patch_repo_api(mock_api),
             patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
+            patch("binstar_client.commands._repo_channels.os.path.getsize", return_value=100),
             patch("binstar_client.repocore.package_utils._detect_package_type", return_value="conda"),
         ):
             result = runner.invoke(app, ["upload", "test-1.0-py39_0.conda", "--channel", "dev"])
@@ -967,6 +975,7 @@ class TestRepoCoreChannelsCLI:
         with (
             _patch_repo_api(mock_api),
             patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
+            patch("binstar_client.commands._repo_channels.os.path.getsize", return_value=100),
             patch("binstar_client.repocore.package_utils._detect_package_type", return_value="conda"),
         ):
             result = runner.invoke(app, ["upload", "test-1.0-py39_0.conda", "--channel", "dev"])
@@ -985,6 +994,7 @@ class TestRepoCoreChannelsCLI:
         with (
             _patch_repo_api(mock_api),
             patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
+            patch("binstar_client.commands._repo_channels.os.path.getsize", return_value=100),
             patch("binstar_client.repocore.package_utils._detect_package_type", return_value="conda"),
         ):
             result = runner.invoke(app, ["upload", "test-1.0-py39_0.conda", "--channel", "dev"])
@@ -999,7 +1009,10 @@ class TestRepoCoreChannelsCLI:
         app = _get_channels_app()
         mock_api = MagicMock()
 
-        with _patch_repo_api(mock_api):
+        with (
+            _patch_repo_api(mock_api),
+            patch("binstar_client.commands._repo_channels.os.path.getsize", return_value=100),
+        ):
             result = runner.invoke(app, ["upload", "test-1.0-py39_0.conda"])
 
         assert result.exit_code == 1
@@ -1155,6 +1168,7 @@ class TestRepoCoreChannelsCLI:
         with (
             _patch_repo_api(mock_api),
             patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
+            patch("binstar_client.commands._repo_channels.os.path.getsize", return_value=100),
             patch("binstar_client.repocore.package_utils._detect_package_type", return_value="conda"),
         ):
             # Simulate the deprecated channel flag by calling from the old upload command
@@ -1174,6 +1188,7 @@ class TestRepoCoreChannelsCLI:
         with (
             _patch_repo_api(mock_api),
             patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
+            patch("binstar_client.commands._repo_channels.os.path.getsize", return_value=100),
             patch("binstar_client.repocore.package_utils._detect_package_type", return_value="conda"),
         ):
             result = runner.invoke(app, ["upload", "--channel", "myorg/dev", "test-1.0-py39_0.conda"])

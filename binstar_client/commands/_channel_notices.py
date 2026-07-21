@@ -177,15 +177,12 @@ def _format_list_cell(value: object) -> str:
     return escape(_sanitize_notice_text(str(value or '')))
 
 
-<<<<<<< HEAD
 def _notice_id_from_payload(payload: Dict[str, Any], default: str = '') -> str:
     """Read notice UUID from API payload field ``id``."""
     value = payload.get('id', default)
     return str(value) if value else ''
 
 
-=======
->>>>>>> f292678 (Prex-2283 - fix display to avoid ANSI characters from breaking terminal UI and extend command to show deleted notices (#899))
 def _show_validation_error(message: str) -> None:
     """Show an interactive validation error with clear visual separation."""
     console.print('-------')
@@ -414,11 +411,7 @@ def show_admin_notices(items: list, channel: str) -> None:
 
     for item in items:
         table.add_row(
-<<<<<<< HEAD
             _format_list_cell(_notice_id_from_payload(item)),
-=======
-            _format_list_cell(item.get('notice_id', '')),
->>>>>>> f292678 (Prex-2283 - fix display to avoid ANSI characters from breaking terminal UI and extend command to show deleted notices (#899))
             _format_list_cell(item.get('status', '')),
             _format_list_cell(item.get('level', '')),
             _format_list_cell(item.get('message', '')),
