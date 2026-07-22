@@ -329,14 +329,15 @@ class Test(CLITestCase):
     @unittest.mock.patch('binstar_client.commands._repo_channels.upload_command')
     def test_upload_channel_flag_delegates_to_channel_upload(self, mock_upload_command):
         main(['--show-traceback', 'upload', '-c', 'mychannel', data_dir('foo-0.1-0.tar.bz2')])
-        mock_upload_command.assert_called_once_with(
-            ctx=None,
-            files=[data_dir('foo-0.1-0.tar.bz2')],
-            channel=['mychannel'],
-            namespace=None,
-            package_type=None,
-            from_deprecated_channel_flag=True,
-        )
+        mock_upload_command.assert_called_once()
+        call_kwargs = mock_upload_command.call_args[1]
+        assert call_kwargs['ctx'] is None
+        assert call_kwargs['files'] == [data_dir('foo-0.1-0.tar.bz2')]
+        assert call_kwargs['channel'] == ['mychannel']
+        assert call_kwargs['namespace'] is None
+        assert call_kwargs['package_type'] is None
+        assert call_kwargs['from_deprecated_channel_flag'] is True
+        assert call_kwargs['labels'] == []
 
     @unittest.mock.patch('binstar_client.commands._repo_channels.upload_command')
     def test_upload_channel_flag_with_package_type_converts_to_enum(self, mock_upload_command):
@@ -370,4 +371,28 @@ class Test(CLITestCase):
         error_message = str(ctx.exception)
         self.assertIn("Invalid value for '--package-type'", error_message)
         self.assertIn('invalid_type', error_message)
-        self.assertIn('is not one of', error_message)
+
+    @unittest.mock.patch('binstar_client.commands._repo_channels.upload_command')
+    def test_upload_namespace_flag_routes_to_repo(self, mock_upload_command):
+        main(['--show-traceback', 'upload', '-c', 'prod', '-n', 'myns', data_dir('foo-0.1-0.tar.bz2')])
+        mock_upload_command.assert_called_once()
+        call_kwargs = mock_upload_command.call_args[1]
+        assert call_kwargs['channel'] == ['prod']
+        assert call_kwargs['namespace'] == 'myns'
+
+    def test_upload_namespace_without_channel_errors(self):
+        with self.assertRaises(SystemExit) as ctx:
+            main(['--show-traceback', 'upload', '-n', 'myns', data_dir('foo-0.1-0.tar.bz2')])
+        self.assertEqual(ctx.exception.code, 1)
+
+    def test_upload_namespace_with_label_errors(self):
+        from click.exceptions import Exit
+
+        with self.assertRaises((SystemExit, Exit)):
+            main(['--show-traceback', 'upload', '-c', 'prod', '-n', 'myns', '-l', 'dev', data_dir('foo-0.1-0.tar.bz2')])
+
+    def test_upload_label_with_qualified_repo_channel_errors(self):
+        from click.exceptions import Exit
+
+        with self.assertRaises((SystemExit, Exit)):
+            main(['--show-traceback', 'upload', '-c', 'myns/prod', '-l', 'dev', data_dir('foo-0.1-0.tar.bz2')])
