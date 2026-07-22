@@ -5,6 +5,7 @@ Extracted from ``binstar_client.commands._repo_channels`` so both the
 can share a single resolver.
 """
 
+import sys
 from typing import Callable, List, Optional
 
 import typer
@@ -90,7 +91,21 @@ def resolve_namespace_and_channel(
 
 
 def _prompt_repo_or_org(name: str) -> str:
-    """Prompt to disambiguate a name matching both systems. Returns 'repo' or 'org'."""
+    """Prompt to disambiguate a name matching both systems. Returns 'repo' or 'org'.
+
+    The interactive selector reads raw keystrokes, which is impossible without a
+    terminal. When stdin is not a TTY (pipelines, CI), refuse to guess and tell
+    the user how to be explicit instead.
+    """
+    if not sys.stdin.isatty():
+        console.print(
+            f'[red]Error:[/red] "{name}" matches both an anaconda.com namespace and an '
+            "anaconda.org owner, and there is no terminal to disambiguate.\n"
+            f'Use "{name}/<channel>" for an anaconda.com channel, or "-u {name}" '
+            "with anaconda upload for anaconda.org."
+        )
+        raise typer.Exit(1)
+
     console.print()
     console.print(f'"{name}" matches both an anaconda.com namespace and an anaconda.org owner.')
     return select_from_list(

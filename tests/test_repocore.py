@@ -3,6 +3,7 @@
 from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
+import typer
 from typer.testing import CliRunner
 
 from binstar_client.repocore import (
@@ -430,7 +431,10 @@ class TestClassifyAndResolve:
 
         mock_api = MagicMock()
         mock_api.list_user_organizations.return_value = [Namespace(name="user1")]
-        with patch("binstar_client.repocore.resolve.select_from_list", return_value="org"):
+        with (
+            patch("binstar_client.repocore.resolve.sys.stdin.isatty", return_value=True),
+            patch("binstar_client.repocore.resolve.select_from_list", return_value="org"),
+        ):
             resolved = classify_and_resolve(mock_api, "user1", owner_probe=lambda n: True)
         assert resolved.target == "org"
         assert resolved.owner == "user1"
@@ -440,12 +444,24 @@ class TestClassifyAndResolve:
 
         mock_api = MagicMock()
         mock_api.list_user_organizations.return_value = [Namespace(name="user1")]
-        with patch("binstar_client.repocore.resolve.select_from_list", return_value="repo"):
+        with (
+            patch("binstar_client.repocore.resolve.sys.stdin.isatty", return_value=True),
+            patch("binstar_client.repocore.resolve.select_from_list", return_value="repo"),
+        ):
             resolved = classify_and_resolve(mock_api, "user1", owner_probe=lambda n: True)
         # Picking repo means: treat the bare name as a channel; the sole namespace is user1.
         assert resolved.target == "repo"
         assert resolved.namespace == "user1"
         assert resolved.channel_name == "user1"
+
+    def test_bare_ambiguous_non_tty_errors(self):
+        from binstar_client.repocore.resolve import classify_and_resolve
+
+        mock_api = MagicMock()
+        mock_api.list_user_organizations.return_value = [Namespace(name="user1")]
+        with patch("binstar_client.repocore.resolve.sys.stdin.isatty", return_value=False):
+            with pytest.raises(typer.Exit):
+                classify_and_resolve(mock_api, "user1", owner_probe=lambda n: True)
 
 
 class TestRepoCoreChannelsCLI:
@@ -908,7 +924,7 @@ class TestRepoCoreChannelsCLI:
         with (
             _patch_repo_api(mock_api, owner_exists=True),
             patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
-            patch("binstar_client.repocore.resolve.select_from_list", return_value="org"),
+            patch("binstar_client.repocore.resolve._prompt_repo_or_org", return_value="org"),
             patch("binstar_client.commands._repo_channels._upload_to_dotorg") as mock_dotorg,
         ):
             result = runner.invoke(app, ["upload", "--channel", "jnguyenwoohoo", "pkg-1.0-0.conda"])

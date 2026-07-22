@@ -151,9 +151,14 @@ def _upload_to_dotorg(files: List[str], owner: str, labels: List[str], org_uploa
         args = argparse.Namespace(**vars(org_upload_args))
     else:
         # Direct `anaconda channel upload` invocation: build a minimal set of args.
+        # channel upload intentionally does not expose the full anaconda.org option
+        # surface (--private, -p, -v, -s, -d, mode flags); use `anaconda upload -c`
+        # for those. Everything here is defaulted.
         args = argparse.Namespace(
             token=None,
             site=None,
+            disable_ssl_warnings=False,
+            show_traceback=False,
             no_progress=False,
             keep_basename=False,
             package=None,
@@ -453,6 +458,7 @@ def _do_upload(
     from_deprecated_channel_flag: bool,
     token_value: Optional[str],
     site_value: Optional[str],
+    org_site_value: Optional[str] = None,
     labels: Optional[List[str]] = None,
     org_upload_args: object = None,
 ) -> None:
@@ -469,9 +475,11 @@ def _do_upload(
         raise typer.Exit(1)
 
     # Probe used to detect anaconda.org owners so a bare name can route to dotorg.
+    # Note: ``--at`` selects the anaconda.com (repo) domain and is NOT a valid
+    # anaconda.org site alias, so it must not be forwarded here.
     def _owner_probe(name: str) -> bool:
         try:
-            aserver_api = get_server_api(token_value, site_value)
+            aserver_api = get_server_api(token_value, org_site_value)
             aserver_api.user(name)
             return True
         except Exception:
@@ -509,6 +517,7 @@ def upload_command(
     """Programmatic entry for uploads (used by the ``anaconda upload`` bridge)."""
     token_value = None
     site_value = None
+    org_site_value = None
     if ctx is None:
         from anaconda_cli_base.cli import ContextExtras
         from binstar_client import __version__
@@ -516,6 +525,7 @@ def upload_command(
         # Carry --site/--token from the `anaconda upload` bridge, if provided.
         token_value = getattr(org_upload_args, "token", None)
         site_value = getattr(org_upload_args, "site", None)
+        org_site_value = site_value  # `anaconda upload --site` is an anaconda.org alias
 
         ctx_obj = ContextExtras()
         ctx_obj.repo_api = RepoCoreClient(site=site_value, version=__version__)
@@ -528,6 +538,8 @@ def upload_command(
         params = getattr(ctx.obj, "params", {})
         site_value = params.get("at") or params.get("site")
         token_value = params.get("token")
+        # --at selects the anaconda.com domain; only --site is an anaconda.org alias.
+        org_site_value = params.get("site")
 
     _do_upload(
         ctx.obj.repo_api,
@@ -538,6 +550,7 @@ def upload_command(
         from_deprecated_channel_flag,
         token_value,
         site_value,
+        org_site_value=org_site_value,
         labels=labels,
         org_upload_args=org_upload_args,
     )
@@ -562,6 +575,12 @@ def _upload_cli(
         "-n",
         help="Namespace for the channel (alternative to namespace/channel format)",
     ),
+    label: Optional[List[str]] = typer.Option(
+        None,
+        "--label",
+        "-l",
+        help="anaconda.org label to apply (only when the target resolves to anaconda.org).",
+    ),
     package_type: Optional[PackageType] = typer.Option(
         None,
         "--package-type",
@@ -582,6 +601,8 @@ def _upload_cli(
         from_deprecated_channel_flag=False,
         token_value=token_value,
         site_value=site_value,
+        org_site_value=params.get("site"),
+        labels=label or [],
     )
 
 

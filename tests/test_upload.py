@@ -396,3 +396,43 @@ class Test(CLITestCase):
 
         with self.assertRaises((SystemExit, Exit)):
             main(['--show-traceback', 'upload', '-c', 'myns/prod', '-l', 'dev', data_dir('foo-0.1-0.tar.bz2')])
+
+    @unittest.mock.patch('binstar_client.commands.upload._dotorg_upload')
+    @unittest.mock.patch('binstar_client.repocore.resolve.classify_and_resolve')
+    def test_upload_channel_org_route_forwards_all_args(self, mock_classify, mock_dotorg):
+        """`anaconda upload -c NAME` that resolves to anaconda.org must forward the full
+        arg set (e.g. --private, --summary) through to the dotorg Uploader."""
+        from binstar_client.repocore import ResolvedChannel
+
+        mock_classify.return_value = ResolvedChannel(
+            namespace=None, channel_name='someorg', target='org', owner='someorg'
+        )
+
+        main(
+            [
+                'upload',
+                '-c',
+                'someorg',
+                '-l',
+                'dev',
+                '--private',
+                '--summary',
+                'a summary',
+                '--package',
+                'mypkg',
+                '--version',
+                '9.9',
+                data_dir('foo-0.1-0.tar.bz2'),
+            ]
+        )
+
+        mock_dotorg.assert_called_once()
+        forwarded = mock_dotorg.call_args[0][0]
+        assert forwarded.user == 'someorg'
+        assert forwarded.labels == ['dev']
+        assert forwarded.private is True
+        assert forwarded.summary == 'a summary'
+        assert forwarded.package == 'mypkg'
+        assert forwarded.version == '9.9'
+        # channels consumed so it doesn't loop back through the repo path
+        assert forwarded.channels == []
