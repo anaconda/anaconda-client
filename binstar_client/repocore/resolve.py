@@ -139,7 +139,7 @@ def classify_and_resolve(
     if "/" in name or namespace:
         return resolve_namespace_and_channel(api, name, namespace, require_namespace=False)
 
-    org_match = bool(owner_probe) and owner_probe(name)
+    org_match = owner_probe is not None and owner_probe(name)
 
     repo_match = False
     if org_match:

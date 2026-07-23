@@ -548,6 +548,8 @@ def _do_upload(
         _process_and_upload_files(api, files, repo_channels, package_type, from_deprecated_channel_flag)
 
     for r in org_targets:
+        if r.owner is None:  # org targets always carry an owner; guard for the type checker
+            continue
         _upload_to_dotorg(files, r.owner, labels, org_upload_args, package_type=package_type)
 
 
