@@ -59,7 +59,7 @@ def resolve_namespace_and_channel(
       5. Calls resolve_no_namespace if none are present
     """
     if "/" in name and namespace:
-        console.print("[red]Error:[/red] Ambiguous: name contains '/' but --namespace was also provided.")
+        console.print(f"[red]Error:[/red] Ambiguous: '{name}' contains '/' but --namespace was also provided.")
         raise typer.Exit(1)
 
     if "/" in name:
@@ -86,7 +86,7 @@ def resolve_namespace_and_channel(
         return ResolvedChannel(namespace=namespaces[0], channel_name=name)
 
     console.print()
-    selected_namespace = select_from_list("Select namespace:", namespaces)
+    selected_namespace = select_from_list(f"Select namespace for channel '{name}':", namespaces)
     return ResolvedChannel(namespace=selected_namespace, channel_name=name)
 
 

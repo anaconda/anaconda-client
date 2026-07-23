@@ -103,11 +103,22 @@ class RepoCoreClient(BaseClient):
             pass
         return f"Error {action} (status {response.status_code})"
 
-    def _manage_response(self, response, action="", success_codes=None):
-        if not success_codes:
-            success_codes = [200]
+    def _manage_response(self, response, action="", success_codes=[200], empty_success_codes=[204]):
+        """Manages server responses
+
+        Defaults to success_codes of only 200 and No Content success code of 204.
+        Callers can pass their own success codes and empty success codes (No Content).
+
+        Resolution order:
+          1. If status code has no content (empty success code), return None
+          2. If status code is a non empty success code, return response.json()
+          3. Extract error message
+          4. If status code is 401 or 403, raise Unauthorized error with extracted msg
+          5. If status code is any other, raise RepoCoreError with extracted msg
+
+        """
         if response.status_code in success_codes:
-            if response.status_code == 204:
+            if response.status_code in empty_success_codes:  # No Content responses
                 return None
             return response.json()
 
@@ -144,12 +155,9 @@ class RepoCoreClient(BaseClient):
     def remove_channel(self, channel: str):
         url = self._get_channel_url(channel)
         response = self.delete(url)
-        if response.status_code in [200, 202, 204]:
-            return None
-        msg = self._extract_error_message(response, f"removing channel {channel}")
-        if response.status_code == 403:
-            raise Unauthorized(msg)
-        raise RepoCoreError(msg)
+        return self._manage_response(
+            response, f"removing channel {channel}", success_codes=[200, 202, 204], empty_success_codes=[200, 202, 204]
+        )
 
     def get_namespace_channel(self, channel: str) -> NamespaceChannel:
         url = self._get_channel_url(channel)
@@ -160,12 +168,9 @@ class RepoCoreClient(BaseClient):
     def update_channel(self, channel: str, **data):
         url = self._get_channel_url(channel)
         response = self.put(url, json=data)
-        if response.status_code in [200, 204]:
-            return None
-        msg = self._extract_error_message(response, f"updating channel {channel}")
-        if response.status_code == 403:
-            raise Unauthorized(msg)
-        raise RepoCoreError(msg)
+        return self._manage_response(
+            response, f"updating channel {channel}", success_codes=[200, 204], empty_success_codes=[200, 204]
+        )
 
     def get_channels(self, channel: str, offset: int = 0, limit: int = 50) -> list[Channel]:
         url = join(self._channels_url, channel, "subchannels")
@@ -205,3 +210,14 @@ class RepoCoreClient(BaseClient):
             response = self.post(url, files=multipart_form_data)
 
         return self._manage_response(response, f"uploading {filename}", success_codes=[200, 201])
+
+    def share_channel(self, namespace: str, channel_name: str, user: str, action: str = "share", grant: str = "read"):
+        url = join(self._api_base, "namespaces", namespace, "channels", channel_name, "sharing")
+        data = {"action": action, "user": user}
+        if action == "share":
+            data["grant"] = grant
+
+        response = self.post(url, json=data)
+        channel_path = f"{namespace}/{channel_name}"
+        action_verb = "sharing" if action == "share" else "unsharing"
+        return self._manage_response(response, f"{action_verb} channel {channel_path} with {user}", success_codes=[200])

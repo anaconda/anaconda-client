@@ -130,6 +130,10 @@ def _process_and_upload_files(
                 console.print(f"[yellow]Warning:[/yellow] File not found: {filepath}")
                 continue
 
+            if os.path.getsize(filepath) == 0:
+                console.print(f"[red]Error:[/red] File is empty (0 bytes): {filepath}")
+                raise typer.Exit(1)
+
             pkg_type = determine_package_type(filepath, package_type)
 
             for ch in resolved_channels:
@@ -608,6 +612,67 @@ def _upload_cli(
         org_site_value=params.get("site"),
         labels=label or [],
     )
+
+
+@app.command(name="share", help="Share a channel with a user")
+def share_command(
+    ctx: typer.Context,
+    user: str = typer.Argument(..., help="User ID, email, or username to share with"),
+    channel: Optional[List[str]] = typer.Option(
+        None,
+        "--channel",
+        "-c",
+        help="Channel(s) to share in format 'namespace/channel' or 'channel'. Can be specified multiple times.",
+    ),
+    namespace: Optional[str] = typer.Option(
+        None,
+        "--namespace",
+        "-n",
+        help="Namespace for the channel (alternative to namespace/channel format)",
+    ),
+    role: str = typer.Option(
+        "viewer",
+        "--role",
+        "-r",
+        help="Role to grant: viewer (read) or collaborator (write). Defaults to viewer.",
+    ),
+    unshare: bool = typer.Option(False, "--unshare", help="Unshare the channel instead of sharing"),
+) -> None:
+    """Share a channel with a user."""
+    api = ctx.obj.repo_api
+
+    channels = channel or []
+    if not channels:
+        console.print("[red]Error:[/red] No channel specified. Use --channel option to specify channel(s) to share.")
+        raise typer.Exit(1)
+
+    if role not in ("viewer", "collaborator"):
+        console.print("[red]Error:[/red] --role must be either 'viewer' or 'collaborator'.")
+        raise typer.Exit(1)
+
+    grant = "write" if role == "collaborator" else "read"
+
+    # Sharing is an anaconda.com (repo) concept only; resolve without an owner
+    # probe so bare names stay repo channels rather than routing to anaconda.org.
+    resolved_channels = _resolve_channels_with_namespaces(api, channels, namespace, False)
+
+    action = "unshare" if unshare else "share"
+    for resolved in resolved_channels:
+        if resolved.target == "org":
+            console.print(
+                f'[red]Error:[/red] "{resolved.owner}" is an anaconda.org owner; sharing applies only to '
+                "anaconda.com repo channels."
+            )
+            raise typer.Exit(1)
+        if not resolved.namespace:
+            console.print(
+                f"[red]Error:[/red] Could not resolve a namespace for '{resolved.channel_name}'. "
+                "Specify one with --namespace or use namespace/channel format."
+            )
+            raise typer.Exit(1)
+        ch = f"{resolved.namespace}/{resolved.channel_name}"
+        api.share_channel(resolved.namespace, resolved.channel_name, user, action=action, grant=grant)
+        console.print(f"[green]Success![/green] {action.capitalize()}d channel '[cyan]{ch}[/cyan]' with {user}")
 
 
 channel_notices.mount_notice_subcommand(app)
