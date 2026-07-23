@@ -986,9 +986,12 @@ class TestRepoCoreChannelsCLI:
                 app,
                 [
                     "upload",
-                    "--channel", "myns/prod",  # qualified -> repo
-                    "--channel", "someowner",  # bare, owner_exists=True -> org
-                    "--label", "dev",
+                    "--channel",
+                    "myns/prod",  # qualified -> repo
+                    "--channel",
+                    "someowner",  # bare, owner_exists=True -> org
+                    "--label",
+                    "dev",
                     "test-1.0-py39_0.conda",
                 ],
             )
@@ -1502,9 +1505,7 @@ class _patch_repo_api:
             from binstar_client import errors
 
             aserver.user.side_effect = errors.NotFound("no such user")
-        self.owner_patcher = patch(
-            "binstar_client.commands._repo_channels.get_server_api", return_value=aserver
-        )
+        self.owner_patcher = patch("binstar_client.commands._repo_channels.get_server_api", return_value=aserver)
 
     def __enter__(self):
         self.patcher.start()
