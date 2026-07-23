@@ -6,6 +6,7 @@ for backward compatibility and operate on labels via the old API.
 """
 
 import argparse
+import logging
 import os
 from glob import glob
 from typing import List, Optional, Tuple
@@ -27,6 +28,8 @@ from binstar_client.repocore.resolve import (
 from binstar_client.utils import get_server_api
 
 __all__ = ["app", "_resolve_namespace_and_channel", "_resolve_no_namespace", "_resolve_channels_with_namespaces"]
+
+logger = logging.getLogger("binstar.channel")
 
 # Value shown in a column where the concept does not exist for that source.
 # anaconda.org labels have no namespace and no channel-level privacy.
@@ -140,12 +143,19 @@ def _process_and_upload_files(
                 _upload_file_to_channel(api, filepath, ch, pkg_type, from_deprecated_channel_flag)
 
 
-def _upload_to_dotorg(files: List[str], owner: str, labels: List[str], org_upload_args) -> None:
+def _upload_to_dotorg(
+    files: List[str],
+    owner: str,
+    labels: List[str],
+    org_upload_args,
+    package_type: Optional[PackageType] = None,
+) -> None:
     """Delegate an owner-only channel upload to the anaconda.org Uploader.
 
     Reuses the legacy upload path (dotorg has no namespace concept). ``org_upload_args``
     carries the original CLI options when the caller was ``anaconda upload``; otherwise
-    a minimal argument set is synthesized from context.
+    a minimal argument set is synthesized from context. ``package_type`` (from
+    ``-t/--package-type``) is honored on both paths.
     """
     import argparse
 
@@ -178,7 +188,22 @@ def _upload_to_dotorg(files: List[str], owner: str, labels: List[str], org_uploa
             force_metadata_update=False,
         )
 
-    args.files = [[f] for f in files]
+    # Honor an explicit --package-type on the direct `channel upload` org route.
+    # anaconda.org and repocore have overlapping-but-different type sets (e.g.
+    # anaconda.org has ipynb/file/env; repocore has sdist), and the Uploader
+    # validates the string against anaconda.org's own enum -- so when the
+    # `anaconda upload` bridge supplied the original args, we keep its raw
+    # ``package_type`` string untouched rather than forcing it through the
+    # repocore enum. Only the synthesized branch needs this backfill, and there
+    # the value is already repocore-constrained by the CLI's typed -t option.
+    if org_upload_args is None and package_type is not None:
+        args.package_type = package_type.value
+
+    # Expand glob patterns the same way the repo path does (windows_glob is a
+    # no-op on POSIX, where the shell already expanded them). Without this, a
+    # literal "*.conda" would reach the Uploader unexpanded on Windows.
+    expanded = [f for pattern in files for f in windows_glob(pattern)]
+    args.files = [[f] for f in expanded]
     args.user = owner
     args.channels = []  # go to the dotorg Uploader, not back through this command
     args.namespace = None
@@ -227,9 +252,9 @@ def _add_org_rows(table: Table, aserver_api) -> None:
     owners = [login]
     try:
         owners += [org["login"] for org in aserver_api.user_orgs()]
-    except Exception:
+    except Exception as exc:
         # Org membership lookup is best-effort; fall back to just the user.
-        pass
+        logger.debug("Could not list anaconda.org organizations, using user only: %s", exc)
 
     # Group header for the whole anaconda.org section: no namespace exists here.
     table.add_row(_NOT_APPLICABLE, "org", "", "", "", "")
@@ -497,6 +522,20 @@ def _do_upload(
     repo_targets = [r for r in resolved if r.target != "org"]
 
     if repo_targets:
+        # A --package-type that isn't a valid repocore type is only an error when
+        # a repo target actually needs it (anaconda.org, which is a superset, may
+        # legitimately accept it for org targets). ``package_type`` is None here
+        # either because none was given or because it wasn't a repocore type; the
+        # raw string on org_upload_args lets us tell those apart and report it.
+        raw_pt = getattr(org_upload_args, "package_type", None)
+        if package_type is None and raw_pt:
+            valid_types = "', '".join(pt.value for pt in PackageType)
+            console.print(
+                f"[red]Error:[/red] Invalid value for '--package-type' / '-t': '{raw_pt}' "
+                f"is not one of '{valid_types}' for anaconda.com repo channels."
+            )
+            raise typer.Exit(1)
+
         # -l/--label has no meaning for repo channels. When a single invocation
         # targets both repo and org (multiple -c flags), the label still applies
         # to the org targets, so warn rather than error and upload to both.
@@ -509,7 +548,7 @@ def _do_upload(
         _process_and_upload_files(api, files, repo_channels, package_type, from_deprecated_channel_flag)
 
     for r in org_targets:
-        _upload_to_dotorg(files, r.owner, labels, org_upload_args)
+        _upload_to_dotorg(files, r.owner, labels, org_upload_args, package_type=package_type)
 
 
 def upload_command(

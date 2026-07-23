@@ -1007,6 +1007,57 @@ class TestRepoCoreChannelsCLI:
         assert args[1] == "someowner"  # owner
         assert args[2] == ["dev"]  # labels
 
+    def test_channel_upload_org_route_honors_package_type(self):
+        """`channel upload -c <org-owner> -t conda` must forward the explicit
+        package type to the anaconda.org Uploader, not silently auto-detect."""
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_user_organizations.return_value = [Namespace(name="myns")]
+
+        with (
+            _patch_repo_api(mock_api, owner_exists=True),
+            patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
+            patch("binstar_client.commands.upload.main") as mock_upload_main,
+        ):
+            result = runner.invoke(
+                app,
+                ["upload", "--channel", "someowner", "--package-type", "conda", "pkg-1.0-0.conda"],
+            )
+
+        assert result.exit_code == 0
+        mock_upload_main.assert_called_once()
+        forwarded = mock_upload_main.call_args[0][0]
+        # Uploader expects the string value, not the repocore enum object.
+        assert forwarded.package_type == "conda"
+        assert forwarded.user == "someowner"
+
+    def test_channel_upload_org_route_expands_globs_on_windows(self):
+        """On Windows the shell does not expand globs, so the org route must
+        expand "*.conda" itself (mirroring the repo path) before uploading."""
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_user_organizations.return_value = [Namespace(name="myns")]
+
+        with (
+            _patch_repo_api(mock_api, owner_exists=True),
+            patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
+            patch("binstar_client.repocore.package_utils.os.name", "nt"),
+            patch(
+                "binstar_client.repocore.package_utils.glob",
+                return_value=["a-1.0-0.conda", "b-1.0-0.conda"],
+            ),
+            patch("binstar_client.commands.upload.main") as mock_upload_main,
+        ):
+            result = runner.invoke(app, ["upload", "--channel", "someowner", "*.conda"])
+
+        assert result.exit_code == 0
+        mock_upload_main.assert_called_once()
+        forwarded = mock_upload_main.call_args[0][0]
+        # The literal "*.conda" must have been expanded to the matching files.
+        assert forwarded.files == [["a-1.0-0.conda"], ["b-1.0-0.conda"]]
+
     def test_upload_multiple_channels(self):
         runner = CliRunner()
         app = _get_channels_app()

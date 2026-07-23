@@ -354,8 +354,19 @@ class Test(CLITestCase):
         assert call_kwargs['channel'] == ['mychannel']
         assert call_kwargs['from_deprecated_channel_flag'] is True
 
-    def test_upload_channel_flag_with_invalid_package_type_raises_value_error(self):
-        with self.assertRaises(ValueError) as ctx:
+    @unittest.mock.patch('binstar_client.repocore.resolve.classify_and_resolve')
+    def test_upload_invalid_package_type_errors_for_repo_target(self, mock_classify):
+        """An invalid --package-type is rejected only once a repo target needs it
+        (anaconda.org accepts a broader set, so main() no longer pre-rejects)."""
+        from click.exceptions import Exit
+
+        from binstar_client.repocore import ResolvedChannel
+
+        mock_classify.return_value = ResolvedChannel(
+            namespace='myns', channel_name='mychannel', target='repo'
+        )
+
+        with self.assertRaises((SystemExit, Exit)):
             main(
                 [
                     '--show-traceback',
@@ -368,9 +379,34 @@ class Test(CLITestCase):
                 ]
             )
 
-        error_message = str(ctx.exception)
-        self.assertIn("Invalid value for '--package-type'", error_message)
-        self.assertIn('invalid_type', error_message)
+    @unittest.mock.patch('binstar_client.commands.upload._dotorg_upload')
+    @unittest.mock.patch('binstar_client.repocore.resolve.classify_and_resolve')
+    def test_upload_broad_package_type_forwarded_to_dotorg(self, mock_classify, mock_dotorg):
+        """A package type that anaconda.org supports but repocore does not must not
+        be rejected when the target resolves to anaconda.org: the raw string is
+        forwarded to the dotorg Uploader (which validates against its wider enum)."""
+        from binstar_client.repocore import ResolvedChannel
+
+        mock_classify.return_value = ResolvedChannel(
+            namespace=None, channel_name='someorg', target='org', owner='someorg'
+        )
+
+        main(
+            [
+                'upload',
+                '-c',
+                'someorg',
+                '--package-type',
+                'ipynb',  # not a repocore type; anaconda.org-only
+                data_dir('foo-0.1-0.tar.bz2'),
+            ]
+        )
+
+        mock_dotorg.assert_called_once()
+        forwarded = mock_dotorg.call_args[0][0]
+        # Raw string forwarded untouched, never coerced through the repocore enum.
+        assert forwarded.package_type == 'ipynb'
+        assert forwarded.user == 'someorg'
 
     @unittest.mock.patch('binstar_client.commands._repo_channels.upload_command')
     def test_upload_namespace_flag_routes_to_repo(self, mock_upload_command):

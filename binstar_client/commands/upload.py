@@ -88,16 +88,18 @@ def main(arguments: argparse.Namespace) -> None:
 
         files = [f for sublist in arguments.files for f in sublist]
         package_type_str = getattr(arguments, 'package_type', None)
+        # Convert to the repocore enum only for repo-target validation. repocore
+        # and anaconda.org have different type sets (neither is a superset), so we
+        # do NOT reject an unknown value here: a name may still resolve to
+        # anaconda.org, which validates the raw string (preserved on
+        # ``arguments.package_type``) against its own enum. The repo path re-checks
+        # and errors only if a repo target actually needs it.
         package_type_enum = None
         if package_type_str:
             try:
                 package_type_enum = RepoPackageType(package_type_str)
             except ValueError:
-                valid_types = "', '".join([pt.value for pt in RepoPackageType])
-                message = (
-                    f"Invalid value for '--package-type' / '-t': '{package_type_str}' is not one of '{valid_types}'."
-                )
-                raise ValueError(message)
+                package_type_enum = None
 
         upload_command(
             ctx=None,  # type: ignore[arg-type]
