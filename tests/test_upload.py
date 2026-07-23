@@ -362,9 +362,7 @@ class Test(CLITestCase):
 
         from binstar_client.repocore import ResolvedChannel
 
-        mock_classify.return_value = ResolvedChannel(
-            namespace='myns', channel_name='mychannel', target='repo'
-        )
+        mock_classify.return_value = ResolvedChannel(namespace='myns', channel_name='mychannel', target='repo')
 
         with self.assertRaises((SystemExit, Exit)):
             main(
