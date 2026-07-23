@@ -6,6 +6,7 @@ for backward compatibility and operate on labels via the old API.
 """
 
 import argparse
+import logging
 import os
 from glob import glob
 from typing import List, Optional, Tuple
@@ -16,9 +17,23 @@ from rich.panel import Panel
 from anaconda_cli_base.console import Table, console, select_from_list
 from binstar_client import __version__
 from binstar_client.commands import _channel_notices as channel_notices
-from binstar_client.repocore import RepoCoreClient, ResolvedChannel
+from binstar_client.repocore import RepoCoreClient
 from binstar_client.repocore.errors import RepoCoreError, Unauthorized
 from binstar_client.repocore.package_utils import PackageType, determine_package_type, windows_glob
+from binstar_client.repocore.resolve import (
+    resolve_channels_with_namespaces as _resolve_channels_with_namespaces,
+    resolve_namespace_and_channel as _resolve_namespace_and_channel,
+    resolve_no_namespace as _resolve_no_namespace,
+)
+from binstar_client.utils import get_server_api
+
+__all__ = ["app", "_resolve_namespace_and_channel", "_resolve_no_namespace", "_resolve_channels_with_namespaces"]
+
+logger = logging.getLogger("binstar.channel")
+
+# Value shown in a column where the concept does not exist for that source.
+# anaconda.org labels have no namespace and no channel-level privacy.
+_NOT_APPLICABLE = "—"
 
 _PAGE_SIZE = 100
 
@@ -95,55 +110,6 @@ def _callback(
         raise typer.Exit(1)
 
 
-def _resolve_no_namespace(api, name: str) -> ResolvedChannel:
-    """Resolve no namespaces case
-
-    Returns ResolvedChannel with namespace and channel_name.
-
-    Checks for username:
-      1. If None or get user request errors, return empty namespace
-      2. If truthy ask user to confirm creation of new namespace
-
-    """
-    try:
-        username = (api.account.get("user") or {}).get("username") or ""
-    except Exception:
-        username = ""
-
-    if username:
-        confirm = typer.confirm(
-            f"No namespaces found. A namespace can be created with your username. Use your username '{username}' as the namespace?"
-        )
-        if confirm:
-            return ResolvedChannel(namespace=username, channel_name=name)
-        raise typer.Exit(0)
-    return ResolvedChannel(namespace=None, channel_name=name)
-
-
-def _resolve_channels_with_namespaces(
-    api, channels: List[str], namespace: Optional[str], from_deprecated_channel_flag: bool
-) -> List[str]:
-    """Resolve channel names to fully qualified namespace/channel format.
-
-    Returns list of resolved channel paths like 'namespace/channel' or 'channel'.
-    """
-    resolved_channels = []
-    for ch in channels:
-        try:
-            resolved = _resolve_namespace_and_channel(api, ch, namespace, require_namespace=False)
-        except (typer.Exit, SystemExit):
-            if from_deprecated_channel_flag:
-                console.print("-c/--channel no longer equals labels, did you mean --label?")
-            raise
-        if resolved.namespace:
-            full_channel = f"{resolved.namespace}/{resolved.channel_name}"
-        else:
-            full_channel = resolved.channel_name
-        resolved_channels.append(full_channel)
-        console.print(f"Resolved channel: [cyan]{full_channel}[/cyan]")
-    return resolved_channels
-
-
 def _upload_file_to_channel(
     api, filepath: str, channel: str, pkg_type: str, from_deprecated_channel_flag: bool
 ) -> None:
@@ -177,74 +143,82 @@ def _process_and_upload_files(
                 _upload_file_to_channel(api, filepath, ch, pkg_type, from_deprecated_channel_flag)
 
 
-def _resolve_namespace_and_channel(
-    api, name: str, namespace: Optional[str] = None, require_namespace: bool = True
-) -> ResolvedChannel:
-    """Resolve namespace and channel name from the given inputs.
-
-    Returns ResolvedChannel with namespace and channel_name. namespace may be None if require_namespace=False
-    and no namespaces are available (lets create delegate to the API).
-
-    Resolution order:
-      1. name contains "/" AND --namespace provided → error (ambiguous)
-      2. name contains "/" → split into namespace/channel
-      3. --namespace provided → use it, name is the channel
-      4. Neither → resolve namespace from API via user's top-level channels
-      5. Calls _resolve_no_namespace if none are present
-    """
-    if "/" in name and namespace:
-        console.print(f"[red]Error:[/red] Ambiguous: '{name}' contains '/' but --namespace was also provided.")
-        raise typer.Exit(1)
-
-    if "/" in name:
-        parts = name.split("/", 1)
-        return ResolvedChannel(namespace=parts[0], channel_name=parts[1])
-
-    if namespace:
-        return ResolvedChannel(namespace=namespace, channel_name=name)
-
-    # Resolve from API
-    orgs = api.list_user_organizations()
-    namespaces = [org.name for org in orgs]
-
-    if not namespaces:
-        if require_namespace:
-            console.print(
-                "[red]Error:[/red] No resolvable namespaces. Specify one with --namespace or use namespace/channel format."
-            )
-            raise typer.Exit(1)
-
-        return _resolve_no_namespace(api, name)
-
-    if len(namespaces) == 1:
-        return ResolvedChannel(namespace=namespaces[0], channel_name=name)
-
-    console.print()
-    selected_namespace = select_from_list(f"Select namespace for channel '{name}':", namespaces)
-    return ResolvedChannel(namespace=selected_namespace, channel_name=name)
-
-
-@app.command(name="list", help="List all channels")
-def list_command(
-    ctx: typer.Context,
-    namespace: Optional[str] = typer.Option(None, "--namespace", "-n", help="Filter to a specific namespace"),
+def _upload_to_dotorg(
+    files: List[str],
+    owner: str,
+    labels: List[str],
+    org_upload_args,
+    package_type: Optional[PackageType] = None,
 ) -> None:
-    """List all channels for the current user."""
-    api = ctx.obj.repo_api
-    orgs = api.list_user_organizations()
+    """Delegate an owner-only channel upload to the anaconda.org Uploader.
 
+    Reuses the legacy upload path (dotorg has no namespace concept). ``org_upload_args``
+    carries the original CLI options when the caller was ``anaconda upload``; otherwise
+    a minimal argument set is synthesized from context. ``package_type`` (from
+    ``-t/--package-type``) is honored on both paths.
+    """
+    import argparse
+
+    from binstar_client.commands.upload import main as upload_main
+
+    if org_upload_args is not None:
+        args = argparse.Namespace(**vars(org_upload_args))
+    else:
+        # Direct `anaconda channel upload` invocation: build a minimal set of args.
+        # channel upload intentionally does not expose the full anaconda.org option
+        # surface (--private, -p, -v, -s, -d, mode flags); use `anaconda upload -c`
+        # for those. Everything here is defaulted.
+        args = argparse.Namespace(
+            token=None,
+            site=None,
+            disable_ssl_warnings=False,
+            show_traceback=False,
+            no_progress=False,
+            keep_basename=False,
+            package=None,
+            version=None,
+            summary=None,
+            package_type=None,
+            description=None,
+            thumbnail=None,
+            private=False,
+            auto_register=True,
+            build_id=None,
+            mode=None,
+            force_metadata_update=False,
+        )
+
+    # Honor an explicit --package-type on the direct `channel upload` org route.
+    # anaconda.org and repocore have overlapping-but-different type sets (e.g.
+    # anaconda.org has ipynb/file/env; repocore has sdist), and the Uploader
+    # validates the string against anaconda.org's own enum -- so when the
+    # `anaconda upload` bridge supplied the original args, we keep its raw
+    # ``package_type`` string untouched rather than forcing it through the
+    # repocore enum. Only the synthesized branch needs this backfill, and there
+    # the value is already repocore-constrained by the CLI's typed -t option.
+    if org_upload_args is None and package_type is not None:
+        args.package_type = package_type.value
+
+    # Expand glob patterns the same way the repo path does (windows_glob is a
+    # no-op on POSIX, where the shell already expanded them). Without this, a
+    # literal "*.conda" would reach the Uploader unexpanded on Windows.
+    expanded = [f for pattern in files for f in windows_glob(pattern)]
+    args.files = [[f] for f in expanded]
+    args.user = owner
+    args.channels = []  # go to the dotorg Uploader, not back through this command
+    args.namespace = None
+    args.labels = labels
+    upload_main(args)
+
+
+def _add_repo_rows(table: Table, api, namespace: Optional[str]) -> None:
+    """Append anaconda.com (repocore) namespace/channel rows to the table."""
+    orgs = api.list_user_organizations()
     if namespace:
         orgs = [org for org in orgs if org.name == namespace]
 
-    table = Table(title="Channels")
-    table.add_column("Namespace / Channel", style="cyan")
-    table.add_column("Privacy")
-    table.add_column("Description")
-    table.add_column("Artifacts", justify="right")
-    table.add_column("Downloads", justify="right")
-
     for org in orgs:
-        table.add_row(org.name, "", "", "", "")
+        table.add_row(org.name, "repo", "", "", "", "")
 
         sub_offset = 0
         while True:
@@ -256,6 +230,7 @@ def list_command(
             for channel in channels:
                 table.add_row(
                     f"  {org.name}/{channel.name}",
+                    "repo",
                     channel.privacy,
                     channel.description,
                     str(channel.artifact_count),
@@ -265,11 +240,98 @@ def list_command(
                 break
             sub_offset += len(channels)
 
+
+def _add_org_rows(table: Table, aserver_api) -> None:
+    """Append anaconda.org owner/label rows to the table.
+
+    Labels are not channels: they have no namespace (shown as a dash) and no
+    channel-level privacy. Each owner's labels are rendered as ``owner · label``
+    so they never read as a repocore ``namespace/channel`` path.
+    """
+    login = aserver_api.user()["login"]
+    owners = [login]
+    try:
+        owners += [org["login"] for org in aserver_api.user_orgs()]
+    except Exception as exc:
+        # Org membership lookup is best-effort; fall back to just the user.
+        logger.debug("Could not list anaconda.org organizations, using user only: %s", exc)
+
+    # Group header for the whole anaconda.org section: no namespace exists here.
+    table.add_row(_NOT_APPLICABLE, "org", "", "", "", "")
+
+    for owner in owners:
+        labels = aserver_api.list_channels(owner)
+        for label, info in labels.items():
+            if isinstance(info, int):  # OLD API returns a count instead of a dict
+                locked = False
+            else:
+                locked = bool(info.get("is_locked"))
+            display = f"  {owner} · {label}"
+            if locked:
+                display += " [locked]"
+            table.add_row(
+                display,
+                "org",
+                _NOT_APPLICABLE,
+                _NOT_APPLICABLE,
+                _NOT_APPLICABLE,
+                _NOT_APPLICABLE,
+            )
+
+
+@app.command(name="list", help="List all channels")
+def list_command(
+    ctx: typer.Context,
+    namespace: Optional[str] = typer.Option(None, "--namespace", "-n", help="Filter to a specific namespace"),
+    source: str = typer.Option(
+        "all",
+        "--source",
+        help="Which channels to list: 'repo' (anaconda.com), 'org' (anaconda.org labels), or 'all'.",
+    ),
+) -> None:
+    """List all channels for the current user."""
+    if source not in ("all", "repo", "org"):
+        console.print("[red]Error:[/red] --source must be one of: all, repo, org")
+        raise typer.Exit(1)
+
+    if namespace and source == "org":
+        console.print("[yellow]Note:[/yellow] --namespace only applies to repo channels; ignored for --source org.")
+
+    table = Table(title="Channels")
+    table.add_column("Namespace / Channel", style="cyan")
+    table.add_column("Source")
+    table.add_column("Privacy")
+    table.add_column("Description")
+    table.add_column("Artifacts", justify="right")
+    table.add_column("Downloads", justify="right")
+
+    notes: List[str] = []
+
+    if source in ("all", "repo"):
+        try:
+            _add_repo_rows(table, ctx.obj.repo_api, namespace)
+        except Exception as exc:
+            notes.append(f"repo channels unavailable: {exc}")
+
+    if source in ("all", "org"):
+        try:
+            params = getattr(ctx.obj, "params", {})
+            aserver_api = get_server_api(params.get("token"), params.get("site"))
+            _add_org_rows(table, aserver_api)
+        except Exception as exc:
+            notes.append(f"anaconda.org labels unavailable: {exc}")
+
+    def _render() -> None:
+        console.print(table)
+        for note in notes:
+            console.print(f"[dim]{note}[/dim]")
+
     if console.height and table.row_count > console.height:
         with console.pager():
-            console.print(table)
+            console.print(f"[dim]Showing {table.row_count} rows — ↑/↓ to scroll, press q to quit.[/dim]")
+            _render()
     else:
-        console.print(table)
+        _render()
 
 
 @app.command(name="create", help="Create a new channel")
@@ -416,8 +478,135 @@ def modify_command(
         console.print(f"[green]Success![/green] Channel '[cyan]{name}[/cyan]' is now {state_map[indexing_behavior]}.")
 
 
-@app.command(name="upload", help="Upload packages to channels")
+def _do_upload(
+    api,
+    files: List[str],
+    channels: List[str],
+    namespace: Optional[str],
+    package_type: Optional[PackageType],
+    from_deprecated_channel_flag: bool,
+    token_value: Optional[str],
+    site_value: Optional[str],
+    org_site_value: Optional[str] = None,
+    labels: Optional[List[str]] = None,
+    org_upload_args: object = None,
+) -> None:
+    """Classify each channel and upload to anaconda.com and/or anaconda.org.
+
+    Shared by the ``anaconda channel upload`` command and the ``anaconda upload``
+    bridge. ``labels``/``org_upload_args`` are only used for owner-only names that
+    route to anaconda.org.
+    """
+    labels = labels or []
+
+    if not channels:
+        console.print("[red]Error:[/red] No channel specified. Use --channel option to specify target channel(s).")
+        raise typer.Exit(1)
+
+    # Probe used to detect anaconda.org owners so a bare name can route to dotorg.
+    # Note: ``--at`` selects the anaconda.com (repo) domain and is NOT a valid
+    # anaconda.org site alias, so it must not be forwarded here.
+    def _owner_probe(name: str) -> bool:
+        try:
+            aserver_api = get_server_api(token_value, org_site_value)
+            aserver_api.user(name)
+            return True
+        except Exception:
+            return False
+
+    resolved = _resolve_channels_with_namespaces(
+        api, channels, namespace, from_deprecated_channel_flag, owner_probe=_owner_probe
+    )
+
+    org_targets = [r for r in resolved if r.target == "org"]
+    repo_targets = [r for r in resolved if r.target != "org"]
+
+    if repo_targets:
+        # A --package-type that isn't a valid repocore type is only an error when
+        # a repo target actually needs it (anaconda.org, which is a superset, may
+        # legitimately accept it for org targets). ``package_type`` is None here
+        # either because none was given or because it wasn't a repocore type; the
+        # raw string on org_upload_args lets us tell those apart and report it.
+        raw_pt = getattr(org_upload_args, "package_type", None)
+        if package_type is None and raw_pt:
+            valid_types = "', '".join(pt.value for pt in PackageType)
+            console.print(
+                f"[red]Error:[/red] Invalid value for '--package-type' / '-t': '{raw_pt}' "
+                f"is not one of '{valid_types}' for anaconda.com repo channels."
+            )
+            raise typer.Exit(1)
+
+        # -l/--label has no meaning for repo channels. When a single invocation
+        # targets both repo and org (multiple -c flags), the label still applies
+        # to the org targets, so warn rather than error and upload to both.
+        if labels:
+            console.print(
+                "[yellow]Note:[/yellow] -l/--label is ignored for repo channels; "
+                "labels apply only to anaconda.org uploads."
+            )
+        repo_channels = [f"{r.namespace}/{r.channel_name}" if r.namespace else r.channel_name for r in repo_targets]
+        _process_and_upload_files(api, files, repo_channels, package_type, from_deprecated_channel_flag)
+
+    for r in org_targets:
+        if r.owner is None:  # org targets always carry an owner; guard for the type checker
+            continue
+        _upload_to_dotorg(files, r.owner, labels, org_upload_args, package_type=package_type)
+
+
 def upload_command(
+    ctx: "typer.Context",
+    files: List[str],
+    channel: Optional[List[str]] = None,
+    namespace: Optional[str] = None,
+    package_type: Optional[PackageType] = None,
+    from_deprecated_channel_flag: bool = False,
+    labels: Optional[List[str]] = None,
+    org_upload_args: object = None,
+) -> None:
+    """Programmatic entry for uploads (used by the ``anaconda upload`` bridge)."""
+    token_value = None
+    site_value = None
+    org_site_value = None
+    if ctx is None:
+        from anaconda_cli_base.cli import ContextExtras
+        from binstar_client import __version__
+
+        # Carry --site/--token from the `anaconda upload` bridge, if provided.
+        token_value = getattr(org_upload_args, "token", None)
+        site_value = getattr(org_upload_args, "site", None)
+        org_site_value = site_value  # `anaconda upload --site` is an anaconda.org alias
+
+        ctx_obj = ContextExtras()
+        ctx_obj.repo_api = RepoCoreClient(site=site_value, version=__version__)
+
+        class FakeContext:
+            obj = ctx_obj
+
+        ctx = FakeContext()
+    else:
+        params = getattr(ctx.obj, "params", {})
+        site_value = params.get("at") or params.get("site")
+        token_value = params.get("token")
+        # --at selects the anaconda.com domain; only --site is an anaconda.org alias.
+        org_site_value = params.get("site")
+
+    _do_upload(
+        ctx.obj.repo_api,
+        files,
+        channel or [],
+        namespace,
+        package_type,
+        from_deprecated_channel_flag,
+        token_value,
+        site_value,
+        org_site_value=org_site_value,
+        labels=labels,
+        org_upload_args=org_upload_args,
+    )
+
+
+@app.command(name="upload", help="Upload packages to channels")
+def _upload_cli(
     ctx: typer.Context,
     files: List[str] = typer.Argument(
         ...,
@@ -435,36 +624,35 @@ def upload_command(
         "-n",
         help="Namespace for the channel (alternative to namespace/channel format)",
     ),
+    label: Optional[List[str]] = typer.Option(
+        None,
+        "--label",
+        "-l",
+        help="anaconda.org label to apply (only when the target resolves to anaconda.org).",
+    ),
     package_type: Optional[PackageType] = typer.Option(
         None,
         "--package-type",
         "-t",
         help="Package type. Defaults to auto-detect.",
     ),
-    from_deprecated_channel_flag: bool = False,
 ) -> None:
     """Upload packages to your Anaconda repository."""
-    if ctx is None:
-        from anaconda_cli_base.cli import ContextExtras
-        from binstar_client import __version__
-
-        ctx_obj = ContextExtras()
-        ctx_obj.repo_api = RepoCoreClient(version=__version__)
-
-        class FakeContext:
-            obj = ctx_obj
-
-        ctx = FakeContext()
-
-    api = ctx.obj.repo_api
-
-    channels = channel or []
-    if not channels:
-        console.print("[red]Error:[/red] No channel specified. Use --channel option to specify target channel(s).")
-        raise typer.Exit(1)
-
-    resolved_channels = _resolve_channels_with_namespaces(api, channels, namespace, from_deprecated_channel_flag)
-    _process_and_upload_files(api, files, resolved_channels, package_type, from_deprecated_channel_flag)
+    params = getattr(ctx.obj, "params", {})
+    site_value = params.get("at") or params.get("site")
+    token_value = params.get("token")
+    _do_upload(
+        ctx.obj.repo_api,
+        files,
+        channel or [],
+        namespace,
+        package_type,
+        from_deprecated_channel_flag=False,
+        token_value=token_value,
+        site_value=site_value,
+        org_site_value=params.get("site"),
+        labels=label or [],
+    )
 
 
 @app.command(name="share", help="Share a channel with a user")
@@ -505,12 +693,26 @@ def share_command(
 
     grant = "write" if role == "collaborator" else "read"
 
+    # Sharing is an anaconda.com (repo) concept only; resolve without an owner
+    # probe so bare names stay repo channels rather than routing to anaconda.org.
     resolved_channels = _resolve_channels_with_namespaces(api, channels, namespace, False)
 
     action = "unshare" if unshare else "share"
-    for ch in resolved_channels:
-        namespace, channel_name = ch.split("/", 1)
-        api.share_channel(namespace, channel_name, user, action=action, grant=grant)
+    for resolved in resolved_channels:
+        if resolved.target == "org":
+            console.print(
+                f'[red]Error:[/red] "{resolved.owner}" is an anaconda.org owner; sharing applies only to '
+                "anaconda.com repo channels."
+            )
+            raise typer.Exit(1)
+        if not resolved.namespace:
+            console.print(
+                f"[red]Error:[/red] Could not resolve a namespace for '{resolved.channel_name}'. "
+                "Specify one with --namespace or use namespace/channel format."
+            )
+            raise typer.Exit(1)
+        ch = f"{resolved.namespace}/{resolved.channel_name}"
+        api.share_channel(resolved.namespace, resolved.channel_name, user, action=action, grant=grant)
         console.print(f"[green]Success![/green] {action.capitalize()}d channel '[cyan]{ch}[/cyan]' with {user}")
 
 

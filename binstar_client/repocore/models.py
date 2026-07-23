@@ -64,7 +64,15 @@ class ChannelCreationResponse(BaseModel):
 
 
 class ResolvedChannel(BaseModel):
-    """Resolved namespace and channel name."""
+    """Resolved namespace and channel name.
+
+    ``target`` indicates which system the upload should go to:
+      * "repo" -> anaconda.com (repocore): use ``namespace``/``channel_name``.
+      * "org"  -> anaconda.org: ``owner`` is the user/organization; labels are
+        applied by the caller. ``namespace`` is not used for org targets.
+    """
 
     namespace: Optional[str]
     channel_name: str
+    target: str = "repo"
+    owner: Optional[str] = None

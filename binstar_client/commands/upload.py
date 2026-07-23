@@ -45,41 +45,8 @@ ReleaseKey: typing_extensions.TypeAlias = typing.Tuple[str, str]
 logger = logging.getLogger('binstar.upload')
 
 
-def main(arguments: argparse.Namespace) -> None:
-    """Entrypoint of the :code:`upload` command."""
-    if arguments.channels:
-        if arguments.user:
-            logger.error(
-                '-c/--channel no longer equals labels, did you mean --label? '
-                '-c/--channel cannot be used with -u/--user.'
-            )
-            raise SystemExit(1)
-
-        from binstar_client.commands._repo_channels import upload_command
-        from binstar_client.repocore.package_utils import PackageType as RepoPackageType
-
-        files = [f for sublist in arguments.files for f in sublist]
-        package_type_str = getattr(arguments, 'package_type', None)
-        package_type_enum = None
-        if package_type_str:
-            try:
-                package_type_enum = RepoPackageType(package_type_str)
-            except ValueError:
-                valid_types = "', '".join([pt.value for pt in RepoPackageType])
-                message = (
-                    f"Invalid value for '--package-type' / '-t': '{package_type_str}' is not one of '{valid_types}'."
-                )
-                raise ValueError(message)
-        upload_command(
-            ctx=None,  # type: ignore[arg-type]
-            files=files,
-            channel=arguments.channels,
-            namespace=arguments.user,
-            package_type=package_type_enum,
-            from_deprecated_channel_flag=True,
-        )
-        return
-
+def _dotorg_upload(arguments: argparse.Namespace) -> None:
+    """Upload to anaconda.org using the legacy Uploader (owner + labels)."""
     uploader: Uploader = Uploader(arguments=arguments)
     uploader.api.check_server()
     _ = uploader.username
@@ -91,6 +58,63 @@ def main(arguments: argparse.Namespace) -> None:
     finally:
         uploader.print_uploads()
         uploader.cleanup()
+
+
+def main(arguments: argparse.Namespace) -> None:
+    """Entrypoint of the :code:`upload` command.
+
+    Routing:
+      * -c/--channel or -n/--namespace present -> anaconda.com (repo) upload command,
+        which classifies the target and may delegate back to anaconda.org for
+        owner-only names. -l/--label is passed through for that org delegation.
+      * neither present -> anaconda.org (legacy Uploader). Unchanged.
+    """
+    namespace = getattr(arguments, 'namespace', None)
+    labels = getattr(arguments, 'labels', None) or []
+
+    if arguments.channels or namespace:
+        if arguments.user:
+            logger.error(
+                '-c/--channel no longer equals labels, did you mean --label? '
+                '-c/--channel cannot be used with -u/--user.'
+            )
+            raise SystemExit(1)
+        if namespace and not arguments.channels:
+            logger.error('-n/--namespace requires -c/--channel to name the channel.')
+            raise SystemExit(1)
+
+        from binstar_client.commands._repo_channels import upload_command
+        from binstar_client.repocore.package_utils import PackageType as RepoPackageType
+
+        files = [f for sublist in arguments.files for f in sublist]
+        package_type_str = getattr(arguments, 'package_type', None)
+        # Convert to the repocore enum only for repo-target validation. repocore
+        # and anaconda.org have different type sets (neither is a superset), so we
+        # do NOT reject an unknown value here: a name may still resolve to
+        # anaconda.org, which validates the raw string (preserved on
+        # ``arguments.package_type``) against its own enum. The repo path re-checks
+        # and errors only if a repo target actually needs it.
+        package_type_enum = None
+        if package_type_str:
+            try:
+                package_type_enum = RepoPackageType(package_type_str)
+            except ValueError:
+                package_type_enum = None
+
+        upload_command(
+            ctx=None,  # type: ignore[arg-type]
+            files=files,
+            channel=arguments.channels,
+            namespace=namespace,
+            package_type=package_type_enum,
+            from_deprecated_channel_flag=True,
+            labels=labels,
+            org_upload_args=arguments,
+        )
+        return
+
+    # No channels and no namespace: plain anaconda.org upload (unchanged behavior).
+    _dotorg_upload(arguments)
 
 
 class UploadedPackage(typing.TypedDict):
@@ -735,6 +759,11 @@ def add_parser(subparsers: typing.Any) -> None:
         help='User account or Organization, defaults to the current user',
     )
     parser.add_argument(
+        '-n',
+        '--namespace',
+        help='Namespace for a repo channel (anaconda.com). Implies an anaconda.com upload.',
+    )
+    parser.add_argument(
         '--keep-basename',
         dest='keep_basename',
         help=(
@@ -900,6 +929,12 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             '--user',
             help='User account or Organization, defaults to the current user',
         ),
+        namespace: typing.Optional[str] = typer.Option(
+            None,
+            '-n',
+            '--namespace',
+            help='Namespace for a repo channel (anaconda.com). Implies an anaconda.com upload.',
+        ),
         keep_basename: bool = typer.Option(
             False,
             help='Do not normalize a basename when uploading a conda package.',
@@ -1012,6 +1047,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             labels=labels,
             no_progress=not progress,
             user=user,
+            namespace=namespace,
             keep_basename=keep_basename,
             package=package,
             version=version,

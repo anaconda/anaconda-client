@@ -3,6 +3,7 @@
 from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
+import typer
 from typer.testing import CliRunner
 
 from binstar_client.repocore import (
@@ -344,7 +345,7 @@ class TestResolveNamespaceAndChannel:
             Namespace(name="org-b"),
         ]
 
-        with patch("binstar_client.commands._repo_channels.select_from_list", return_value="org-b"):
+        with patch("binstar_client.repocore.resolve.select_from_list", return_value="org-b"):
             resolved = _resolve_namespace_and_channel(mock_api, "dev")
 
         assert resolved.namespace == "org-b"
@@ -356,7 +357,7 @@ class TestResolveNamespaceAndChannel:
         mock_api = MagicMock()
         mock_api.account.get.return_value = {"username": "testuser"}
 
-        with patch("binstar_client.commands._repo_channels.typer.confirm", return_value=True):
+        with patch("binstar_client.repocore.resolve.typer.confirm", return_value=True):
             resolved = _resolve_no_namespace(mock_api, "dev")
 
         assert resolved.namespace == "testuser"
@@ -369,7 +370,7 @@ class TestResolveNamespaceAndChannel:
         mock_api = MagicMock()
         mock_api.account.get.return_value = {"username": "testuser"}
 
-        with patch("binstar_client.commands._repo_channels.typer.confirm", return_value=False):
+        with patch("binstar_client.repocore.resolve.typer.confirm", return_value=False):
             with pytest.raises(Exit):
                 _resolve_no_namespace(mock_api, "dev")
 
@@ -406,6 +407,75 @@ class TestResolveNamespaceAndChannel:
 
         assert resolved.namespace is None
         assert resolved.channel_name == "dev"
+
+
+class TestClassifyAndResolve:
+    def test_qualified_name_is_repo(self):
+        from binstar_client.repocore.resolve import classify_and_resolve
+
+        mock_api = MagicMock()
+        resolved = classify_and_resolve(mock_api, "myns/dev", owner_probe=lambda n: True)
+        assert resolved.target == "repo"
+        assert resolved.namespace == "myns"
+        assert resolved.channel_name == "dev"
+        # A qualified name is unambiguous: no owner probe needed.
+
+    def test_bare_org_only_routes_to_org(self):
+        from binstar_client.repocore.resolve import classify_and_resolve
+
+        mock_api = MagicMock()
+        mock_api.list_user_organizations.return_value = [Namespace(name="other")]
+        resolved = classify_and_resolve(mock_api, "user1", owner_probe=lambda n: n == "user1")
+        assert resolved.target == "org"
+        assert resolved.owner == "user1"
+
+    def test_bare_repo_only_resolves_channel_under_namespace(self):
+        from binstar_client.repocore.resolve import classify_and_resolve
+
+        mock_api = MagicMock()
+        mock_api.list_user_organizations.return_value = [Namespace(name="myns")]
+        # Not a dotorg owner -> stays repo; bare name is a channel under the sole namespace.
+        resolved = classify_and_resolve(mock_api, "dev", owner_probe=lambda n: False)
+        assert resolved.target == "repo"
+        assert resolved.namespace == "myns"
+        assert resolved.channel_name == "dev"
+
+    def test_bare_ambiguous_prompts_and_can_pick_org(self):
+        from binstar_client.repocore.resolve import classify_and_resolve
+
+        mock_api = MagicMock()
+        mock_api.list_user_organizations.return_value = [Namespace(name="user1")]
+        with (
+            patch("binstar_client.repocore.resolve.sys.stdin.isatty", return_value=True),
+            patch("binstar_client.repocore.resolve.select_from_list", return_value="org"),
+        ):
+            resolved = classify_and_resolve(mock_api, "user1", owner_probe=lambda n: True)
+        assert resolved.target == "org"
+        assert resolved.owner == "user1"
+
+    def test_bare_ambiguous_pick_repo_resolves_channel(self):
+        from binstar_client.repocore.resolve import classify_and_resolve
+
+        mock_api = MagicMock()
+        mock_api.list_user_organizations.return_value = [Namespace(name="user1")]
+        with (
+            patch("binstar_client.repocore.resolve.sys.stdin.isatty", return_value=True),
+            patch("binstar_client.repocore.resolve.select_from_list", return_value="repo"),
+        ):
+            resolved = classify_and_resolve(mock_api, "user1", owner_probe=lambda n: True)
+        # Picking repo means: treat the bare name as a channel; the sole namespace is user1.
+        assert resolved.target == "repo"
+        assert resolved.namespace == "user1"
+        assert resolved.channel_name == "user1"
+
+    def test_bare_ambiguous_non_tty_errors(self):
+        from binstar_client.repocore.resolve import classify_and_resolve
+
+        mock_api = MagicMock()
+        mock_api.list_user_organizations.return_value = [Namespace(name="user1")]
+        with patch("binstar_client.repocore.resolve.sys.stdin.isatty", return_value=False):
+            with pytest.raises(typer.Exit):
+                classify_and_resolve(mock_api, "user1", owner_probe=lambda n: True)
 
 
 class TestRepoCoreChannelsCLI:
@@ -508,6 +578,76 @@ class TestRepoCoreChannelsCLI:
         assert "dev" in result.output
         assert "staging" in result.output
         assert mock_api.get_channels.call_count == 2
+
+    def test_channels_list_source_repo_skips_org(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_user_organizations.return_value = [Namespace(name="org-a")]
+        mock_api.get_channels.return_value = []
+
+        with (
+            _patch_repo_api(mock_api),
+            patch("binstar_client.commands._repo_channels.get_server_api") as mock_get_server,
+        ):
+            result = runner.invoke(app, ["list", "--source", "repo"])
+
+        assert result.exit_code == 0
+        assert "org-a" in result.output
+        # org path must not be touched when source is repo-only
+        mock_get_server.assert_not_called()
+
+    def test_channels_list_source_org_shows_labels(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+
+        aserver = MagicMock()
+        aserver.user.return_value = {"login": "user1"}
+        aserver.user_orgs.return_value = []
+        aserver.list_channels.return_value = {"main": {"is_locked": False}, "dev": {"is_locked": True}}
+
+        with (
+            _patch_repo_api(mock_api),
+            patch("binstar_client.commands._repo_channels.get_server_api", return_value=aserver),
+        ):
+            result = runner.invoke(app, ["list", "--source", "org"])
+
+        assert result.exit_code == 0
+        assert "user1" in result.output
+        assert "main" in result.output
+        assert "dev" in result.output
+        # repocore namespaces must not be fetched for org-only listing
+        mock_api.list_user_organizations.assert_not_called()
+
+    def test_channels_list_org_failure_isolated(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_user_organizations.return_value = [Namespace(name="org-a")]
+        mock_api.get_channels.return_value = []
+
+        aserver = MagicMock()
+        aserver.user.side_effect = Exception("not logged in")
+
+        with (
+            _patch_repo_api(mock_api),
+            patch("binstar_client.commands._repo_channels.get_server_api", return_value=aserver),
+        ):
+            result = runner.invoke(app, ["list", "--source", "all"])
+
+        # repo section still renders; org failure is a dim note, not a crash
+        assert result.exit_code == 0
+        assert "org-a" in result.output
+        assert "unavailable" in result.output
+
+    def test_channels_list_invalid_source(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        with _patch_repo_api(MagicMock()):
+            result = runner.invoke(app, ["list", "--source", "bogus"])
+        assert result.exit_code == 1
+        assert "must be one of" in result.output
 
     def test_channels_create_with_slash(self):
         runner = CliRunner()
@@ -800,6 +940,124 @@ class TestRepoCoreChannelsCLI:
         assert result.exit_code == 1
         assert "No channel specified" in result.output
 
+    def test_channel_upload_bare_name_matching_org_owner_routes_to_dotorg(self):
+        """Regression: `channel upload -c NAME` where NAME is also an org owner must
+        not silently resolve to NAME/NAME. It routes to anaconda.org instead."""
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_user_organizations.return_value = [Namespace(name="jnguyenwoohoo")]
+
+        with (
+            _patch_repo_api(mock_api, owner_exists=True),
+            patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
+            patch("binstar_client.repocore.resolve._prompt_repo_or_org", return_value="org"),
+            patch("binstar_client.commands._repo_channels._upload_to_dotorg") as mock_dotorg,
+        ):
+            result = runner.invoke(app, ["upload", "--channel", "jnguyenwoohoo", "pkg-1.0-0.conda"])
+
+        assert result.exit_code == 0
+        # Must NOT attempt a repo upload to jnguyenwoohoo/jnguyenwoohoo.
+        mock_api.upload_file.assert_not_called()
+        mock_dotorg.assert_called_once()
+        args, _ = mock_dotorg.call_args
+        assert args[1] == "jnguyenwoohoo"  # owner
+
+    def test_channel_upload_mixed_repo_and_org_with_label(self):
+        """A single invocation targeting both a repo channel and an org owner with -l:
+        the repo channel uploads (label ignored, with a warning) AND the org owner
+        gets the file plus the label. The label must not abort the repo upload."""
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        type(mock_api).account = PropertyMock(return_value={"default_channel": "main"})
+        mock_api.upload_file.return_value = _mock_response(201, {"status": "uploaded"})
+        # "someowner" is not a repo namespace -> no repo/org collision, no prompt.
+        mock_api.list_user_organizations.return_value = [Namespace(name="myns")]
+
+        with (
+            _patch_repo_api(mock_api, owner_exists=True),
+            patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
+            patch("binstar_client.commands._repo_channels.os.path.getsize", return_value=100),
+            patch("binstar_client.repocore.package_utils._detect_package_type", return_value="conda"),
+            patch("binstar_client.commands._repo_channels._upload_to_dotorg") as mock_dotorg,
+        ):
+            result = runner.invoke(
+                app,
+                [
+                    "upload",
+                    "--channel",
+                    "myns/prod",  # qualified -> repo
+                    "--channel",
+                    "someowner",  # bare, owner_exists=True -> org
+                    "--label",
+                    "dev",
+                    "test-1.0-py39_0.conda",
+                ],
+            )
+
+        assert result.exit_code == 0
+        # Repo upload still happens even though a label was supplied.
+        mock_api.upload_file.assert_called_once_with("test-1.0-py39_0.conda", "myns/prod", "conda")
+        # Warns that the label is ignored for the repo channel.
+        assert "ignored for repo channels" in result.output
+        # Org owner receives the file and the label.
+        mock_dotorg.assert_called_once()
+        args, _ = mock_dotorg.call_args
+        assert args[1] == "someowner"  # owner
+        assert args[2] == ["dev"]  # labels
+
+    def test_channel_upload_org_route_honors_package_type(self):
+        """`channel upload -c <org-owner> -t conda` must forward the explicit
+        package type to the anaconda.org Uploader, not silently auto-detect."""
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_user_organizations.return_value = [Namespace(name="myns")]
+
+        with (
+            _patch_repo_api(mock_api, owner_exists=True),
+            patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
+            patch("binstar_client.commands.upload.main") as mock_upload_main,
+        ):
+            result = runner.invoke(
+                app,
+                ["upload", "--channel", "someowner", "--package-type", "conda", "pkg-1.0-0.conda"],
+            )
+
+        assert result.exit_code == 0
+        mock_upload_main.assert_called_once()
+        forwarded = mock_upload_main.call_args[0][0]
+        # Uploader expects the string value, not the repocore enum object.
+        assert forwarded.package_type == "conda"
+        assert forwarded.user == "someowner"
+
+    def test_channel_upload_org_route_expands_globs_on_windows(self):
+        """On Windows the shell does not expand globs, so the org route must
+        expand "*.conda" itself (mirroring the repo path) before uploading."""
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_user_organizations.return_value = [Namespace(name="myns")]
+
+        with (
+            _patch_repo_api(mock_api, owner_exists=True),
+            patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
+            patch("binstar_client.repocore.package_utils.os.name", "nt"),
+            patch(
+                "binstar_client.repocore.package_utils.glob",
+                return_value=["a-1.0-0.conda", "b-1.0-0.conda"],
+            ),
+            patch("binstar_client.commands.upload.main") as mock_upload_main,
+        ):
+            result = runner.invoke(app, ["upload", "--channel", "someowner", "*.conda"])
+
+        assert result.exit_code == 0
+        mock_upload_main.assert_called_once()
+        forwarded = mock_upload_main.call_args[0][0]
+        # The literal "*.conda" must have been expanded to the matching files.
+        assert forwarded.files == [["a-1.0-0.conda"], ["b-1.0-0.conda"]]
+
     def test_upload_multiple_channels(self):
         runner = CliRunner()
         app = _get_channels_app()
@@ -1085,7 +1343,7 @@ class TestRepoCoreChannelsCLI:
 
         with (
             _patch_repo_api(mock_api),
-            patch("binstar_client.commands._repo_channels.select_from_list", return_value="org-a"),
+            patch("binstar_client.repocore.resolve.select_from_list", return_value="org-a"),
         ):
             result = runner.invoke(app, ["share", "testuser", "--channel", "dev", "--role", "viewer"])
 
@@ -1104,7 +1362,7 @@ class TestRepoCoreChannelsCLI:
         with (
             _patch_repo_api(mock_api),
             patch(
-                "binstar_client.commands._repo_channels.select_from_list",
+                "binstar_client.repocore.resolve.select_from_list",
                 side_effect=["org-a", "org-b"],
             ),
         ):
@@ -1280,17 +1538,33 @@ def _get_channels_app():
 
 
 class _patch_repo_api:
-    """Context manager to inject a mock repo_api into the Typer context."""
+    """Context manager to inject a mock repo_api into the Typer context.
 
-    def __init__(self, mock_api):
+    Also stubs the anaconda.org owner probe used during channel classification.
+    By default the probe reports "no such owner" so bare channel names route to
+    the repo path; pass ``owner_exists=True`` to simulate an anaconda.org owner.
+    """
+
+    def __init__(self, mock_api, owner_exists=False):
         self.mock_api = mock_api
         self.patcher = patch("binstar_client.commands._repo_channels.RepoCoreClient", return_value=mock_api)
 
+        aserver = MagicMock()
+        if owner_exists:
+            aserver.user.return_value = {"login": "someowner"}
+        else:
+            from binstar_client import errors
+
+            aserver.user.side_effect = errors.NotFound("no such user")
+        self.owner_patcher = patch("binstar_client.commands._repo_channels.get_server_api", return_value=aserver)
+
     def __enter__(self):
         self.patcher.start()
+        self.owner_patcher.start()
         return self.mock_api
 
     def __exit__(self, *args):
+        self.owner_patcher.stop()
         self.patcher.stop()
 
 

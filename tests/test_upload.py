@@ -329,14 +329,15 @@ class Test(CLITestCase):
     @unittest.mock.patch('binstar_client.commands._repo_channels.upload_command')
     def test_upload_channel_flag_delegates_to_channel_upload(self, mock_upload_command):
         main(['--show-traceback', 'upload', '-c', 'mychannel', data_dir('foo-0.1-0.tar.bz2')])
-        mock_upload_command.assert_called_once_with(
-            ctx=None,
-            files=[data_dir('foo-0.1-0.tar.bz2')],
-            channel=['mychannel'],
-            namespace=None,
-            package_type=None,
-            from_deprecated_channel_flag=True,
-        )
+        mock_upload_command.assert_called_once()
+        call_kwargs = mock_upload_command.call_args[1]
+        assert call_kwargs['ctx'] is None
+        assert call_kwargs['files'] == [data_dir('foo-0.1-0.tar.bz2')]
+        assert call_kwargs['channel'] == ['mychannel']
+        assert call_kwargs['namespace'] is None
+        assert call_kwargs['package_type'] is None
+        assert call_kwargs['from_deprecated_channel_flag'] is True
+        assert call_kwargs['labels'] == []
 
     @unittest.mock.patch('binstar_client.commands._repo_channels.upload_command')
     def test_upload_channel_flag_with_package_type_converts_to_enum(self, mock_upload_command):
@@ -353,8 +354,17 @@ class Test(CLITestCase):
         assert call_kwargs['channel'] == ['mychannel']
         assert call_kwargs['from_deprecated_channel_flag'] is True
 
-    def test_upload_channel_flag_with_invalid_package_type_raises_value_error(self):
-        with self.assertRaises(ValueError) as ctx:
+    @unittest.mock.patch('binstar_client.repocore.resolve.classify_and_resolve')
+    def test_upload_invalid_package_type_errors_for_repo_target(self, mock_classify):
+        """An invalid --package-type is rejected only once a repo target needs it
+        (anaconda.org accepts a broader set, so main() no longer pre-rejects)."""
+        from click.exceptions import Exit
+
+        from binstar_client.repocore import ResolvedChannel
+
+        mock_classify.return_value = ResolvedChannel(namespace='myns', channel_name='mychannel', target='repo')
+
+        with self.assertRaises((SystemExit, Exit)):
             main(
                 [
                     '--show-traceback',
@@ -367,7 +377,103 @@ class Test(CLITestCase):
                 ]
             )
 
-        error_message = str(ctx.exception)
-        self.assertIn("Invalid value for '--package-type'", error_message)
-        self.assertIn('invalid_type', error_message)
-        self.assertIn('is not one of', error_message)
+    @unittest.mock.patch('binstar_client.commands.upload._dotorg_upload')
+    @unittest.mock.patch('binstar_client.repocore.resolve.classify_and_resolve')
+    def test_upload_broad_package_type_forwarded_to_dotorg(self, mock_classify, mock_dotorg):
+        """A package type that anaconda.org supports but repocore does not must not
+        be rejected when the target resolves to anaconda.org: the raw string is
+        forwarded to the dotorg Uploader (which validates against its wider enum)."""
+        from binstar_client.repocore import ResolvedChannel
+
+        mock_classify.return_value = ResolvedChannel(
+            namespace=None, channel_name='someorg', target='org', owner='someorg'
+        )
+
+        main(
+            [
+                'upload',
+                '-c',
+                'someorg',
+                '--package-type',
+                'ipynb',  # not a repocore type; anaconda.org-only
+                data_dir('foo-0.1-0.tar.bz2'),
+            ]
+        )
+
+        mock_dotorg.assert_called_once()
+        forwarded = mock_dotorg.call_args[0][0]
+        # Raw string forwarded untouched, never coerced through the repocore enum.
+        assert forwarded.package_type == 'ipynb'
+        assert forwarded.user == 'someorg'
+
+    @unittest.mock.patch('binstar_client.commands._repo_channels.upload_command')
+    def test_upload_namespace_flag_routes_to_repo(self, mock_upload_command):
+        main(['--show-traceback', 'upload', '-c', 'prod', '-n', 'myns', data_dir('foo-0.1-0.tar.bz2')])
+        mock_upload_command.assert_called_once()
+        call_kwargs = mock_upload_command.call_args[1]
+        assert call_kwargs['channel'] == ['prod']
+        assert call_kwargs['namespace'] == 'myns'
+
+    def test_upload_namespace_without_channel_errors(self):
+        with self.assertRaises(SystemExit) as ctx:
+            main(['--show-traceback', 'upload', '-n', 'myns', data_dir('foo-0.1-0.tar.bz2')])
+        self.assertEqual(ctx.exception.code, 1)
+
+    @unittest.mock.patch('binstar_client.commands._repo_channels._upload_to_dotorg')
+    @unittest.mock.patch('binstar_client.commands._repo_channels._process_and_upload_files')
+    def test_upload_label_on_repo_channel_warns_not_errors(self, mock_repo_upload, mock_dotorg):
+        """A label on a repo-only channel is a no-op, not an error: we warn and
+        still upload to the repo channel (labels are dropped for it)."""
+        main(['--show-traceback', 'upload', '-c', 'myns/prod', '-l', 'dev', data_dir('foo-0.1-0.tar.bz2')])
+        # Repo upload proceeds despite the label; nothing routes to dotorg.
+        mock_repo_upload.assert_called_once()
+        mock_dotorg.assert_not_called()
+
+    @unittest.mock.patch('binstar_client.commands._repo_channels._upload_to_dotorg')
+    @unittest.mock.patch('binstar_client.commands._repo_channels._process_and_upload_files')
+    def test_upload_label_with_namespace_flag_warns_not_errors(self, mock_repo_upload, mock_dotorg):
+        """`-c prod -n myns -l dev` resolves to a repo channel; the label warns
+        rather than aborting the upload."""
+        main(['--show-traceback', 'upload', '-c', 'prod', '-n', 'myns', '-l', 'dev', data_dir('foo-0.1-0.tar.bz2')])
+        mock_repo_upload.assert_called_once()
+        mock_dotorg.assert_not_called()
+
+    @unittest.mock.patch('binstar_client.commands.upload._dotorg_upload')
+    @unittest.mock.patch('binstar_client.repocore.resolve.classify_and_resolve')
+    def test_upload_channel_org_route_forwards_all_args(self, mock_classify, mock_dotorg):
+        """`anaconda upload -c NAME` that resolves to anaconda.org must forward the full
+        arg set (e.g. --private, --summary) through to the dotorg Uploader."""
+        from binstar_client.repocore import ResolvedChannel
+
+        mock_classify.return_value = ResolvedChannel(
+            namespace=None, channel_name='someorg', target='org', owner='someorg'
+        )
+
+        main(
+            [
+                'upload',
+                '-c',
+                'someorg',
+                '-l',
+                'dev',
+                '--private',
+                '--summary',
+                'a summary',
+                '--package',
+                'mypkg',
+                '--version',
+                '9.9',
+                data_dir('foo-0.1-0.tar.bz2'),
+            ]
+        )
+
+        mock_dotorg.assert_called_once()
+        forwarded = mock_dotorg.call_args[0][0]
+        assert forwarded.user == 'someorg'
+        assert forwarded.labels == ['dev']
+        assert forwarded.private is True
+        assert forwarded.summary == 'a summary'
+        assert forwarded.package == 'mypkg'
+        assert forwarded.version == '9.9'
+        # channels consumed so it doesn't loop back through the repo path
+        assert forwarded.channels == []
