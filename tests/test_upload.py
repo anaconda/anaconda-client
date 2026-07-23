@@ -385,17 +385,24 @@ class Test(CLITestCase):
             main(['--show-traceback', 'upload', '-n', 'myns', data_dir('foo-0.1-0.tar.bz2')])
         self.assertEqual(ctx.exception.code, 1)
 
-    def test_upload_namespace_with_label_errors(self):
-        from click.exceptions import Exit
+    @unittest.mock.patch('binstar_client.commands._repo_channels._upload_to_dotorg')
+    @unittest.mock.patch('binstar_client.commands._repo_channels._process_and_upload_files')
+    def test_upload_label_on_repo_channel_warns_not_errors(self, mock_repo_upload, mock_dotorg):
+        """A label on a repo-only channel is a no-op, not an error: we warn and
+        still upload to the repo channel (labels are dropped for it)."""
+        main(['--show-traceback', 'upload', '-c', 'myns/prod', '-l', 'dev', data_dir('foo-0.1-0.tar.bz2')])
+        # Repo upload proceeds despite the label; nothing routes to dotorg.
+        mock_repo_upload.assert_called_once()
+        mock_dotorg.assert_not_called()
 
-        with self.assertRaises((SystemExit, Exit)):
-            main(['--show-traceback', 'upload', '-c', 'prod', '-n', 'myns', '-l', 'dev', data_dir('foo-0.1-0.tar.bz2')])
-
-    def test_upload_label_with_qualified_repo_channel_errors(self):
-        from click.exceptions import Exit
-
-        with self.assertRaises((SystemExit, Exit)):
-            main(['--show-traceback', 'upload', '-c', 'myns/prod', '-l', 'dev', data_dir('foo-0.1-0.tar.bz2')])
+    @unittest.mock.patch('binstar_client.commands._repo_channels._upload_to_dotorg')
+    @unittest.mock.patch('binstar_client.commands._repo_channels._process_and_upload_files')
+    def test_upload_label_with_namespace_flag_warns_not_errors(self, mock_repo_upload, mock_dotorg):
+        """`-c prod -n myns -l dev` resolves to a repo channel; the label warns
+        rather than aborting the upload."""
+        main(['--show-traceback', 'upload', '-c', 'prod', '-n', 'myns', '-l', 'dev', data_dir('foo-0.1-0.tar.bz2')])
+        mock_repo_upload.assert_called_once()
+        mock_dotorg.assert_not_called()
 
     @unittest.mock.patch('binstar_client.commands.upload._dotorg_upload')
     @unittest.mock.patch('binstar_client.repocore.resolve.classify_and_resolve')

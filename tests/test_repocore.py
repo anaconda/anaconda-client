@@ -936,6 +936,46 @@ class TestRepoCoreChannelsCLI:
         args, _ = mock_dotorg.call_args
         assert args[1] == "jnguyenwoohoo"  # owner
 
+    def test_channel_upload_mixed_repo_and_org_with_label(self):
+        """A single invocation targeting both a repo channel and an org owner with -l:
+        the repo channel uploads (label ignored, with a warning) AND the org owner
+        gets the file plus the label. The label must not abort the repo upload."""
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        type(mock_api).account = PropertyMock(return_value={"default_channel": "main"})
+        mock_api.upload_file.return_value = _mock_response(201, {"status": "uploaded"})
+        # "someowner" is not a repo namespace -> no repo/org collision, no prompt.
+        mock_api.list_user_organizations.return_value = [Namespace(name="myns")]
+
+        with (
+            _patch_repo_api(mock_api, owner_exists=True),
+            patch("binstar_client.commands._repo_channels.os.path.exists", return_value=True),
+            patch("binstar_client.repocore.package_utils._detect_package_type", return_value="conda"),
+            patch("binstar_client.commands._repo_channels._upload_to_dotorg") as mock_dotorg,
+        ):
+            result = runner.invoke(
+                app,
+                [
+                    "upload",
+                    "--channel", "myns/prod",  # qualified -> repo
+                    "--channel", "someowner",  # bare, owner_exists=True -> org
+                    "--label", "dev",
+                    "test-1.0-py39_0.conda",
+                ],
+            )
+
+        assert result.exit_code == 0
+        # Repo upload still happens even though a label was supplied.
+        mock_api.upload_file.assert_called_once_with("test-1.0-py39_0.conda", "myns/prod", "conda")
+        # Warns that the label is ignored for the repo channel.
+        assert "ignored for repo channels" in result.output
+        # Org owner receives the file and the label.
+        mock_dotorg.assert_called_once()
+        args, _ = mock_dotorg.call_args
+        assert args[1] == "someowner"  # owner
+        assert args[2] == ["dev"]  # labels
+
     def test_upload_multiple_channels(self):
         runner = CliRunner()
         app = _get_channels_app()

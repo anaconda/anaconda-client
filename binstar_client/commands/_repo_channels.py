@@ -493,10 +493,14 @@ def _do_upload(
     repo_targets = [r for r in resolved if r.target != "org"]
 
     if repo_targets:
-        # -l/--label has no meaning for repo channels.
+        # -l/--label has no meaning for repo channels. When a single invocation
+        # targets both repo and org (multiple -c flags), the label still applies
+        # to the org targets, so warn rather than error and upload to both.
         if labels:
-            console.print("[red]Error:[/red] -l/--label applies only to anaconda.org uploads, not repo channels.")
-            raise typer.Exit(1)
+            console.print(
+                "[yellow]Note:[/yellow] -l/--label is ignored for repo channels; "
+                "labels apply only to anaconda.org uploads."
+            )
         repo_channels = [f"{r.namespace}/{r.channel_name}" if r.namespace else r.channel_name for r in repo_targets]
         _process_and_upload_files(api, files, repo_channels, package_type, from_deprecated_channel_flag)
 
