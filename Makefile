@@ -24,7 +24,7 @@ conda_env_dir ?= ./env
 CONDA_EXE ?= conda
 CONDA_RUN := $(CONDA_EXE) run --prefix $(conda_env_dir) --no-capture-output
 
-.PHONY: help init lint lint-bandit lint-mypy test test-pytest build-wheel build-conda install-hooks pre-commit
+.PHONY: help init init-tel lint lint-bandit lint-mypy test test-pytest build-wheel build-conda install-hooks pre-commit
 
 help:
 	@echo "$${HELP}"
@@ -47,6 +47,11 @@ init:
 		--prefix $(conda_env_dir) \
 		pip install -e . --no-deps
 	@echo "\n\nConda environment has been created. To activate run \"conda activate $(conda_env_dir)\"."
+
+init-tel:
+	@if [ -z "$${CONDA_SHLVL:+x}" ]; then echo "Conda is not installed." && exit 1; fi
+	@$(CONDA_EXE) env $$([ -d ./tel-env ] && echo update || echo create) -p ./tel-env --file environment-tel.yml
+	@echo "\n\nTelemetry dev environment created with local anaconda-cli-base. To activate run \"conda activate ./tel-env\"."
 
 check: lint test
 

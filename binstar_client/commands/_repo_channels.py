@@ -14,9 +14,10 @@ import typer
 from rich.panel import Panel
 
 from anaconda_cli_base.console import Table, console, select_from_list
+from anaconda_cli_base.telemetry import log_event
 from binstar_client import __version__
 from binstar_client.commands import _channel_notices as channel_notices
-from binstar_client.repocore import RepoCoreClient, ResolvedChannel
+from binstar_client.repocore import RepoCoreClient, ResolvedChannel, ChannelEvents
 from binstar_client.repocore.errors import RepoCoreError, Unauthorized
 from binstar_client.repocore.package_utils import PackageType, determine_package_type, windows_glob
 
@@ -301,6 +302,8 @@ def create_command(
     )
     if response.created:
         console.print(f"[green]Success![/green] Channel '[cyan]{response.channel_path}[/cyan]' created ({privacy}).")
+        attrs = {'namespace': resolved.namespace, 'channel': resolved.channel_name, 'privacy': privacy}
+        log_event("Created private channel", ChannelEvents.created, app.info.name, attrs)
     else:
         console.print(f"Channel '[cyan]{response.channel_path}[/cyan]' already exists.")
 

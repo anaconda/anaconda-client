@@ -8,6 +8,12 @@ from binstar_client.repocore.models import (
     NamespaceChannel,
     ResolvedChannel,
 )
+from binstar_client.repocore.events import (
+    ChannelEvents,
+    UpgradeEvents,
+    UploadEvents,
+    ShareEvents,
+)
 
 __all__ = [
     "REPO_API_PATH",
@@ -18,4 +24,8 @@ __all__ = [
     "Namespace",
     "NamespaceChannel",
     "ResolvedChannel",
+    "ChannelEvents",
+    "UpgradeEvents",
+    "UploadEvents",
+    "ShareEvents",
 ]
