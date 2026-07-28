@@ -2,7 +2,7 @@
 
 from typing import FrozenSet, Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator, model_validator
 
 
 def _handle_none_as_empty_string(v):
@@ -84,6 +84,13 @@ class ResolvedChannel(BaseModel):
     target: str = "repo"
     owner: Optional[str] = None
     accepted_package_types: FrozenSet[str] = frozenset()
+
+    @model_validator(mode="after")
+    def _require_dotorg_owner(self) -> "ResolvedChannel":
+        """A dotorg (``target="org"``) target must carry an owner to upload to."""
+        if self.target == "org" and not self.owner:
+            raise ValueError('ResolvedChannel with target="org" must have an owner')
+        return self
 
     def accepts_package_type(self, package_type: Optional[str]) -> bool:
         """Return whether ``package_type`` is acceptable for this target.

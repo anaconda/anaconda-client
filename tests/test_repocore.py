@@ -59,6 +59,19 @@ class TestPydanticModels:
         resolved = ResolvedChannel(namespace="myorg", channel_name="dev")
         assert resolved.accepts_package_type("anything")
 
+    def test_org_target_requires_owner(self):
+        # A dotorg target with no owner has nothing to upload to; reject it.
+        with pytest.raises(ValueError):
+            ResolvedChannel(namespace=None, channel_name="someowner", target="org")
+
+    def test_org_target_with_owner_is_valid(self):
+        resolved = ResolvedChannel(namespace=None, channel_name="someowner", target="org", owner="someowner")
+        assert resolved.owner == "someowner"
+
+    def test_repo_target_needs_no_owner(self):
+        resolved = ResolvedChannel(namespace="myorg", channel_name="dev", target="repo")
+        assert resolved.owner is None
+
     def test_namespace_model_used_in_list_organizations(self):
         client = _make_client()
         orgs = [{"name": "org1"}, {"name": "org2"}]
@@ -1003,8 +1016,8 @@ class TestRepoCoreChannelsCLI:
 
     def test_channel_upload_mixed_repo_and_org_with_label(self):
         """A single invocation targeting both a repo channel and an org owner with -l:
-        the repo channel uploads (label ignored, with a warning) AND the org owner
-        gets the file plus the label. The label must not abort the repo upload."""
+        the repo channel uploads (label silently ignored) AND the org owner gets the
+        file plus the label. The label must not abort the repo upload."""
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
@@ -1037,8 +1050,6 @@ class TestRepoCoreChannelsCLI:
         assert result.exit_code == 0
         # Repo upload still happens even though a label was supplied.
         mock_api.upload_file.assert_called_once_with("test-1.0-py39_0.conda", "myns/prod", "conda")
-        # Warns that the label is ignored for the repo channel.
-        assert "ignored for repo channels" in result.output
         # Org owner receives the file and the label.
         mock_dotorg.assert_called_once()
         args, _ = mock_dotorg.call_args

@@ -9,7 +9,7 @@ import argparse
 import logging
 import os
 from glob import glob
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, cast
 
 import typer
 from rich.panel import Panel
@@ -17,6 +17,7 @@ from rich.panel import Panel
 from anaconda_cli_base.console import Table, console, select_from_list
 from binstar_client import __version__
 from binstar_client.commands import _channel_notices as channel_notices
+from binstar_client.commands import upload as upload_mod
 from binstar_client.repocore import RepoCoreClient
 from binstar_client.repocore.errors import RepoCoreError, Unauthorized
 from binstar_client.repocore.package_utils import PackageType, determine_package_type, windows_glob
@@ -157,10 +158,6 @@ def _upload_to_dotorg(
     a minimal argument set is synthesized from context. ``package_type`` (from
     ``-t/--package-type``) is honored on both paths.
     """
-    import argparse
-
-    from binstar_client.commands.upload import main as upload_main
-
     if org_upload_args is not None:
         args = argparse.Namespace(**vars(org_upload_args))
     else:
@@ -204,7 +201,8 @@ def _upload_to_dotorg(
     args.channels = []  # go to the dotorg Uploader, not back through this command
     args.namespace = None
     args.labels = labels
-    upload_main(args)
+
+    upload_mod.main(args)
 
 
 def _add_repo_rows(table: Table, api, namespace: Optional[str]) -> None:
@@ -524,23 +522,14 @@ def _do_upload(
             )
             raise typer.Exit(1)
 
-        # -l/--label has no meaning for repo channels. When a single invocation
-        # targets both repo and org (multiple -c flags), the label still applies
-        # to the org targets, so warn rather than error and upload to both.
-        if labels:
-            console.print(
-                "[yellow]Note:[/yellow] -l/--label is ignored for repo channels; "
-                "labels apply only to anaconda.org uploads."
-            )
         # Validated above, so the string is a valid repocore type here (or None).
         repo_package_type = PackageType(package_type) if package_type else None
         repo_channels = [f"{r.namespace}/{r.channel_name}" if r.namespace else r.channel_name for r in repo_targets]
         _process_and_upload_files(api, files, repo_channels, repo_package_type, from_deprecated_channel_flag)
 
     for r in org_targets:
-        if r.owner is None:  # org targets always carry an owner; guard for the type checker
-            continue
-        _upload_to_dotorg(files, r.owner, labels, org_upload_args, package_type=package_type)
+        # ResolvedChannel guarantees a dotorg target carries an owner.
+        _upload_to_dotorg(files, cast(str, r.owner), labels, org_upload_args, package_type=package_type)
 
 
 def upload_command(
