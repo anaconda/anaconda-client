@@ -84,29 +84,19 @@ def main(arguments: argparse.Namespace) -> None:
             raise SystemExit(1)
 
         from binstar_client.commands._repo_channels import upload_command
-        from binstar_client.repocore.package_utils import PackageType as RepoPackageType
 
         files = [f for sublist in arguments.files for f in sublist]
-        package_type_str = getattr(arguments, 'package_type', None)
-        # Convert to the repocore enum only for repo-target validation. repocore
-        # and anaconda.org have different type sets (neither is a superset), so we
-        # do NOT reject an unknown value here: a name may still resolve to
-        # anaconda.org, which validates the raw string (preserved on
-        # ``arguments.package_type``) against its own enum. The repo path re-checks
-        # and errors only if a repo target actually needs it.
-        package_type_enum = None
-        if package_type_str:
-            try:
-                package_type_enum = RepoPackageType(package_type_str)
-            except ValueError:
-                package_type_enum = None
-
+        # Pass the raw --package-type string through untouched. repocore and
+        # anaconda.org have overlapping-but-different type sets, so the target
+        # can't be known here; the repo path validates the string against each
+        # resolved target's own accepted set and errors only if a repo target
+        # actually can't take it.
         upload_command(
             ctx=None,  # type: ignore[arg-type]
             files=files,
             channel=arguments.channels,
             namespace=namespace,
-            package_type=package_type_enum,
+            package_type=getattr(arguments, 'package_type', None),
             from_deprecated_channel_flag=True,
             labels=labels,
             org_upload_args=arguments,

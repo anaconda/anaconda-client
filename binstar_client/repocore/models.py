@@ -1,6 +1,6 @@
 """Pydantic models for repocore API responses."""
 
-from typing import Optional
+from typing import FrozenSet, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -70,9 +70,27 @@ class ResolvedChannel(BaseModel):
       * "repo" -> anaconda.com (repocore): use ``namespace``/``channel_name``.
       * "org"  -> anaconda.org: ``owner`` is the user/organization; labels are
         applied by the caller. ``namespace`` is not used for org targets.
+
+    ``accepted_package_types`` is the set of ``--package-type`` values this target
+    accepts (as raw strings, e.g. ``"conda"``, ``"sdist"``). anaconda.com and
+    anaconda.org have overlapping-but-different type sets — neither is a superset —
+    so the resolver stamps the correct set here and callers validate against it
+    generically instead of hard-coding per-target enum rules. An empty set means
+    "not populated / do not validate here".
     """
 
     namespace: Optional[str]
     channel_name: str
     target: str = "repo"
     owner: Optional[str] = None
+    accepted_package_types: FrozenSet[str] = frozenset()
+
+    def accepts_package_type(self, package_type: Optional[str]) -> bool:
+        """Return whether ``package_type`` is acceptable for this target.
+
+        ``None`` (autodetect) is always acceptable; validation of a detected type
+        happens later at the point of upload. An unpopulated set accepts anything.
+        """
+        if package_type is None or not self.accepted_package_types:
+            return True
+        return package_type in self.accepted_package_types

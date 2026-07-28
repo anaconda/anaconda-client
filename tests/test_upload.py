@@ -340,17 +340,16 @@ class Test(CLITestCase):
         assert call_kwargs['labels'] == []
 
     @unittest.mock.patch('binstar_client.commands._repo_channels.upload_command')
-    def test_upload_channel_flag_with_package_type_converts_to_enum(self, mock_upload_command):
-        from binstar_client.repocore.package_utils import PackageType
-
+    def test_upload_channel_flag_passes_raw_package_type(self, mock_upload_command):
+        """The bridge forwards the raw --package-type string untouched; the repo
+        path validates it per-target rather than the bridge pre-coercing to an enum."""
         main(
             ['--show-traceback', 'upload', '-c', 'mychannel', '--package-type', 'conda', data_dir('foo-0.1-0.tar.bz2')]
         )
 
         mock_upload_command.assert_called_once()
         call_kwargs = mock_upload_command.call_args[1]
-        assert call_kwargs['package_type'] == PackageType.conda
-        assert isinstance(call_kwargs['package_type'], PackageType)
+        assert call_kwargs['package_type'] == 'conda'
         assert call_kwargs['channel'] == ['mychannel']
         assert call_kwargs['from_deprecated_channel_flag'] is True
 
@@ -361,8 +360,14 @@ class Test(CLITestCase):
         from click.exceptions import Exit
 
         from binstar_client.repocore import ResolvedChannel
+        from binstar_client.repocore.resolve import REPO_PACKAGE_TYPES
 
-        mock_classify.return_value = ResolvedChannel(namespace='myns', channel_name='mychannel', target='repo')
+        mock_classify.return_value = ResolvedChannel(
+            namespace='myns',
+            channel_name='mychannel',
+            target='repo',
+            accepted_package_types=REPO_PACKAGE_TYPES,
+        )
 
         with self.assertRaises((SystemExit, Exit)):
             main(

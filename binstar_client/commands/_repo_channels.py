@@ -148,7 +148,7 @@ def _upload_to_dotorg(
     owner: str,
     labels: List[str],
     org_upload_args,
-    package_type: Optional[PackageType] = None,
+    package_type: Optional[str] = None,
 ) -> None:
     """Delegate an owner-only channel upload to the anaconda.org Uploader.
 
@@ -189,15 +189,11 @@ def _upload_to_dotorg(
         )
 
     # Honor an explicit --package-type on the direct `channel upload` org route.
-    # anaconda.org and repocore have overlapping-but-different type sets (e.g.
-    # anaconda.org has ipynb/file/env; repocore has sdist), and the Uploader
-    # validates the string against anaconda.org's own enum -- so when the
-    # `anaconda upload` bridge supplied the original args, we keep its raw
-    # ``package_type`` string untouched rather than forcing it through the
-    # repocore enum. Only the synthesized branch needs this backfill, and there
-    # the value is already repocore-constrained by the CLI's typed -t option.
+    # The Uploader validates it against anaconda.org's own (wider) enum. When the
+    # `anaconda upload` bridge supplied the original args, its raw package_type is
+    # already present on them, so only the synthesized branch needs this backfill.
     if org_upload_args is None and package_type is not None:
-        args.package_type = package_type.value
+        args.package_type = package_type
 
     # Expand glob patterns the same way the repo path does (windows_glob is a
     # no-op on POSIX, where the shell already expanded them). Without this, a
@@ -218,7 +214,7 @@ def _add_repo_rows(table: Table, api, namespace: Optional[str]) -> None:
         orgs = [org for org in orgs if org.name == namespace]
 
     for org in orgs:
-        table.add_row(org.name, "repo", "", "", "", "")
+        table.add_row(org.name, "", "", "", "")
 
         sub_offset = 0
         while True:
@@ -230,7 +226,6 @@ def _add_repo_rows(table: Table, api, namespace: Optional[str]) -> None:
             for channel in channels:
                 table.add_row(
                     f"  {org.name}/{channel.name}",
-                    "repo",
                     channel.privacy,
                     channel.description,
                     str(channel.artifact_count),
@@ -242,11 +237,12 @@ def _add_repo_rows(table: Table, api, namespace: Optional[str]) -> None:
 
 
 def _add_org_rows(table: Table, aserver_api) -> None:
-    """Append anaconda.org owner/label rows to the table.
+    """Append anaconda.org owner rows to the table.
 
-    Labels are not channels: they have no namespace (shown as a dash) and no
-    channel-level privacy. Each owner's labels are rendered as ``owner · label``
-    so they never read as a repocore ``namespace/channel`` path.
+    anaconda.org owners are not repocore channels: they have no namespace and no
+    channel-level privacy (both shown as a dash). Labels are intentionally *not*
+    listed here — a label is not a channel, and `anaconda channel list` lists
+    channels. Use ``anaconda label`` to work with labels.
     """
     login = aserver_api.user()["login"]
     owners = [login]
@@ -256,27 +252,18 @@ def _add_org_rows(table: Table, aserver_api) -> None:
         # Org membership lookup is best-effort; fall back to just the user.
         logger.debug("Could not list anaconda.org organizations, using user only: %s", exc)
 
-    # Group header for the whole anaconda.org section: no namespace exists here.
-    table.add_row(_NOT_APPLICABLE, "org", "", "", "", "")
+    # Group header for the whole anaconda.org section: no namespace exists here,
+    # so the Namespace / Channel column is a dash and owners are listed beneath it.
+    table.add_row(_NOT_APPLICABLE, _NOT_APPLICABLE, _NOT_APPLICABLE, _NOT_APPLICABLE, _NOT_APPLICABLE)
 
     for owner in owners:
-        labels = aserver_api.list_channels(owner)
-        for label, info in labels.items():
-            if isinstance(info, int):  # OLD API returns a count instead of a dict
-                locked = False
-            else:
-                locked = bool(info.get("is_locked"))
-            display = f"  {owner} · {label}"
-            if locked:
-                display += " [locked]"
-            table.add_row(
-                display,
-                "org",
-                _NOT_APPLICABLE,
-                _NOT_APPLICABLE,
-                _NOT_APPLICABLE,
-                _NOT_APPLICABLE,
-            )
+        table.add_row(
+            f"  {owner}",
+            _NOT_APPLICABLE,
+            _NOT_APPLICABLE,
+            _NOT_APPLICABLE,
+            _NOT_APPLICABLE,
+        )
 
 
 @app.command(name="list", help="List all channels")
@@ -299,7 +286,6 @@ def list_command(
 
     table = Table(title="Channels")
     table.add_column("Namespace / Channel", style="cyan")
-    table.add_column("Source")
     table.add_column("Privacy")
     table.add_column("Description")
     table.add_column("Artifacts", justify="right")
@@ -483,7 +469,7 @@ def _do_upload(
     files: List[str],
     channels: List[str],
     namespace: Optional[str],
-    package_type: Optional[PackageType],
+    package_type: Optional[str],
     from_deprecated_channel_flag: bool,
     token_value: Optional[str],
     site_value: Optional[str],
@@ -494,8 +480,11 @@ def _do_upload(
     """Classify each channel and upload to anaconda.com and/or anaconda.org.
 
     Shared by the ``anaconda channel upload`` command and the ``anaconda upload``
-    bridge. ``labels``/``org_upload_args`` are only used for owner-only names that
-    route to anaconda.org.
+    bridge. ``package_type`` is the raw ``--package-type`` string as the user
+    typed it (or ``None`` to autodetect); it flows through untouched and is
+    validated against each resolved target's own accepted set, since anaconda.com
+    and anaconda.org have overlapping-but-different type sets. ``labels``/
+    ``org_upload_args`` are only used for owner-only names that route to anaconda.org.
     """
     labels = labels or []
 
@@ -522,16 +511,15 @@ def _do_upload(
     repo_targets = [r for r in resolved if r.target != "org"]
 
     if repo_targets:
-        # A --package-type that isn't a valid repocore type is only an error when
-        # a repo target actually needs it (anaconda.org, which is a superset, may
-        # legitimately accept it for org targets). ``package_type`` is None here
-        # either because none was given or because it wasn't a repocore type; the
-        # raw string on org_upload_args lets us tell those apart and report it.
-        raw_pt = getattr(org_upload_args, "package_type", None)
-        if package_type is None and raw_pt:
-            valid_types = "', '".join(pt.value for pt in PackageType)
+        # Each resolved channel carries the set of package types its target
+        # accepts. Reject a --package-type only for the targets that actually
+        # can't take it — a name may resolve to anaconda.org, which has a
+        # different type set, so an "invalid" type there is not an error here.
+        offending = next((r for r in repo_targets if not r.accepts_package_type(package_type)), None)
+        if offending is not None:
+            valid_types = "', '".join(sorted(offending.accepted_package_types))
             console.print(
-                f"[red]Error:[/red] Invalid value for '--package-type' / '-t': '{raw_pt}' "
+                f"[red]Error:[/red] Invalid value for '--package-type' / '-t': '{package_type}' "
                 f"is not one of '{valid_types}' for anaconda.com repo channels."
             )
             raise typer.Exit(1)
@@ -544,8 +532,10 @@ def _do_upload(
                 "[yellow]Note:[/yellow] -l/--label is ignored for repo channels; "
                 "labels apply only to anaconda.org uploads."
             )
+        # Validated above, so the string is a valid repocore type here (or None).
+        repo_package_type = PackageType(package_type) if package_type else None
         repo_channels = [f"{r.namespace}/{r.channel_name}" if r.namespace else r.channel_name for r in repo_targets]
-        _process_and_upload_files(api, files, repo_channels, package_type, from_deprecated_channel_flag)
+        _process_and_upload_files(api, files, repo_channels, repo_package_type, from_deprecated_channel_flag)
 
     for r in org_targets:
         if r.owner is None:  # org targets always carry an owner; guard for the type checker
@@ -558,7 +548,7 @@ def upload_command(
     files: List[str],
     channel: Optional[List[str]] = None,
     namespace: Optional[str] = None,
-    package_type: Optional[PackageType] = None,
+    package_type: Optional[str] = None,
     from_deprecated_channel_flag: bool = False,
     labels: Optional[List[str]] = None,
     org_upload_args: object = None,
@@ -641,12 +631,14 @@ def _upload_cli(
     params = getattr(ctx.obj, "params", {})
     site_value = params.get("at") or params.get("site")
     token_value = params.get("token")
+    # typer validates -t against the repocore enum at the CLI boundary; hand the
+    # raw string down so _do_upload can validate per-target uniformly.
     _do_upload(
         ctx.obj.repo_api,
         files,
         channel or [],
         namespace,
-        package_type,
+        package_type.value if package_type else None,
         from_deprecated_channel_flag=False,
         token_value=token_value,
         site_value=site_value,

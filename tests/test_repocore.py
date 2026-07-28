@@ -45,6 +45,20 @@ class TestPydanticModels:
         assert resolved.namespace == "myorg"
         assert resolved.channel_name == "dev"
 
+    def test_accepts_package_type(self):
+        resolved = ResolvedChannel(
+            namespace="myorg", channel_name="dev", accepted_package_types=frozenset({"conda", "pypi"})
+        )
+        assert resolved.accepts_package_type("conda")
+        assert not resolved.accepts_package_type("ipynb")
+        # None (autodetect) is always acceptable; validation happens at upload.
+        assert resolved.accepts_package_type(None)
+
+    def test_accepts_package_type_empty_set_accepts_anything(self):
+        # An unpopulated set means "do not validate here".
+        resolved = ResolvedChannel(namespace="myorg", channel_name="dev")
+        assert resolved.accepts_package_type("anything")
+
     def test_namespace_model_used_in_list_organizations(self):
         client = _make_client()
         orgs = [{"name": "org1"}, {"name": "org2"}]
@@ -429,6 +443,26 @@ class TestClassifyAndResolve:
         assert resolved.target == "org"
         assert resolved.owner == "user1"
 
+    def test_repo_target_carries_repo_package_types(self):
+        from binstar_client.repocore.resolve import REPO_PACKAGE_TYPES, classify_and_resolve
+
+        mock_api = MagicMock()
+        resolved = classify_and_resolve(mock_api, "myns/dev", owner_probe=lambda n: False)
+        assert resolved.accepted_package_types == REPO_PACKAGE_TYPES
+        # "sdist" is a repocore-only type; org-only types are not accepted.
+        assert resolved.accepts_package_type("sdist")
+        assert not resolved.accepts_package_type("ipynb")
+
+    def test_org_target_carries_org_package_types(self):
+        from binstar_client.repocore.resolve import ORG_PACKAGE_TYPES, classify_and_resolve
+
+        mock_api = MagicMock()
+        resolved = classify_and_resolve(mock_api, "user1", owner_probe=lambda n: n == "user1")
+        assert resolved.accepted_package_types == ORG_PACKAGE_TYPES
+        # "ipynb" is an anaconda.org type; the repocore-only "sdist" is not accepted.
+        assert resolved.accepts_package_type("ipynb")
+        assert not resolved.accepts_package_type("sdist")
+
     def test_bare_repo_only_resolves_channel_under_namespace(self):
         from binstar_client.repocore.resolve import classify_and_resolve
 
@@ -597,14 +631,14 @@ class TestRepoCoreChannelsCLI:
         # org path must not be touched when source is repo-only
         mock_get_server.assert_not_called()
 
-    def test_channels_list_source_org_shows_labels(self):
+    def test_channels_list_source_org_shows_owners_not_labels(self):
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
 
         aserver = MagicMock()
         aserver.user.return_value = {"login": "user1"}
-        aserver.user_orgs.return_value = []
+        aserver.user_orgs.return_value = [{"login": "org1"}]
         aserver.list_channels.return_value = {"main": {"is_locked": False}, "dev": {"is_locked": True}}
 
         with (
@@ -614,9 +648,13 @@ class TestRepoCoreChannelsCLI:
             result = runner.invoke(app, ["list", "--source", "org"])
 
         assert result.exit_code == 0
+        # Owners are listed...
         assert "user1" in result.output
-        assert "main" in result.output
-        assert "dev" in result.output
+        assert "org1" in result.output
+        # ...but labels are not: `channel list` lists channels, not labels.
+        assert "main" not in result.output
+        assert "dev" not in result.output
+        aserver.list_channels.assert_not_called()
         # repocore namespaces must not be fetched for org-only listing
         mock_api.list_user_organizations.assert_not_called()
 

@@ -6,17 +6,48 @@ can share a single resolver.
 """
 
 import sys
-from typing import Callable, List, Optional
+from typing import Callable, FrozenSet, List, Optional
 
 import typer
 
 from anaconda_cli_base.console import console, select_from_list
 from binstar_client.repocore.models import ResolvedChannel
+from binstar_client.repocore.package_utils import PackageType as RepoPackageType
+from binstar_client.utils.config import PackageType as OrgPackageType
 
 # A callable that reports whether ``name`` is a valid anaconda.org owner
 # (user or organization). Injected by callers so this module stays free of
 # client imports and circular dependencies.
 OwnerProbe = Callable[[str], bool]
+
+# The accepted ``--package-type`` values for each target, derived from the two
+# enums so they stay in sync with the source of truth. Stamped onto each
+# ResolvedChannel so callers validate generically instead of re-encoding the
+# per-target type rules. anaconda.com and anaconda.org overlap but neither is a
+# superset (e.g. repo has "sdist"; org has "ipynb"/"file"/"env").
+REPO_PACKAGE_TYPES: FrozenSet[str] = frozenset(pt.value for pt in RepoPackageType)
+ORG_PACKAGE_TYPES: FrozenSet[str] = frozenset(pt.value for pt in OrgPackageType)
+
+
+def _repo_channel(namespace: Optional[str], channel_name: str) -> ResolvedChannel:
+    """Build a repocore (anaconda.com) ResolvedChannel with its accepted types."""
+    return ResolvedChannel(
+        namespace=namespace,
+        channel_name=channel_name,
+        target="repo",
+        accepted_package_types=REPO_PACKAGE_TYPES,
+    )
+
+
+def _org_channel(owner: str, channel_name: str) -> ResolvedChannel:
+    """Build an anaconda.org ResolvedChannel with its accepted types."""
+    return ResolvedChannel(
+        namespace=None,
+        channel_name=channel_name,
+        target="org",
+        owner=owner,
+        accepted_package_types=ORG_PACKAGE_TYPES,
+    )
 
 
 def resolve_no_namespace(api, name: str) -> ResolvedChannel:
@@ -38,9 +69,9 @@ def resolve_no_namespace(api, name: str) -> ResolvedChannel:
             f"No namespaces found. A namespace can be created with your username. Use your username '{username}' as the namespace?"
         )
         if confirm:
-            return ResolvedChannel(namespace=username, channel_name=name)
+            return _repo_channel(namespace=username, channel_name=name)
         raise typer.Exit(0)
-    return ResolvedChannel(namespace=None, channel_name=name)
+    return _repo_channel(namespace=None, channel_name=name)
 
 
 def resolve_namespace_and_channel(
@@ -64,10 +95,10 @@ def resolve_namespace_and_channel(
 
     if "/" in name:
         parts = name.split("/", 1)
-        return ResolvedChannel(namespace=parts[0], channel_name=parts[1])
+        return _repo_channel(namespace=parts[0], channel_name=parts[1])
 
     if namespace:
-        return ResolvedChannel(namespace=namespace, channel_name=name)
+        return _repo_channel(namespace=namespace, channel_name=name)
 
     # Resolve from API
     orgs = api.list_user_organizations()
@@ -83,11 +114,11 @@ def resolve_namespace_and_channel(
         return resolve_no_namespace(api, name)
 
     if len(namespaces) == 1:
-        return ResolvedChannel(namespace=namespaces[0], channel_name=name)
+        return _repo_channel(namespace=namespaces[0], channel_name=name)
 
     console.print()
     selected_namespace = select_from_list(f"Select namespace for channel '{name}':", namespaces)
-    return ResolvedChannel(namespace=selected_namespace, channel_name=name)
+    return _repo_channel(namespace=selected_namespace, channel_name=name)
 
 
 def _prompt_repo_or_org(name: str) -> str:
@@ -151,9 +182,9 @@ def classify_and_resolve(
 
     if org_match and repo_match:
         if _prompt_repo_or_org(name) == "org":
-            return ResolvedChannel(namespace=None, channel_name=name, target="org", owner=name)
+            return _org_channel(owner=name, channel_name=name)
     elif org_match:
-        return ResolvedChannel(namespace=None, channel_name=name, target="org", owner=name)
+        return _org_channel(owner=name, channel_name=name)
 
     # anaconda.com: treat the bare name as a channel and resolve its namespace.
     return resolve_namespace_and_channel(api, name, namespace, require_namespace=False)
