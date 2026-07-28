@@ -271,7 +271,7 @@ def list_command(
     source: str = typer.Option(
         "all",
         "--source",
-        help="Which channels to list: 'repo' (anaconda.com), 'org' (anaconda.org labels), or 'all'.",
+        help="Which channels to list: 'repo' (anaconda.com), 'org' (anaconda.org owners), or 'all'.",
     ),
 ) -> None:
     """List all channels for the current user."""
@@ -303,7 +303,7 @@ def list_command(
             aserver_api = get_server_api(params.get("token"), params.get("site"))
             _add_org_rows(table, aserver_api)
         except Exception as exc:
-            notes.append(f"anaconda.org labels unavailable: {exc}")
+            notes.append(f"anaconda.org owners unavailable: {exc}")
 
     def _render() -> None:
         console.print(table)
@@ -470,7 +470,6 @@ def _do_upload(
     package_type: Optional[str],
     from_deprecated_channel_flag: bool,
     token_value: Optional[str],
-    site_value: Optional[str],
     org_site_value: Optional[str] = None,
     labels: Optional[List[str]] = None,
     org_upload_args: object = None,
@@ -544,7 +543,6 @@ def upload_command(
 ) -> None:
     """Programmatic entry for uploads (used by the ``anaconda upload`` bridge)."""
     token_value = None
-    site_value = None
     org_site_value = None
     if ctx is None:
         from anaconda_cli_base.cli import ContextExtras
@@ -564,7 +562,6 @@ def upload_command(
         ctx = FakeContext()
     else:
         params = getattr(ctx.obj, "params", {})
-        site_value = params.get("at") or params.get("site")
         token_value = params.get("token")
         # --at selects the anaconda.com domain; only --site is an anaconda.org alias.
         org_site_value = params.get("site")
@@ -577,7 +574,6 @@ def upload_command(
         package_type,
         from_deprecated_channel_flag,
         token_value,
-        site_value,
         org_site_value=org_site_value,
         labels=labels,
         org_upload_args=org_upload_args,
@@ -618,7 +614,6 @@ def _upload_cli(
 ) -> None:
     """Upload packages to your Anaconda repository."""
     params = getattr(ctx.obj, "params", {})
-    site_value = params.get("at") or params.get("site")
     token_value = params.get("token")
     # typer validates -t against the repocore enum at the CLI boundary; hand the
     # raw string down so _do_upload can validate per-target uniformly.
@@ -630,7 +625,6 @@ def _upload_cli(
         package_type.value if package_type else None,
         from_deprecated_channel_flag=False,
         token_value=token_value,
-        site_value=site_value,
         org_site_value=params.get("site"),
         labels=label or [],
     )
@@ -680,12 +674,6 @@ def share_command(
 
     action = "unshare" if unshare else "share"
     for resolved in resolved_channels:
-        if resolved.target == "org":
-            console.print(
-                f'[red]Error:[/red] "{resolved.owner}" is an anaconda.org owner; sharing applies only to '
-                "anaconda.com repo channels."
-            )
-            raise typer.Exit(1)
         if not resolved.namespace:
             console.print(
                 f"[red]Error:[/red] Could not resolve a namespace for '{resolved.channel_name}'. "
