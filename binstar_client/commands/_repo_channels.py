@@ -217,17 +217,7 @@ def _iter_all_channels(api):
 
 
 def _add_repo_rows(table: Table, api, namespace: Optional[str]) -> None:
-    """Append anaconda.com (repocore) namespace/channel rows to the table.
-
-    Uses the flat ``GET /channels`` listing, which the server scopes to every
-    channel the user can read — including channels *shared* with them from
-    namespaces they don't own. This replaces the old per-organization
-    enumeration, which only saw the user's own namespaces and missed shares.
-    """
-    # The flat listing returns two kinds of item: top-level channels (no parent),
-    # which ARE the namespaces, and subchannels, whose parent is the namespace.
-    # A user's actual channels are the subchannels; group them under their
-    # namespace header. Preserve first-seen order so headers precede channels.
+    """Append anaconda.com (repocore) namespace/channel rows to the table."""
     namespaces: "list[str]" = []
     subchannels: "dict[str, list]" = {}
     for channel in _iter_all_channels(api):

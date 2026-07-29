@@ -179,9 +179,7 @@ class RepoCoreClient(BaseClient):
         """List every channel the caller can read, including channels shared with them.
 
         Hits ``GET /channels`` — the server scopes the result to the token's
-        permissions (its own namespaces plus any channels shared with the user),
-        so a single call replaces per-namespace enumeration and surfaces shared
-        channels the organizations-based listing missed.
+        permissions (its own namespaces plus any channels shared with the user)
 
         Returns the page of channels and the server's total count (for paging).
         """
