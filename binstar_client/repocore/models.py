@@ -27,6 +27,47 @@ class Channel(BaseModel):
     _handle_description = field_validator("description", mode="before")(_handle_none_as_empty_string)
 
 
+class ChannelListing(BaseModel):
+    """A channel as returned by the flat ``GET /channels`` listing endpoint.
+
+    Unlike :class:`Channel` (a subchannel nested under a known parent), this comes
+    from the top-level channels listing, which spans every channel the user can
+    read — including channels *shared* with them from namespaces they don't own.
+
+    A repocore "namespace" is a top-level channel named after the org; a user's
+    actual channel is a subchannel beneath it. So a channel's namespace is its
+    ``parent`` (when present); ``name`` alone is the bare channel name. ``path``
+    reconstructs the ``namespace/channel`` form used for display.
+    """
+
+    name: str
+    privacy: str
+    description: str = ""
+    artifact_count: int = 0
+    download_count: int = 0
+    parent: Optional[str] = None
+    owners: list[str] = Field(default_factory=list)
+
+    _handle_description = field_validator("description", mode="before")(_handle_none_as_empty_string)
+
+    @field_validator("owners", mode="before")
+    @classmethod
+    def _filter_none_owners(cls, v):
+        if v is None:
+            return []
+        return [o for o in v if o]
+
+    @property
+    def namespace(self) -> Optional[str]:
+        """The channel's namespace: its parent top-level channel, if any."""
+        return self.parent
+
+    @property
+    def path(self) -> str:
+        """The ``namespace/channel`` display path (or bare name for a top-level channel)."""
+        return f"{self.parent}/{self.name}" if self.parent else self.name
+
+
 class NamespaceChannel(BaseModel):
     """Parent namespace channel data from the repo API."""
 

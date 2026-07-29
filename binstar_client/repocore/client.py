@@ -13,6 +13,7 @@ from binstar_client.repocore.errors import InvalidName, RepoCoreError, Unauthori
 from binstar_client.repocore.models import (
     Channel,
     ChannelCreationResponse,
+    ChannelListing,
     Namespace,
     NamespaceChannel,
 )
@@ -171,6 +172,30 @@ class RepoCoreClient(BaseClient):
         return self._manage_response(
             response, f"updating channel {channel}", success_codes=[200, 204], empty_success_codes=[200, 204]
         )
+
+    def list_all_channels(
+        self, offset: int = 0, limit: int = 100, include_subchannels: bool = True
+    ) -> tuple[list[ChannelListing], int]:
+        """List every channel the caller can read, including channels shared with them.
+
+        Hits ``GET /channels`` — the server scopes the result to the token's
+        permissions (its own namespaces plus any channels shared with the user),
+        so a single call replaces per-namespace enumeration and surfaces shared
+        channels the organizations-based listing missed.
+
+        Returns the page of channels and the server's total count (for paging).
+        """
+        response = self.get(
+            self._channels_url,
+            params={
+                "offset": offset,
+                "limit": limit,
+                "include_subchannels": include_subchannels,
+            },
+        )
+        data = self._manage_response(response, "listing channels")
+        items = [ChannelListing(**item) for item in data.get("items", [])]
+        return items, data.get("total_count", len(items))
 
     def get_channels(self, channel: str, offset: int = 0, limit: int = 50) -> list[Channel]:
         url = join(self._channels_url, channel, "subchannels")

@@ -205,33 +205,55 @@ def _upload_to_dotorg(
     upload_mod.main(args)
 
 
+def _iter_all_channels(api):
+    """Yield every channel the user can read, paging through ``GET /channels``."""
+    offset = 0
+    while True:
+        channels, total = api.list_all_channels(offset=offset, limit=_PAGE_SIZE)
+        yield from channels
+        offset += len(channels)
+        if not channels or offset >= total:
+            break
+
+
 def _add_repo_rows(table: Table, api, namespace: Optional[str]) -> None:
-    """Append anaconda.com (repocore) namespace/channel rows to the table."""
-    orgs = api.list_user_organizations()
+    """Append anaconda.com (repocore) namespace/channel rows to the table.
+
+    Uses the flat ``GET /channels`` listing, which the server scopes to every
+    channel the user can read — including channels *shared* with them from
+    namespaces they don't own. This replaces the old per-organization
+    enumeration, which only saw the user's own namespaces and missed shares.
+    """
+    # The flat listing returns two kinds of item: top-level channels (no parent),
+    # which ARE the namespaces, and subchannels, whose parent is the namespace.
+    # A user's actual channels are the subchannels; group them under their
+    # namespace header. Preserve first-seen order so headers precede channels.
+    namespaces: "list[str]" = []
+    subchannels: "dict[str, list]" = {}
+    for channel in _iter_all_channels(api):
+        if channel.parent is None:
+            # A top-level channel is a namespace header, not a channel row.
+            if channel.name not in namespaces:
+                namespaces.append(channel.name)
+        else:
+            subchannels.setdefault(channel.parent, []).append(channel)
+            if channel.parent not in namespaces:
+                # Shared channel from a namespace we don't own a header for yet.
+                namespaces.append(channel.parent)
+
     if namespace:
-        orgs = [org for org in orgs if org.name == namespace]
+        namespaces = [ns for ns in namespaces if ns == namespace]
 
-    for org in orgs:
-        table.add_row(org.name, "", "", "", "")
-
-        sub_offset = 0
-        while True:
-            try:
-                channels = api.get_channels(org.name, offset=sub_offset, limit=_PAGE_SIZE)
-            except Exception:
-                # Namespace may not have any channels yet in the repo
-                break
-            for channel in channels:
-                table.add_row(
-                    f"  {org.name}/{channel.name}",
-                    channel.privacy,
-                    channel.description,
-                    str(channel.artifact_count),
-                    str(channel.download_count),
-                )
-            if len(channels) < _PAGE_SIZE:
-                break
-            sub_offset += len(channels)
+    for ns in namespaces:
+        table.add_row(ns, "", "", "", "")
+        for channel in subchannels.get(ns, []):
+            table.add_row(
+                f"  {channel.path}",
+                channel.privacy,
+                channel.description,
+                str(channel.artifact_count),
+                str(channel.download_count),
+            )
 
 
 def _add_org_rows(table: Table, aserver_api) -> None:

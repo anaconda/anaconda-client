@@ -9,6 +9,7 @@ from typer.testing import CliRunner
 from binstar_client.repocore import (
     Channel,
     ChannelCreationResponse,
+    ChannelListing,
     Namespace,
     NamespaceChannel,
     RepoCoreClient,
@@ -174,6 +175,33 @@ class TestRepoCoreClientAPI:
         result = client.list_user_organizations()
         assert result == []
         assert isinstance(result, list)
+
+    def test_list_all_channels(self):
+        client = _make_client()
+        payload = {
+            "total_count": 2,
+            "items": [
+                {"name": "myorg", "privacy": "public"},
+                {"name": "dev", "privacy": "private", "parent": "myorg", "artifact_count": 3},
+            ],
+        }
+        mock_response = _mock_response(200, payload)
+        client.get = MagicMock(return_value=mock_response)
+
+        items, total = client.list_all_channels()
+
+        assert total == 2
+        assert all(isinstance(ch, ChannelListing) for ch in items)
+        # The flat listing hits /channels with include_subchannels so shared
+        # channels (subchannels under namespaces the user doesn't own) come back.
+        call_url = client.get.call_args[0][0]
+        assert call_url.endswith("/api/repo/channels")
+        assert client.get.call_args[1]["params"]["include_subchannels"] is True
+        # A subchannel's namespace is its parent; path reconstructs namespace/channel.
+        assert items[0].namespace is None
+        assert items[0].path == "myorg"
+        assert items[1].namespace == "myorg"
+        assert items[1].path == "myorg/dev"
 
     def test_create_channel(self):
         client = _make_client()
@@ -542,18 +570,19 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = [
-            Namespace(name="main"),
-        ]
-        mock_api.get_channels.return_value = [
-            Channel(
-                name="dev",
-                privacy="public",
-                description="",
-                artifact_count=10,
-                download_count=5,
-            )
-        ]
+        mock_api.list_all_channels.return_value = (
+            [
+                ChannelListing(name="main", privacy="public"),
+                ChannelListing(
+                    name="dev",
+                    privacy="public",
+                    parent="main",
+                    artifact_count=10,
+                    download_count=5,
+                ),
+            ],
+            2,
+        )
 
         with _patch_repo_api(mock_api):
             result = runner.invoke(app, ["list"])
@@ -566,19 +595,15 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = [
-            Namespace(name="org-a"),
-            Namespace(name="org-b"),
-        ]
-        mock_api.get_channel_subchannels.return_value = [
-            Channel(
-                name="dev",
-                privacy="public",
-                description="",
-                artifact_count=5,
-                download_count=1,
-            )
-        ]
+        mock_api.list_all_channels.return_value = (
+            [
+                ChannelListing(name="org-a", privacy="public"),
+                ChannelListing(name="org-b", privacy="public"),
+                ChannelListing(name="dev", privacy="public", parent="org-a"),
+                ChannelListing(name="prod", privacy="public", parent="org-b"),
+            ],
+            4,
+        )
 
         with _patch_repo_api(mock_api):
             result = runner.invoke(app, ["list", "--namespace", "org-a"])
@@ -587,51 +612,40 @@ class TestRepoCoreChannelsCLI:
         assert "org-a" in result.output
         assert "org-b" not in result.output
 
-    def test_channels_list_fetches_subchannels_per_org(self):
+    def test_channels_list_includes_shared_channels(self):
+        """A channel shared from a namespace the user doesn't own still appears.
+
+        The flat listing returns the shared subchannel (parent=someorg) without a
+        top-level channel of its own; its namespace header is synthesized so the
+        shared channel is grouped and shown.
+        """
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = [
-            Namespace(name="org-a"),
-            Namespace(name="org-b"),
-        ]
-        mock_api.get_channels.side_effect = [
+        mock_api.list_all_channels.return_value = (
             [
-                Channel(
-                    name="dev",
-                    privacy="private",
-                    description="",
-                    artifact_count=3,
-                    download_count=1,
-                )
+                ChannelListing(name="myorg", privacy="public"),
+                ChannelListing(name="dev", privacy="private", parent="myorg"),
+                # Shared with the user from an org they don't own (no top-level item).
+                ChannelListing(name="staging", privacy="public", parent="someorg"),
             ],
-            [
-                Channel(
-                    name="staging",
-                    privacy="public",
-                    description="Staging",
-                    artifact_count=7,
-                    download_count=2,
-                )
-            ],
-        ]
+            3,
+        )
 
         with _patch_repo_api(mock_api):
             result = runner.invoke(app, ["list"])
 
         assert result.exit_code == 0
-        assert "org-a" in result.output
-        assert "org-b" in result.output
+        assert "myorg" in result.output
         assert "dev" in result.output
+        assert "someorg" in result.output
         assert "staging" in result.output
-        assert mock_api.get_channels.call_count == 2
 
     def test_channels_list_source_repo_skips_org(self):
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = [Namespace(name="org-a")]
-        mock_api.get_channels.return_value = []
+        mock_api.list_all_channels.return_value = ([ChannelListing(name="org-a", privacy="public")], 1)
 
         with (
             _patch_repo_api(mock_api),
@@ -675,8 +689,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = [Namespace(name="org-a")]
-        mock_api.get_channels.return_value = []
+        mock_api.list_all_channels.return_value = ([ChannelListing(name="org-a", privacy="public")], 1)
 
         aserver = MagicMock()
         aserver.user.side_effect = Exception("not logged in")
