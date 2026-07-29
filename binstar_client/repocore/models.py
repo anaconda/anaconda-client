@@ -16,23 +16,13 @@ class Namespace(BaseModel):
 
 
 class Channel(BaseModel):
-    """Channel within a parent namespace channel."""
+    """A repocore channel, as returned by any of the channel endpoints.
 
-    name: str
-    privacy: str
-    description: str = ""
-    artifact_count: int = 0
-    download_count: int = 0
-
-    _handle_description = field_validator("description", mode="before")(_handle_none_as_empty_string)
-
-
-class ChannelListing(BaseModel):
-    """A channel as returned by the flat ``GET /channels`` listing endpoint.
-
-    Unlike :class:`Channel` (a subchannel nested under a known parent), this comes
-    from the top-level channels listing, which spans every channel the user can
-    read — including channels *shared* with them from namespaces they don't own.
+    The repo API serializes channels with a single shape (``resources.channels``
+    ``dump()``); the various endpoints — the flat ``GET /channels`` listing, a
+    parent's ``/subchannels``, and a single ``GET /channels/{name}`` — differ only
+    in which of those fields they populate. This model carries the superset with
+    permissive defaults, so one class parses every channel response.
 
     A repocore "namespace" is a top-level channel named after the org; a user's
     actual channel is a subchannel beneath it. So a channel's namespace is its
@@ -45,6 +35,11 @@ class ChannelListing(BaseModel):
     description: str = ""
     artifact_count: int = 0
     download_count: int = 0
+    mirror_count: int = 0
+    channel_count: int = 0
+    indexing_behavior: str = "default"
+    created: str = ""
+    updated: str = ""
     parent: Optional[str] = None
     owners: list[str] = Field(default_factory=list)
 
@@ -66,31 +61,6 @@ class ChannelListing(BaseModel):
     def path(self) -> str:
         """The ``namespace/channel`` display path (or bare name for a top-level channel)."""
         return f"{self.parent}/{self.name}" if self.parent else self.name
-
-
-class NamespaceChannel(BaseModel):
-    """Parent namespace channel data from the repo API."""
-
-    name: str
-    privacy: str
-    description: str = ""
-    artifact_count: int = 0
-    download_count: int = 0
-    mirror_count: int = 0
-    channel_count: int = 0
-    indexing_behavior: str = "default"
-    created: str = ""
-    updated: str = ""
-    owners: list[str] = Field(default_factory=list)
-
-    _handle_description = field_validator("description", mode="before")(_handle_none_as_empty_string)
-
-    @field_validator("owners", mode="before")
-    @classmethod
-    def _filter_none_owners(cls, v):
-        if v is None:
-            return []
-        return [o for o in v if o]
 
 
 class ChannelCreationResponse(BaseModel):

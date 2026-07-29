@@ -13,9 +13,7 @@ from binstar_client.repocore.errors import InvalidName, RepoCoreError, Unauthori
 from binstar_client.repocore.models import (
     Channel,
     ChannelCreationResponse,
-    ChannelListing,
     Namespace,
-    NamespaceChannel,
 )
 from binstar_client.repocore.package_utils import PackageType
 
@@ -160,11 +158,11 @@ class RepoCoreClient(BaseClient):
             response, f"removing channel {channel}", success_codes=[200, 202, 204], empty_success_codes=[200, 202, 204]
         )
 
-    def get_namespace_channel(self, channel: str) -> NamespaceChannel:
+    def get_namespace_channel(self, channel: str) -> Channel:
         url = self._get_channel_url(channel)
         response = self.get(url)
         data = self._manage_response(response, f"getting channel {channel}")
-        return NamespaceChannel(**data)
+        return Channel(**data)
 
     def update_channel(self, channel: str, **data):
         url = self._get_channel_url(channel)
@@ -175,7 +173,7 @@ class RepoCoreClient(BaseClient):
 
     def list_all_channels(
         self, offset: int = 0, limit: int = 100, include_subchannels: bool = True
-    ) -> tuple[list[ChannelListing], int]:
+    ) -> tuple[list[Channel], int]:
         """List every channel the caller can read, including channels shared with them.
 
         Hits ``GET /channels`` — the server scopes the result to the token's
@@ -192,7 +190,7 @@ class RepoCoreClient(BaseClient):
             },
         )
         data = self._manage_response(response, "listing channels")
-        items = [ChannelListing(**item) for item in data.get("items", [])]
+        items = [Channel(**item) for item in data.get("items", [])]
         return items, data.get("total_count", len(items))
 
     def get_channels(self, channel: str, offset: int = 0, limit: int = 50) -> list[Channel]:
