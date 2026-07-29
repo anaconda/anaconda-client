@@ -218,8 +218,8 @@ def _iter_all_channels(api):
 
 def _add_repo_rows(table: Table, api, namespace: Optional[str]) -> None:
     """Append anaconda.com (repocore) namespace/channel rows to the table."""
-    namespaces: "list[str]" = []
-    subchannels: "dict[str, list]" = {}
+    namespaces: list[str] = []
+    subchannels: dict[str, list] = {}
     for channel in _iter_all_channels(api):
         if channel.parent is None:
             # A top-level channel is a namespace header, not a channel row.
