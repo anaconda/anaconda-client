@@ -131,7 +131,7 @@ def _upload_file_to_channel(
             "channel": channel,
             "package_type": pkg_type,
             "filepath": filepath,
-        }
+        },
     )
 
 
@@ -384,7 +384,7 @@ def create_command(
                 **attrs.to_dict(),
                 "channel_path": response.channel_path,
                 "privacy": privacy,
-            }
+            },
         )
     else:
         console.print(f"Channel '[cyan]{response.channel_path}[/cyan]' already exists.")
@@ -411,7 +411,7 @@ def remove_command(
         {
             **attrs.to_dict(),
             "channel_path": qualified,
-        }
+        },
     )
 
 
@@ -746,7 +746,7 @@ def share_command(
                     "shared_with_user": user,
                     "grant": grant,
                     "role": role,
-                }
+                },
             )
 
 
