@@ -15,12 +15,13 @@ import typer
 from rich.panel import Panel
 
 from anaconda_cli_base.console import Table, console, select_from_list
-from anaconda_cli_base.telemetry import log_event
+from anaconda_cli_base.telemetry import count
 from binstar_client import __version__
 from binstar_client.commands import _channel_notices as channel_notices
 from binstar_client.commands import upload as upload_mod
 from binstar_client.repocore import RepoCoreClient
 from binstar_client.repocore.errors import RepoCoreError, Unauthorized
+from binstar_client.repocore.events import Attributes, ChannelEvents, ShareEvents, UploadEvents
 from binstar_client.repocore.package_utils import PackageType, determine_package_type, windows_glob
 from binstar_client.repocore.resolve import (
     resolve_channels_with_namespaces as _resolve_channels_with_namespaces,
@@ -119,6 +120,19 @@ def _upload_file_to_channel(
     console.print(f"Uploading [cyan]{filepath}[/cyan] to channel [cyan]{channel}[/cyan]...")
     api.upload_file(filepath, channel, pkg_type)
     console.print(f"[green]Success![/green] Uploaded {filepath} to {channel}")
+
+    # Log telemetry event
+    attrs = Attributes(api)
+    count(
+        UploadEvents.uploaded,
+        app.info.name,
+        {
+            **attrs.to_dict(),
+            "channel": channel,
+            "package_type": pkg_type,
+            "filepath": filepath,
+        }
+    )
 
 
 def _process_and_upload_files(
@@ -360,6 +374,18 @@ def create_command(
     )
     if response.created:
         console.print(f"[green]Success![/green] Channel '[cyan]{response.channel_path}[/cyan]' created ({privacy}).")
+
+        # Log telemetry event
+        attrs = Attributes(api)
+        count(
+            ChannelEvents.created,
+            app.info.name,
+            {
+                **attrs.to_dict(),
+                "channel_path": response.channel_path,
+                "privacy": privacy,
+            }
+        )
     else:
         console.print(f"Channel '[cyan]{response.channel_path}[/cyan]' already exists.")
 
@@ -376,6 +402,17 @@ def remove_command(
     qualified = f"{resolved.namespace}/{resolved.channel_name}"
     api.remove_channel(qualified)
     console.print(f"[green]Success![/green] Channel '[cyan]{qualified}[/cyan]' removed.")
+
+    # Log telemetry event
+    attrs = Attributes(api)
+    count(
+        ChannelEvents.removed,
+        app.info.name,
+        {
+            **attrs.to_dict(),
+            "channel_path": qualified,
+        }
+    )
 
 
 @app.command(name="show", help="Show channel information")
@@ -696,6 +733,21 @@ def share_command(
         ch = f"{resolved.namespace}/{resolved.channel_name}"
         api.share_channel(resolved.namespace, resolved.channel_name, user, action=action, grant=grant)
         console.print(f"[green]Success![/green] {action.capitalize()}d channel '[cyan]{ch}[/cyan]' with {user}")
+
+        # Log telemetry event (only for share, not unshare)
+        if action == "share":
+            attrs = Attributes(api)
+            count(
+                ShareEvents.share,
+                app.info.name,
+                {
+                    **attrs.to_dict(),
+                    "channel_path": ch,
+                    "shared_with_user": user,
+                    "grant": grant,
+                    "role": role,
+                }
+            )
 
 
 channel_notices.mount_notice_subcommand(app)

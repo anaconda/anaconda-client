@@ -264,7 +264,7 @@ class TestRepoCoreClientAPI:
         client = _make_client()
         mock_response = _mock_response(401, {"error": {"code": "auth_required", "message": "Invalid token"}})
 
-        with pytest.raises(Unauthorized, match="Invalid token"):
+        with pytest.raises(Unauthorized, match="Invalid token.*anaconda login"):
             client._manage_response(mock_response, "test action")
 
     def test_manage_response_403(self):
@@ -1230,6 +1230,7 @@ class TestRepoCoreChannelsCLI:
         assert result.exit_code == 1
         assert isinstance(result.exception, Unauthorized)
         assert "does not allow you to perform this operation" in str(result.exception)
+        assert "anaconda login" in str(result.exception)
 
     def test_upload_repocore_error(self):
         runner = CliRunner()
@@ -1282,6 +1283,7 @@ class TestRepoCoreChannelsCLI:
         assert result.exit_code == 1
         assert isinstance(result.exception, Unauthorized)
         assert "does not allow you to perform this operation" in str(result.exception)
+        assert "anaconda login" in str(result.exception)
 
     def test_upload_error_response(self):
         runner = CliRunner()
