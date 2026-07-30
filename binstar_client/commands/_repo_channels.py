@@ -302,8 +302,6 @@ def create_command(
     )
     if response.created:
         console.print(f"[green]Success![/green] Channel '[cyan]{response.channel_path}[/cyan]' created ({privacy}).")
-        attrs = {'namespace': resolved.namespace, 'channel': resolved.channel_name, 'privacy': privacy}
-        log_event("Created private channel", ChannelEvents.created, app.info.name, attrs)
     else:
         console.print(f"Channel '[cyan]{response.channel_path}[/cyan]' already exists.")
 
