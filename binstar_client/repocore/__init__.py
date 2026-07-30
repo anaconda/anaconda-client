@@ -5,7 +5,6 @@ from binstar_client.repocore.models import (
     Channel,
     ChannelCreationResponse,
     Namespace,
-    NamespaceChannel,
     ResolvedChannel,
 )
 from binstar_client.repocore.events import (
@@ -22,7 +21,6 @@ __all__ = [
     "Channel",
     "ChannelCreationResponse",
     "Namespace",
-    "NamespaceChannel",
     "ResolvedChannel",
     "ChannelEvents",
     "UpgradeEvents",
