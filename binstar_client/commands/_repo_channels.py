@@ -27,10 +27,15 @@ from binstar_client.repocore.resolve import (
     resolve_no_namespace as _resolve_no_namespace,
 )
 from binstar_client.utils import get_server_api
+from binstar_client.utils.console_utils import configure_console_encoding
 
 __all__ = ["app", "_resolve_namespace_and_channel", "_resolve_no_namespace", "_resolve_channels_with_namespaces"]
 
 logger = logging.getLogger("binstar.channel")
+
+# Ensure Rich box-drawing borders render on Windows legacy code pages instead of
+# being emitted as escaped \uXXXX literals (see console_utils for details).
+configure_console_encoding()
 
 # Value shown in a column where the concept does not exist for that source.
 # anaconda.org labels have no namespace and no channel-level privacy.
