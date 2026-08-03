@@ -7,7 +7,7 @@ from binstar_client.repocore.models import (
     Namespace,
     ResolvedChannel,
 )
-from binstar_client.repocore.events import (
+from binstar_client.repocore.telemetry import (
     ChannelEvents,
     UpgradeEvents,
     UploadEvents,
