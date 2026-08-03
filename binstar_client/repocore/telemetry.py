@@ -1,14 +1,15 @@
 import hashlib
-from typing import Any, Dict, Optional
 
 from anaconda_cli_base.telemetry import count as _base_count
 
+from .telemetry_models import TelemetryEvent
 
-def _count(event_name: str, api, app_name: str, attributes: Dict[str, Any]) -> None:
+
+def _count(event: TelemetryEvent, api, app_name: str) -> None:
     """Helper to track telemetry events with user attributes."""
     user_attrs = Attributes(api)
-    all_attributes = {**user_attrs.to_dict(), **attributes}
-    _base_count(event_name, app_name, attributes=all_attributes)
+    all_attributes = {**user_attrs.to_dict(), **event.attribute_dump()}
+    _base_count(event.event_name, app_name, attributes=all_attributes)
 
 
 class Attributes:
@@ -64,96 +65,104 @@ class ChannelEvents:
     """Channel events"""
 
     @staticmethod
-    def created(api, app_name: str, channel_path: str, privacy: str, error: bool = False, extra_attrs: Optional[Dict[str, Any]] = None) -> None:
+    def created(api, app_name: str, channel_path: str, privacy: str, error: bool = False) -> None:
         """Track channel creation event."""
-        event_name = 'channel.created.error' if error else 'channel.created'
-        attributes = {
-            "channel_path": channel_path,
-            "privacy": privacy,
-        }
-        if extra_attrs:
-            attributes.update(extra_attrs)
-        _count(event_name, api, app_name, attributes)
+        from .telemetry_models import ChannelCreatedEvent
+        event = ChannelCreatedEvent(channel_path=channel_path, privacy=privacy)
+        if error:
+            event.event_name += '.error'
+        _count(event, api, app_name)
 
     @staticmethod
-    def accessed(api, app_name: str, channel_path: str, error: bool = False, extra_attrs: Optional[Dict[str, Any]] = None) -> None:
+    def created_exists(api, app_name: str, channel_path: str, privacy: str, error: bool = False) -> None:
+        """Track channel creation event when channel already exists."""
+        from .telemetry_models import ChannelCreatedExistsEvent
+        event = ChannelCreatedExistsEvent(channel_path=channel_path, privacy=privacy)
+        if error:
+            event.event_name += '.error'
+        _count(event, api, app_name)
+
+    @staticmethod
+    def accessed(api, app_name: str, channel_path: str, error: bool = False) -> None:
         """Track channel access event."""
-        event_name = 'channel.accessed.error' if error else 'channel.accessed'
-        attributes = {"channel_path": channel_path}
-        if extra_attrs:
-            attributes.update(extra_attrs)
-        _count(event_name, api, app_name, attributes)
+        from .telemetry_models import ChannelAccessedEvent
+        event = ChannelAccessedEvent(channel_path=channel_path)
+        if error:
+            event.event_name += '.error'
+        _count(event, api, app_name)
 
     @staticmethod
-    def limit(api, app_name: str, channel_path: str, extra_attrs: Optional[Dict[str, Any]] = None) -> None:
+    def limit(api, app_name: str, channel_path: str) -> None:
         """Track channel limit reached event."""
-        attributes = {"channel_path": channel_path}
-        if extra_attrs:
-            attributes.update(extra_attrs)
-        _count('channel.limit_reached', api, app_name, attributes)
+        from .telemetry_models import ChannelLimitReachedEvent
+        event = ChannelLimitReachedEvent(channel_path=channel_path)
+        _count(event, api, app_name)
 
     @staticmethod
-    def removed(api, app_name: str, channel_path: str, error: bool = False, extra_attrs: Optional[Dict[str, Any]] = None) -> None:
+    def removed(api, app_name: str, channel_path: str, error: bool = False) -> None:
         """Track channel removal event."""
-        event_name = 'channel.removed.error' if error else 'channel.removed'
-        attributes = {"channel_path": channel_path}
-        if extra_attrs:
-            attributes.update(extra_attrs)
-        _count(event_name, api, app_name, attributes)
+        from .telemetry_models import ChannelRemovedEvent
+        event = ChannelRemovedEvent(channel_path=channel_path)
+        if error:
+            event.event_name += '.error'
+        _count(event, api, app_name)
 
 
 class UpgradeEvents:
-    """Channel events"""
+    """Upgrade prompt events"""
 
     @staticmethod
-    def impressed(api, app_name: str, extra_attrs: Optional[Dict[str, Any]] = None) -> None:
+    def impressed(api, app_name: str) -> None:
         """Track upgrade prompt impression event."""
-        attributes = extra_attrs or {}
-        _count('upgrade_prompt.impressed', api, app_name, attributes)
+        from .telemetry_models import UpgradePromptImpressedEvent
+        event = UpgradePromptImpressedEvent()
+        _count(event, api, app_name)
 
     @staticmethod
-    def converted(api, app_name: str, extra_attrs: Optional[Dict[str, Any]] = None) -> None:
+    def converted(api, app_name: str) -> None:
         """Track upgrade prompt conversion event."""
-        attributes = extra_attrs or {}
-        _count('upgrade_prompt.converted', api, app_name, attributes)
+        from .telemetry_models import UpgradePromptConvertedEvent
+        event = UpgradePromptConvertedEvent()
+        _count(event, api, app_name)
 
     @staticmethod
-    def dismissed(api, app_name: str, extra_attrs: Optional[Dict[str, Any]] = None) -> None:
+    def dismissed(api, app_name: str) -> None:
         """Track upgrade prompt dismissal event."""
-        attributes = extra_attrs or {}
-        _count('upgrade_prompt.dismissed', api, app_name, attributes)
+        from .telemetry_models import UpgradePromptDismissedEvent
+        event = UpgradePromptDismissedEvent()
+        _count(event, api, app_name)
 
 
 class UploadEvents:
     """Package upload events"""
 
     @staticmethod
-    def uploaded(api, app_name: str, channel: str, package_type: str, package_name: str, error: bool = False, extra_attrs: Optional[Dict[str, Any]] = None) -> None:
+    def uploaded(api, app_name: str, channel: str, package_type: str, package_name: str, error: bool = False) -> None:
         """Track package upload event."""
-        event_name = 'package.uploaded.error' if error else 'package.uploaded'
-        attributes = {
-            "channel": channel,
-            "package_type": package_type,
-            "package_name": package_name,
-        }
-        if extra_attrs:
-            attributes.update(extra_attrs)
-        _count(event_name, api, app_name, attributes)
+        from .telemetry_models import PackageUploadedEvent
+        event = PackageUploadedEvent(channel=channel, package_type=package_type, package_name=package_name)
+        if error:
+            event.event_name += '.error'
+        _count(event, api, app_name)
 
 
 class ShareEvents:
     """Channel sharing events"""
 
     @staticmethod
-    def share(api, app_name: str, channel_path: str, shared_with_user: str, grant: str, role: str, error: bool = False, extra_attrs: Optional[Dict[str, Any]] = None) -> None:
+    def share(api, app_name: str, channel_path: str, user: str, role: str, error: bool = False) -> None:
         """Track channel sharing event."""
-        event_name = 'member.invited.error' if error else 'member.invited'
-        attributes = {
-            "channel_path": channel_path,
-            "shared_with_user": shared_with_user,
-            "grant": grant,
-            "role": role,
-        }
-        if extra_attrs:
-            attributes.update(extra_attrs)
-        _count(event_name, api, app_name, attributes)
+        from .telemetry_models import MemberInvitedEvent
+        event = MemberInvitedEvent(channel_path=channel_path, user=user, role=role)
+        if error:
+            event.event_name += '.error'
+        _count(event, api, app_name)
+
+    @staticmethod
+    def unshare(api, app_name: str, channel_path: str, user: str, error: bool = False) -> None:
+        """Track channel unsharing event."""
+        from .telemetry_models import MemberRemovedEvent
+        event = MemberRemovedEvent(channel_path=channel_path, user=user)
+        if error:
+            event.event_name += '.error'
+        _count(event, api, app_name)

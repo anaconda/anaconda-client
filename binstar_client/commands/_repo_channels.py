@@ -122,11 +122,12 @@ def _upload_file_to_channel(
 ) -> None:
     """Upload a single file to a single channel."""
     console.print(f"Uploading [cyan]{filepath}[/cyan] to channel [cyan]{channel}[/cyan]...")
-    api.upload_file(filepath, channel, pkg_type)
+    result, error = api.upload_file(filepath, channel, pkg_type)
+    package_name = os.path.basename(filepath)
+    UploadEvents.uploaded(api, app.info.name, channel, pkg_type, package_name, error=bool(error))
+    if error:
+        raise error
     console.print(f"[green]Success![/green] Uploaded {filepath} to {channel}")
-
-    package_name = filepath.split('/')[-1]
-    UploadEvents.uploaded(api, app.info.name, channel, pkg_type, package_name)
 
 
 def _process_and_upload_files(
@@ -363,13 +364,18 @@ def create_command(
     else:
         console.print()
         privacy = select_from_list("Channel privacy:", ["private", "public"])
-    response = api.create_namespace_channel(
+    response, error = api.create_namespace_channel(
         channel_name=resolved.channel_name, namespace=resolved.namespace, privacy=privacy
     )
+    channel_path = f"{resolved.namespace}/{resolved.channel_name}" if resolved.namespace else resolved.channel_name
+    if error:
+        ChannelEvents.created(api, app.info.name, channel_path, privacy, error=bool(error))
+        raise error
     if response.created:
+        ChannelEvents.created(api, app.info.name, channel_path, privacy, error=bool(error))
         console.print(f"[green]Success![/green] Channel '[cyan]{response.channel_path}[/cyan]' created ({privacy}).")
-        ChannelEvents.created(api, app.info.name, response.channel_path, privacy)
     else:
+        ChannelEvents.created_exists(api, app.info.name, channel_path, privacy, error=bool(error))
         console.print(f"Channel '[cyan]{response.channel_path}[/cyan]' already exists.")
 
 
@@ -383,9 +389,11 @@ def remove_command(
     api = ctx.obj.repo_api
     resolved = _resolve_namespace_and_channel(api, name, namespace)
     qualified = f"{resolved.namespace}/{resolved.channel_name}"
-    api.remove_channel(qualified)
+    _, error = api.remove_channel(qualified)
+    ChannelEvents.removed(api, app.info.name, qualified, error=bool(error))
+    if error:
+        raise error
     console.print(f"[green]Success![/green] Channel '[cyan]{qualified}[/cyan]' removed.")
-    ChannelEvents.removed(api, app.info.name, qualified)
 
 
 @app.command(name="show", help="Show channel information")
@@ -475,12 +483,16 @@ def modify_command(
     name = f"{resolved.namespace}/{resolved.channel_name}"
 
     if privacy:
-        api.update_channel(name, privacy=privacy)
+        result, error = api.update_channel(name, privacy=privacy)
+        if error:
+            raise error
         state_map = {"private": "locked", "authenticated": "soft-locked", "public": "unlocked"}
         console.print(f"[green]Success![/green] Channel '[cyan]{name}[/cyan]' is now {state_map[privacy]} ({privacy}).")
 
     if indexing_behavior:
-        api.update_channel(name, indexing_behavior=indexing_behavior)
+        result, error = api.update_channel(name, indexing_behavior=indexing_behavior)
+        if error:
+            raise error
         state_map = {"frozen": "frozen", "default": "unfrozen"}
         console.print(f"[green]Success![/green] Channel '[cyan]{name}[/cyan]' is now {state_map[indexing_behavior]}.")
 
@@ -704,11 +716,14 @@ def share_command(
             )
             raise typer.Exit(1)
         ch = f"{resolved.namespace}/{resolved.channel_name}"
-        api.share_channel(resolved.namespace, resolved.channel_name, user, action=action, grant=grant)
-        console.print(f"[green]Success![/green] {action.capitalize()}d channel '[cyan]{ch}[/cyan]' with {user}")
-
+        result, error = api.share_channel(resolved.namespace, resolved.channel_name, user, action=action, grant=grant)
         if action == "share":
-            ShareEvents.share(api, app.info.name, ch, user, grant, role)
+            ShareEvents.share(api, app.info.name, ch, user, role, error=bool(error))
+        else:
+            ShareEvents.unshare(api, app.info.name, ch, user, error=bool(error))
+        if error:
+            raise error
+        console.print(f"[green]Success![/green] {action.capitalize()}d channel '[cyan]{ch}[/cyan]' with {user}")
 
 
 channel_notices.mount_notice_subcommand(app)
