@@ -15,7 +15,6 @@ import typer
 from rich.panel import Panel
 
 from anaconda_cli_base.console import Table, console, select_from_list
-from anaconda_cli_base.telemetry import count
 from binstar_client import __version__
 from binstar_client.commands import _channel_notices as channel_notices
 from binstar_client.commands import upload as upload_mod
