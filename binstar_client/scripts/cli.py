@@ -21,6 +21,7 @@ from binstar_client import commands
 from binstar_client import errors
 from binstar_client.commands.login import interactive_login
 from binstar_client.utils import logging_utils
+from binstar_client.utils.console_utils import configure_console_encoding
 
 
 logger = logging.getLogger('binstar')
@@ -260,6 +261,12 @@ def main(
     allow_plugin_main: bool = True,
 ) -> None:
     """Entrypoint for CLI interface of `anaconda`."""
+    # Make sure Rich-rendered tables (e.g. `anaconda channel list`) print their
+    # box-drawing borders correctly on Windows legacy code pages, rather than as
+    # escaped \uXXXX literals. Runs before any command output regardless of
+    # whether we delegate to a plugin main or the standalone path.
+    configure_console_encoding()
+
     if allow_plugin_main and (not os.environ.get('ANACONDA_CLIENT_FORCE_STANDALONE', '')):
         plugged_in_main: typing.Optional[typing.Callable[[], typing.Any]] = _load_main_plugin()
         if plugged_in_main is not None:
