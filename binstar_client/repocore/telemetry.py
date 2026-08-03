@@ -64,7 +64,14 @@ class ChannelEvents:
     """Channel events"""
 
     @staticmethod
-    def created(api, app_name: str, channel_path: str, privacy: str, error: bool = False, extra_attrs: Optional[Dict[str, Any]] = None) -> None:
+    def created(
+        api,
+        app_name: str,
+        channel_path: str,
+        privacy: str,
+        error: bool = False,
+        extra_attrs: Optional[Dict[str, Any]] = None,
+    ) -> None:
         """Track channel creation event."""
         event_name = 'channel.created.error' if error else 'channel.created'
         attributes = {
@@ -76,7 +83,9 @@ class ChannelEvents:
         _count(event_name, api, app_name, attributes)
 
     @staticmethod
-    def accessed(api, app_name: str, channel_path: str, error: bool = False, extra_attrs: Optional[Dict[str, Any]] = None) -> None:
+    def accessed(
+        api, app_name: str, channel_path: str, error: bool = False, extra_attrs: Optional[Dict[str, Any]] = None
+    ) -> None:
         """Track channel access event."""
         event_name = 'channel.accessed.error' if error else 'channel.accessed'
         attributes = {"channel_path": channel_path}
@@ -93,7 +102,9 @@ class ChannelEvents:
         _count('channel.limit_reached', api, app_name, attributes)
 
     @staticmethod
-    def removed(api, app_name: str, channel_path: str, error: bool = False, extra_attrs: Optional[Dict[str, Any]] = None) -> None:
+    def removed(
+        api, app_name: str, channel_path: str, error: bool = False, extra_attrs: Optional[Dict[str, Any]] = None
+    ) -> None:
         """Track channel removal event."""
         event_name = 'channel.removed.error' if error else 'channel.removed'
         attributes = {"channel_path": channel_path}
@@ -128,7 +139,15 @@ class UploadEvents:
     """Package upload events"""
 
     @staticmethod
-    def uploaded(api, app_name: str, channel: str, package_type: str, package_name: str, error: bool = False, extra_attrs: Optional[Dict[str, Any]] = None) -> None:
+    def uploaded(
+        api,
+        app_name: str,
+        channel: str,
+        package_type: str,
+        package_name: str,
+        error: bool = False,
+        extra_attrs: Optional[Dict[str, Any]] = None,
+    ) -> None:
         """Track package upload event."""
         event_name = 'package.uploaded.error' if error else 'package.uploaded'
         attributes = {
@@ -145,7 +164,16 @@ class ShareEvents:
     """Channel sharing events"""
 
     @staticmethod
-    def share(api, app_name: str, channel_path: str, shared_with_user: str, grant: str, role: str, error: bool = False, extra_attrs: Optional[Dict[str, Any]] = None) -> None:
+    def share(
+        api,
+        app_name: str,
+        channel_path: str,
+        shared_with_user: str,
+        grant: str,
+        role: str,
+        error: bool = False,
+        extra_attrs: Optional[Dict[str, Any]] = None,
+    ) -> None:
         """Track channel sharing event."""
         event_name = 'member.invited.error' if error else 'member.invited'
         attributes = {
