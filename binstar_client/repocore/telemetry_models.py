@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 
 class TelemetryEvent(BaseModel):
     """Base class for all telemetry events."""
+
     event_name: str
     errorable: bool = Field(default=False, description="Whether this event can be an error event")
     attributes: Dict[str, Any] = Field(default_factory=dict)
@@ -16,6 +17,7 @@ class TelemetryEvent(BaseModel):
 
 class ChannelCreatedEvent(TelemetryEvent):
     """Channel creation event."""
+
     event_name: str = "channel.created"
     errorable: bool = True
     channel_path: str
@@ -24,6 +26,7 @@ class ChannelCreatedEvent(TelemetryEvent):
 
 class ChannelCreatedExistsEvent(TelemetryEvent):
     """Channel creation event when channel already exists."""
+
     event_name: str = "channel.created_exists"
     errorable: bool = False
     channel_path: str
@@ -32,6 +35,7 @@ class ChannelCreatedExistsEvent(TelemetryEvent):
 
 class ChannelAccessedEvent(TelemetryEvent):
     """Channel access event."""
+
     event_name: str = "channel.accessed"
     errorable: bool = True
     channel_path: str
@@ -39,6 +43,7 @@ class ChannelAccessedEvent(TelemetryEvent):
 
 class ChannelLimitReachedEvent(TelemetryEvent):
     """Channel limit reached event."""
+
     event_name: str = "channel.limit_reached"
     errorable: bool = False
     channel_path: str
@@ -46,6 +51,7 @@ class ChannelLimitReachedEvent(TelemetryEvent):
 
 class ChannelRemovedEvent(TelemetryEvent):
     """Channel removal event."""
+
     event_name: str = "channel.removed"
     errorable: bool = True
     channel_path: str
@@ -53,24 +59,28 @@ class ChannelRemovedEvent(TelemetryEvent):
 
 class UpgradePromptImpressedEvent(TelemetryEvent):
     """Upgrade prompt impression event."""
+
     event_name: str = "upgrade_prompt.impressed"
     errorable: bool = False
 
 
 class UpgradePromptConvertedEvent(TelemetryEvent):
     """Upgrade prompt conversion event."""
+
     event_name: str = "upgrade_prompt.converted"
     errorable: bool = False
 
 
 class UpgradePromptDismissedEvent(TelemetryEvent):
     """Upgrade prompt dismissal event."""
+
     event_name: str = "upgrade_prompt.dismissed"
     errorable: bool = False
 
 
 class PackageUploadedEvent(TelemetryEvent):
     """Package upload event."""
+
     event_name: str = "package.uploaded"
     errorable: bool = True
     channel: str
@@ -80,6 +90,7 @@ class PackageUploadedEvent(TelemetryEvent):
 
 class MemberInvitedEvent(TelemetryEvent):
     """Channel sharing (member invited) event."""
+
     event_name: str = "member.invited"
     errorable: bool = True
     channel_path: str
@@ -89,6 +100,7 @@ class MemberInvitedEvent(TelemetryEvent):
 
 class MemberRemovedEvent(TelemetryEvent):
     """Channel unsharing (member removed) event."""
+
     event_name: str = "member.removed"
     errorable: bool = True
     channel_path: str
