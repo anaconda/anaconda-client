@@ -9,6 +9,8 @@ def _count(event: TelemetryEvent, api, app_name: str | None) -> None:
     """Helper to track telemetry events with user attributes."""
     user_attrs = Attributes(api)
     all_attributes = {**user_attrs.to_dict(), **event.attribute_dump()}
+    if app_name is None:
+        app_name = ""
     _base_count(event.event_name, app_name, attributes=all_attributes)
 
 
