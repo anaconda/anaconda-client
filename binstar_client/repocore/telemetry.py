@@ -37,6 +37,8 @@ class Attributes:
             if user_email:
                 salt = "anaconda_client_telemetry"
                 self.user_email = hashlib.sha256(f"{user_email}{salt}".encode()).hexdigest()
+            else:
+                self.user_email = None
 
             # Extract org_id and product_code from subscriptions
             subscriptions = account.get("subscriptions", [])
