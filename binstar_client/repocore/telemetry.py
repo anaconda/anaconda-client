@@ -24,10 +24,6 @@ class Attributes:
         Args:
             client: RepoCoreClient or any BaseClient instance with account property
         """
-        self.user_id = None
-        self.user_email = None
-        self.organization_ids = []
-        self.account_tiers = []
 
         try:
             account = client.account
@@ -45,8 +41,10 @@ class Attributes:
             self.organization_ids = [sub.get("org_id") for sub in subscriptions if sub.get("org_id") is not None]
             self.account_tiers = [sub.get("product_code") for sub in subscriptions if sub.get("product_code")]
         except Exception:
-            # should except any errors getting account or user data without blocking command
-            pass
+            self.user_id = None
+            self.user_email = None
+            self.organization_ids = []
+            self.account_tiers = []
 
     def to_dict(self) -> dict:
         """Export user attributes as a dictionary for telemetry.
