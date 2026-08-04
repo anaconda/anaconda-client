@@ -8,4 +8,4 @@ dependencies:
 - pip
 - pip:
   - -e .[dev]
-  - -e ~/Documents/GitHub/anaconda-cli-base[telemetry]
+  - -e ~/Documents/GitHub/anaconda-otel-python[dev]

@@ -58,15 +58,8 @@ class RepoCoreClient(BaseClient):
     def account(self):
         """Get user account information."""
         url = join(self._auth_api_base, "account", "me")
-        print(f"\n=== ACCOUNT REQUEST DEBUG ===")
-        print(f"URL: {url}")
         response = self.get(url)
-        print(f"Status: {response.status_code}")
-        print(f"Raw body: {response.text}")
         data, error = self._manage_response(response, "getting account information")
-        print(f"Parsed data: {data}")
-        print(f"Error: {error}")
-        print(f"==============================\n")
         if error:
             raise error
         return data
@@ -239,15 +232,9 @@ class RepoCoreClient(BaseClient):
         if namespace:
             data["namespace"] = namespace
         response = self.post(url, json=data)
-        print(f"\n=== CREATE NAMESPACE CHANNEL DEBUG ===")
-        print(f"Status: {response.status_code}")
-        print(f"Raw body: {response.text}")
         result, error = self._manage_response(
             response, f"creating namespace channel {channel_name}", success_codes=[200, 201]
         )
-        print(f"Parsed result: {result}")
-        print(f"Error: {error}")
-        print(f"======================================\n")
         return ChannelCreationResponse(status_code=response.status_code, **result), error
 
     def upload_file(self, filepath: str, channel: str, package_type: str):
