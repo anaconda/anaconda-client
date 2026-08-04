@@ -5,7 +5,7 @@ from anaconda_cli_base.telemetry import count as _base_count
 from .telemetry_models import TelemetryEvent
 
 
-def _count(event: TelemetryEvent, api, app_name: str) -> None:
+def _count(event: TelemetryEvent, api, app_name: str | None) -> None:
     """Helper to track telemetry events with user attributes."""
     user_attrs = Attributes(api)
     all_attributes = {**user_attrs.to_dict(), **event.attribute_dump()}
@@ -146,7 +146,9 @@ class UploadEvents:
     """Package upload events"""
 
     @staticmethod
-    def uploaded(api, app_name: str | None, channel: str, package_type: str, package_name: str, error: bool = False) -> None:
+    def uploaded(
+        api, app_name: str | None, channel: str, package_type: str, package_name: str, error: bool = False
+    ) -> None:
         """Track package upload event."""
         from .telemetry_models import PackageUploadedEvent
 
