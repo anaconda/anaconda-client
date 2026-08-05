@@ -17,16 +17,18 @@ from rich.panel import Panel
 from anaconda_cli_base.console import Table, console, select_from_list
 from binstar_client import __version__
 from binstar_client.commands import _channel_notices as channel_notices
+from binstar_client.commands import remove as remove_mod
 from binstar_client.commands import upload as upload_mod
 from binstar_client.repocore import RepoCoreClient
 from binstar_client.repocore.errors import RepoCoreError, Unauthorized
 from binstar_client.repocore.package_utils import PackageType, determine_package_type, windows_glob
 from binstar_client.repocore.resolve import (
+    classify_and_resolve,
     resolve_channels_with_namespaces as _resolve_channels_with_namespaces,
     resolve_namespace_and_channel as _resolve_namespace_and_channel,
     resolve_no_namespace as _resolve_no_namespace,
 )
-from binstar_client.utils import get_server_api
+from binstar_client.utils import get_server_api, parse_specs
 from binstar_client.utils.console_utils import configure_console_encoding
 
 __all__ = ["app", "_resolve_namespace_and_channel", "_resolve_no_namespace", "_resolve_channels_with_namespaces"]
@@ -719,7 +721,8 @@ def _iter_all_artifacts(api, channel: str):
         artifacts, total = api.list_artifacts(channel, offset=offset, limit=_PAGE_SIZE)
         yield from artifacts
         offset += len(artifacts)
-        if not artifacts or offset >= total:
+        # Stop on an empty/short page too, so an over-reported total can't loop forever.
+        if not artifacts or len(artifacts) < _PAGE_SIZE or offset >= total:
             break
 
 
@@ -730,7 +733,8 @@ def _iter_artifact_files(api, channel: str, family: str, name: str):
         files, total = api.list_artifact_files(channel, family, name, offset=offset, limit=_PAGE_SIZE)
         yield from files
         offset += len(files)
-        if not files or offset >= total:
+        # Stop on an empty/short page too, so an over-reported total can't loop forever.
+        if not files or len(files) < _PAGE_SIZE or offset >= total:
             break
 
 
@@ -747,6 +751,16 @@ def _find_file_by_name(api, channel: str, filename: str):
             if f.filename == filename:
                 matches.append((artifact.family, artifact.name, f.ckey))
     return matches
+
+
+def _fmt_size(num_bytes: int) -> str:
+    """Human-readable byte size for the files table."""
+    size = float(num_bytes or 0)
+    for unit in ("B", "KB", "MB", "GB"):
+        if size < 1024 or unit == "GB":
+            return f"{size:.0f} {unit}" if unit == "B" else f"{size:.1f} {unit}"
+        size /= 1024
+    return f"{size:.1f} GB"
 
 
 @app.command(name="view", help="View packages in a channel")
@@ -828,16 +842,6 @@ def view_command(
         console.print(table)
 
 
-def _fmt_size(num_bytes: int) -> str:
-    """Human-readable byte size for the files table."""
-    size = float(num_bytes or 0)
-    for unit in ("B", "KB", "MB", "GB"):
-        if size < 1024 or unit == "GB":
-            return f"{size:.0f} {unit}" if unit == "B" else f"{size:.1f} {unit}"
-        size /= 1024
-    return f"{size:.1f} GB"
-
-
 def _remove_from_repo(api, channel: str, target: str, force: bool) -> None:
     """Remove a single file (by filename) from an anaconda.com repo channel.
 
@@ -879,9 +883,6 @@ def _remove_from_dotorg(owner: str, target: str, token_value, org_site_value, fo
     hand it to the legacy remove command — the same proxying ``channel upload``
     does for owner-only names.
     """
-    from binstar_client.commands import remove as remove_mod
-    from binstar_client.utils import parse_specs
-
     spec = target if target.startswith(f"{owner}/") else f"{owner}/{target}"
     args = argparse.Namespace(
         token=token_value,
@@ -939,17 +940,13 @@ def remove_package_command(
     # Classify the -c target the same way `channel upload` does: a bare name that
     # matches an anaconda.org owner routes to dotorg, otherwise anaconda.com.
     owner_probe = _make_owner_probe(token_value, org_site_value)
-    from binstar_client.repocore.resolve import classify_and_resolve
-
     resolved = classify_and_resolve(api, channels[0], namespace, owner_probe=owner_probe)
 
     if resolved.target == "org":
         _remove_from_dotorg(cast(str, resolved.owner), target, token_value, org_site_value, force)
         return
 
-    channel_path = (
-        f"{resolved.namespace}/{resolved.channel_name}" if resolved.namespace else resolved.channel_name
-    )
+    channel_path = f"{resolved.namespace}/{resolved.channel_name}" if resolved.namespace else resolved.channel_name
     _remove_from_repo(api, channel_path, target, force)
 
 

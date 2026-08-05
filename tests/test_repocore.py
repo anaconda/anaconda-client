@@ -1697,6 +1697,8 @@ class TestRepoCoreViewAndRemove:
         spec = args.specs[0]
         assert spec.user == "someowner"
         assert spec.package == "mypkg"
+        assert spec.version == "1.0"
+        assert spec.basename == "mypkg-1.0.tar.bz2"
 
     def test_remove_package_owner_prepended_once(self):
         """If the target already starts with the owner, it is not doubled."""
@@ -1717,6 +1719,64 @@ class TestRepoCoreViewAndRemove:
         spec = mock_remove_main.call_args[0][0].specs[0]
         assert spec.user == "someowner"
         assert spec.package == "mypkg"
+        assert spec.version == "1.0"
+        assert spec.basename == "mypkg-1.0.tar.bz2"
+
+    def test_view_pages_through_all_artifacts(self):
+        """view keeps requesting pages until the reported total is reached."""
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        # Two full pages of 100 then a short final page; total is 250.
+        page1 = ([self._artifact(name=f"pkg{i}", family="conda") for i in range(100)], 250)
+        page2 = ([self._artifact(name=f"pkg{i}", family="conda") for i in range(100, 200)], 250)
+        page3 = ([self._artifact(name=f"pkg{i}", family="conda") for i in range(200, 250)], 250)
+        mock_api.list_artifacts.side_effect = [page1, page2, page3]
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(app, ["view", "-c", "myns/dev", "--packages"])
+
+        assert result.exit_code == 0, result.output
+        assert mock_api.list_artifacts.call_count == 3
+        offsets = [call.kwargs["offset"] for call in mock_api.list_artifacts.call_args_list]
+        assert offsets == [0, 100, 200]
+
+    def test_view_stops_on_short_page_despite_overreported_total(self):
+        """A total larger than the data still terminates once a short page arrives."""
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        # Server over-reports total=999 but only returns a short first page.
+        mock_api.list_artifacts.return_value = ([self._artifact(name="numpy", family="conda")], 999)
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(app, ["view", "-c", "myns/dev", "--packages"])
+
+        assert result.exit_code == 0, result.output
+        # Short page (1 < _PAGE_SIZE) ends paging; no infinite loop.
+        assert mock_api.list_artifacts.call_count == 1
+
+    def test_remove_package_ambiguous_match(self):
+        """A filename resolving to more than one file aborts without deleting."""
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_artifacts.return_value = (
+            [self._artifact(name="numpy", family="conda"), self._artifact(name="numpy2", family="conda")],
+            2,
+        )
+        # Same bare filename appears under two different packages/subdirs.
+        mock_api.list_artifact_files.side_effect = [
+            ([self._file(ckey="linux-64/dup.conda", name="numpy", family="conda")], 1),
+            ([self._file(ckey="win-64/dup.conda", name="numpy2", family="conda")], 1),
+        ]
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(app, ["remove-package", "dup.conda", "-c", "myns/dev", "--force"])
+
+        assert result.exit_code == 1
+        assert "matches more than one file" in result.output
+        mock_api.delete_artifact_file.assert_not_called()
 
 
 class TestPackageUtils:
