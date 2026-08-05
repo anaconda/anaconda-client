@@ -283,9 +283,7 @@ class RepoCoreClient(BaseClient):
         """List the individual files of a package in a channel."""
         url = join(self._artifacts_url(channel), artifact_family, artifact_name, "files")
         response = self.get(url, params={"offset": offset, "limit": limit})
-        data = self._manage_response(
-            response, f"listing files for {artifact_family}/{artifact_name} in {channel}"
-        )
+        data = self._manage_response(response, f"listing files for {artifact_family}/{artifact_name} in {channel}")
         items = [ArtifactFile(**item) for item in data.get("items", [])]
         return items, data.get("total_count", len(items))
 
