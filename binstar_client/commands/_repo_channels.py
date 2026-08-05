@@ -947,9 +947,7 @@ def remove_package_command(
         _remove_from_dotorg(cast(str, resolved.owner), target, token_value, org_site_value, force)
         return
 
-    channel_path = (
-        f"{resolved.namespace}/{resolved.channel_name}" if resolved.namespace else resolved.channel_name
-    )
+    channel_path = f"{resolved.namespace}/{resolved.channel_name}" if resolved.namespace else resolved.channel_name
     _remove_from_repo(api, channel_path, target, force)
 
 
