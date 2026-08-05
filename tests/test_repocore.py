@@ -20,6 +20,25 @@ from binstar_client.repocore.errors import (
 )
 
 
+def _namespace_channels(*names):
+    """Build a ``list_all_channels`` return value from top-level channel names.
+
+    The resolver derives namespaces from the top-level channels the user can
+    read; a single unpaged page is enough for tests.
+    """
+    return ([Channel(name=n, privacy="private") for n in names], len(names))
+
+
+def _readable_channels(*channels):
+    """Build a ``list_all_channels`` return value from ``(name, parent)`` pairs.
+
+    A ``parent`` of ``None`` is a top-level channel (a namespace); a non-None
+    parent makes it a subchannel under that namespace.
+    """
+    items = [Channel(name=name, privacy="private", parent=parent) for name, parent in channels]
+    return (items, len(items))
+
+
 class TestPydanticModels:
     def test_namespace_model(self):
         ns = Namespace(name="test-org")
@@ -408,7 +427,7 @@ class TestResolveNamespaceAndChannel:
         resolved = _resolve_namespace_and_channel(mock_api, "myorg/dev")
         assert resolved.namespace == "myorg"
         assert resolved.channel_name == "dev"
-        mock_api.list_user_organizations.assert_not_called()
+        mock_api.list_all_channels.assert_not_called()
 
     def test_explicit_namespace_flag(self):
         from binstar_client.commands._repo_channels import _resolve_namespace_and_channel
@@ -417,7 +436,7 @@ class TestResolveNamespaceAndChannel:
         resolved = _resolve_namespace_and_channel(mock_api, "dev", namespace="myorg")
         assert resolved.namespace == "myorg"
         assert resolved.channel_name == "dev"
-        mock_api.list_user_organizations.assert_not_called()
+        mock_api.list_all_channels.assert_not_called()
 
     def test_ambiguous_slash_and_flag_exits(self):
         from binstar_client.commands._repo_channels import _resolve_namespace_and_channel
@@ -431,7 +450,7 @@ class TestResolveNamespaceAndChannel:
         from binstar_client.commands._repo_channels import _resolve_namespace_and_channel
 
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = [Namespace(name="myorg")]
+        mock_api.list_all_channels.return_value = _namespace_channels("myorg")
         resolved = _resolve_namespace_and_channel(mock_api, "dev")
         assert resolved.namespace == "myorg"
         assert resolved.channel_name == "dev"
@@ -441,7 +460,7 @@ class TestResolveNamespaceAndChannel:
         from click.exceptions import Exit
 
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = []
+        mock_api.list_all_channels.return_value = _namespace_channels()
         with pytest.raises(Exit):
             _resolve_namespace_and_channel(mock_api, "dev")
 
@@ -449,16 +468,116 @@ class TestResolveNamespaceAndChannel:
         from binstar_client.commands._repo_channels import _resolve_namespace_and_channel
 
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = [
-            Namespace(name="org-a"),
-            Namespace(name="org-b"),
-        ]
+        mock_api.list_all_channels.return_value = _namespace_channels("org-a", "org-b")
 
         with patch("binstar_client.repocore.resolve.select_from_list", return_value="org-b"):
             resolved = _resolve_namespace_and_channel(mock_api, "dev")
 
         assert resolved.namespace == "org-b"
         assert resolved.channel_name == "dev"
+
+    def test_namespaces_sourced_from_readable_channels(self):
+        """Namespaces come from GET /channels (own + shared), not org memberships."""
+        from binstar_client.commands._repo_channels import _resolve_namespace_and_channel
+
+        mock_api = MagicMock()
+        # A channel shared from an org the user is not a member of is still offered.
+        mock_api.list_all_channels.return_value = _namespace_channels("shared-org")
+
+        resolved = _resolve_namespace_and_channel(mock_api, "dev")
+
+        assert resolved.namespace == "shared-org"
+        assert resolved.channel_name == "dev"
+        # Resolution uses the readable-channels listing (which includes subchannels
+        # so an existing channel by that name can be matched directly), and never
+        # the org-membership endpoint.
+        assert mock_api.list_all_channels.call_args.kwargs["include_subchannels"] is True
+        mock_api.list_user_organizations.assert_not_called()
+
+    def test_namespaces_paged_and_deduped(self):
+        """Namespace resolution pages GET /channels and drops duplicate namespaces."""
+        from binstar_client.commands._repo_channels import _resolve_namespace_and_channel
+
+        mock_api = MagicMock()
+        page1 = ([Channel(name=f"ns{i}", privacy="private") for i in range(100)], 150)
+        # Second page repeats ns0 (dedup) and adds ns100 (the sole *new* namespace).
+        page2 = ([Channel(name="ns0", privacy="private"), Channel(name="ns100", privacy="private")], 150)
+        mock_api.list_all_channels.side_effect = [page1, page2]
+
+        with patch("binstar_client.repocore.resolve.select_from_list", return_value="ns100") as sel:
+            resolved = _resolve_namespace_and_channel(mock_api, "dev")
+
+        assert resolved.namespace == "ns100"
+        # Two pages fetched; the picker saw 101 distinct namespaces (ns0..ns100, no dup).
+        assert mock_api.list_all_channels.call_count == 2
+        assert len(sel.call_args[0][1]) == 101
+
+    def test_existing_subchannel_resolves_directly(self):
+        """A bare name matching exactly one readable subchannel resolves with no prompt.
+
+        Even when several namespaces exist, ``imhungry`` living only under ``dude``
+        is unambiguous → ``dude/imhungry`` directly.
+        """
+        from binstar_client.commands._repo_channels import _resolve_namespace_and_channel
+
+        mock_api = MagicMock()
+        mock_api.list_all_channels.return_value = _readable_channels(
+            ("dude", None),
+            ("fluffybunnies", None),
+            ("imhungry", "dude"),
+        )
+
+        with patch("binstar_client.repocore.resolve.select_from_list") as sel:
+            resolved = _resolve_namespace_and_channel(mock_api, "imhungry")
+
+        assert resolved.namespace == "dude"
+        assert resolved.channel_name == "imhungry"
+        sel.assert_not_called()
+
+    def test_ambiguous_subchannel_prompts_full_paths(self):
+        """The same channel name under multiple namespaces prompts among full paths."""
+        from binstar_client.commands._repo_channels import _resolve_namespace_and_channel
+
+        mock_api = MagicMock()
+        mock_api.list_all_channels.return_value = _readable_channels(
+            ("dude", None),
+            ("fluffybunnies", None),
+            ("imhungry", "dude"),
+            ("imhungry", "fluffybunnies"),
+        )
+
+        with patch(
+            "binstar_client.repocore.resolve.select_from_list",
+            return_value="fluffybunnies/imhungry",
+        ) as sel:
+            resolved = _resolve_namespace_and_channel(mock_api, "imhungry")
+
+        assert resolved.namespace == "fluffybunnies"
+        assert resolved.channel_name == "imhungry"
+        # The picker is offered the full paths, not the bare namespaces.
+        assert set(sel.call_args[0][1]) == {"dude/imhungry", "fluffybunnies/imhungry"}
+
+    def test_unknown_name_falls_back_to_namespace_picker(self):
+        """A name matching no existing subchannel resolves a namespace (create path)."""
+        from binstar_client.commands._repo_channels import _resolve_namespace_and_channel
+
+        mock_api = MagicMock()
+        mock_api.list_all_channels.return_value = _readable_channels(
+            ("dude", None),
+            ("fluffybunnies", None),
+            ("imhungry", "dude"),
+        )
+
+        with patch(
+            "binstar_client.repocore.resolve.select_from_list",
+            return_value="fluffybunnies",
+        ) as sel:
+            resolved = _resolve_namespace_and_channel(mock_api, "brandnew")
+
+        assert resolved.namespace == "fluffybunnies"
+        assert resolved.channel_name == "brandnew"
+        # No existing channel matched, so the picker offers namespaces to create under.
+        assert set(sel.call_args[0][1]) == {"dude", "fluffybunnies"}
 
     def test_no_namespaces_with_username_confirmed(self):
         from binstar_client.commands._repo_channels import _resolve_no_namespace
@@ -509,7 +628,7 @@ class TestResolveNamespaceAndChannel:
         from binstar_client.commands._repo_channels import _resolve_namespace_and_channel
 
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = []
+        mock_api.list_all_channels.return_value = _namespace_channels()
         mock_api.account.get.return_value = {}
 
         resolved = _resolve_namespace_and_channel(mock_api, "dev", require_namespace=False)
@@ -533,7 +652,7 @@ class TestClassifyAndResolve:
         from binstar_client.repocore.resolve import classify_and_resolve
 
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = [Namespace(name="other")]
+        mock_api.list_all_channels.return_value = _namespace_channels("other")
         resolved = classify_and_resolve(mock_api, "user1", owner_probe=lambda n: n == "user1")
         assert resolved.target == "org"
         assert resolved.owner == "user1"
@@ -562,7 +681,7 @@ class TestClassifyAndResolve:
         from binstar_client.repocore.resolve import classify_and_resolve
 
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = [Namespace(name="myns")]
+        mock_api.list_all_channels.return_value = _namespace_channels("myns")
         # Not a dotorg owner -> stays repo; bare name is a channel under the sole namespace.
         resolved = classify_and_resolve(mock_api, "dev", owner_probe=lambda n: False)
         assert resolved.target == "repo"
@@ -573,7 +692,7 @@ class TestClassifyAndResolve:
         from binstar_client.repocore.resolve import classify_and_resolve
 
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = [Namespace(name="user1")]
+        mock_api.list_all_channels.return_value = _namespace_channels("user1")
         with (
             patch("binstar_client.repocore.resolve.sys.stdin.isatty", return_value=True),
             patch("binstar_client.repocore.resolve.select_from_list", return_value="org"),
@@ -586,7 +705,7 @@ class TestClassifyAndResolve:
         from binstar_client.repocore.resolve import classify_and_resolve
 
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = [Namespace(name="user1")]
+        mock_api.list_all_channels.return_value = _namespace_channels("user1")
         with (
             patch("binstar_client.repocore.resolve.sys.stdin.isatty", return_value=True),
             patch("binstar_client.repocore.resolve.select_from_list", return_value="repo"),
@@ -597,11 +716,34 @@ class TestClassifyAndResolve:
         assert resolved.namespace == "user1"
         assert resolved.channel_name == "user1"
 
+    def test_bare_org_owner_colliding_with_subchannel_prompts(self):
+        """A bare name that is an org owner *and* an existing subchannel collides.
+
+        Even though it is not a top-level namespace, repocore would resolve it to
+        that subchannel directly, so the collision prompt must fire.
+        """
+        from binstar_client.repocore.resolve import classify_and_resolve
+
+        mock_api = MagicMock()
+        mock_api.list_all_channels.return_value = _readable_channels(
+            ("dude", None),
+            ("imhungry", "dude"),
+        )
+        with (
+            patch("binstar_client.repocore.resolve.sys.stdin.isatty", return_value=True),
+            patch("binstar_client.repocore.resolve.select_from_list", return_value="repo"),
+        ):
+            resolved = classify_and_resolve(mock_api, "imhungry", owner_probe=lambda n: True)
+        # Picking repo resolves to the existing subchannel unambiguously.
+        assert resolved.target == "repo"
+        assert resolved.namespace == "dude"
+        assert resolved.channel_name == "imhungry"
+
     def test_bare_ambiguous_non_tty_errors(self):
         from binstar_client.repocore.resolve import classify_and_resolve
 
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = [Namespace(name="user1")]
+        mock_api.list_all_channels.return_value = _namespace_channels("user1")
         with patch("binstar_client.repocore.resolve.sys.stdin.isatty", return_value=False):
             with pytest.raises(typer.Exit):
                 classify_and_resolve(mock_api, "user1", owner_probe=lambda n: True)
@@ -737,7 +879,7 @@ class TestRepoCoreChannelsCLI:
         assert "dev" not in result.output
         aserver.list_channels.assert_not_called()
         # repocore namespaces must not be fetched for org-only listing
-        mock_api.list_user_organizations.assert_not_called()
+        mock_api.list_all_channels.assert_not_called()
 
     def test_channels_list_org_failure_isolated(self):
         runner = CliRunner()
@@ -804,7 +946,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = []
+        mock_api.list_all_channels.return_value = _namespace_channels()
         type(mock_api).account = PropertyMock(return_value={"user": {"username": "testuser"}})
         mock_api.create_namespace_channel.return_value = ChannelCreationResponse(
             channel_path="testuser/newchannel", status_code=201
@@ -822,7 +964,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = [Namespace(name="myorg")]
+        mock_api.list_all_channels.return_value = _namespace_channels("myorg")
         mock_api.create_namespace_channel.return_value = ChannelCreationResponse(
             channel_path="myorg/dev", status_code=201
         )
@@ -889,7 +1031,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = []
+        mock_api.list_all_channels.return_value = _namespace_channels()
         type(mock_api).account = PropertyMock(side_effect=Exception("No account"))
         mock_api.create_namespace_channel.return_value = ChannelCreationResponse(
             channel_path="newchannel", status_code=201
@@ -907,7 +1049,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = []
+        mock_api.list_all_channels.return_value = _namespace_channels()
         type(mock_api).account = PropertyMock(return_value={"user": {"username": "testuser"}})
         mock_api.create_namespace_channel.return_value = ChannelCreationResponse(
             channel_path="testuser/newchannel", status_code=201
@@ -925,7 +1067,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = [Namespace(name="myorg")]
+        mock_api.list_all_channels.return_value = _namespace_channels("myorg")
 
         with _patch_repo_api(mock_api):
             result = runner.invoke(app, ["remove", "dev"])
@@ -948,7 +1090,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = []
+        mock_api.list_all_channels.return_value = _namespace_channels()
 
         with _patch_repo_api(mock_api):
             result = runner.invoke(app, ["remove", "dev"])
@@ -984,7 +1126,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = [Namespace(name="myorg")]
+        mock_api.list_all_channels.return_value = _namespace_channels("myorg")
 
         with _patch_repo_api(mock_api):
             result = runner.invoke(app, ["modify", "dev", "--privacy", "private"])
@@ -1008,6 +1150,7 @@ class TestRepoCoreChannelsCLI:
         app = _get_channels_app()
         mock_api = MagicMock()
         type(mock_api).account = PropertyMock(return_value={"default_channel": "main"})
+        mock_api.list_all_channels.return_value = _namespace_channels()
         mock_response = _mock_response(201, {"status": "uploaded"})
         mock_api.upload_file.return_value = mock_response
 
@@ -1064,7 +1207,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = [Namespace(name="jnguyenwoohoo")]
+        mock_api.list_all_channels.return_value = _namespace_channels("jnguyenwoohoo")
 
         with (
             _patch_repo_api(mock_api, owner_exists=True),
@@ -1091,7 +1234,7 @@ class TestRepoCoreChannelsCLI:
         type(mock_api).account = PropertyMock(return_value={"default_channel": "main"})
         mock_api.upload_file.return_value = _mock_response(201, {"status": "uploaded"})
         # "someowner" is not a repo namespace -> no repo/org collision, no prompt.
-        mock_api.list_user_organizations.return_value = [Namespace(name="myns")]
+        mock_api.list_all_channels.return_value = _namespace_channels("myns")
 
         with (
             _patch_repo_api(mock_api, owner_exists=True),
@@ -1129,7 +1272,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = [Namespace(name="myns")]
+        mock_api.list_all_channels.return_value = _namespace_channels("myns")
 
         with (
             _patch_repo_api(mock_api, owner_exists=True),
@@ -1154,7 +1297,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = [Namespace(name="myns")]
+        mock_api.list_all_channels.return_value = _namespace_channels("myns")
 
         with (
             _patch_repo_api(mock_api, owner_exists=True),
@@ -1179,6 +1322,7 @@ class TestRepoCoreChannelsCLI:
         app = _get_channels_app()
         mock_api = MagicMock()
         type(mock_api).account = PropertyMock(return_value={"default_channel": "main"})
+        mock_api.list_all_channels.return_value = _namespace_channels()
         mock_response = _mock_response(201, {"status": "uploaded"})
         mock_api.upload_file.return_value = mock_response
 
@@ -1200,6 +1344,7 @@ class TestRepoCoreChannelsCLI:
         app = _get_channels_app()
         mock_api = MagicMock()
         type(mock_api).account = PropertyMock(return_value={"default_channel": "main"})
+        mock_api.list_all_channels.return_value = _namespace_channels()
         mock_response = _mock_response(200, {"status": "uploaded"})
         mock_api.upload_file.return_value = mock_response
 
@@ -1219,7 +1364,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = [Namespace(name="testorg")]
+        mock_api.list_all_channels.return_value = _namespace_channels("testorg")
 
         with (
             _patch_repo_api(mock_api),
@@ -1237,7 +1382,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = [Namespace(name="testorg")]
+        mock_api.list_all_channels.return_value = _namespace_channels("testorg")
 
         with (
             _patch_repo_api(mock_api),
@@ -1255,7 +1400,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = [Namespace(name="testorg")]
+        mock_api.list_all_channels.return_value = _namespace_channels("testorg")
 
         with (
             _patch_repo_api(mock_api),
@@ -1272,7 +1417,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = [Namespace(name="testorg")]
+        mock_api.list_all_channels.return_value = _namespace_channels("testorg")
         mock_api.upload_file.side_effect = Unauthorized()
 
         with (
@@ -1291,7 +1436,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = [Namespace(name="testorg")]
+        mock_api.list_all_channels.return_value = _namespace_channels("testorg")
         mock_api.upload_file.side_effect = RepoCoreError("Upload failed")
 
         with (
@@ -1324,7 +1469,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = [Namespace(name="testorg")]
+        mock_api.list_all_channels.return_value = _namespace_channels("testorg")
         mock_api.upload_file.side_effect = Unauthorized()
 
         with (
@@ -1343,7 +1488,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = [Namespace(name="testorg")]
+        mock_api.list_all_channels.return_value = _namespace_channels("testorg")
         mock_api.upload_file.side_effect = RepoCoreError("Internal server error")
 
         with (
@@ -1377,7 +1522,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = [Namespace(name="testorg")]
+        mock_api.list_all_channels.return_value = _namespace_channels("testorg")
         mock_api.upload_file.side_effect = RepoCoreError("Channel 'myorg/dev' not found")
 
         with (
@@ -1397,7 +1542,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = [Namespace(name="myorg")]
+        mock_api.list_all_channels.return_value = _namespace_channels("myorg")
 
         with _patch_repo_api(mock_api):
             result = runner.invoke(app, ["share", "testuser", "--channel", "myorg/dev", "--unshare"])
@@ -1409,7 +1554,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = [Namespace(name="myorg")]
+        mock_api.list_all_channels.return_value = _namespace_channels("myorg")
 
         with _patch_repo_api(mock_api):
             result = runner.invoke(app, ["share", "testuser", "--channel", "myorg/dev"])
@@ -1421,7 +1566,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = [Namespace(name="myorg")]
+        mock_api.list_all_channels.return_value = _namespace_channels("myorg")
 
         with _patch_repo_api(mock_api):
             result = runner.invoke(app, ["share", "testuser", "--channel", "myorg/dev", "--role", "viewer"])
@@ -1436,7 +1581,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = [Namespace(name="myorg")]
+        mock_api.list_all_channels.return_value = _namespace_channels("myorg")
 
         with _patch_repo_api(mock_api):
             result = runner.invoke(
@@ -1452,10 +1597,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = [
-            Namespace(name="org-a"),
-            Namespace(name="org-b"),
-        ]
+        mock_api.list_all_channels.return_value = _namespace_channels("org-a", "org-b")
 
         with (
             _patch_repo_api(mock_api),
@@ -1470,10 +1612,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_user_organizations.return_value = [
-            Namespace(name="org-a"),
-            Namespace(name="org-b"),
-        ]
+        mock_api.list_all_channels.return_value = _namespace_channels("org-a", "org-b")
 
         with (
             _patch_repo_api(mock_api),
@@ -1517,7 +1656,7 @@ class TestRepoCoreChannelsCLI:
         assert mock_api.share_channel.call_count == 2
         mock_api.share_channel.assert_any_call("myorg", "dev", "testuser", action="share", grant="read")
         mock_api.share_channel.assert_any_call("myorg", "staging", "testuser", action="share", grant="read")
-        mock_api.list_user_organizations.assert_not_called()
+        mock_api.list_all_channels.assert_not_called()
 
     def test_share_namespace_with_slash_format_throws_ambiguous(self):
         runner = CliRunner()
@@ -1534,7 +1673,7 @@ class TestRepoCoreChannelsCLI:
         mock_api.share_channel.assert_not_called()
 
 
-class TestRepoCoreViewAndRemove:
+class TestRepoCoreShowListingAndRemove:
     def _artifact(self, **kw):
         from binstar_client.repocore import Artifact
 
@@ -1545,15 +1684,41 @@ class TestRepoCoreViewAndRemove:
 
         return ArtifactFile(**kw)
 
-    def test_view_requires_channel(self):
+    def test_show_metadata_only_skips_listing(self):
+        """Bare `show` prints channel metadata and does no package paging."""
         runner = CliRunner()
         app = _get_channels_app()
-        with _patch_repo_api(MagicMock()):
-            result = runner.invoke(app, ["view", "--packages"])
-        assert result.exit_code == 1
-        assert "No channel specified" in result.output
+        mock_api = MagicMock()
 
-    def test_view_packages_summary(self):
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(app, ["show", "myns/dev"])
+
+        assert result.exit_code == 0, result.output
+        mock_api.get_namespace_channel.assert_called_once_with("myns/dev")
+        mock_api.list_artifacts.assert_not_called()
+
+    def test_show_routes_to_dotorg_for_owner(self):
+        """A bare name matching an anaconda.org owner delegates to the legacy show."""
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+
+        with (
+            # owner_exists=True makes the owner probe report an anaconda.org owner,
+            # so classify_and_resolve routes the bare name to target="org".
+            _patch_repo_api(mock_api, owner_exists=True),
+            patch("binstar_client.commands.show.main") as mock_show_main,
+        ):
+            result = runner.invoke(app, ["show", "someowner"])
+
+        assert result.exit_code == 0, result.output
+        # Delegated to dotorg, not the repocore channel metadata call.
+        mock_api.get_namespace_channel.assert_not_called()
+        mock_show_main.assert_called_once()
+        spec = mock_show_main.call_args[0][0].spec
+        assert spec.user == "someowner"
+
+    def test_show_packages_summary(self):
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
@@ -1563,25 +1728,13 @@ class TestRepoCoreViewAndRemove:
         )
 
         with _patch_repo_api(mock_api):
-            result = runner.invoke(app, ["view", "-c", "myns/dev", "--packages"])
+            result = runner.invoke(app, ["show", "myns/dev", "--packages"])
 
         assert result.exit_code == 0, result.output
         assert "numpy" in result.output
         mock_api.list_artifacts.assert_called_with("myns/dev", offset=0, limit=100)
 
-    def test_view_defaults_to_packages(self):
-        runner = CliRunner()
-        app = _get_channels_app()
-        mock_api = MagicMock()
-        mock_api.list_artifacts.return_value = ([self._artifact(name="numpy", family="conda")], 1)
-
-        with _patch_repo_api(mock_api):
-            result = runner.invoke(app, ["view", "-c", "myns/dev"])
-
-        assert result.exit_code == 0, result.output
-        assert "numpy" in result.output
-
-    def test_view_files_shows_filenames(self):
+    def test_show_files_shows_filenames(self):
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
@@ -1592,19 +1745,34 @@ class TestRepoCoreViewAndRemove:
         )
 
         with _patch_repo_api(mock_api):
-            result = runner.invoke(app, ["view", "-c", "myns/dev", "--files"])
+            result = runner.invoke(app, ["show", "myns/dev", "--files"])
 
         assert result.exit_code == 0, result.output
         assert "numpy-2.2.5-py313.conda" in result.output
 
-    def test_view_empty_channel(self):
+    def test_show_packages_and_files_are_mutually_exclusive(self):
+        """Passing both -p and --files is a user error, not a silent files-wins."""
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(app, ["show", "myns/dev", "-p", "--files"])
+
+        assert result.exit_code == 1
+        assert "mutually exclusive" in result.output
+        # Rejected before any channel/listing work.
+        mock_api.get_namespace_channel.assert_not_called()
+        mock_api.list_artifacts.assert_not_called()
+
+    def test_show_empty_channel_listing(self):
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
         mock_api.list_artifacts.return_value = ([], 0)
 
         with _patch_repo_api(mock_api):
-            result = runner.invoke(app, ["view", "-c", "myns/dev", "--packages"])
+            result = runner.invoke(app, ["show", "myns/dev", "--packages"])
 
         assert result.exit_code == 0, result.output
         assert "No packages found" in result.output
@@ -1722,8 +1890,8 @@ class TestRepoCoreViewAndRemove:
         assert spec.version == "1.0"
         assert spec.basename == "mypkg-1.0.tar.bz2"
 
-    def test_view_pages_through_all_artifacts(self):
-        """view keeps requesting pages until the reported total is reached."""
+    def test_show_pages_through_all_artifacts(self):
+        """show --packages keeps requesting pages until the reported total is reached."""
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
@@ -1734,14 +1902,14 @@ class TestRepoCoreViewAndRemove:
         mock_api.list_artifacts.side_effect = [page1, page2, page3]
 
         with _patch_repo_api(mock_api):
-            result = runner.invoke(app, ["view", "-c", "myns/dev", "--packages"])
+            result = runner.invoke(app, ["show", "myns/dev", "--packages"])
 
         assert result.exit_code == 0, result.output
         assert mock_api.list_artifacts.call_count == 3
         offsets = [call.kwargs["offset"] for call in mock_api.list_artifacts.call_args_list]
         assert offsets == [0, 100, 200]
 
-    def test_view_stops_on_short_page_despite_overreported_total(self):
+    def test_show_stops_on_short_page_despite_overreported_total(self):
         """A total larger than the data still terminates once a short page arrives."""
         runner = CliRunner()
         app = _get_channels_app()
@@ -1750,7 +1918,7 @@ class TestRepoCoreViewAndRemove:
         mock_api.list_artifacts.return_value = ([self._artifact(name="numpy", family="conda")], 999)
 
         with _patch_repo_api(mock_api):
-            result = runner.invoke(app, ["view", "-c", "myns/dev", "--packages"])
+            result = runner.invoke(app, ["show", "myns/dev", "--packages"])
 
         assert result.exit_code == 0, result.output
         # Short page (1 < _PAGE_SIZE) ends paging; no infinite loop.

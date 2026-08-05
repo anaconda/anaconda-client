@@ -18,6 +18,7 @@ from anaconda_cli_base.console import Table, console, select_from_list
 from binstar_client import __version__
 from binstar_client.commands import _channel_notices as channel_notices
 from binstar_client.commands import remove as remove_mod
+from binstar_client.commands import show as show_mod
 from binstar_client.commands import upload as upload_mod
 from binstar_client.repocore import RepoCoreClient
 from binstar_client.repocore.errors import RepoCoreError, Unauthorized
@@ -390,11 +391,48 @@ def show_command(
     name: str = typer.Argument(..., help="Channel name to show"),
     namespace: Optional[str] = typer.Option(None, "--namespace", "-n", help="Namespace the channel belongs to"),
     full_details: bool = typer.Option(False, "--full-details", help="Show full details including subchannels"),
+    packages: bool = typer.Option(False, "--packages", "-p", help="Also list the packages in the channel."),
+    files: bool = typer.Option(
+        False,
+        "--files",
+        help="Also list individual files (with the exact filename to remove) instead of a package summary.",
+    ),
 ) -> None:
-    """Show information about a channel."""
+    """Show information about a channel.
+
+    Like ``channel upload``, this proxies across systems: a bare ``name`` that
+    matches an anaconda.org owner routes to anaconda.org (delegating to the
+    legacy ``anaconda show``); otherwise it targets an anaconda.com (repocore)
+    channel.
+
+    By default this prints channel metadata only. ``--packages/-p`` appends a
+    package summary; ``--files`` appends a per-file listing (with the exact
+    filename to pass to ``remove-package``). The two listing flags are alternatives.
+    """
+    # --packages/-p and --files pick the listing format; reject both at once
+    # rather than silently letting one win.
+    if packages and files:
+        console.print("[red]Error:[/red] --packages/-p and --files are mutually exclusive; specify at most one.")
+        raise typer.Exit(1)
+
     api = ctx.obj.repo_api
-    resolved = _resolve_namespace_and_channel(api, name, namespace)
-    name = f"{resolved.namespace}/{resolved.channel_name}"
+    params = getattr(ctx.obj, "params", {})
+    token_value = params.get("token")
+    # --at selects the anaconda.com domain; only --site is an anaconda.org alias.
+    org_site_value = params.get("site")
+
+    # Classify the name the same way `channel upload`/`remove-package` do: a bare
+    # name matching an anaconda.org owner routes to dotorg, otherwise anaconda.com.
+    owner_probe = _make_owner_probe(token_value, org_site_value)
+    resolved = classify_and_resolve(api, name, namespace, owner_probe=owner_probe)
+
+    if resolved.target == "org":
+        # anaconda.org packages/files listings don't apply; `anaconda show OWNER`
+        # already lists the owner's packages.
+        _show_dotorg(cast(str, resolved.owner), token_value, org_site_value)
+        return
+
+    name = f"{resolved.namespace}/{resolved.channel_name}" if resolved.namespace else resolved.channel_name
     channel_data = api.get_namespace_channel(name)
 
     subchannels_response = None
@@ -438,6 +476,10 @@ def show_command(
                 str(sub.artifact_count),
             )
         console.print(sub_table)
+
+    if packages or files:
+        console.print()
+        _render_package_listing(api, name, files)
 
 
 @app.command(name="modify", help="Modify channel settings")
@@ -763,64 +805,33 @@ def _fmt_size(num_bytes: int) -> str:
     return f"{size:.1f} GB"
 
 
-@app.command(name="view", help="View packages in a channel")
-def view_command(
-    ctx: typer.Context,
-    channel: Optional[List[str]] = typer.Option(
-        None,
-        "--channel",
-        "-c",
-        help="Channel in format 'namespace/channel' or 'channel'.",
-    ),
-    namespace: Optional[str] = typer.Option(None, "--namespace", "-n", help="Namespace the channel belongs to"),
-    packages: bool = typer.Option(False, "--packages", "-p", help="List the packages in the channel."),
-    files: bool = typer.Option(
-        False, "--files", help="List individual files (with the exact filename to remove) instead of a package summary."
-    ),
-) -> None:
-    """View the packages in a channel.
+def _render_package_listing(api, channel: str, files: bool) -> None:
+    """Print the package (or, with ``files``, per-file) listing for a channel.
 
-    The package summary shows one row per package. ``--files`` drills into every
-    file so you can see the exact filename to pass to ``remove-package``.
+    The package summary shows one row per package. ``files=True`` drills into
+    every file so the exact filename to pass to ``remove-package`` is visible.
+    Long listings page through the console.
     """
-    channels = channel or []
-    if not channels:
-        console.print("[red]Error:[/red] No channel specified. Use --channel/-c to specify a channel.")
-        raise typer.Exit(1)
-    if len(channels) > 1:
-        console.print("[red]Error:[/red] view accepts a single channel; specify -c once.")
-        raise typer.Exit(1)
-
-    # --packages/-p and --files select what to view; default to the package summary.
-    if not packages and not files:
-        packages = True
-
-    api = ctx.obj.repo_api
-    # view lists packages/files/ckeys, which are anaconda.com (repocore) concepts;
-    # for anaconda.org owners use `anaconda show`. Resolve the same way show/modify do.
-    resolved_channel = _resolve_namespace_and_channel(api, channels[0], namespace)
-    resolved = f"{resolved_channel.namespace}/{resolved_channel.channel_name}"
-
     if files:
-        table = Table(title=f"Files in {resolved}")
+        table = Table(title=f"Files in {channel}")
         table.add_column("Filename", style="cyan")
         table.add_column("Package")
         table.add_column("Family")
         table.add_column("Size", justify="right")
         row_count = 0
-        for artifact in _iter_all_artifacts(api, resolved):
-            for f in _iter_artifact_files(api, resolved, artifact.family, artifact.name):
+        for artifact in _iter_all_artifacts(api, channel):
+            for f in _iter_artifact_files(api, channel, artifact.family, artifact.name):
                 table.add_row(f.filename, f.name or artifact.name, f.family or artifact.family, _fmt_size(f.size))
                 row_count += 1
     else:
-        table = Table(title=f"Packages in {resolved}")
+        table = Table(title=f"Packages in {channel}")
         table.add_column("Package", style="cyan")
         table.add_column("Family")
         table.add_column("Versions", justify="right")
         table.add_column("Files", justify="right")
         table.add_column("Downloads", justify="right")
         row_count = 0
-        for artifact in _iter_all_artifacts(api, resolved):
+        for artifact in _iter_all_artifacts(api, channel):
             table.add_row(
                 artifact.name,
                 artifact.family,
@@ -831,7 +842,7 @@ def view_command(
             row_count += 1
 
     if row_count == 0:
-        console.print(f"No packages found in [cyan]{resolved}[/cyan].")
+        console.print(f"No packages found in [cyan]{channel}[/cyan].")
         return
 
     if console.height and table.row_count > console.height:
@@ -872,6 +883,21 @@ def _remove_from_repo(api, channel: str, target: str, force: bool) -> None:
 
     api.delete_artifact_file(channel, family, name, ckey)
     console.print(f"[green]Success![/green] Removed [cyan]{target}[/cyan] from '[cyan]{channel}[/cyan]'.")
+
+
+def _show_dotorg(owner: str, token_value, org_site_value) -> None:
+    """Delegate a channel show for an anaconda.org owner to the legacy ``show`` path.
+
+    anaconda.org has no repocore channel metadata; ``anaconda show OWNER`` lists
+    the owner's packages, which is the closest equivalent — the same proxying
+    ``channel upload`` does for owner-only names.
+    """
+    args = argparse.Namespace(
+        token=token_value,
+        site=org_site_value,
+        spec=parse_specs(owner),
+    )
+    show_mod.main(args)
 
 
 def _remove_from_dotorg(owner: str, target: str, token_value, org_site_value, force: bool) -> None:

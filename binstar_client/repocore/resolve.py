@@ -50,6 +50,41 @@ def _org_channel(owner: str, channel_name: str) -> ResolvedChannel:
     )
 
 
+_CHANNEL_PAGE_SIZE = 100
+
+
+def _iter_readable_channels(api):
+    """Yield every channel the caller can read (own + shared), paging ``GET /channels``.
+
+    ``include_subchannels=True`` so the listing carries both top-level channels
+    (a namespace: ``parent is None``) and subchannels (an actual channel, whose
+    namespace is its ``parent``). The server scopes the result to the token's
+    permissions, so this spans the user's own channels plus any shared with it.
+    """
+    offset = 0
+    while True:
+        channels, total = api.list_all_channels(offset=offset, limit=_CHANNEL_PAGE_SIZE, include_subchannels=True)
+        yield from channels
+        offset += len(channels)
+        # Stop on an empty/short page too, so an over-reported total can't loop forever.
+        if not channels or len(channels) < _CHANNEL_PAGE_SIZE or offset >= total:
+            break
+
+
+def _readable_namespaces(channels) -> List[str]:
+    """The distinct namespaces present in a readable-channel listing.
+
+    A top-level channel is itself a namespace; a subchannel's namespace is its
+    ``parent``. Order is preserved and duplicates dropped so the picker is stable.
+    """
+    namespaces: List[str] = []
+    for channel in channels:
+        ns = channel.namespace or channel.name
+        if ns not in namespaces:
+            namespaces.append(ns)
+    return namespaces
+
+
 def resolve_no_namespace(api, name: str) -> ResolvedChannel:
     """Resolve the no-namespaces case.
 
@@ -86,8 +121,12 @@ def resolve_namespace_and_channel(
       1. name contains "/" AND --namespace provided → error (ambiguous)
       2. name contains "/" → split into namespace/channel
       3. --namespace provided → use it, name is the channel
-      4. Neither → resolve namespace from API via user's top-level channels
-      5. Calls resolve_no_namespace if none are present
+      4. Neither → match the bare name against readable subchannels (own +
+         shared): exactly one match resolves to that namespace/channel directly,
+         several prompt among the full paths
+      5. No existing subchannel matches → resolve the namespace instead (one
+         auto-resolves, several prompt), so a new channel name still resolves
+      6. Calls resolve_no_namespace if no namespaces are present
     """
     if "/" in name and namespace:
         console.print(f"[red]Error:[/red] Ambiguous: '{name}' contains '/' but --namespace was also provided.")
@@ -100,9 +139,30 @@ def resolve_namespace_and_channel(
     if namespace:
         return _repo_channel(namespace=namespace, channel_name=name)
 
-    # Resolve from API
-    orgs = api.list_user_organizations()
-    namespaces = [org.name for org in orgs]
+    # List every channel the caller can read — its own *and* any shared with it —
+    # so both existing-channel matching and namespace resolution see shared items.
+    channels = list(_iter_readable_channels(api))
+
+    # First, does the bare name already name a subchannel? A subchannel is an
+    # actual channel (has a parent namespace); a top-level channel is a namespace,
+    # not a channel target. If exactly one subchannel matches, resolve it directly
+    # even when several namespaces exist — it's unambiguous (e.g. dude/imhungry).
+    subchannel_matches = [c for c in channels if c.namespace and c.name == name]
+    if len(subchannel_matches) == 1:
+        chosen = subchannel_matches[0]
+        return _repo_channel(namespace=chosen.namespace, channel_name=chosen.name)
+    if len(subchannel_matches) > 1:
+        # The same channel name under more than one readable namespace: disambiguate
+        # by full path (e.g. dude/imhungry vs fluffybunnies/imhungry).
+        console.print()
+        paths = [c.path for c in subchannel_matches]
+        selected_path = select_from_list(f"Select channel for '{name}':", paths)
+        chosen = next(c for c in subchannel_matches if c.path == selected_path)
+        return _repo_channel(namespace=chosen.namespace, channel_name=chosen.name)
+
+    # No existing channel by that name — resolve the namespace it should live
+    # under, so a brand-new channel name (e.g. `create`) still resolves.
+    namespaces = _readable_namespaces(channels)
 
     if not namespaces:
         if require_namespace:
@@ -160,8 +220,8 @@ def classify_and_resolve(
     never a namespace: we find which namespace it lives under. When a bare name also
     names an anaconda.org owner, we disambiguate:
 
-      * matches an anaconda.org owner AND an anaconda.com namespace -> prompt
-      * matches only an anaconda.org owner                          -> target="org"
+      * matches an anaconda.org owner AND a readable anaconda.com namespace -> prompt
+      * matches only an anaconda.org owner                                  -> target="org"
       * otherwise -> anaconda.com channel resolution (existing behavior)
 
     Returns a ResolvedChannel whose ``target`` field says which system to use.
@@ -174,9 +234,14 @@ def classify_and_resolve(
 
     repo_match = False
     if org_match:
-        # Only need the (possibly expensive) namespace list to detect a collision.
+        # Only fetch the (possibly expensive) channel listing to detect a real
+        # collision — where the bare name already *names* something on anaconda.com:
+        # a top-level namespace, or an existing readable subchannel by that name.
+        # The namespace *fallback* (placing a brand-new channel under some namespace)
+        # is not a collision: with no such name present, an org owner routes to org.
         try:
-            repo_match = any(org.name == name for org in api.list_user_organizations())
+            channels = list(_iter_readable_channels(api))
+            repo_match = any(c.name == name for c in channels)
         except Exception:
             repo_match = False
 
