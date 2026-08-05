@@ -760,12 +760,8 @@ def view_command(
         "-c",
         help="Channel in format 'namespace/channel' or 'channel'.",
     ),
-    namespace: Optional[str] = typer.Option(
-        None, "--namespace", "-n", help="Namespace the channel belongs to"
-    ),
-    packages: bool = typer.Option(
-        False, "--packages", "-p", help="List the packages in the channel."
-    ),
+    namespace: Optional[str] = typer.Option(None, "--namespace", "-n", help="Namespace the channel belongs to"),
+    packages: bool = typer.Option(False, "--packages", "-p", help="List the packages in the channel."),
     files: bool = typer.Option(
         False, "--files", help="List individual files (with the exact filename to remove) instead of a package summary."
     ),
@@ -851,9 +847,7 @@ def remove_package_command(
         "-c",
         help="Channel in format 'namespace/channel' or 'channel'.",
     ),
-    namespace: Optional[str] = typer.Option(
-        None, "--namespace", "-n", help="Namespace the channel belongs to"
-    ),
+    namespace: Optional[str] = typer.Option(None, "--namespace", "-n", help="Namespace the channel belongs to"),
     force: bool = typer.Option(False, "--force", "-f", help="Skip the confirmation prompt."),
 ) -> None:
     """Remove a single package file (by filename) from a channel.

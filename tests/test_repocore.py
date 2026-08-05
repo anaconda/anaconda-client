@@ -390,9 +390,7 @@ class TestRepoCoreArtifacts:
         assert call_url.endswith("/artifacts/bulk")
         body = client.put.call_args[1]["json"]
         assert body["action"] == "delete"
-        assert body["items"] == [
-            {"name": "numpy", "family": "conda", "ckey": "linux-64/numpy-2.2.5-py313.conda"}
-        ]
+        assert body["items"] == [{"name": "numpy", "family": "conda", "ckey": "linux-64/numpy-2.2.5-py313.conda"}]
 
     def test_delete_artifact_file_unauthorized(self):
         client = _make_client()
@@ -1622,9 +1620,7 @@ class TestRepoCoreViewAndRemove:
         )
 
         with _patch_repo_api(mock_api):
-            result = runner.invoke(
-                app, ["remove-package", "numpy-2.2.5-py313.conda", "-c", "myns/dev", "--force"]
-            )
+            result = runner.invoke(app, ["remove-package", "numpy-2.2.5-py313.conda", "-c", "myns/dev", "--force"])
 
         assert result.exit_code == 0, result.output
         mock_api.delete_artifact_file.assert_called_once_with(
@@ -1644,9 +1640,7 @@ class TestRepoCoreViewAndRemove:
 
         with _patch_repo_api(mock_api):
             # Answer "n" to the confirmation prompt.
-            result = runner.invoke(
-                app, ["remove-package", "numpy-2.2.5-py313.conda", "-c", "myns/dev"], input="n\n"
-            )
+            result = runner.invoke(app, ["remove-package", "numpy-2.2.5-py313.conda", "-c", "myns/dev"], input="n\n")
 
         assert result.exit_code == 0
         mock_api.delete_artifact_file.assert_not_called()
@@ -1662,9 +1656,7 @@ class TestRepoCoreViewAndRemove:
         )
 
         with _patch_repo_api(mock_api):
-            result = runner.invoke(
-                app, ["remove-package", "does-not-exist.conda", "-c", "myns/dev", "--force"]
-            )
+            result = runner.invoke(app, ["remove-package", "does-not-exist.conda", "-c", "myns/dev", "--force"])
 
         assert result.exit_code == 1
         assert "No file named" in result.output
