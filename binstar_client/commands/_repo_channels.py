@@ -885,6 +885,27 @@ def _remove_from_repo(api, channel: str, target: str, force: bool) -> None:
     console.print(f"[green]Success![/green] Removed [cyan]{target}[/cyan] from '[cyan]{channel}[/cyan]'.")
 
 
+def _ensure_binstar_console_logging() -> None:
+    """Make the legacy ``binstar`` logger print to the console at INFO.
+
+    The delegated legacy commands (``show``/``remove``) write their user-facing
+    output via ``logging`` at INFO. Under the standalone ``binstar`` entrypoint
+    that logger is configured by ``setup_logging``; but when we call their
+    ``main()`` from inside the ``anaconda channel`` Typer app nothing has
+    configured it, so INFO records are dropped (the logger defaults to WARNING
+    with no handler) and the command appears to print nothing. Install a plain
+    console handler at INFO once, only if none is already attached.
+    """
+    binstar_logger = logging.getLogger("binstar")
+    if binstar_logger.level == logging.NOTSET or binstar_logger.level > logging.INFO:
+        binstar_logger.setLevel(logging.INFO)
+    if not any(isinstance(h, logging.StreamHandler) for h in binstar_logger.handlers):
+        handler = logging.StreamHandler()
+        handler.setLevel(logging.INFO)
+        handler.setFormatter(logging.Formatter("%(message)s"))
+        binstar_logger.addHandler(handler)
+
+
 def _show_dotorg(owner: str, token_value, org_site_value) -> None:
     """Delegate a channel show for an anaconda.org owner to the legacy ``show`` path.
 
@@ -892,6 +913,9 @@ def _show_dotorg(owner: str, token_value, org_site_value) -> None:
     the owner's packages, which is the closest equivalent — the same proxying
     ``channel upload`` does for owner-only names.
     """
+    # show.main emits its listing through the binstar logger at INFO; ensure it
+    # reaches the console when invoked via this Typer app (see helper).
+    _ensure_binstar_console_logging()
     args = argparse.Namespace(
         token=token_value,
         site=org_site_value,

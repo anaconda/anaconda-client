@@ -1718,6 +1718,54 @@ class TestRepoCoreShowListingAndRemove:
         spec = mock_show_main.call_args[0][0].spec
         assert spec.user == "someowner"
 
+    def test_show_dotorg_configures_binstar_console_logging(self):
+        """Delegating to legacy show must configure the binstar logger for console.
+
+        legacy ``show.main`` prints its listing via ``logging`` at INFO. Under the
+        ``channel`` Typer app nothing configures that logger, so without the fix
+        the INFO records are dropped and the command prints nothing. Assert that,
+        by the time show.main runs, the ``binstar`` logger is emitting at INFO
+        with a console (StreamHandler) attached so its output is not swallowed.
+        """
+        import logging
+
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+
+        binstar_logger = logging.getLogger("binstar")
+        # Start from the unconfigured state the bug depends on.
+        original_handlers = binstar_logger.handlers[:]
+        original_level = binstar_logger.level
+        for handler in original_handlers:
+            binstar_logger.removeHandler(handler)
+        binstar_logger.setLevel(logging.NOTSET)
+
+        seen = {}
+
+        def _fake_show_main(args):
+            show_logger = logging.getLogger("binstar.show")
+            seen["effective_level"] = show_logger.getEffectiveLevel()
+            seen["has_stream_handler"] = any(isinstance(h, logging.StreamHandler) for h in binstar_logger.handlers)
+
+        try:
+            with (
+                _patch_repo_api(mock_api, owner_exists=True),
+                patch("binstar_client.commands.show.main", side_effect=_fake_show_main),
+            ):
+                result = runner.invoke(app, ["show", "someowner"])
+        finally:
+            for handler in binstar_logger.handlers[:]:
+                binstar_logger.removeHandler(handler)
+            for handler in original_handlers:
+                binstar_logger.addHandler(handler)
+            binstar_logger.setLevel(original_level)
+
+        assert result.exit_code == 0, result.output
+        # INFO records from show.main will not be dropped, and go to a console.
+        assert seen["effective_level"] <= logging.INFO
+        assert seen["has_stream_handler"] is True
+
     def test_show_packages_summary(self):
         runner = CliRunner()
         app = _get_channels_app()
