@@ -479,6 +479,24 @@ def modify_command(
         console.print(f"[green]Success![/green] Channel '[cyan]{name}[/cyan]' is now {state_map[indexing_behavior]}.")
 
 
+def _make_owner_probe(token_value: Optional[str], org_site_value: Optional[str]):
+    """Build the anaconda.org owner probe used to route bare names to dotorg.
+
+    Note: ``--at`` selects the anaconda.com (repo) domain and is NOT a valid
+    anaconda.org site alias, so only ``--site`` (org_site_value) is forwarded.
+    """
+
+    def _owner_probe(name: str) -> bool:
+        try:
+            aserver_api = get_server_api(token_value, org_site_value)
+            aserver_api.user(name)
+            return True
+        except Exception:
+            return False
+
+    return _owner_probe
+
+
 def _do_upload(
     api,
     files: List[str],
@@ -507,15 +525,7 @@ def _do_upload(
         raise typer.Exit(1)
 
     # Probe used to detect anaconda.org owners so a bare name can route to dotorg.
-    # Note: ``--at`` selects the anaconda.com (repo) domain and is NOT a valid
-    # anaconda.org site alias, so it must not be forwarded here.
-    def _owner_probe(name: str) -> bool:
-        try:
-            aserver_api = get_server_api(token_value, org_site_value)
-            aserver_api.user(name)
-            return True
-        except Exception:
-            return False
+    _owner_probe = _make_owner_probe(token_value, org_site_value)
 
     resolved = _resolve_channels_with_namespaces(
         api, channels, namespace, from_deprecated_channel_flag, owner_probe=_owner_probe
@@ -702,18 +712,6 @@ def share_command(
         console.print(f"[green]Success![/green] {action.capitalize()}d channel '[cyan]{ch}[/cyan]' with {user}")
 
 
-def _resolve_channel_arg(api, channel: str, namespace: Optional[str]) -> str:
-    """Resolve a ``-c`` channel arg to the ``namespace/channel`` form (or a subchannel path).
-
-    A ``namespace/channel`` or ``--namespace``-qualified name is used as-is. A bare
-    channel name is resolved to its namespace the same way the other subcommands do.
-    """
-    resolved = _resolve_namespace_and_channel(api, channel, namespace)
-    if resolved.namespace:
-        return f"{resolved.namespace}/{resolved.channel_name}"
-    return resolved.channel_name
-
-
 def _iter_all_artifacts(api, channel: str):
     """Yield every package (artifact) in ``channel``, paging through the listing."""
     offset = 0
@@ -788,7 +786,10 @@ def view_command(
         packages = True
 
     api = ctx.obj.repo_api
-    resolved = _resolve_channel_arg(api, channels[0], namespace)
+    # view lists packages/files/ckeys, which are anaconda.com (repocore) concepts;
+    # for anaconda.org owners use `anaconda show`. Resolve the same way show/modify do.
+    resolved_channel = _resolve_namespace_and_channel(api, channels[0], namespace)
+    resolved = f"{resolved_channel.namespace}/{resolved_channel.channel_name}"
 
     if files:
         table = Table(title=f"Files in {resolved}")
@@ -841,26 +842,91 @@ def _fmt_size(num_bytes: int) -> str:
     return f"{size:.1f} GB"
 
 
+def _remove_from_repo(api, channel: str, target: str, force: bool) -> None:
+    """Remove a single file (by filename) from an anaconda.com repo channel.
+
+    ``target`` is the bare filename; it is resolved to its file (ckey) by
+    scanning the channel, then removed via the bulk endpoint so only that one
+    file goes, not the whole package.
+    """
+    matches = _find_file_by_name(api, channel, target)
+    if not matches:
+        console.print(
+            f"[red]Error:[/red] No file named '[cyan]{target}[/cyan]' found in channel '[cyan]{channel}[/cyan]'. "
+            f"Run 'anaconda channel view -c {channel} --files' to list removable filenames."
+        )
+        raise typer.Exit(1)
+    if len(matches) > 1:
+        console.print(f"[red]Error:[/red] '{target}' matches more than one file in '{channel}':")
+        for family, name, ckey in matches:
+            console.print(f"  - {family}/{name}: [cyan]{ckey}[/cyan]")
+        console.print("This is unexpected for a single filename; contact support if it persists.")
+        raise typer.Exit(1)
+
+    family, name, ckey = matches[0]
+
+    if not force:
+        console.print(f"About to remove [cyan]{ckey}[/cyan] ({family}/{name}) from [cyan]{channel}[/cyan].")
+        if not typer.confirm("Are you sure?"):
+            raise typer.Exit(0)
+
+    api.delete_artifact_file(channel, family, name, ckey)
+    console.print(f"[green]Success![/green] Removed [cyan]{target}[/cyan] from '[cyan]{channel}[/cyan]'.")
+
+
+def _remove_from_dotorg(owner: str, target: str, token_value, org_site_value, force: bool) -> None:
+    """Delegate a package removal to the anaconda.org ``remove`` path.
+
+    anaconda.org has no bare-filename delete; its grammar is
+    ``owner/package/version/filename``. The ``target`` is the part after the
+    owner (``-c owner`` supplies the owner), so we reconstruct the full spec and
+    hand it to the legacy remove command — the same proxying ``channel upload``
+    does for owner-only names.
+    """
+    from binstar_client.commands import remove as remove_mod
+    from binstar_client.utils import parse_specs
+
+    spec = target if target.startswith(f"{owner}/") else f"{owner}/{target}"
+    args = argparse.Namespace(
+        token=token_value,
+        site=org_site_value,
+        specs=[parse_specs(spec)],
+        force=force,
+    )
+    remove_mod.main(args)
+
+
 @app.command(name="remove-package", help="Remove a package file from a channel")
 def remove_package_command(
     ctx: typer.Context,
-    filename: str = typer.Argument(..., help="The package filename to remove (e.g. numpy-2.2.5-py313h51bfb38_3.conda)"),
+    target: str = typer.Argument(
+        ...,
+        metavar="PACKAGE",
+        help=(
+            "For an anaconda.com channel: the package filename to remove "
+            "(e.g. numpy-2.2.5-py313h51bfb38_3.conda). For an anaconda.org owner: "
+            "the package spec 'package/version/filename'."
+        ),
+    ),
     channel: Optional[List[str]] = typer.Option(
         None,
         "--channel",
         "-c",
-        help="Channel in format 'namespace/channel' or 'channel'.",
+        help="Channel 'namespace/channel'/'channel', or an anaconda.org owner.",
     ),
     namespace: Optional[str] = typer.Option(
         None, "--namespace", "-n", help="Namespace the channel belongs to"
     ),
     force: bool = typer.Option(False, "--force", "-f", help="Skip the confirmation prompt."),
 ) -> None:
-    """Remove a single package file (by filename) from a channel.
+    """Remove a single package file from a channel.
 
-    A package spans many files, so removal targets one file. The filename is
-    resolved to its file (ckey) by scanning the channel; run
-    ``anaconda channel view -c CHANNEL --files`` to see removable filenames.
+    Like ``channel upload``, this proxies across systems: a ``-c`` value that names
+    an anaconda.org owner routes to anaconda.org; otherwise it targets an
+    anaconda.com (repocore) channel. On anaconda.com a package spans many files, so
+    removal targets one file — the filename is resolved to its file (ckey) by
+    scanning the channel; run ``anaconda channel view -c CHANNEL --files`` to see
+    removable filenames.
     """
     channels = channel or []
     if not channels:
@@ -871,31 +937,26 @@ def remove_package_command(
         raise typer.Exit(1)
 
     api = ctx.obj.repo_api
-    resolved = _resolve_channel_arg(api, channels[0], namespace)
+    params = getattr(ctx.obj, "params", {})
+    token_value = params.get("token")
+    # --at selects the anaconda.com domain; only --site is an anaconda.org alias.
+    org_site_value = params.get("site")
 
-    matches = _find_file_by_name(api, resolved, filename)
-    if not matches:
-        console.print(
-            f"[red]Error:[/red] No file named '[cyan]{filename}[/cyan]' found in channel '[cyan]{resolved}[/cyan]'. "
-            f"Run 'anaconda channel view -c {resolved} --files' to list removable filenames."
-        )
-        raise typer.Exit(1)
-    if len(matches) > 1:
-        console.print(f"[red]Error:[/red] '{filename}' matches more than one file in '{resolved}':")
-        for family, name, ckey in matches:
-            console.print(f"  - {family}/{name}: [cyan]{ckey}[/cyan]")
-        console.print("This is unexpected for a single filename; contact support if it persists.")
-        raise typer.Exit(1)
+    # Classify the -c target the same way `channel upload` does: a bare name that
+    # matches an anaconda.org owner routes to dotorg, otherwise anaconda.com.
+    owner_probe = _make_owner_probe(token_value, org_site_value)
+    from binstar_client.repocore.resolve import classify_and_resolve
 
-    family, name, ckey = matches[0]
+    resolved = classify_and_resolve(api, channels[0], namespace, owner_probe=owner_probe)
 
-    if not force:
-        console.print(f"About to remove [cyan]{ckey}[/cyan] ({family}/{name}) from [cyan]{resolved}[/cyan].")
-        if not typer.confirm("Are you sure?"):
-            raise typer.Exit(0)
+    if resolved.target == "org":
+        _remove_from_dotorg(cast(str, resolved.owner), target, token_value, org_site_value, force)
+        return
 
-    api.delete_artifact_file(resolved, family, name, ckey)
-    console.print(f"[green]Success![/green] Removed [cyan]{filename}[/cyan] from '[cyan]{resolved}[/cyan]'.")
+    channel_path = (
+        f"{resolved.namespace}/{resolved.channel_name}" if resolved.namespace else resolved.channel_name
+    )
+    _remove_from_repo(api, channel_path, target, force)
 
 
 channel_notices.mount_notice_subcommand(app)

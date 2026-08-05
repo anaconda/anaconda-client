@@ -1678,6 +1678,54 @@ class TestRepoCoreViewAndRemove:
         assert result.exit_code == 1
         assert "No channel specified" in result.output
 
+    def test_remove_package_routes_to_dotorg_for_owner(self):
+        """A -c value matching an anaconda.org owner proxies to the legacy remove path."""
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+
+        with (
+            # owner_exists=True makes the owner probe report an anaconda.org owner,
+            # so classify_and_resolve routes the bare name to target="org".
+            _patch_repo_api(mock_api, owner_exists=True),
+            patch("binstar_client.commands.remove.main") as mock_remove_main,
+        ):
+            result = runner.invoke(
+                app,
+                ["remove-package", "mypkg/1.0/mypkg-1.0.tar.bz2", "-c", "someowner", "--force"],
+            )
+
+        assert result.exit_code == 0, result.output
+        # Delegated to dotorg, not the repocore file delete.
+        mock_api.delete_artifact_file.assert_not_called()
+        mock_remove_main.assert_called_once()
+        args = mock_remove_main.call_args[0][0]
+        assert args.force is True
+        # The owner is prepended to form the full owner/package/version/filename spec.
+        spec = args.specs[0]
+        assert spec.user == "someowner"
+        assert spec.package == "mypkg"
+
+    def test_remove_package_owner_prepended_once(self):
+        """If the target already starts with the owner, it is not doubled."""
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+
+        with (
+            _patch_repo_api(mock_api, owner_exists=True),
+            patch("binstar_client.commands.remove.main") as mock_remove_main,
+        ):
+            result = runner.invoke(
+                app,
+                ["remove-package", "someowner/mypkg/1.0/mypkg-1.0.tar.bz2", "-c", "someowner", "--force"],
+            )
+
+        assert result.exit_code == 0, result.output
+        spec = mock_remove_main.call_args[0][0].specs[0]
+        assert spec.user == "someowner"
+        assert spec.package == "mypkg"
+
 
 class TestPackageUtils:
     def test_windows_glob_on_windows(self):
