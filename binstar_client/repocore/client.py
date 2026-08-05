@@ -241,9 +241,6 @@ class RepoCoreClient(BaseClient):
         result, error = self._manage_response(
             response, f"creating namespace channel {channel_name}", success_codes=[200, 201]
         )
-        print(f"[DEBUG] create_namespace_channel response status: {response.status_code}")
-        print(f"[DEBUG] create_namespace_channel result: {result}")
-        print(f"[DEBUG] create_namespace_channel error: {error}")
         if error:
             return None, error
         return ChannelCreationResponse(status_code=response.status_code, **result), None
