@@ -85,7 +85,8 @@ class TestPydanticModels:
         channels = {"items": [{"name": "dev", "privacy": "private", "artifact_count": 5, "download_count": 10}]}
         mock_response = _mock_response(200, channels)
         client.get = MagicMock(return_value=mock_response)
-        result = client.get_channels("myorg")
+        result, error = client.get_channels("myorg")
+        assert error is None
         assert all(isinstance(ch, Channel) for ch in result)
         assert result[0].name == "dev"
 
@@ -94,7 +95,8 @@ class TestPydanticModels:
         channel = {"name": "myorg/dev", "privacy": "private", "owners": ["user1"]}
         mock_response = _mock_response(200, channel)
         client.get = MagicMock(return_value=mock_response)
-        result = client.get_namespace_channel("myorg/dev")
+        result, error = client.get_namespace_channel("myorg/dev")
+        assert error is None
         assert isinstance(result, Channel)
         assert result.name == "myorg/dev"
 
@@ -186,8 +188,9 @@ class TestRepoCoreClientAPI:
         mock_response = _mock_response(200, payload)
         client.get = MagicMock(return_value=mock_response)
 
-        items, total = client.list_all_channels()
+        items, total, error = client.list_all_channels()
 
+        assert error is None
         assert total == 2
         assert all(isinstance(ch, Channel) for ch in items)
         # The flat listing hits /channels with include_subchannels so shared
@@ -200,6 +203,12 @@ class TestRepoCoreClientAPI:
         assert items[0].path == "myorg"
         assert items[1].namespace == "myorg"
         assert items[1].path == "myorg/dev"
+
+        # An error response yields an empty page rather than raising.
+        client.get = MagicMock(return_value=_mock_response(403, None))
+        items, total, error = client.list_all_channels()
+        assert (items, total) == ([], 0)
+        assert isinstance(error, Unauthorized)
 
     def test_create_channel(self):
         client = _make_client()
@@ -249,11 +258,18 @@ class TestRepoCoreClientAPI:
         mock_response = _mock_response(200, channel_data)
         client.get = MagicMock(return_value=mock_response)
 
-        result = client.get_namespace_channel("test")
+        result, error = client.get_namespace_channel("test")
+        assert error is None
         assert isinstance(result, Channel)
         assert result.name == "test"
         assert result.privacy == "public"
         assert result.artifact_count == 5
+
+        # An error response carries no channel to build, so no model is attempted.
+        client.get = MagicMock(return_value=_mock_response(403, None))
+        result, error = client.get_namespace_channel("test")
+        assert result is None
+        assert isinstance(error, Unauthorized)
 
     def test_update_channel(self):
         client = _make_client()
@@ -328,6 +344,12 @@ class TestRepoCoreNamespaceChannel:
         assert result.channel_path == "myns/dev"
         assert result.status_code == 200
         assert result.created is False
+
+        # An error response has no channel_path to build, so no model is attempted.
+        client.post = MagicMock(return_value=_mock_response(403, None))
+        result, error = client.create_namespace_channel("dev", namespace="myns")
+        assert result is None
+        assert isinstance(error, Unauthorized)
 
     def test_share_channel_role_mapping(self):
         client = _make_client()
@@ -591,6 +613,7 @@ class TestRepoCoreChannelsCLI:
                 ),
             ],
             2,
+            None,
         )
 
         with _patch_repo_api(mock_api):
@@ -612,6 +635,7 @@ class TestRepoCoreChannelsCLI:
                 Channel(name="prod", privacy="public", parent="org-b"),
             ],
             4,
+            None,
         )
 
         with _patch_repo_api(mock_api):
@@ -639,6 +663,7 @@ class TestRepoCoreChannelsCLI:
                 Channel(name="staging", privacy="public", parent="someorg"),
             ],
             3,
+            None,
         )
 
         with _patch_repo_api(mock_api):
@@ -654,7 +679,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_all_channels.return_value = ([Channel(name="org-a", privacy="public")], 1)
+        mock_api.list_all_channels.return_value = ([Channel(name="org-a", privacy="public")], 1, None)
 
         with (
             _patch_repo_api(mock_api),
@@ -698,7 +723,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_all_channels.return_value = ([Channel(name="org-a", privacy="public")], 1)
+        mock_api.list_all_channels.return_value = ([Channel(name="org-a", privacy="public")], 1, None)
 
         aserver = MagicMock()
         aserver.user.side_effect = Exception("not logged in")
@@ -925,17 +950,20 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.get_channel.return_value = Channel(
-            name="dev",
-            privacy="private",
-            description="",
-            artifact_count=0,
-            download_count=0,
-            mirror_count=0,
-            channel_count=0,
-            indexing_behavior="default",
-            created="2025-01-01",
-            updated="2025-06-01",
+        mock_api.get_namespace_channel.return_value = (
+            Channel(
+                name="dev",
+                privacy="private",
+                description="",
+                artifact_count=0,
+                download_count=0,
+                mirror_count=0,
+                channel_count=0,
+                indexing_behavior="default",
+                created="2025-01-01",
+                updated="2025-06-01",
+            ),
+            None,
         )
         mock_api.is_subchannel.return_value = True
 

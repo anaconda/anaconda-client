@@ -48,6 +48,22 @@ Run anaconda-client commands:
 python -m binstar_client.scripts.cli --version
 ```
 
+Setup conda environment for testing telemetry:
+- By default this uses an editable install of `anaconda-opentelemetry`
+    - Assumes that project root is adjacent to this one
+- If you don't have the repo cloned it will not work. Removing it from the environment-tel.yml file will use the a package version from conda defaults that satisfies the dependency of `anaconda-cli-base`
+- You may also want an editable install of `anaconda-cli-base` since it is the source of telemetry export, in which case just add that to the `environment-tel.yml` file, remove the environment, and run make init-tel again
+
+```bash
+make init-tel
+```
+
+Activate it:
+
+```bash
+conda activate ./tel-env
+```
+
 ### Pre-commit Setup in Local
 
 Pre-commit also runs in the [GitHub workflow](.github/workflows/pre-commit.yaml) on pull requests. Installing it locally is recommended so you catch formatting and lint issues before pushing, and avoid back-and-forth commits when CI auto-fixes files. Set this up **from the development environment** (`./env`, Python 3.11) — some hooks require Python ≥ 3.10.

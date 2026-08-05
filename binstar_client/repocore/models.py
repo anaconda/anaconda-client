@@ -68,6 +68,7 @@ class ChannelCreationResponse(BaseModel):
 
     channel_path: str
     status_code: int
+    org_id: Optional[str] = None
 
     @property
     def created(self) -> bool:

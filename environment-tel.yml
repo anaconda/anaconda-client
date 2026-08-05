@@ -8,4 +8,4 @@ dependencies:
 - pip
 - pip:
   - -e .[dev]
-  - -e ~/Documents/GitHub/anaconda-otel-python[dev]
+  - -e ../anaconda-otel-python[dev]

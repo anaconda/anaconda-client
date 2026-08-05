@@ -124,7 +124,9 @@ def _upload_file_to_channel(
     console.print(f"Uploading [cyan]{filepath}[/cyan] to channel [cyan]{channel}[/cyan]...")
     result, error = api.upload_file(filepath, channel, pkg_type)
     package_name = os.path.basename(filepath)
-    UploadEvents.uploaded(api, app.info.name, channel, pkg_type, package_name, error=bool(error))
+    UploadEvents.uploaded(
+        api, app.info.name, channel=channel, package_type=pkg_type, package_name=package_name, error=bool(error)
+    )
     if error:
         raise error
     console.print(f"[green]Success![/green] Uploaded {filepath} to {channel}")
@@ -219,7 +221,9 @@ def _iter_all_channels(api):
     """Yield every channel the user can read, paging through ``GET /channels``."""
     offset = 0
     while True:
-        channels, total = api.list_all_channels(offset=offset, limit=_PAGE_SIZE)
+        channels, total, error = api.list_all_channels(offset=offset, limit=_PAGE_SIZE)
+        if error:
+            raise error
         yield from channels
         offset += len(channels)
         if not channels or offset >= total:
@@ -312,12 +316,14 @@ def list_command(
     table.add_column("Downloads", justify="right")
 
     notes: List[str] = []
+    error_occurred = False
 
     if source in ("all", "repo"):
         try:
             _add_repo_rows(table, ctx.obj.repo_api, namespace)
         except Exception as exc:
             notes.append(f"repo channels unavailable: {exc}")
+            error_occurred = True
 
     if source in ("all", "org"):
         try:
@@ -326,6 +332,12 @@ def list_command(
             _add_org_rows(table, aserver_api)
         except Exception as exc:
             notes.append(f"anaconda.org owners unavailable: {exc}")
+            error_occurred = True
+
+    channel_path = namespace if namespace else "all"
+    ChannelEvents.accessed(
+        ctx.obj.repo_api, app.info.name, channel_path=channel_path, action="list", error=error_occurred
+    )
 
     def _render() -> None:
         console.print(table)
@@ -368,14 +380,36 @@ def create_command(
         channel_name=resolved.channel_name, namespace=resolved.namespace, privacy=privacy
     )
     channel_path = f"{resolved.namespace}/{resolved.channel_name}" if resolved.namespace else resolved.channel_name
+    operation_org_id = getattr(response, 'org_id', None) if response else None
     if error:
-        ChannelEvents.created(api, app.info.name, channel_path, privacy, error=bool(error))
+        ChannelEvents.created(
+            api,
+            app.info.name,
+            channel_path=channel_path,
+            privacy=privacy,
+            operation_org_id=operation_org_id,
+            error=bool(error),
+        )
         raise error
     if response.created:
-        ChannelEvents.created(api, app.info.name, channel_path, privacy, error=bool(error))
+        ChannelEvents.created(
+            api,
+            app.info.name,
+            channel_path=channel_path,
+            privacy=privacy,
+            operation_org_id=operation_org_id,
+            error=bool(error),
+        )
         console.print(f"[green]Success![/green] Channel '[cyan]{response.channel_path}[/cyan]' created ({privacy}).")
     else:
-        ChannelEvents.created_exists(api, app.info.name, channel_path, privacy, error=bool(error))
+        ChannelEvents.created_exists(
+            api,
+            app.info.name,
+            channel_path=channel_path,
+            privacy=privacy,
+            operation_org_id=operation_org_id,
+            error=bool(error),
+        )
         console.print(f"Channel '[cyan]{response.channel_path}[/cyan]' already exists.")
 
 
@@ -390,7 +424,7 @@ def remove_command(
     resolved = _resolve_namespace_and_channel(api, name, namespace)
     qualified = f"{resolved.namespace}/{resolved.channel_name}"
     _, error = api.remove_channel(qualified)
-    ChannelEvents.removed(api, app.info.name, qualified, error=bool(error))
+    ChannelEvents.removed(api, app.info.name, channel_path=qualified, error=bool(error))
     if error:
         raise error
     console.print(f"[green]Success![/green] Channel '[cyan]{qualified}[/cyan]' removed.")
@@ -407,11 +441,16 @@ def show_command(
     api = ctx.obj.repo_api
     resolved = _resolve_namespace_and_channel(api, name, namespace)
     name = f"{resolved.namespace}/{resolved.channel_name}"
-    channel_data = api.get_namespace_channel(name)
+    channel_data, error = api.get_namespace_channel(name)
+    ChannelEvents.accessed(api, app.info.name, channel_path=name, action="show", error=bool(error))
+    if error:
+        raise error
 
     subchannels_response = None
     if full_details and not api.is_subchannel(name):
-        subchannels_response = api.get_channels(name)
+        subchannels_response, error = api.get_channels(name)
+        if error:
+            raise error
 
     table = Table(show_header=False, box=None, padding=(0, 2))
     table.add_column("Field", style="bold cyan")
@@ -484,6 +523,7 @@ def modify_command(
 
     if privacy:
         result, error = api.update_channel(name, privacy=privacy)
+        ChannelEvents.modified(api, app.info.name, channel_path=name, privacy=privacy, error=bool(error))
         if error:
             raise error
         state_map = {"private": "locked", "authenticated": "soft-locked", "public": "unlocked"}
@@ -491,6 +531,9 @@ def modify_command(
 
     if indexing_behavior:
         result, error = api.update_channel(name, indexing_behavior=indexing_behavior)
+        ChannelEvents.modified(
+            api, app.info.name, channel_path=name, indexing_behavior=indexing_behavior, error=bool(error)
+        )
         if error:
             raise error
         state_map = {"frozen": "frozen", "default": "unfrozen"}
@@ -718,9 +761,9 @@ def share_command(
         ch = f"{resolved.namespace}/{resolved.channel_name}"
         result, error = api.share_channel(resolved.namespace, resolved.channel_name, user, action=action, grant=grant)
         if action == "share":
-            ShareEvents.share(api, app.info.name, ch, user, role, error=bool(error))
+            ShareEvents.share(api, app.info.name, channel_path=ch, user=user, role=role, error=bool(error))
         else:
-            ShareEvents.unshare(api, app.info.name, ch, user, error=bool(error))
+            ShareEvents.unshare(api, app.info.name, channel_path=ch, user=user, error=bool(error))
         if error:
             raise error
         console.print(f"[green]Success![/green] {action.capitalize()}d channel '[cyan]{ch}[/cyan]' with {user}")
