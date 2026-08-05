@@ -40,8 +40,7 @@ class Attributes:
             user_email = user.get("email")
 
             if user_email:
-                salt = "anaconda_client_telemetry"
-                self.user_email = hashlib.sha256(f"{user_email}{salt}".encode()).hexdigest()
+                self.user_email = hashlib.sha256(user_email.encode()).hexdigest()
             else:
                 self.user_email = None
 
