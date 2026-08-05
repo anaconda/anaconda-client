@@ -63,6 +63,53 @@ class Channel(BaseModel):
         return f"{self.parent}/{self.name}" if self.parent else self.name
 
 
+class Artifact(BaseModel):
+    """A package in a channel, as returned by ``GET .../artifacts``.
+
+    An "artifact" here is a *package* — the server groups files by
+    ``family`` + ``name`` (its common name), so one Artifact spans every
+    version and file of that package in the channel. Individual files live one
+    level down (see :class:`ArtifactFile`).
+    """
+
+    name: str
+    family: str = ""
+    channel: str = ""
+    subchannel: str = ""
+    download_count: int = 0
+    file_count: int = 0
+    cve_count: int = 0
+    available_versions: list[str] = Field(default_factory=list)
+    updated_at: str = ""
+
+    @field_validator("available_versions", mode="before")
+    @classmethod
+    def _none_versions_as_empty(cls, v):
+        return v or []
+
+
+class ArtifactFile(BaseModel):
+    """A single physical file (route) belonging to an artifact/package.
+
+    Identified by ``ckey``, the file's route path (e.g.
+    ``linux-64/numpy-2.2.5-py313h51bfb38_3.conda`` or
+    ``simple/six/six-1.12.0-py2.py3-none-any.whl``). The filename a user works
+    with is the basename of the ckey.
+    """
+
+    ckey: str = ""
+    name: str = ""
+    family: str = ""
+    channel: str = ""
+    subchannel: str = ""
+    size: int = 0
+
+    @property
+    def filename(self) -> str:
+        """The bare filename — the last path segment of the ckey."""
+        return self.ckey.rsplit("/", 1)[-1] if self.ckey else ""
+
+
 class ChannelCreationResponse(BaseModel):
     """Response from creating a namespace channel."""
 

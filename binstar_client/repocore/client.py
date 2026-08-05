@@ -11,6 +11,8 @@ from anaconda_auth.client import BaseClient
 
 from binstar_client.repocore.errors import InvalidName, RepoCoreError, Unauthorized
 from binstar_client.repocore.models import (
+    Artifact,
+    ArtifactFile,
     Channel,
     ChannelCreationResponse,
     Namespace,
@@ -231,6 +233,81 @@ class RepoCoreClient(BaseClient):
             response = self.post(url, files=multipart_form_data)
 
         return self._manage_response(response, f"uploading {filename}", success_codes=[200, 201])
+
+    def _artifacts_url(self, channel: str) -> str:
+        """Base ``.../artifacts`` URL for a channel or subchannel.
+
+        Reuses ``_get_channel_url`` so subchannels resolve to the
+        ``/channels/{parent}/subchannels/{sub}`` form the server expects.
+        """
+        return join(self._get_channel_url(channel), "artifacts")
+
+    def list_artifacts(
+        self,
+        channel: str,
+        offset: int = 0,
+        limit: int = 100,
+        query: Optional[str] = None,
+        artifact_family: Optional[str] = None,
+        platform: Optional[str] = None,
+        sort: Optional[str] = None,
+    ) -> tuple[list[Artifact], int]:
+        """List packages (artifacts) in a channel.
+
+        Each item is a *package* grouped by family + name — not an individual
+        file. Returns the page of artifacts and the server's total count.
+        """
+        params: dict = {"offset": offset, "limit": limit}
+        if query:
+            params["q"] = query
+        if artifact_family:
+            params["artifact_family"] = artifact_family
+        if platform:
+            params["platform"] = platform
+        if sort:
+            params["sort"] = sort
+
+        response = self.get(self._artifacts_url(channel), params=params)
+        data = self._manage_response(response, f"listing artifacts in {channel}")
+        items = [Artifact(**item) for item in data.get("items", [])]
+        return items, data.get("total_count", len(items))
+
+    def list_artifact_files(
+        self,
+        channel: str,
+        artifact_family: str,
+        artifact_name: str,
+        offset: int = 0,
+        limit: int = 100,
+    ) -> tuple[list[ArtifactFile], int]:
+        """List the individual files of a package in a channel."""
+        url = join(self._artifacts_url(channel), artifact_family, artifact_name, "files")
+        response = self.get(url, params={"offset": offset, "limit": limit})
+        data = self._manage_response(
+            response, f"listing files for {artifact_family}/{artifact_name} in {channel}"
+        )
+        items = [ArtifactFile(**item) for item in data.get("items", [])]
+        return items, data.get("total_count", len(items))
+
+    def delete_artifact_file(self, channel: str, artifact_family: str, artifact_name: str, ckey: str):
+        """Delete a single file (identified by ``ckey``) from a channel.
+
+        Uses the bulk endpoint with a ``ckey`` so only that one file (route) is
+        removed, rather than the whole package that ``DELETE .../{family}/{name}``
+        would drop. Returns on the server's 202 Accepted.
+        """
+        url = join(self._artifacts_url(channel), "bulk")
+        data = {
+            "action": "delete",
+            "items": [{"name": artifact_name, "family": artifact_family, "ckey": ckey}],
+        }
+        response = self.put(url, json=data)
+        return self._manage_response(
+            response,
+            f"removing {ckey} from {channel}",
+            success_codes=[200, 202, 204],
+            empty_success_codes=[200, 202, 204],
+        )
 
     def share_channel(self, namespace: str, channel_name: str, user: str, action: str = "share", grant: str = "read"):
         url = join(self._api_base, "namespaces", namespace, "channels", channel_name, "sharing")

@@ -344,6 +344,64 @@ class TestRepoCoreNamespaceChannel:
         assert "grant" not in call_args[1]["json"]
 
 
+class TestRepoCoreArtifacts:
+    def test_list_artifacts(self):
+        client = _make_client()
+        payload = {
+            "total_count": 2,
+            "items": [
+                {"name": "numpy", "family": "conda", "file_count": 3, "available_versions": ["1.0", "2.0"]},
+                {"name": "flask", "family": "python", "download_count": 7},
+            ],
+        }
+        client.get = MagicMock(return_value=_mock_response(200, payload))
+
+        items, total = client.list_artifacts("myns/dev", query="num")
+
+        assert total == 2
+        assert [a.name for a in items] == ["numpy", "flask"]
+        call_url = client.get.call_args[0][0]
+        # Subchannel arg routes through /subchannels/ and appends /artifacts.
+        assert call_url.endswith("/channels/myns/subchannels/dev/artifacts")
+        assert client.get.call_args[1]["params"]["q"] == "num"
+
+    def test_list_artifact_files(self):
+        client = _make_client()
+        payload = {
+            "total_count": 1,
+            "items": [{"ckey": "linux-64/numpy-2.2.5-py313.conda", "name": "numpy", "family": "conda", "size": 100}],
+        }
+        client.get = MagicMock(return_value=_mock_response(200, payload))
+
+        items, total = client.list_artifact_files("myns/dev", "conda", "numpy")
+
+        assert total == 1
+        assert items[0].filename == "numpy-2.2.5-py313.conda"
+        call_url = client.get.call_args[0][0]
+        assert call_url.endswith("/channels/myns/subchannels/dev/artifacts/conda/numpy/files")
+
+    def test_delete_artifact_file_uses_bulk_with_ckey(self):
+        client = _make_client()
+        client.put = MagicMock(return_value=_mock_response(202, None))
+
+        client.delete_artifact_file("myns/dev", "conda", "numpy", "linux-64/numpy-2.2.5-py313.conda")
+
+        call_url = client.put.call_args[0][0]
+        assert call_url.endswith("/artifacts/bulk")
+        body = client.put.call_args[1]["json"]
+        assert body["action"] == "delete"
+        assert body["items"] == [
+            {"name": "numpy", "family": "conda", "ckey": "linux-64/numpy-2.2.5-py313.conda"}
+        ]
+
+    def test_delete_artifact_file_unauthorized(self):
+        client = _make_client()
+        client.put = MagicMock(return_value=_mock_response(403, None))
+
+        with pytest.raises(Unauthorized):
+            client.delete_artifact_file("myns/dev", "conda", "numpy", "linux-64/numpy.conda")
+
+
 class TestResolveNamespaceAndChannel:
     def test_slash_in_name_extracts_both(self):
         from binstar_client.commands._repo_channels import _resolve_namespace_and_channel
@@ -1476,6 +1534,149 @@ class TestRepoCoreChannelsCLI:
         assert result.exit_code == 1
         assert "Ambiguous" in result.output
         mock_api.share_channel.assert_not_called()
+
+
+class TestRepoCoreViewAndRemove:
+    def _artifact(self, **kw):
+        from binstar_client.repocore import Artifact
+
+        return Artifact(**kw)
+
+    def _file(self, **kw):
+        from binstar_client.repocore import ArtifactFile
+
+        return ArtifactFile(**kw)
+
+    def test_view_requires_channel(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        with _patch_repo_api(MagicMock()):
+            result = runner.invoke(app, ["view", "--packages"])
+        assert result.exit_code == 1
+        assert "No channel specified" in result.output
+
+    def test_view_packages_summary(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_artifacts.return_value = (
+            [self._artifact(name="numpy", family="conda", file_count=3, available_versions=["1.0", "2.0"])],
+            1,
+        )
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(app, ["view", "-c", "myns/dev", "--packages"])
+
+        assert result.exit_code == 0, result.output
+        assert "numpy" in result.output
+        mock_api.list_artifacts.assert_called_with("myns/dev", offset=0, limit=100)
+
+    def test_view_defaults_to_packages(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_artifacts.return_value = ([self._artifact(name="numpy", family="conda")], 1)
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(app, ["view", "-c", "myns/dev"])
+
+        assert result.exit_code == 0, result.output
+        assert "numpy" in result.output
+
+    def test_view_files_shows_filenames(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_artifacts.return_value = ([self._artifact(name="numpy", family="conda")], 1)
+        mock_api.list_artifact_files.return_value = (
+            [self._file(ckey="linux-64/numpy-2.2.5-py313.conda", name="numpy", family="conda", size=1048576)],
+            1,
+        )
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(app, ["view", "-c", "myns/dev", "--files"])
+
+        assert result.exit_code == 0, result.output
+        assert "numpy-2.2.5-py313.conda" in result.output
+
+    def test_view_empty_channel(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_artifacts.return_value = ([], 0)
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(app, ["view", "-c", "myns/dev", "--packages"])
+
+        assert result.exit_code == 0, result.output
+        assert "No packages found" in result.output
+
+    def test_remove_package_success(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_artifacts.return_value = ([self._artifact(name="numpy", family="conda")], 1)
+        mock_api.list_artifact_files.return_value = (
+            [self._file(ckey="linux-64/numpy-2.2.5-py313.conda", name="numpy", family="conda")],
+            1,
+        )
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(
+                app, ["remove-package", "numpy-2.2.5-py313.conda", "-c", "myns/dev", "--force"]
+            )
+
+        assert result.exit_code == 0, result.output
+        mock_api.delete_artifact_file.assert_called_once_with(
+            "myns/dev", "conda", "numpy", "linux-64/numpy-2.2.5-py313.conda"
+        )
+        assert "Success" in result.output
+
+    def test_remove_package_prompts_without_force(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_artifacts.return_value = ([self._artifact(name="numpy", family="conda")], 1)
+        mock_api.list_artifact_files.return_value = (
+            [self._file(ckey="linux-64/numpy-2.2.5-py313.conda", name="numpy", family="conda")],
+            1,
+        )
+
+        with _patch_repo_api(mock_api):
+            # Answer "n" to the confirmation prompt.
+            result = runner.invoke(
+                app, ["remove-package", "numpy-2.2.5-py313.conda", "-c", "myns/dev"], input="n\n"
+            )
+
+        assert result.exit_code == 0
+        mock_api.delete_artifact_file.assert_not_called()
+
+    def test_remove_package_not_found(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_artifacts.return_value = ([self._artifact(name="numpy", family="conda")], 1)
+        mock_api.list_artifact_files.return_value = (
+            [self._file(ckey="linux-64/numpy-2.2.5-py313.conda", name="numpy", family="conda")],
+            1,
+        )
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(
+                app, ["remove-package", "does-not-exist.conda", "-c", "myns/dev", "--force"]
+            )
+
+        assert result.exit_code == 1
+        assert "No file named" in result.output
+        mock_api.delete_artifact_file.assert_not_called()
+
+    def test_remove_package_requires_channel(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        with _patch_repo_api(MagicMock()):
+            result = runner.invoke(app, ["remove-package", "foo.conda", "--force"])
+        assert result.exit_code == 1
+        assert "No channel specified" in result.output
 
 
 class TestPackageUtils:
