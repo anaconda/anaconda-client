@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
 
-from binstar_client.repocore.telemetry import Attributes, ChannelEvents, ShareEvents, UpgradeEvents, UploadEvents
+from binstar_client.repocore.telemetry import Attributes, ChannelEvents, UpgradeEvents, UploadEvents
 from binstar_client.repocore.telemetry_models import (
     ChannelAccessedEvent,
     ChannelCreatedEvent,
@@ -43,8 +43,11 @@ class TestPydanticTelemetryModels:
         assert event.action == "list"
 
     def test_channel_limit_reached_event_model(self):
-        event = ChannelLimitReachedEvent(channel_path="myorg/dev")
+        event = ChannelLimitReachedEvent(channel_path="myorg/dev", action="create", limit=5)
         assert event.event_name == "channel.limit_reached"
+        assert event.channel_path == "myorg/dev"
+        assert event.action == "create"
+        assert event.limit == 5
 
     def test_channel_removed_event_model(self):
         event = ChannelRemovedEvent(channel_path="myorg/staging")

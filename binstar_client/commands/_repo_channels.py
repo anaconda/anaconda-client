@@ -8,6 +8,7 @@ for backward compatibility and operate on labels via the old API.
 import argparse
 import logging
 import os
+import re
 from glob import glob
 from typing import List, Optional, Tuple, cast
 
@@ -20,7 +21,7 @@ from binstar_client.commands import _channel_notices as channel_notices
 from binstar_client.commands import upload as upload_mod
 from binstar_client.repocore import RepoCoreClient
 from binstar_client.repocore.errors import RepoCoreError, Unauthorized
-from binstar_client.repocore.telemetry import ChannelEvents, ShareEvents, UploadEvents
+from binstar_client.repocore.telemetry import ChannelEvents, UploadEvents
 from binstar_client.repocore.package_utils import PackageType, determine_package_type, windows_glob
 from binstar_client.repocore.resolve import (
     resolve_channels_with_namespaces as _resolve_channels_with_namespaces,
@@ -51,6 +52,12 @@ app = typer.Typer(
     no_args_is_help=True,
     context_settings={"help_option_names": ["-h", "--help"]},
 )
+
+
+def _extract_limit_from_error(error: Exception) -> Optional[int]:
+    """Extract channel limit number from error message."""
+    limit_match = re.search(r'has reached the limit of (\d+)', str(error))
+    return int(limit_match.group(1)) if limit_match else None
 
 
 @app.callback(invoke_without_command=True)
@@ -122,7 +129,7 @@ def _upload_file_to_channel(
 ) -> None:
     """Upload a single file to a single channel."""
     console.print(f"Uploading [cyan]{filepath}[/cyan] to channel [cyan]{channel}[/cyan]...")
-    result, error = api.upload_file(filepath, channel, pkg_type)
+    _, error = api.upload_file(filepath, channel, pkg_type)
     package_name = os.path.basename(filepath)
     UploadEvents.uploaded(
         api, app.info.name, channel=channel, package_type=pkg_type, package_name=package_name, error=bool(error)
@@ -381,35 +388,26 @@ def create_command(
     )
     channel_path = f"{resolved.namespace}/{resolved.channel_name}" if resolved.namespace else resolved.channel_name
     operation_org_id = getattr(response, 'org_id', None) if response else None
+    event_kwargs = {
+        "api": api,
+        "app_name": app.info.name,
+        "channel_path": channel_path,
+        "privacy": privacy,
+        "operation_org_id": operation_org_id,
+        "error": bool(error),
+    }
     if error:
-        ChannelEvents.created(
-            api,
-            app.info.name,
-            channel_path=channel_path,
-            privacy=privacy,
-            operation_org_id=operation_org_id,
-            error=bool(error),
-        )
+        error_msg = str(error).lower()
+        if "limit" in error_msg and "private" in error_msg:
+            limit_value = _extract_limit_from_error(error)
+            ChannelEvents.limit(api, app.info.name, channel_path=channel_path, action="create", limit=limit_value)
+        ChannelEvents.created(**event_kwargs)
         raise error
     if response.created:
-        ChannelEvents.created(
-            api,
-            app.info.name,
-            channel_path=channel_path,
-            privacy=privacy,
-            operation_org_id=operation_org_id,
-            error=bool(error),
-        )
+        ChannelEvents.created(**event_kwargs)
         console.print(f"[green]Success![/green] Channel '[cyan]{response.channel_path}[/cyan]' created ({privacy}).")
     else:
-        ChannelEvents.created_exists(
-            api,
-            app.info.name,
-            channel_path=channel_path,
-            privacy=privacy,
-            operation_org_id=operation_org_id,
-            error=bool(error),
-        )
+        ChannelEvents.created_exists(**event_kwargs)
         console.print(f"Channel '[cyan]{response.channel_path}[/cyan]' already exists.")
 
 
@@ -523,6 +521,11 @@ def modify_command(
 
     if privacy:
         result, error = api.update_channel(name, privacy=privacy)
+        if error:
+            error_msg = str(error).lower()
+            if "limit" in error_msg and "private" in error_msg:
+                limit_value = _extract_limit_from_error(error)
+                ChannelEvents.limit(api, app.info.name, channel_path=name, action="modify", limit=limit_value)
         ChannelEvents.modified(api, app.info.name, channel_path=name, privacy=privacy, error=bool(error))
         if error:
             raise error
@@ -760,10 +763,11 @@ def share_command(
             raise typer.Exit(1)
         ch = f"{resolved.namespace}/{resolved.channel_name}"
         result, error = api.share_channel(resolved.namespace, resolved.channel_name, user, action=action, grant=grant)
+        event_kwargs = {"api": api, "app_name": app.info.name, "channel_path": ch, "user": user, "error": bool(error)}
         if action == "share":
-            ShareEvents.share(api, app.info.name, channel_path=ch, user=user, role=role, error=bool(error))
+            ChannelEvents.share(**event_kwargs, role=role)
         else:
-            ShareEvents.unshare(api, app.info.name, channel_path=ch, user=user, error=bool(error))
+            ChannelEvents.unshare(**event_kwargs)
         if error:
             raise error
         console.print(f"[green]Success![/green] {action.capitalize()}d channel '[cyan]{ch}[/cyan]' with {user}")

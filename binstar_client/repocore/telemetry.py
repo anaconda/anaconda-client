@@ -129,6 +129,18 @@ class ChannelEvents:
         event = ChannelModifiedEvent(**kwargs)
         _count(event, api, app_name, error)
 
+    @staticmethod
+    def share(api, app_name: str | None, error: bool = False, **kwargs) -> None:
+        """Track channel sharing event."""
+        event = MemberInvitedEvent(**kwargs)
+        _count(event, api, app_name, error)
+
+    @staticmethod
+    def unshare(api, app_name: str | None, error: bool = False, **kwargs) -> None:
+        """Track channel unsharing event."""
+        event = MemberRemovedEvent(**kwargs)
+        _count(event, api, app_name, error)
+
 
 class UpgradeEvents:
     """Upgrade prompt events"""
@@ -159,20 +171,4 @@ class UploadEvents:
     def uploaded(api, app_name: str | None, error: bool = False, **kwargs) -> None:
         """Track package upload event."""
         event = PackageUploadedEvent(**kwargs)
-        _count(event, api, app_name, error)
-
-
-class ShareEvents:
-    """Channel sharing events"""
-
-    @staticmethod
-    def share(api, app_name: str | None, error: bool = False, **kwargs) -> None:
-        """Track channel sharing event."""
-        event = MemberInvitedEvent(**kwargs)
-        _count(event, api, app_name, error)
-
-    @staticmethod
-    def unshare(api, app_name: str | None, error: bool = False, **kwargs) -> None:
-        """Track channel unsharing event."""
-        event = MemberRemovedEvent(**kwargs)
         _count(event, api, app_name, error)

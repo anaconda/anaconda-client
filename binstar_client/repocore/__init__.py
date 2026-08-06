@@ -11,7 +11,6 @@ from binstar_client.repocore.telemetry import (
     ChannelEvents,
     UpgradeEvents,
     UploadEvents,
-    ShareEvents,
 )
 
 __all__ = [
@@ -25,5 +24,4 @@ __all__ = [
     "ChannelEvents",
     "UpgradeEvents",
     "UploadEvents",
-    "ShareEvents",
 ]

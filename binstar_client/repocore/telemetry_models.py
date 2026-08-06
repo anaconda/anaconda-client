@@ -51,6 +51,8 @@ class ChannelLimitReachedEvent(TelemetryEvent):
     event_name: str = "channel.limit_reached"
     errorable: bool = False
     channel_path: str = Field(alias="channel.path")
+    action: str
+    limit: Optional[int] = None
 
 
 class ChannelRemovedEvent(TelemetryEvent):
