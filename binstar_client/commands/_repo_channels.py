@@ -12,6 +12,7 @@ from glob import glob
 from typing import List, Optional, Tuple, cast
 
 import typer
+from pydantic import BaseModel
 from rich.panel import Panel
 
 from anaconda_cli_base.console import Table, console, select_from_list
@@ -416,20 +417,16 @@ def show_command(
         raise typer.Exit(1)
 
     api = ctx.obj.repo_api
-    params = getattr(ctx.obj, "params", {})
-    token_value = params.get("token")
-    # --at selects the anaconda.com domain; only --site is an anaconda.org alias.
-    org_site_value = params.get("site")
+    creds = _DotOrgCredentials.from_ctx(ctx)
 
     # Classify the name the same way `channel upload`/`remove-package` do: a bare
     # name matching an anaconda.org owner routes to dotorg, otherwise anaconda.com.
-    owner_probe = _make_owner_probe(token_value, org_site_value)
-    resolved = classify_and_resolve(api, name, namespace, owner_probe=owner_probe)
+    resolved = classify_and_resolve(api, name, namespace, owner_probe=creds.owner_probe)
 
     if resolved.target == "org":
         # anaconda.org packages/files listings don't apply; `anaconda show OWNER`
         # already lists the owner's packages.
-        _show_dotorg(cast(str, resolved.owner), token_value, org_site_value)
+        _show_dotorg(cast(str, resolved.owner), creds.token, creds.site)
         return
 
     name = f"{resolved.namespace}/{resolved.channel_name}" if resolved.namespace else resolved.channel_name
@@ -523,22 +520,35 @@ def modify_command(
         console.print(f"[green]Success![/green] Channel '[cyan]{name}[/cyan]' is now {state_map[indexing_behavior]}.")
 
 
-def _make_owner_probe(token_value: Optional[str], org_site_value: Optional[str]):
-    """Build the anaconda.org owner probe used to route bare names to dotorg.
+class _DotOrgCredentials(BaseModel):
+    """The ``--token``/``--site`` pair plus the anaconda.org owner probe.
+
+    These always travel together: the probe routes a bare name to dotorg when it
+    matches an anaconda.org owner, and the same token/site then drive the dotorg
+    operation (show/remove/upload) after resolution. Bundling them keeps the
+    per-command wiring to one line and the ``--at`` vs ``--site`` rule in one place.
 
     Note: ``--at`` selects the anaconda.com (repo) domain and is NOT a valid
-    anaconda.org site alias, so only ``--site`` (org_site_value) is forwarded.
+    anaconda.org site alias, so only ``--site`` is carried here as ``site``.
     """
 
-    def _owner_probe(name: str) -> bool:
+    token: Optional[str] = None
+    site: Optional[str] = None
+
+    @classmethod
+    def from_ctx(cls, ctx) -> "_DotOrgCredentials":
+        """Read ``--token``/``--site`` off the command context's params."""
+        params = getattr(ctx.obj, "params", {})
+        return cls(token=params.get("token"), site=params.get("site"))
+
+    def owner_probe(self, name: str) -> bool:
+        """Whether ``name`` is a real anaconda.org owner (user or organization)."""
         try:
-            aserver_api = get_server_api(token_value, org_site_value)
+            aserver_api = get_server_api(self.token, self.site)
             aserver_api.user(name)
             return True
         except Exception:
             return False
-
-    return _owner_probe
 
 
 def _do_upload(
@@ -548,8 +558,7 @@ def _do_upload(
     namespace: Optional[str],
     package_type: Optional[str],
     from_deprecated_channel_flag: bool,
-    token_value: Optional[str],
-    org_site_value: Optional[str] = None,
+    creds: "_DotOrgCredentials",
     labels: Optional[List[str]] = None,
     org_upload_args: object = None,
 ) -> None:
@@ -568,11 +577,8 @@ def _do_upload(
         console.print("[red]Error:[/red] No channel specified. Use --channel option to specify target channel(s).")
         raise typer.Exit(1)
 
-    # Probe used to detect anaconda.org owners so a bare name can route to dotorg.
-    _owner_probe = _make_owner_probe(token_value, org_site_value)
-
     resolved = _resolve_channels_with_namespaces(
-        api, channels, namespace, from_deprecated_channel_flag, owner_probe=_owner_probe
+        api, channels, namespace, from_deprecated_channel_flag, owner_probe=creds.owner_probe
     )
 
     org_targets = [r for r in resolved if r.target == "org"]
@@ -613,16 +619,14 @@ def upload_command(
     org_upload_args: object = None,
 ) -> None:
     """Programmatic entry for uploads (used by the ``anaconda upload`` bridge)."""
-    token_value = None
-    org_site_value = None
     if ctx is None:
         from anaconda_cli_base.cli import ContextExtras
         from binstar_client import __version__
 
         # Carry --site/--token from the `anaconda upload` bridge, if provided.
-        token_value = getattr(org_upload_args, "token", None)
+        # `anaconda upload --site` is an anaconda.org alias (see _DotOrgCredentials).
         site_value = getattr(org_upload_args, "site", None)
-        org_site_value = site_value  # `anaconda upload --site` is an anaconda.org alias
+        creds = _DotOrgCredentials(token=getattr(org_upload_args, "token", None), site=site_value)
 
         ctx_obj = ContextExtras()
         ctx_obj.repo_api = RepoCoreClient(site=site_value, version=__version__)
@@ -632,10 +636,7 @@ def upload_command(
 
         ctx = FakeContext()
     else:
-        params = getattr(ctx.obj, "params", {})
-        token_value = params.get("token")
-        # --at selects the anaconda.com domain; only --site is an anaconda.org alias.
-        org_site_value = params.get("site")
+        creds = _DotOrgCredentials.from_ctx(ctx)
 
     _do_upload(
         ctx.obj.repo_api,
@@ -644,8 +645,7 @@ def upload_command(
         namespace,
         package_type,
         from_deprecated_channel_flag,
-        token_value,
-        org_site_value=org_site_value,
+        creds,
         labels=labels,
         org_upload_args=org_upload_args,
     )
@@ -684,8 +684,6 @@ def _upload_cli(
     ),
 ) -> None:
     """Upload packages to your Anaconda repository."""
-    params = getattr(ctx.obj, "params", {})
-    token_value = params.get("token")
     # typer validates -t against the repocore enum at the CLI boundary; hand the
     # raw string down so _do_upload can validate per-target uniformly.
     _do_upload(
@@ -695,8 +693,7 @@ def _upload_cli(
         namespace,
         package_type.value if package_type else None,
         from_deprecated_channel_flag=False,
-        token_value=token_value,
-        org_site_value=params.get("site"),
+        creds=_DotOrgCredentials.from_ctx(ctx),
         labels=label or [],
     )
 
@@ -982,18 +979,14 @@ def remove_package_command(
         raise typer.Exit(1)
 
     api = ctx.obj.repo_api
-    params = getattr(ctx.obj, "params", {})
-    token_value = params.get("token")
-    # --at selects the anaconda.com domain; only --site is an anaconda.org alias.
-    org_site_value = params.get("site")
+    creds = _DotOrgCredentials.from_ctx(ctx)
 
     # Classify the -c target the same way `channel upload` does: a bare name that
     # matches an anaconda.org owner routes to dotorg, otherwise anaconda.com.
-    owner_probe = _make_owner_probe(token_value, org_site_value)
-    resolved = classify_and_resolve(api, channels[0], namespace, owner_probe=owner_probe)
+    resolved = classify_and_resolve(api, channels[0], namespace, owner_probe=creds.owner_probe)
 
     if resolved.target == "org":
-        _remove_from_dotorg(cast(str, resolved.owner), target, token_value, org_site_value, force)
+        _remove_from_dotorg(cast(str, resolved.owner), target, creds.token, creds.site, force)
         return
 
     channel_path = f"{resolved.namespace}/{resolved.channel_name}" if resolved.namespace else resolved.channel_name
