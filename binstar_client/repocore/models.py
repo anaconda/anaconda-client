@@ -74,6 +74,22 @@ class ChannelCreationResponse(BaseModel):
         return self.status_code == 201
 
 
+class ChannelUpdateResponse(BaseModel):
+    """Response from updating a channel.
+
+    The repo PUT endpoint is idempotent and signals whether the request actually
+    changed anything via the HTTP status: 201 when a submitted field differed from
+    the channel's current state, 200 when the channel already held every submitted
+    value (a no-op). Mirrors ``ChannelCreationResponse``.
+    """
+
+    status_code: int
+
+    @property
+    def changed(self) -> bool:
+        return self.status_code == 201
+
+
 class ResolvedChannel(BaseModel):
     """Resolved namespace and channel name.
 

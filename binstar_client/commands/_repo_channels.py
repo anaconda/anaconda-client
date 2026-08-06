@@ -468,15 +468,32 @@ def modify_command(
     resolved = _resolve_namespace_and_channel(api, name, namespace)
     name = f"{resolved.namespace}/{resolved.channel_name}"
 
+    # The repo PUT endpoint is idempotent and reports whether it actually changed
+    # anything via the response status (201 = changed, 200 = value already set).
+    # We use that instead of pre-reading the channel, so a no-op is surfaced to the
+    # user rather than a misleading "Success!".
     if privacy:
-        api.update_channel(name, privacy=privacy)
-        state_map = {"private": "locked", "authenticated": "soft-locked", "public": "unlocked"}
-        console.print(f"[green]Success![/green] Channel '[cyan]{name}[/cyan]' is now {state_map[privacy]} ({privacy}).")
+        result = api.update_channel(name, privacy=privacy)
+        if result.changed:
+            state_map = {"private": "locked", "authenticated": "soft-locked", "public": "unlocked"}
+            console.print(
+                f"[green]Success![/green] Channel '[cyan]{name}[/cyan]' is now {state_map[privacy]} ({privacy})."
+            )
+        else:
+            console.print(f"[yellow]No change:[/yellow] Channel '[cyan]{name}[/cyan]' is already {privacy}.")
 
     if indexing_behavior:
-        api.update_channel(name, indexing_behavior=indexing_behavior)
-        state_map = {"frozen": "frozen", "default": "unfrozen"}
-        console.print(f"[green]Success![/green] Channel '[cyan]{name}[/cyan]' is now {state_map[indexing_behavior]}.")
+        result = api.update_channel(name, indexing_behavior=indexing_behavior)
+        if result.changed:
+            state_map = {"frozen": "frozen", "default": "unfrozen"}
+            console.print(
+                f"[green]Success![/green] Channel '[cyan]{name}[/cyan]' is now {state_map[indexing_behavior]}."
+            )
+        else:
+            console.print(
+                f"[yellow]No change:[/yellow] Channel '[cyan]{name}[/cyan]' indexing behavior is already "
+                f"{indexing_behavior}."
+            )
 
 
 def _do_upload(
