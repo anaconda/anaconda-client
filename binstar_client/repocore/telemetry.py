@@ -20,9 +20,9 @@ from .telemetry_models import (
 
 
 class Attributes:
-    """Stores user attributes for telemetry events.
+    """Stores user attributes for telemetry events
 
-    Initialized once with client data and provides a method to export as dict.
+    Initialized once with client data and provides a method to export as dict
     """
 
     def __init__(self, client):
