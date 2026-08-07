@@ -9,6 +9,7 @@ from typer.testing import CliRunner
 from binstar_client.repocore import (
     Channel,
     ChannelCreationResponse,
+    ChannelUpdateResponse,
     Namespace,
     RepoCoreClient,
     ResolvedChannel,
@@ -273,12 +274,23 @@ class TestRepoCoreClientAPI:
 
     def test_update_channel(self):
         client = _make_client()
-        mock_response = _mock_response(200, None)
-        client.put = MagicMock(return_value=mock_response)
+        # 200 + {"changed": true} => the server applied a change.
+        client.put = MagicMock(return_value=_mock_response(200, {"changed": True}))
 
-        client.update_channel("test", privacy="private")
+        result, error = client.update_channel("test", privacy="private")
         call_args = client.put.call_args
         assert call_args[1]["json"] == {"privacy": "private"}
+        assert error is None
+        assert result.changed is True
+
+    def test_update_channel_no_op_returns_unchanged(self):
+        client = _make_client()
+        # 200 + {"changed": false} => the channel already held the submitted value.
+        client.put = MagicMock(return_value=_mock_response(200, {"changed": False}))
+
+        result, error = client.update_channel("test", privacy="private")
+        assert error is None
+        assert result.changed is False
 
     def test_manage_response_401_raises_unauthorized(self):
         client = _make_client()
@@ -977,14 +989,50 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.update_channel.return_value = (None, None)
         mock_api.list_user_organizations.return_value = [Namespace(name="myorg")]
+        # changed => the PUT changed the channel.
+        mock_api.update_channel.return_value = (ChannelUpdateResponse(changed=True), None)
 
         with _patch_repo_api(mock_api):
             result = runner.invoke(app, ["modify", "dev", "--privacy", "private"])
 
         assert result.exit_code == 0
+        assert "Success" in result.output
         mock_api.update_channel.assert_called_once_with("myorg/dev", privacy="private")
+
+    def test_channels_modify_privacy_no_change(self):
+        """A 200 (idempotent no-op) should warn instead of reporting success."""
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_user_organizations.return_value = [Namespace(name="myorg")]
+        # not changed => the channel already held the requested privacy.
+        mock_api.update_channel.return_value = (ChannelUpdateResponse(changed=False), None)
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(app, ["modify", "dev", "--privacy", "public"])
+
+        assert result.exit_code == 0
+        assert "No change" in result.output
+        assert "already public" in result.output
+        assert "Success" not in result.output
+        mock_api.update_channel.assert_called_once_with("myorg/dev", privacy="public")
+
+    def test_channels_modify_indexing_no_change(self):
+        """A 200 (idempotent no-op) on indexing_behavior should warn, not succeed."""
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_user_organizations.return_value = [Namespace(name="myorg")]
+        mock_api.update_channel.return_value = (ChannelUpdateResponse(changed=False), None)
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(app, ["modify", "dev", "--indexing-behavior", "default"])
+
+        assert result.exit_code == 0
+        assert "No change" in result.output
+        assert "Success" not in result.output
+        mock_api.update_channel.assert_called_once_with("myorg/dev", indexing_behavior="default")
 
     def test_channels_modify_no_options(self):
         runner = CliRunner()

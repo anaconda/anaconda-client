@@ -4,6 +4,7 @@ from binstar_client.repocore.client import REPO_API_PATH, AUTH_API_PATH, RepoCor
 from binstar_client.repocore.models import (
     Channel,
     ChannelCreationResponse,
+    ChannelUpdateResponse,
     Namespace,
     ResolvedChannel,
 )
@@ -19,6 +20,7 @@ __all__ = [
     "RepoCoreClient",
     "Channel",
     "ChannelCreationResponse",
+    "ChannelUpdateResponse",
     "Namespace",
     "ResolvedChannel",
     "ChannelEvents",

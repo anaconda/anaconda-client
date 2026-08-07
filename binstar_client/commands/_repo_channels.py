@@ -519,6 +519,8 @@ def modify_command(
     resolved = _resolve_namespace_and_channel(api, name, namespace)
     name = f"{resolved.namespace}/{resolved.channel_name}"
 
+    # The PUT reports whether it actually changed anything, so a no-op is surfaced
+    # rather than a misleading "Success!".
     if privacy:
         result, error = api.update_channel(name, privacy=privacy)
         if error:
@@ -529,8 +531,13 @@ def modify_command(
         ChannelEvents.modified(api, app.info.name, channel_path=name, privacy=privacy, error=bool(error))
         if error:
             raise error
-        state_map = {"private": "locked", "authenticated": "soft-locked", "public": "unlocked"}
-        console.print(f"[green]Success![/green] Channel '[cyan]{name}[/cyan]' is now {state_map[privacy]} ({privacy}).")
+        if result.changed:
+            state_map = {"private": "locked", "authenticated": "soft-locked", "public": "unlocked"}
+            console.print(
+                f"[green]Success![/green] Channel '[cyan]{name}[/cyan]' is now {state_map[privacy]} ({privacy})."
+            )
+        else:
+            console.print(f"[yellow]No change:[/yellow] Channel '[cyan]{name}[/cyan]' is already {privacy}.")
 
     if indexing_behavior:
         result, error = api.update_channel(name, indexing_behavior=indexing_behavior)
@@ -539,8 +546,16 @@ def modify_command(
         )
         if error:
             raise error
-        state_map = {"frozen": "frozen", "default": "unfrozen"}
-        console.print(f"[green]Success![/green] Channel '[cyan]{name}[/cyan]' is now {state_map[indexing_behavior]}.")
+        if result.changed:
+            state_map = {"frozen": "frozen", "default": "unfrozen"}
+            console.print(
+                f"[green]Success![/green] Channel '[cyan]{name}[/cyan]' is now {state_map[indexing_behavior]}."
+            )
+        else:
+            console.print(
+                f"[yellow]No change:[/yellow] Channel '[cyan]{name}[/cyan]' indexing behavior is already "
+                f"{indexing_behavior}."
+            )
 
 
 def _do_upload(
