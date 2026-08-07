@@ -468,10 +468,8 @@ def modify_command(
     resolved = _resolve_namespace_and_channel(api, name, namespace)
     name = f"{resolved.namespace}/{resolved.channel_name}"
 
-    # The repo PUT endpoint is idempotent and reports whether it actually changed
-    # anything via the response status (201 = changed, 200 = value already set).
-    # We use that instead of pre-reading the channel, so a no-op is surfaced to the
-    # user rather than a misleading "Success!".
+    # The PUT reports whether it actually changed anything, so a no-op is surfaced
+    # rather than a misleading "Success!".
     if privacy:
         result = api.update_channel(name, privacy=privacy)
         if result.changed:

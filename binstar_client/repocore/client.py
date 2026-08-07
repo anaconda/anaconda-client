@@ -166,23 +166,12 @@ class RepoCoreClient(BaseClient):
         return Channel(**data)
 
     def update_channel(self, channel: str, **data) -> "ChannelUpdateResponse":
-        """Update a channel and report whether the request changed anything.
-
-        The repo endpoint is idempotent: it returns 201 when a submitted field
-        differed from the channel's current state and 200 when the channel already
-        held every submitted value. ``_manage_response`` is only used here to raise
-        on error statuses; the returned body is not needed, so both 200 and 201 are
-        treated as empty successes and the status is surfaced instead.
-        """
+        """Update a channel; ``changed`` reflects the endpoint's ``{"changed": bool}``
+        body (``false`` when the channel already held every submitted value)."""
         url = self._get_channel_url(channel)
         response = self.put(url, json=data)
-        self._manage_response(
-            response,
-            f"updating channel {channel}",
-            success_codes=[200, 201, 204],
-            empty_success_codes=[200, 201, 204],
-        )
-        return ChannelUpdateResponse(status_code=response.status_code)
+        body = self._manage_response(response, f"updating channel {channel}", success_codes=[200])
+        return ChannelUpdateResponse(changed=bool((body or {}).get("changed", False)))
 
     def list_all_channels(
         self, offset: int = 0, limit: int = 100, include_subchannels: bool = True

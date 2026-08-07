@@ -254,8 +254,8 @@ class TestRepoCoreClientAPI:
 
     def test_update_channel(self):
         client = _make_client()
-        # 201 => the server applied a change.
-        client.put = MagicMock(return_value=_mock_response(201, None))
+        # 200 + {"changed": true} => the server applied a change.
+        client.put = MagicMock(return_value=_mock_response(200, {"changed": True}))
 
         result = client.update_channel("test", privacy="private")
         call_args = client.put.call_args
@@ -264,8 +264,8 @@ class TestRepoCoreClientAPI:
 
     def test_update_channel_no_op_returns_unchanged(self):
         client = _make_client()
-        # 200 => the channel already held the submitted value (idempotent no-op).
-        client.put = MagicMock(return_value=_mock_response(200, None))
+        # 200 + {"changed": false} => the channel already held the submitted value.
+        client.put = MagicMock(return_value=_mock_response(200, {"changed": False}))
 
         result = client.update_channel("test", privacy="private")
         assert result.changed is False
@@ -939,8 +939,8 @@ class TestRepoCoreChannelsCLI:
         app = _get_channels_app()
         mock_api = MagicMock()
         mock_api.list_user_organizations.return_value = [Namespace(name="myorg")]
-        # 201 => the PUT changed the channel.
-        mock_api.update_channel.return_value = ChannelUpdateResponse(status_code=201)
+        # changed => the PUT changed the channel.
+        mock_api.update_channel.return_value = ChannelUpdateResponse(changed=True)
 
         with _patch_repo_api(mock_api):
             result = runner.invoke(app, ["modify", "dev", "--privacy", "private"])
@@ -955,8 +955,8 @@ class TestRepoCoreChannelsCLI:
         app = _get_channels_app()
         mock_api = MagicMock()
         mock_api.list_user_organizations.return_value = [Namespace(name="myorg")]
-        # 200 => the channel already held the requested privacy.
-        mock_api.update_channel.return_value = ChannelUpdateResponse(status_code=200)
+        # not changed => the channel already held the requested privacy.
+        mock_api.update_channel.return_value = ChannelUpdateResponse(changed=False)
 
         with _patch_repo_api(mock_api):
             result = runner.invoke(app, ["modify", "dev", "--privacy", "public"])
@@ -973,7 +973,7 @@ class TestRepoCoreChannelsCLI:
         app = _get_channels_app()
         mock_api = MagicMock()
         mock_api.list_user_organizations.return_value = [Namespace(name="myorg")]
-        mock_api.update_channel.return_value = ChannelUpdateResponse(status_code=200)
+        mock_api.update_channel.return_value = ChannelUpdateResponse(changed=False)
 
         with _patch_repo_api(mock_api):
             result = runner.invoke(app, ["modify", "dev", "--indexing-behavior", "default"])
