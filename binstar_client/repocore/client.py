@@ -189,7 +189,7 @@ class RepoCoreClient(BaseClient):
             return None, error
         return Channel(**data), None
 
-    def update_channel(self, channel: str, **data) -> tuple["ChannelUpdateResponse", Optional[Exception]]:
+    def update_channel(self, channel: str, **data) -> tuple[Optional[ChannelUpdateResponse], Optional[Exception]]:
         """Update a channel; ``changed`` reflects the endpoint's ``{"changed": bool}``
         body (``false`` when the channel already held every submitted value)."""
         url = self._get_channel_url(channel)
