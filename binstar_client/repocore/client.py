@@ -63,6 +63,10 @@ class RepoCoreClient(BaseClient):
         return join(self._api_base, "channels")
 
     @property
+    def _account_channels_url(self):
+        return join(self._api_base, "account", "channels")
+
+    @property
     def account(self):
         """Get user account information."""
         url = join(self._account_api_base, "account")
@@ -221,6 +225,32 @@ class RepoCoreClient(BaseClient):
             },
         )
         data, error = self._manage_response(response, "listing channels")
+        if error:
+            return [], 0, error
+        items = [Channel(**item) for item in (data or {}).get("items", [])]
+        return items, (data or {}).get("total_count", len(items)), None
+
+    def list_my_channels(
+        self, offset: int = 0, limit: int = 100, include_subchannels: bool = True
+    ) -> tuple[list[Channel], int, Optional[Exception]]:
+        """List only the channels the caller owns or has had shared with them.
+
+        Hits ``GET /account/channels`` — unlike ``list_all_channels`` this excludes
+        public channels the caller merely has read access to, returning just the
+        user's own namespaces plus channels explicitly shared with them.
+
+        Returns the page of channels, the server's total count (for paging), and
+        any error. On error the page is empty and the count is zero.
+        """
+        response = self.get(
+            self._account_channels_url,
+            params={
+                "offset": offset,
+                "limit": limit,
+                "include_subchannels": include_subchannels,
+            },
+        )
+        data, error = self._manage_response(response, "listing account channels")
         if error:
             return [], 0, error
         items = [Channel(**item) for item in (data or {}).get("items", [])]

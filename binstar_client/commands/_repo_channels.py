@@ -22,8 +22,9 @@ from binstar_client.commands import _channel_notices as channel_notices
 from binstar_client.commands import remove as remove_mod
 from binstar_client.commands import show as show_mod
 from binstar_client.commands import upload as upload_mod
+from binstar_client import errors as dotorg_errors
 from binstar_client.repocore import RepoCoreClient
-from binstar_client.repocore.errors import RepoCoreError, Unauthorized
+from binstar_client.repocore.errors import LoginRequiredError, RepoCoreError, Unauthorized
 from binstar_client.repocore.telemetry import ChannelEvents, UploadEvents
 from binstar_client.repocore.package_utils import PackageType, determine_package_type, windows_glob
 from binstar_client.repocore.resolve import (
@@ -48,6 +49,18 @@ configure_console_encoding()
 _NOT_APPLICABLE = "—"
 
 _PAGE_SIZE = 100
+
+
+def _is_not_logged_in(exc: Exception) -> bool:
+    """True if ``exc`` means "no valid credentials for this backend".
+
+    Covers both backends' auth signals — repocore's ``Unauthorized`` /
+    ``LoginRequiredError`` and anaconda.org's ``Unauthorized`` (raised, e.g.,
+    when the token is missing). Used to stay quiet about a backend the user
+    simply isn't logged into when listing every source at once.
+    """
+    return isinstance(exc, (Unauthorized, LoginRequiredError, dotorg_errors.Unauthorized))
+
 
 app = typer.Typer(
     name="channel",
@@ -257,11 +270,17 @@ def _upload_to_dotorg(
     upload_mod.main(args)
 
 
-def _iter_all_channels(api):
-    """Yield every channel the user can read, paging through ``GET /channels``."""
+def _iter_channels(api, include_all: bool):
+    """Yield the caller's channels, paging through the repocore channel listing.
+
+    By default this pages ``GET /account/channels`` (the user's own channels plus
+    any shared with them). When ``include_all`` is set it pages ``GET /channels``
+    instead, which also includes public channels the user merely has read access to.
+    """
+    list_page = api.list_all_channels if include_all else api.list_my_channels
     offset = 0
     while True:
-        channels, total, error = api.list_all_channels(offset=offset, limit=_PAGE_SIZE)
+        channels, total, error = list_page(offset=offset, limit=_PAGE_SIZE)
         if error:
             raise error
         yield from channels
@@ -270,11 +289,11 @@ def _iter_all_channels(api):
             break
 
 
-def _add_repo_rows(table: Table, api, namespace: Optional[str]) -> None:
+def _add_repo_rows(table: Table, api, namespace: Optional[str], include_all: bool) -> None:
     """Append anaconda.com (repocore) namespace/channel rows to the table."""
     namespaces: list[str] = []
     subchannels: dict[str, list] = {}
-    for channel in _iter_all_channels(api):
+    for channel in _iter_channels(api, include_all):
         if channel.parent is None:
             # A top-level channel is a namespace header, not a channel row.
             if channel.name not in namespaces:
@@ -339,8 +358,17 @@ def list_command(
         "--source",
         help="Which channels to list: 'repo' (anaconda.com), 'org' (anaconda.org owners), or 'all'.",
     ),
+    include_all: bool = typer.Option(
+        False,
+        "--all",
+        help="Include every anaconda.com channel you can read, not just your own and those shared with you.",
+    ),
 ) -> None:
-    """List all channels for the current user."""
+    """List channels for the current user.
+
+    By default only lists anaconda.com channels you own or that have been shared
+    with you. Pass --all to also include public channels you can read.
+    """
     if source not in ("all", "repo", "org"):
         console.print("[red]Error:[/red] --source must be one of: all, repo, org")
         raise typer.Exit(1)
@@ -355,15 +383,35 @@ def list_command(
     table.add_column("Artifacts", justify="right")
     table.add_column("Downloads", justify="right")
 
+    # When listing a single explicit source the user asked for exactly that, so
+    # any failure (including "not logged in") is worth reporting. When listing
+    # "all" we're speculatively querying both backends; most users are logged
+    # into only one, so an auth failure on the other is expected — stay quiet
+    # about it and only surface failures that look like a real outage.
+    explicit_source = source != "all"
+
     notes: List[str] = []
     error_occurred = False
 
+    def _note_failure(label: str, exc: Exception) -> None:
+        """Record a source failure, suppressing not-logged-in noise for ``all``.
+
+        Under ``--source all`` an auth error just means the user isn't logged
+        into that backend, which is the norm — stay quiet. A non-auth error
+        (network, 5xx) still surfaces since it signals a genuine problem.
+        """
+        nonlocal error_occurred
+        error_occurred = True
+        if not explicit_source and _is_not_logged_in(exc):
+            logger.debug("%s unavailable (not logged in), suppressed under --source all: %s", label, exc)
+            return
+        notes.append(f"{label} unavailable: {exc}")
+
     if source in ("all", "repo"):
         try:
-            _add_repo_rows(table, ctx.obj.repo_api, namespace)
+            _add_repo_rows(table, ctx.obj.repo_api, namespace, include_all)
         except Exception as exc:
-            notes.append(f"repo channels unavailable: {exc}")
-            error_occurred = True
+            _note_failure("repo channels", exc)
 
     if source in ("all", "org"):
         try:
@@ -371,8 +419,7 @@ def list_command(
             aserver_api = get_server_api(params.get("token"), params.get("site"))
             _add_org_rows(table, aserver_api)
         except Exception as exc:
-            notes.append(f"anaconda.org owners unavailable: {exc}")
-            error_occurred = True
+            _note_failure("anaconda.org owners", exc)
 
     channel_path = namespace if namespace else "all"
     ChannelEvents.accessed(

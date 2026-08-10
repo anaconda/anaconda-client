@@ -230,6 +230,34 @@ class TestRepoCoreClientAPI:
         assert (items, total) == ([], 0)
         assert isinstance(error, Unauthorized)
 
+    def test_list_my_channels(self):
+        client = _make_client()
+        payload = {
+            "total_count": 2,
+            "items": [
+                {"name": "myorg", "privacy": "public"},
+                {"name": "dev", "privacy": "private", "parent": "myorg", "artifact_count": 3},
+            ],
+        }
+        client.get = MagicMock(return_value=_mock_response(200, payload))
+
+        items, total, error = client.list_my_channels()
+
+        assert error is None
+        assert total == 2
+        assert all(isinstance(ch, Channel) for ch in items)
+        # Hits /account/channels (own + shared only), with subchannels included.
+        call_url = client.get.call_args[0][0]
+        assert call_url.endswith("/api/repo/account/channels")
+        assert client.get.call_args[1]["params"]["include_subchannels"] is True
+        assert items[1].path == "myorg/dev"
+
+        # An error response yields an empty page rather than raising.
+        client.get = MagicMock(return_value=_mock_response(403, None))
+        items, total, error = client.list_my_channels()
+        assert (items, total) == ([], 0)
+        assert isinstance(error, Unauthorized)
+
     def test_create_channel(self):
         client = _make_client()
         mock_response = _mock_response(201, {"name": "new-channel"})
@@ -811,7 +839,8 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_all_channels.return_value = (
+        # The default listing pages the caller's own + shared channels.
+        mock_api.list_my_channels.return_value = (
             [
                 Channel(name="main", privacy="public"),
                 Channel(
@@ -832,12 +861,38 @@ class TestRepoCoreChannelsCLI:
         assert result.exit_code == 0
         assert "main" in result.output
         assert "dev" in result.output
+        # Default path hits /account/channels, not the broad /channels listing.
+        mock_api.list_my_channels.assert_called()
+        mock_api.list_all_channels.assert_not_called()
+
+    def test_channels_list_all_uses_broad_listing(self):
+        """`--all` pages GET /channels (every readable channel) instead of the
+        account listing."""
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_all_channels.return_value = (
+            [
+                Channel(name="main", privacy="public"),
+                Channel(name="public-only", privacy="public"),
+            ],
+            2,
+            None,
+        )
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(app, ["list", "--all"])
+
+        assert result.exit_code == 0
+        assert "public-only" in result.output
+        mock_api.list_all_channels.assert_called()
+        mock_api.list_my_channels.assert_not_called()
 
     def test_channels_list_with_namespace_filter(self):
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_all_channels.return_value = (
+        mock_api.list_my_channels.return_value = (
             [
                 Channel(name="org-a", privacy="public"),
                 Channel(name="org-b", privacy="public"),
@@ -865,7 +920,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_all_channels.return_value = (
+        mock_api.list_my_channels.return_value = (
             [
                 Channel(name="myorg", privacy="public"),
                 Channel(name="dev", privacy="private", parent="myorg"),
@@ -889,7 +944,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_all_channels.return_value = ([Channel(name="org-a", privacy="public")], 1, None)
+        mock_api.list_my_channels.return_value = ([Channel(name="org-a", privacy="public")], 1, None)
 
         with (
             _patch_repo_api(mock_api),
@@ -927,13 +982,14 @@ class TestRepoCoreChannelsCLI:
         assert "dev" not in result.output
         aserver.list_channels.assert_not_called()
         # repocore namespaces must not be fetched for org-only listing
+        mock_api.list_my_channels.assert_not_called()
         mock_api.list_all_channels.assert_not_called()
 
     def test_channels_list_org_failure_isolated(self):
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_all_channels.return_value = ([Channel(name="org-a", privacy="public")], 1, None)
+        mock_api.list_my_channels.return_value = ([Channel(name="org-a", privacy="public")], 1, None)
 
         aserver = MagicMock()
         aserver.user.side_effect = Exception("not logged in")
@@ -947,6 +1003,102 @@ class TestRepoCoreChannelsCLI:
         # repo section still renders; org failure is a dim note, not a crash
         assert result.exit_code == 0
         assert "org-a" in result.output
+        assert "unavailable" in result.output
+
+    def test_channels_list_all_suppresses_org_auth_failure(self):
+        """Logged into repo but not anaconda.org: `list` (default all) is quiet.
+
+        Most users are logged into only one backend; an auth failure on the other
+        under `--source all` is expected, so we don't nag with an 'unavailable'
+        note when the source the user *is* logged into worked.
+        """
+        from binstar_client import errors as dotorg_errors
+
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_my_channels.return_value = ([Channel(name="org-a", privacy="public")], 1, None)
+
+        aserver = MagicMock()
+        aserver.user.side_effect = dotorg_errors.Unauthorized("Authentication token is missing.", 401)
+
+        with (
+            _patch_repo_api(mock_api),
+            patch("binstar_client.commands._repo_channels.get_server_api", return_value=aserver),
+        ):
+            result = runner.invoke(app, ["list"])
+
+        assert result.exit_code == 0
+        assert "org-a" in result.output
+        # Not-logged-into-dotorg is silent under the default all-sources listing.
+        assert "unavailable" not in result.output
+
+    def test_channels_list_all_suppresses_repo_auth_failure(self):
+        """Logged into anaconda.org but not repo: `list` (default all) is quiet."""
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_my_channels.side_effect = Unauthorized("Please run `anaconda login`.")
+
+        aserver = MagicMock()
+        aserver.user.return_value = {"login": "user1"}
+        aserver.user_orgs.return_value = [{"login": "org1"}]
+
+        with (
+            _patch_repo_api(mock_api),
+            patch("binstar_client.commands._repo_channels.get_server_api", return_value=aserver),
+        ):
+            result = runner.invoke(app, ["list"])
+
+        assert result.exit_code == 0
+        # org section rendered; repo auth failure suppressed.
+        assert "user1" in result.output
+        assert "unavailable" not in result.output
+
+    def test_channels_list_explicit_source_reports_auth_failure(self):
+        """An auth failure on an *explicitly requested* source is still reported.
+
+        The user asked for exactly `--source org`, so "not logged in" is the
+        answer they need, not something to hide.
+        """
+        from binstar_client import errors as dotorg_errors
+
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+
+        aserver = MagicMock()
+        aserver.user.side_effect = dotorg_errors.Unauthorized("Authentication token is missing.", 401)
+
+        with (
+            _patch_repo_api(mock_api),
+            patch("binstar_client.commands._repo_channels.get_server_api", return_value=aserver),
+        ):
+            result = runner.invoke(app, ["list", "--source", "org"])
+
+        assert result.exit_code == 0
+        assert "unavailable" in result.output
+        # repo listing was never consulted for an org-only request.
+        mock_api.list_my_channels.assert_not_called()
+
+    def test_channels_list_all_reports_repo_non_auth_failure(self):
+        """A non-auth repo failure (real outage) still surfaces under all-sources."""
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_my_channels.side_effect = RepoCoreError("Service Unavailable")
+
+        aserver = MagicMock()
+        aserver.user.return_value = {"login": "user1"}
+        aserver.user_orgs.return_value = []
+
+        with (
+            _patch_repo_api(mock_api),
+            patch("binstar_client.commands._repo_channels.get_server_api", return_value=aserver),
+        ):
+            result = runner.invoke(app, ["list"])
+
+        assert result.exit_code == 0
         assert "unavailable" in result.output
 
     def test_channels_list_invalid_source(self):
