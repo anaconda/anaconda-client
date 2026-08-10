@@ -8,6 +8,7 @@ for backward compatibility and operate on labels via the old API.
 import argparse
 import logging
 import os
+import re
 from glob import glob
 from typing import List, Optional, Tuple, cast
 
@@ -23,6 +24,7 @@ from binstar_client.commands import show as show_mod
 from binstar_client.commands import upload as upload_mod
 from binstar_client.repocore import RepoCoreClient
 from binstar_client.repocore.errors import RepoCoreError, Unauthorized
+from binstar_client.repocore.telemetry import ChannelEvents, UploadEvents
 from binstar_client.repocore.package_utils import PackageType, determine_package_type, windows_glob
 from binstar_client.repocore.resolve import (
     classify_and_resolve,
@@ -83,6 +85,12 @@ class _DotOrgCredentials(BaseModel):
             return True
         except Exception:
             return False
+
+
+def _extract_limit_from_error(error: Exception) -> Optional[int]:
+    """Extract channel limit number from error message."""
+    limit_match = re.search(r'has reached the limit of (\d+)', str(error))
+    return int(limit_match.group(1)) if limit_match else None
 
 
 @app.callback(invoke_without_command=True)
@@ -154,7 +162,13 @@ def _upload_file_to_channel(
 ) -> None:
     """Upload a single file to a single channel."""
     console.print(f"Uploading [cyan]{filepath}[/cyan] to channel [cyan]{channel}[/cyan]...")
-    api.upload_file(filepath, channel, pkg_type)
+    _, error = api.upload_file(filepath, channel, pkg_type)
+    package_name = os.path.basename(filepath)
+    UploadEvents.uploaded(
+        api, app.info.name, channel=channel, package_type=pkg_type, package_name=package_name, error=bool(error)
+    )
+    if error:
+        raise error
     console.print(f"[green]Success![/green] Uploaded {filepath} to {channel}")
 
 
@@ -247,7 +261,9 @@ def _iter_all_channels(api):
     """Yield every channel the user can read, paging through ``GET /channels``."""
     offset = 0
     while True:
-        channels, total = api.list_all_channels(offset=offset, limit=_PAGE_SIZE)
+        channels, total, error = api.list_all_channels(offset=offset, limit=_PAGE_SIZE)
+        if error:
+            raise error
         yield from channels
         offset += len(channels)
         if not channels or offset >= total:
@@ -340,12 +356,14 @@ def list_command(
     table.add_column("Downloads", justify="right")
 
     notes: List[str] = []
+    error_occurred = False
 
     if source in ("all", "repo"):
         try:
             _add_repo_rows(table, ctx.obj.repo_api, namespace)
         except Exception as exc:
             notes.append(f"repo channels unavailable: {exc}")
+            error_occurred = True
 
     if source in ("all", "org"):
         try:
@@ -354,6 +372,12 @@ def list_command(
             _add_org_rows(table, aserver_api)
         except Exception as exc:
             notes.append(f"anaconda.org owners unavailable: {exc}")
+            error_occurred = True
+
+    channel_path = namespace if namespace else "all"
+    ChannelEvents.accessed(
+        ctx.obj.repo_api, app.info.name, channel_path=channel_path, action="list", error=error_occurred
+    )
 
     def _render() -> None:
         console.print(table)
@@ -392,12 +416,31 @@ def create_command(
     else:
         console.print()
         privacy = select_from_list("Channel privacy:", ["private", "public"])
-    response = api.create_namespace_channel(
+    response, error = api.create_namespace_channel(
         channel_name=resolved.channel_name, namespace=resolved.namespace, privacy=privacy
     )
+    channel_path = f"{resolved.namespace}/{resolved.channel_name}" if resolved.namespace else resolved.channel_name
+    operation_org_id = getattr(response, 'org_id', None) if response else None
+    event_kwargs = {
+        "api": api,
+        "app_name": app.info.name,
+        "channel_path": channel_path,
+        "privacy": privacy,
+        "operation_org_id": operation_org_id,
+        "error": bool(error),
+    }
+    if error:
+        error_msg = str(error).lower()
+        if "limit" in error_msg and "private" in error_msg:
+            limit_value = _extract_limit_from_error(error)
+            ChannelEvents.limit(api, app.info.name, channel_path=channel_path, action="create", limit=limit_value)
+        ChannelEvents.created(**event_kwargs)
+        raise error
     if response.created:
+        ChannelEvents.created(**event_kwargs)
         console.print(f"[green]Success![/green] Channel '[cyan]{response.channel_path}[/cyan]' created ({privacy}).")
     else:
+        ChannelEvents.created_exists(**event_kwargs)
         console.print(f"Channel '[cyan]{response.channel_path}[/cyan]' already exists.")
 
 
@@ -411,7 +454,10 @@ def remove_command(
     api = ctx.obj.repo_api
     resolved = _resolve_namespace_and_channel(api, name, namespace)
     qualified = f"{resolved.namespace}/{resolved.channel_name}"
-    api.remove_channel(qualified)
+    _, error = api.remove_channel(qualified)
+    ChannelEvents.removed(api, app.info.name, channel_path=qualified, error=bool(error))
+    if error:
+        raise error
     console.print(f"[green]Success![/green] Channel '[cyan]{qualified}[/cyan]' removed.")
 
 
@@ -459,11 +505,16 @@ def show_command(
         return
 
     name = f"{resolved.namespace}/{resolved.channel_name}" if resolved.namespace else resolved.channel_name
-    channel_data = api.get_namespace_channel(name)
+    channel_data, error = api.get_namespace_channel(name)
+    ChannelEvents.accessed(api, app.info.name, channel_path=name, action="show", error=bool(error))
+    if error:
+        raise error
 
     subchannels_response = None
     if full_details and not api.is_subchannel(name):
-        subchannels_response = api.get_channels(name)
+        subchannels_response, error = api.get_channels(name)
+        if error:
+            raise error
 
     table = Table(show_header=False, box=None, padding=(0, 2))
     table.add_column("Field", style="bold cyan")
@@ -538,15 +589,43 @@ def modify_command(
     resolved = _resolve_namespace_and_channel(api, name, namespace)
     name = f"{resolved.namespace}/{resolved.channel_name}"
 
+    # The PUT reports whether it actually changed anything, so a no-op is surfaced
+    # rather than a misleading "Success!".
     if privacy:
-        api.update_channel(name, privacy=privacy)
-        state_map = {"private": "locked", "authenticated": "soft-locked", "public": "unlocked"}
-        console.print(f"[green]Success![/green] Channel '[cyan]{name}[/cyan]' is now {state_map[privacy]} ({privacy}).")
+        result, error = api.update_channel(name, privacy=privacy)
+        if error:
+            error_msg = str(error).lower()
+            if "limit" in error_msg and "private" in error_msg:
+                limit_value = _extract_limit_from_error(error)
+                ChannelEvents.limit(api, app.info.name, channel_path=name, action="modify", limit=limit_value)
+        ChannelEvents.modified(api, app.info.name, channel_path=name, privacy=privacy, error=bool(error))
+        if error:
+            raise error
+        if result.changed:
+            state_map = {"private": "locked", "authenticated": "soft-locked", "public": "unlocked"}
+            console.print(
+                f"[green]Success![/green] Channel '[cyan]{name}[/cyan]' is now {state_map[privacy]} ({privacy})."
+            )
+        else:
+            console.print(f"[yellow]No change:[/yellow] Channel '[cyan]{name}[/cyan]' is already {privacy}.")
 
     if indexing_behavior:
-        api.update_channel(name, indexing_behavior=indexing_behavior)
-        state_map = {"frozen": "frozen", "default": "unfrozen"}
-        console.print(f"[green]Success![/green] Channel '[cyan]{name}[/cyan]' is now {state_map[indexing_behavior]}.")
+        result, error = api.update_channel(name, indexing_behavior=indexing_behavior)
+        ChannelEvents.modified(
+            api, app.info.name, channel_path=name, indexing_behavior=indexing_behavior, error=bool(error)
+        )
+        if error:
+            raise error
+        if result.changed:
+            state_map = {"frozen": "frozen", "default": "unfrozen"}
+            console.print(
+                f"[green]Success![/green] Channel '[cyan]{name}[/cyan]' is now {state_map[indexing_behavior]}."
+            )
+        else:
+            console.print(
+                f"[yellow]No change:[/yellow] Channel '[cyan]{name}[/cyan]' indexing behavior is already "
+                f"{indexing_behavior}."
+            )
 
 
 def _do_upload(
@@ -746,7 +825,14 @@ def share_command(
             )
             raise typer.Exit(1)
         ch = f"{resolved.namespace}/{resolved.channel_name}"
-        api.share_channel(resolved.namespace, resolved.channel_name, user, action=action, grant=grant)
+        result, error = api.share_channel(resolved.namespace, resolved.channel_name, user, action=action, grant=grant)
+        event_kwargs = {"api": api, "app_name": app.info.name, "channel_path": ch, "user": user, "error": bool(error)}
+        if action == "share":
+            ChannelEvents.share(**event_kwargs, role=role)
+        else:
+            ChannelEvents.unshare(**event_kwargs)
+        if error:
+            raise error
         console.print(f"[green]Success![/green] {action.capitalize()}d channel '[cyan]{ch}[/cyan]' with {user}")
 
 

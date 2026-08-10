@@ -1,0 +1,11 @@
+# Telemetry development conda environment with local anaconda-cli-base
+channels:
+- defaults
+- anaconda-cloud
+- conda-forge
+dependencies:
+- python=3.11
+- pip
+- pip:
+  - -e .[dev]
+  - -e ../anaconda-otel-python[dev]

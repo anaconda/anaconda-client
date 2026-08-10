@@ -115,10 +115,18 @@ class ChannelCreationResponse(BaseModel):
 
     channel_path: str
     status_code: int
+    org_id: Optional[str] = None
 
     @property
     def created(self) -> bool:
         return self.status_code == 201
+
+
+class ChannelUpdateResponse(BaseModel):
+    """Response from updating a channel. ``changed`` is ``false`` when the channel
+    already held every submitted value (a no-op)."""
+
+    changed: bool = False
 
 
 class ResolvedChannel(BaseModel):

@@ -6,8 +6,14 @@ from binstar_client.repocore.models import (
     ArtifactFile,
     Channel,
     ChannelCreationResponse,
+    ChannelUpdateResponse,
     Namespace,
     ResolvedChannel,
+)
+from binstar_client.repocore.telemetry import (
+    ChannelEvents,
+    UpgradeEvents,
+    UploadEvents,
 )
 
 __all__ = [
@@ -18,6 +24,10 @@ __all__ = [
     "ArtifactFile",
     "Channel",
     "ChannelCreationResponse",
+    "ChannelUpdateResponse",
     "Namespace",
     "ResolvedChannel",
+    "ChannelEvents",
+    "UpgradeEvents",
+    "UploadEvents",
 ]

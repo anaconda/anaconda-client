@@ -359,6 +359,7 @@ class Test(CLITestCase):
         (anaconda.org accepts a broader set, so main() no longer pre-rejects)."""
         from click.exceptions import Exit
 
+        import typer
         from binstar_client.repocore import ResolvedChannel
         from binstar_client.repocore.resolve import REPO_PACKAGE_TYPES
 
@@ -369,7 +370,7 @@ class Test(CLITestCase):
             accepted_package_types=REPO_PACKAGE_TYPES,
         )
 
-        with self.assertRaises((SystemExit, Exit)):
+        with self.assertRaises((SystemExit, Exit, typer.Exit)):
             main(
                 [
                     '--show-traceback',
