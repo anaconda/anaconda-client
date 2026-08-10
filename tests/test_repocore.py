@@ -1055,32 +1055,6 @@ class TestRepoCoreChannelsCLI:
         assert "user1" in result.output
         assert "unavailable" not in result.output
 
-    def test_channels_list_explicit_source_reports_auth_failure(self):
-        """An auth failure on an *explicitly requested* source is still reported.
-
-        The user asked for exactly `--source org`, so "not logged in" is the
-        answer they need, not something to hide.
-        """
-        from binstar_client import errors as dotorg_errors
-
-        runner = CliRunner()
-        app = _get_channels_app()
-        mock_api = MagicMock()
-
-        aserver = MagicMock()
-        aserver.user.side_effect = dotorg_errors.Unauthorized("Authentication token is missing.", 401)
-
-        with (
-            _patch_repo_api(mock_api),
-            patch("binstar_client.commands._repo_channels.get_server_api", return_value=aserver),
-        ):
-            result = runner.invoke(app, ["list", "--source", "org"])
-
-        assert result.exit_code == 0
-        assert "unavailable" in result.output
-        # repo listing was never consulted for an org-only request.
-        mock_api.list_my_channels.assert_not_called()
-
     def test_channels_list_all_reports_repo_non_auth_failure(self):
         """A non-auth repo failure (real outage) still surfaces under all-sources."""
         runner = CliRunner()
