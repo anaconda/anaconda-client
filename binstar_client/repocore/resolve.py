@@ -54,16 +54,18 @@ _CHANNEL_PAGE_SIZE = 100
 
 
 def _iter_readable_channels(api):
-    """Yield every channel the caller can read (own + shared), paging ``GET /channels``.
+    """Yield the caller's own + shared channels, paging ``GET /account/channels``.
 
-    ``include_subchannels=True`` so the listing carries both top-level channels
-    (a namespace: ``parent is None``) and subchannels (an actual channel, whose
-    namespace is its ``parent``). The server scopes the result to the token's
-    permissions, so this spans the user's own channels plus any shared with it.
+    ``include_subchannels=True`` so the listing carries both namespaces
+    (``parent is None``) and subchannels (namespace is ``parent``).
+
+    Uses the account listing, not ``GET /channels``: resolution picks an upload
+    target, so it excludes public channels the user only reads. Not a write check
+    though — a read-only shared channel still appears and only 403s at upload.
     """
     offset = 0
     while True:
-        channels, total, error = api.list_all_channels(
+        channels, total, error = api.list_my_channels(
             offset=offset, limit=_CHANNEL_PAGE_SIZE, include_subchannels=True
         )
         if error:
@@ -143,8 +145,8 @@ def resolve_namespace_and_channel(
     if namespace:
         return _repo_channel(namespace=namespace, channel_name=name)
 
-    # List every channel the caller can read — its own *and* any shared with it —
-    # so both existing-channel matching and namespace resolution see shared items.
+    # Own + shared channels only, so name matching and namespace resolution stay
+    # scoped to the user's channels rather than every public channel it can read.
     channels = list(_iter_readable_channels(api))
 
     # First, does the bare name already name a subchannel? A subchannel is an

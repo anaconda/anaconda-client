@@ -52,12 +52,8 @@ _PAGE_SIZE = 100
 
 
 def _is_not_logged_in(exc: Exception) -> bool:
-    """True if ``exc`` means "no valid credentials for this backend".
-
-    Covers both backends' auth signals — repocore's ``Unauthorized`` /
-    ``LoginRequiredError`` and anaconda.org's ``Unauthorized`` (raised, e.g.,
-    when the token is missing). Used to stay quiet about a backend the user
-    simply isn't logged into when listing every source at once.
+    """True if ``exc`` is a not-logged-in signal from either backend — repocore's
+    ``Unauthorized`` / ``LoginRequiredError`` or anaconda.org's ``Unauthorized``.
     """
     return isinstance(exc, (Unauthorized, LoginRequiredError, dotorg_errors.Unauthorized))
 
@@ -271,11 +267,10 @@ def _upload_to_dotorg(
 
 
 def _iter_channels(api, include_all: bool):
-    """Yield the caller's channels, paging through the repocore channel listing.
+    """Yield the caller's channels, paging the repocore listing.
 
-    By default this pages ``GET /account/channels`` (the user's own channels plus
-    any shared with them). When ``include_all`` is set it pages ``GET /channels``
-    instead, which also includes public channels the user merely has read access to.
+    Default pages ``GET /account/channels`` (own + shared); ``include_all`` pages
+    ``GET /channels``, adding public channels the user only has read access to.
     """
     list_page = api.list_all_channels if include_all else api.list_my_channels
     offset = 0
@@ -383,22 +378,17 @@ def list_command(
     table.add_column("Artifacts", justify="right")
     table.add_column("Downloads", justify="right")
 
-    # When listing a single explicit source the user asked for exactly that, so
-    # any failure (including "not logged in") is worth reporting. When listing
-    # "all" we're speculatively querying both backends; most users are logged
-    # into only one, so an auth failure on the other is expected — stay quiet
-    # about it and only surface failures that look like a real outage.
+    # An explicit --source means the user asked for exactly that, so report any
+    # failure. "all" queries both backends, but most users are logged into only
+    # one — so a not-logged-in error on the other is expected and stays quiet.
     explicit_source = source != "all"
 
     notes: List[str] = []
     error_occurred = False
 
     def _note_failure(label: str, exc: Exception) -> None:
-        """Record a source failure, suppressing not-logged-in noise for ``all``.
-
-        Under ``--source all`` an auth error just means the user isn't logged
-        into that backend, which is the norm — stay quiet. A non-auth error
-        (network, 5xx) still surfaces since it signals a genuine problem.
+        """Record a source failure, but stay quiet about a backend the user just
+        isn't logged into under ``all``. Real outages (non-auth) still surface.
         """
         nonlocal error_occurred
         error_occurred = True
