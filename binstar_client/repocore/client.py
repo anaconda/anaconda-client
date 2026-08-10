@@ -323,7 +323,9 @@ class RepoCoreClient(BaseClient):
         """List the individual files of a package in a channel."""
         url = join(self._artifacts_url(channel), artifact_family, artifact_name, "files")
         response = self.get(url, params={"offset": offset, "limit": limit})
-        data, error = self._manage_response(response, f"listing files for {artifact_family}/{artifact_name} in {channel}")
+        data, error = self._manage_response(
+            response, f"listing files for {artifact_family}/{artifact_name} in {channel}"
+        )
         if error:
             raise error
         items = [ArtifactFile(**item) for item in data.get("items", [])]
