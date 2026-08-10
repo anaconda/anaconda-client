@@ -27,7 +27,7 @@ def _namespace_channels(*names):
     The resolver derives namespaces from the top-level channels the user can
     read; a single unpaged page is enough for tests.
     """
-    return ([Channel(name=n, privacy="private") for n in names], len(names))
+    return ([Channel(name=n, privacy="private") for n in names], len(names), None)
 
 
 def _readable_channels(*channels):
@@ -37,7 +37,7 @@ def _readable_channels(*channels):
     parent makes it a subchannel under that namespace.
     """
     items = [Channel(name=name, privacy="private", parent=parent) for name, parent in channels]
-    return (items, len(items))
+    return (items, len(items), None)
 
 
 class TestPydanticModels:
@@ -544,9 +544,9 @@ class TestResolveNamespaceAndChannel:
         from binstar_client.commands._repo_channels import _resolve_namespace_and_channel
 
         mock_api = MagicMock()
-        page1 = ([Channel(name=f"ns{i}", privacy="private") for i in range(100)], 150)
+        page1 = ([Channel(name=f"ns{i}", privacy="private") for i in range(100)], 150, None)
         # Second page repeats ns0 (dedup) and adds ns100 (the sole *new* namespace).
-        page2 = ([Channel(name="ns0", privacy="private"), Channel(name="ns100", privacy="private")], 150)
+        page2 = ([Channel(name="ns0", privacy="private"), Channel(name="ns100", privacy="private")], 150, None)
         mock_api.list_all_channels.side_effect = [page1, page2]
 
         with patch("binstar_client.repocore.resolve.select_from_list", return_value="ns100") as sel:
