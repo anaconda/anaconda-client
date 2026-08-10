@@ -65,9 +65,7 @@ def _iter_readable_channels(api):
     """
     offset = 0
     while True:
-        channels, total, error = api.list_my_channels(
-            offset=offset, limit=_CHANNEL_PAGE_SIZE, include_subchannels=True
-        )
+        channels, total, error = api.list_my_channels(offset=offset, limit=_CHANNEL_PAGE_SIZE, include_subchannels=True)
         if error:
             raise error
         yield from channels
