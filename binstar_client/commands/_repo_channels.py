@@ -870,7 +870,7 @@ def share_command(
         result, error = api.share_channel(resolved.namespace, resolved.channel_name, user, action=action, grant=grant)
         event_kwargs = {"api": api, "app_name": app.info.name, "channel_path": ch, "user": user, "error": bool(error)}
         if action == "share":
-            ChannelEvents.share(**event_kwargs, role=access)
+            ChannelEvents.share(**event_kwargs, access=access)
         else:
             ChannelEvents.unshare(**event_kwargs)
         if error:
