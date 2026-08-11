@@ -626,17 +626,22 @@ def modify_command(
     resolved = _resolve_namespace_and_channel(api, name, namespace)
     name = f"{resolved.namespace}/{resolved.channel_name}"
 
+    telemetry_kwargs = {"channel_path": name}
+    had_error = False
+
     # The PUT reports whether it actually changed anything, so a no-op is surfaced
     # rather than a misleading "Success!".
     if privacy:
         result, error = api.update_channel(name, privacy=privacy)
         if error:
+            had_error = True
             error_msg = str(error).lower()
             if "limit" in error_msg and "private" in error_msg:
                 limit_value = _extract_limit_from_error(error)
                 ChannelEvents.limit(api, app.info.name, channel_path=name, action="modify", limit=limit_value)
-        ChannelEvents.modified(api, app.info.name, channel_path=name, privacy=privacy, error=bool(error))
+        telemetry_kwargs["privacy"] = privacy
         if error:
+            ChannelEvents.modified(api, app.info.name, error=True, **telemetry_kwargs)
             raise error
         if result.changed:
             state_map = {"private": "locked", "authenticated": "soft-locked", "public": "unlocked"}
@@ -648,10 +653,11 @@ def modify_command(
 
     if indexing_behavior:
         result, error = api.update_channel(name, indexing_behavior=indexing_behavior)
-        ChannelEvents.modified(
-            api, app.info.name, channel_path=name, indexing_behavior=indexing_behavior, error=bool(error)
-        )
         if error:
+            had_error = True
+        telemetry_kwargs["indexing_behavior"] = indexing_behavior
+        if error:
+            ChannelEvents.modified(api, app.info.name, error=True, **telemetry_kwargs)
             raise error
         if result.changed:
             state_map = {"frozen": "frozen", "default": "unfrozen"}
@@ -663,6 +669,9 @@ def modify_command(
                 f"[yellow]No change:[/yellow] Channel '[cyan]{name}[/cyan]' indexing behavior is already "
                 f"{indexing_behavior}."
             )
+
+    if not had_error:
+        ChannelEvents.modified(api, app.info.name, error=False, **telemetry_kwargs)
 
 
 def _do_upload(
