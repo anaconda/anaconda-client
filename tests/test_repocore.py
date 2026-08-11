@@ -236,7 +236,13 @@ class TestRepoCoreClientAPI:
             "total_count": 2,
             "items": [
                 {"name": "myorg", "privacy": "public"},
-                {"name": "dev", "privacy": "private", "parent": "myorg", "artifact_count": 3},
+                {
+                    "name": "dev",
+                    "privacy": "private",
+                    "parent": "myorg",
+                    "artifact_count": 3,
+                    "access": "collaborator",
+                },
             ],
         }
         client.get = MagicMock(return_value=_mock_response(200, payload))
@@ -251,6 +257,9 @@ class TestRepoCoreClientAPI:
         assert call_url.endswith("/api/repo/account/channels")
         assert client.get.call_args[1]["params"]["include_subchannels"] is True
         assert items[1].path == "myorg/dev"
+        # /account/channels surfaces the caller's access level on each channel.
+        assert items[1].access == "collaborator"
+        assert items[0].access is None
 
         # An error response yields an empty page rather than raising.
         client.get = MagicMock(return_value=_mock_response(403, None))
@@ -849,6 +858,7 @@ class TestRepoCoreChannelsCLI:
                     parent="main",
                     artifact_count=10,
                     download_count=5,
+                    access="owner",
                 ),
             ],
             2,
@@ -861,6 +871,9 @@ class TestRepoCoreChannelsCLI:
         assert result.exit_code == 0
         assert "main" in result.output
         assert "dev" in result.output
+        # The Access column surfaces the caller's access level from /account/channels.
+        assert "Access" in result.output
+        assert "owner" in result.output
         # Default path hits /account/channels, not the broad /channels listing.
         mock_api.list_my_channels.assert_called()
         mock_api.list_all_channels.assert_not_called()
@@ -885,6 +898,9 @@ class TestRepoCoreChannelsCLI:
 
         assert result.exit_code == 0
         assert "public-only" in result.output
+        # --all uses GET /channels, which omits access; the Access column still renders
+        # (its header is present) but carries no access value for these channels.
+        assert "Access" in result.output
         mock_api.list_all_channels.assert_called()
         mock_api.list_my_channels.assert_not_called()
 
@@ -1774,7 +1790,7 @@ class TestRepoCoreChannelsCLI:
         assert result.exit_code == 0
         mock_api.share_channel.assert_called_once_with("myorg", "dev", "testuser", action="unshare", grant="read")
 
-    def test_share_role_defaults_to_viewer(self):
+    def test_share_access_defaults_to_viewer(self):
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
@@ -1795,7 +1811,7 @@ class TestRepoCoreChannelsCLI:
         mock_api.share_channel.return_value = (None, None)
 
         with _patch_repo_api(mock_api):
-            result = runner.invoke(app, ["share", "testuser", "--channel", "myorg/dev", "--role", "viewer"])
+            result = runner.invoke(app, ["share", "testuser", "--channel", "myorg/dev", "--access", "viewer"])
 
         assert result.exit_code == 0
         assert "Success" in result.output
@@ -1812,7 +1828,7 @@ class TestRepoCoreChannelsCLI:
 
         with _patch_repo_api(mock_api):
             result = runner.invoke(
-                app, ["share", "testuser", "--channel", "myorg/dev", "--channel", "myorg/staging", "--role", "viewer"]
+                app, ["share", "testuser", "--channel", "myorg/dev", "--channel", "myorg/staging", "--access", "viewer"]
             )
 
         assert result.exit_code == 0
@@ -1831,7 +1847,7 @@ class TestRepoCoreChannelsCLI:
             _patch_repo_api(mock_api),
             patch("binstar_client.repocore.resolve.select_from_list", return_value="org-a"),
         ):
-            result = runner.invoke(app, ["share", "testuser", "--channel", "dev", "--role", "viewer"])
+            result = runner.invoke(app, ["share", "testuser", "--channel", "dev", "--access", "viewer"])
 
         assert result.exit_code == 0
         mock_api.share_channel.assert_called_once_with("org-a", "dev", "testuser", action="share", grant="read")
@@ -1851,7 +1867,7 @@ class TestRepoCoreChannelsCLI:
             ),
         ):
             result = runner.invoke(
-                app, ["share", "testuser", "--channel", "dev", "--channel", "staging", "--role", "viewer"]
+                app, ["share", "testuser", "--channel", "dev", "--channel", "staging", "--access", "viewer"]
             )
 
         assert result.exit_code == 0
@@ -1877,7 +1893,7 @@ class TestRepoCoreChannelsCLI:
                     "staging",
                     "--namespace",
                     "myorg",
-                    "--role",
+                    "--access",
                     "viewer",
                 ],
             )
@@ -1895,7 +1911,7 @@ class TestRepoCoreChannelsCLI:
 
         with _patch_repo_api(mock_api):
             result = runner.invoke(
-                app, ["share", "testuser", "--channel", "org-a/dev", "--namespace", "org-b", "--role", "viewer"]
+                app, ["share", "testuser", "--channel", "org-a/dev", "--namespace", "org-b", "--access", "viewer"]
             )
 
         assert result.exit_code == 1

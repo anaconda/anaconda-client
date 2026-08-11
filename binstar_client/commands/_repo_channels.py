@@ -303,7 +303,7 @@ def _add_repo_rows(table: Table, api, namespace: Optional[str], include_all: boo
         namespaces = [ns for ns in namespaces if ns == namespace]
 
     for ns in namespaces:
-        table.add_row(ns, "", "", "", "")
+        table.add_row(ns, "", "", "", "", "")
         for channel in subchannels.get(ns, []):
             table.add_row(
                 f"  {channel.path}",
@@ -311,6 +311,9 @@ def _add_repo_rows(table: Table, api, namespace: Optional[str], include_all: boo
                 channel.description,
                 str(channel.artifact_count),
                 str(channel.download_count),
+                # /account/channels reports the caller's access level; --all
+                # (GET /channels) omits it, so fall back to a dash.
+                channel.access or _NOT_APPLICABLE,
             )
 
 
@@ -332,11 +335,12 @@ def _add_org_rows(table: Table, aserver_api) -> None:
 
     # Group header for the whole anaconda.org section: no namespace exists here,
     # so the Namespace / Channel column is a dash and owners are listed beneath it.
-    table.add_row(_NOT_APPLICABLE, _NOT_APPLICABLE, _NOT_APPLICABLE, _NOT_APPLICABLE, _NOT_APPLICABLE)
+    table.add_row(_NOT_APPLICABLE, _NOT_APPLICABLE, _NOT_APPLICABLE, _NOT_APPLICABLE, _NOT_APPLICABLE, _NOT_APPLICABLE)
 
     for owner in owners:
         table.add_row(
             f"  {owner}",
+            _NOT_APPLICABLE,
             _NOT_APPLICABLE,
             _NOT_APPLICABLE,
             _NOT_APPLICABLE,
@@ -377,6 +381,7 @@ def list_command(
     table.add_column("Description")
     table.add_column("Artifacts", justify="right")
     table.add_column("Downloads", justify="right")
+    table.add_column("Access")
 
     # An explicit --source means the user asked for exactly that, so report any
     # failure. "all" queries both backends, but most users are logged into only
@@ -827,11 +832,11 @@ def share_command(
         "-n",
         help="Namespace for the channel (alternative to namespace/channel format)",
     ),
-    role: str = typer.Option(
+    access: str = typer.Option(
         "viewer",
-        "--role",
+        "--access",
         "-r",
-        help="Role to grant: viewer (read) or collaborator (write). Defaults to viewer.",
+        help="Access level to grant: viewer (read) or collaborator (write). Defaults to viewer.",
     ),
     unshare: bool = typer.Option(False, "--unshare", help="Unshare the channel instead of sharing"),
 ) -> None:
@@ -843,11 +848,11 @@ def share_command(
         console.print("[red]Error:[/red] No channel specified. Use --channel option to specify channel(s) to share.")
         raise typer.Exit(1)
 
-    if role not in ("viewer", "collaborator"):
-        console.print("[red]Error:[/red] --role must be either 'viewer' or 'collaborator'.")
+    if access not in ("viewer", "collaborator"):
+        console.print("[red]Error:[/red] --access must be either 'viewer' or 'collaborator'.")
         raise typer.Exit(1)
 
-    grant = "write" if role == "collaborator" else "read"
+    grant = "write" if access == "collaborator" else "read"
 
     # Sharing is an anaconda.com (repo) concept only; resolve without an owner
     # probe so bare names stay repo channels rather than routing to anaconda.org.
@@ -865,7 +870,7 @@ def share_command(
         result, error = api.share_channel(resolved.namespace, resolved.channel_name, user, action=action, grant=grant)
         event_kwargs = {"api": api, "app_name": app.info.name, "channel_path": ch, "user": user, "error": bool(error)}
         if action == "share":
-            ChannelEvents.share(**event_kwargs, role=role)
+            ChannelEvents.share(**event_kwargs, role=access)
         else:
             ChannelEvents.unshare(**event_kwargs)
         if error:
