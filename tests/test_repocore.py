@@ -40,6 +40,17 @@ def _readable_channels(*channels):
     return (items, len(items), None)
 
 
+def _channels_with_access(*channels):
+    """Build a ``list_my_channels`` return value from ``(name, parent, access)`` triples.
+
+    Like :func:`_readable_channels` but stamps each channel's ``access`` level
+    (``"viewer"``/``"collaborator"``/``"owner"``/``None``) so resolver tests can
+    exercise the writable filter.
+    """
+    items = [Channel(name=name, privacy="private", parent=parent, access=access) for name, parent, access in channels]
+    return (items, len(items), None)
+
+
 class TestPydanticModels:
     def test_namespace_model(self):
         ns = Namespace(name="test-org")
@@ -660,6 +671,79 @@ class TestResolveNamespaceAndChannel:
         assert resolved.channel_name == "brandnew"
         # No existing channel matched, so the picker offers namespaces to create under.
         assert set(sel.call_args[0][1]) == {"dude", "fluffybunnies"}
+
+    def test_viewer_access_channel_is_not_resolved(self):
+        """A read-only ("viewer") shared channel is filtered out of resolution.
+
+        ``imhungry`` exists only as a viewer channel, so the bare name does not
+        match a writable subchannel and instead falls through to namespace
+        resolution (which offers only the writable namespace ``dude``).
+        """
+        from binstar_client.commands._repo_channels import _resolve_namespace_and_channel
+
+        mock_api = MagicMock()
+        mock_api.list_my_channels.return_value = _channels_with_access(
+            ("dude", None, "owner"),
+            ("imhungry", "fluffybunnies", "viewer"),
+        )
+
+        resolved = _resolve_namespace_and_channel(mock_api, "imhungry")
+
+        # Not resolved to the viewer subchannel; a single writable namespace
+        # remains, so "imhungry" resolves as a new channel under "dude".
+        assert resolved.namespace == "dude"
+        assert resolved.channel_name == "imhungry"
+
+    def test_writable_access_channels_are_resolved(self):
+        """Collaborator and owner channels stay resolvable as upload targets."""
+        from binstar_client.commands._repo_channels import _resolve_namespace_and_channel
+
+        mock_api = MagicMock()
+        mock_api.list_my_channels.return_value = _channels_with_access(
+            ("dude", None, "owner"),
+            ("imhungry", "dude", "collaborator"),
+        )
+
+        with patch("binstar_client.repocore.resolve.select_from_list") as sel:
+            resolved = _resolve_namespace_and_channel(mock_api, "imhungry")
+
+        assert resolved.namespace == "dude"
+        assert resolved.channel_name == "imhungry"
+        sel.assert_not_called()
+
+    def test_viewer_namespace_excluded_from_picker(self):
+        """A namespace the caller only views is not offered when creating a channel."""
+        from binstar_client.commands._repo_channels import _resolve_namespace_and_channel
+
+        mock_api = MagicMock()
+        mock_api.list_my_channels.return_value = _channels_with_access(
+            ("owned-ns", None, "owner"),
+            ("viewer-ns", None, "viewer"),
+        )
+
+        # Only one writable namespace remains, so a brand-new name resolves under
+        # it with no prompt — the viewer-only namespace is not a candidate.
+        resolved = _resolve_namespace_and_channel(mock_api, "brandnew")
+
+        assert resolved.namespace == "owned-ns"
+        assert resolved.channel_name == "brandnew"
+
+    def test_missing_access_is_kept(self):
+        """When the server omits ``access`` (SpiceDB off), channels are not filtered."""
+        from binstar_client.commands._repo_channels import _resolve_namespace_and_channel
+
+        mock_api = MagicMock()
+        mock_api.list_my_channels.return_value = _channels_with_access(
+            ("dude", None, None),
+            ("imhungry", "dude", None),
+        )
+
+        with patch("binstar_client.repocore.resolve.select_from_list") as sel:
+            resolved = _resolve_namespace_and_channel(mock_api, "imhungry")
+
+        assert resolved.namespace == "dude"
+        assert resolved.channel_name == "imhungry"
+        sel.assert_not_called()
 
     def test_no_namespaces_with_username_confirmed(self):
         from binstar_client.commands._repo_channels import _resolve_no_namespace
