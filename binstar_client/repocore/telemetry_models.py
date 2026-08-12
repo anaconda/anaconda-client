@@ -113,7 +113,7 @@ class MemberInvitedEvent(TelemetryEvent):
     errorable: bool = True
     channel_path: str = Field(alias="channel.path")
     user: str
-    role: str
+    access: str
 
 
 class MemberRemovedEvent(TelemetryEvent):

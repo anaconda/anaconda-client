@@ -76,11 +76,11 @@ class TestPydanticTelemetryModels:
         assert event.package_name == "test-pkg"
 
     def test_member_invited_event_model(self):
-        event = MemberInvitedEvent(channel_path="myorg/dev", user="testuser", role="viewer")
+        event = MemberInvitedEvent(channel_path="myorg/dev", user="testuser", access="viewer")
         assert event.event_name == "member.invited"
         assert event.channel_path == "myorg/dev"
         assert event.user == "testuser"
-        assert event.role == "viewer"
+        assert event.access == "viewer"
 
     def test_member_removed_event_model(self):
         event = MemberRemovedEvent(channel_path="myorg/dev", user="testuser")
