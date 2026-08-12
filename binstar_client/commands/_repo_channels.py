@@ -351,6 +351,8 @@ def _add_org_rows(table: Table, aserver_api, include_all: bool) -> None:
     table.add_row(*([_NOT_APPLICABLE] * cell_count))
 
     for owner in owners:
+        # Indent the owner in the first (Namespace / Channel) column, then fill
+        # every remaining column with a dash.
         table.add_row(f"  {owner}", *([_NOT_APPLICABLE] * (cell_count - 1)))
 
 
@@ -842,11 +844,17 @@ def share_command(
         "-n",
         help="Namespace for the channel (alternative to namespace/channel format)",
     ),
-    access: str = typer.Option(
-        "viewer",
+    access: Optional[str] = typer.Option(
+        None,
         "--access",
         "-r",
         help="Access level to grant: viewer (read) or collaborator (write). Defaults to viewer.",
+    ),
+    role: Optional[str] = typer.Option(
+        None,
+        "--role",
+        hidden=True,
+        help="Deprecated alias for --access.",
     ),
     unshare: bool = typer.Option(False, "--unshare", help="Unshare the channel instead of sharing"),
 ) -> None:
@@ -857,6 +865,10 @@ def share_command(
     if not channels:
         console.print("[red]Error:[/red] No channel specified. Use --channel option to specify channel(s) to share.")
         raise typer.Exit(1)
+
+    # --role was the original (already-released) flag name; accept it as a hidden
+    # alias for --access, preferring --access when both are given.
+    access = access or role or "viewer"
 
     if access not in ("viewer", "collaborator"):
         console.print("[red]Error:[/red] --access must be either 'viewer' or 'collaborator'.")

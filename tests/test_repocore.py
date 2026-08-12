@@ -35,6 +35,9 @@ def _readable_channels(*channels):
 
     A ``parent`` of ``None`` is a top-level channel (a namespace); a non-None
     parent makes it a subchannel under that namespace.
+
+    Matches ``list_my_channels``'s ``(items, total_count, error)`` signature;
+    the trailing ``None`` is the error slot (no error).
     """
     items = [Channel(name=name, privacy="private", parent=parent) for name, parent in channels]
     return (items, len(items), None)
@@ -45,7 +48,7 @@ def _channels_with_access(*channels):
 
     Like :func:`_readable_channels` but stamps each channel's ``access`` level
     (``"viewer"``/``"collaborator"``/``"owner"``/``None``) so resolver tests can
-    exercise the writable filter.
+    exercise the writable filter. The trailing ``None`` is the error slot.
     """
     items = [Channel(name=name, privacy="private", parent=parent, access=access) for name, parent, access in channels]
     return (items, len(items), None)
@@ -1884,6 +1887,36 @@ class TestRepoCoreChannelsCLI:
 
         with _patch_repo_api(mock_api):
             result = runner.invoke(app, ["share", "testuser", "--channel", "myorg/dev"])
+
+        assert result.exit_code == 0
+        mock_api.share_channel.assert_called_once_with("myorg", "dev", "testuser", action="share", grant="read")
+
+    def test_share_role_is_hidden_alias_for_access(self):
+        # --role was the original released flag; it still maps to --access.
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_my_channels.return_value = _namespace_channels("myorg")
+        mock_api.share_channel.return_value = (None, None)
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(app, ["share", "testuser", "--channel", "myorg/dev", "--role", "collaborator"])
+
+        assert result.exit_code == 0
+        mock_api.share_channel.assert_called_once_with("myorg", "dev", "testuser", action="share", grant="write")
+
+    def test_share_access_wins_over_role(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_my_channels.return_value = _namespace_channels("myorg")
+        mock_api.share_channel.return_value = (None, None)
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(
+                app,
+                ["share", "testuser", "--channel", "myorg/dev", "--access", "viewer", "--role", "collaborator"],
+            )
 
         assert result.exit_code == 0
         mock_api.share_channel.assert_called_once_with("myorg", "dev", "testuser", action="share", grant="read")

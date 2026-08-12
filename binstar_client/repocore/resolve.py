@@ -62,10 +62,13 @@ def _is_writable(channel) -> bool:
     """Whether ``channel``'s access permits writing (upload/share/modify).
 
     Resolution targets a channel the caller can write to, so read-only
-    ("viewer") channels are excluded. ``access`` is only populated when the
-    server reports it (SpiceDB enabled); when it is ``None`` we keep the channel
-    rather than filter it out, preserving the pre-access behavior where a
-    non-writable channel simply 403s at upload instead of vanishing here.
+    ("viewer") channels are excluded.
+
+    ``access`` is only populated when the server reports it (SpiceDB enabled).
+    When it is ``None`` — an older/other backend that does not report access at
+    all — we treat the channel as writable rather than filter it out, preserving
+    the pre-access behavior where a non-writable channel simply 403s at upload
+    instead of silently vanishing from resolution here.
     """
     return channel.access is None or channel.access in _WRITABLE_ACCESS
 
