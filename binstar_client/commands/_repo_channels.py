@@ -626,52 +626,37 @@ def modify_command(
     resolved = _resolve_namespace_and_channel(api, name, namespace)
     name = f"{resolved.namespace}/{resolved.channel_name}"
 
-    telemetry_kwargs = {"channel_path": name}
-    had_error = False
-
-    # The PUT reports whether it actually changed anything, so a no-op is surfaced
-    # rather than a misleading "Success!".
+    update_data = {}
     if privacy:
-        result, error = api.update_channel(name, privacy=privacy)
-        if error:
-            had_error = True
-            error_msg = str(error).lower()
-            if "limit" in error_msg and "private" in error_msg:
-                limit_value = _extract_limit_from_error(error)
-                ChannelEvents.limit(api, app.info.name, channel_path=name, action="modify", limit=limit_value)
-        telemetry_kwargs["privacy"] = privacy
-        if error:
-            ChannelEvents.modified(api, app.info.name, error=True, **telemetry_kwargs)
-            raise error
-        if result.changed:
-            state_map = {"private": "locked", "authenticated": "soft-locked", "public": "unlocked"}
-            console.print(
-                f"[green]Success![/green] Channel '[cyan]{name}[/cyan]' is now {state_map[privacy]} ({privacy})."
-            )
-        else:
-            console.print(f"[yellow]No change:[/yellow] Channel '[cyan]{name}[/cyan]' is already {privacy}.")
-
+        update_data["privacy"] = privacy
     if indexing_behavior:
-        result, error = api.update_channel(name, indexing_behavior=indexing_behavior)
-        if error:
-            had_error = True
-        telemetry_kwargs["indexing_behavior"] = indexing_behavior
-        if error:
-            ChannelEvents.modified(api, app.info.name, error=True, **telemetry_kwargs)
-            raise error
-        if result.changed:
-            state_map = {"frozen": "frozen", "default": "unfrozen"}
-            console.print(
-                f"[green]Success![/green] Channel '[cyan]{name}[/cyan]' is now {state_map[indexing_behavior]}."
-            )
-        else:
-            console.print(
-                f"[yellow]No change:[/yellow] Channel '[cyan]{name}[/cyan]' indexing behavior is already "
-                f"{indexing_behavior}."
-            )
+        update_data["indexing_behavior"] = indexing_behavior
 
-    if not had_error:
-        ChannelEvents.modified(api, app.info.name, error=False, **telemetry_kwargs)
+    result, error = api.update_channel(name, **update_data)
+
+    telemetry_kwargs = {"channel_path": name, **update_data}
+
+    if error:
+        error_msg = str(error).lower()
+        if "limit" in error_msg and "private" in error_msg:
+            limit_value = _extract_limit_from_error(error)
+            ChannelEvents.limit(api, app.info.name, channel_path=name, action="modify", limit=limit_value)
+        ChannelEvents.modified(api, app.info.name, error=True, **telemetry_kwargs)
+        raise error
+
+    ChannelEvents.modified(api, app.info.name, error=False, **telemetry_kwargs)
+
+    if result.changed:
+        messages = []
+        if privacy:
+            state_map = {"private": "locked", "authenticated": "soft-locked", "public": "unlocked"}
+            messages.append(f"privacy set to {state_map[privacy]} ({privacy})")
+        if indexing_behavior:
+            state_map = {"frozen": "frozen", "default": "unfrozen"}
+            messages.append(f"indexing behavior set to {state_map[indexing_behavior]}")
+        console.print(f"[green]Success![/green] Channel '[cyan]{name}[/cyan]' {', '.join(messages)}.")
+    else:
+        console.print(f"[yellow]No change:[/yellow] Channel '[cyan]{name}[/cyan]' already has these settings.")
 
 
 def _do_upload(
