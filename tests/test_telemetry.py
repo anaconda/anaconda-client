@@ -16,7 +16,7 @@ from binstar_client.repocore.telemetry_models import (
     MemberRemovedEvent,
     PackageUploadedEvent,
     TelemetryEvent,
-    UpgradePromptConvertedEvent,
+    UpgradePromptAcceptedEvent,
     UpgradePromptDismissedEvent,
     UpgradePromptImpressedEvent,
 )
@@ -62,10 +62,10 @@ class TestPydanticTelemetryModels:
 
     def test_upgrade_events_models(self):
         impressed = UpgradePromptImpressedEvent()
-        converted = UpgradePromptConvertedEvent()
+        accepted = UpgradePromptAcceptedEvent()
         dismissed = UpgradePromptDismissedEvent()
         assert impressed.event_name == "upgrade_prompt.impressed"
-        assert converted.event_name == "upgrade_prompt.converted"
+        assert accepted.event_name == "upgrade.accepted"
         assert dismissed.event_name == "upgrade_prompt.dismissed"
 
     def test_package_uploaded_event_model(self):

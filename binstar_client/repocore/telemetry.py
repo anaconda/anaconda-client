@@ -11,7 +11,7 @@ from .telemetry_models import (
     ChannelRemovedEvent,
     ChannelModifiedEvent,
     UpgradePromptImpressedEvent,
-    UpgradePromptConvertedEvent,
+    UpgradePromptAcceptedEvent,
     UpgradePromptDismissedEvent,
     PackageUploadedEvent,
     MemberInvitedEvent,
@@ -152,9 +152,9 @@ class UpgradeEvents:
         _count(event, api, app_name)
 
     @staticmethod
-    def converted(api, app_name: str | None) -> None:
-        """Track upgrade prompt conversion event."""
-        event = UpgradePromptConvertedEvent()
+    def accepted(api, app_name: str | None) -> None:
+        """Track upgrade prompt acceptance event."""
+        event = UpgradePromptAcceptedEvent()
         _count(event, api, app_name)
 
     @staticmethod

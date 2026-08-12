@@ -26,7 +26,7 @@ from binstar_client.commands import upload as upload_mod
 from binstar_client import errors as dotorg_errors
 from binstar_client.repocore import RepoCoreClient
 from binstar_client.repocore.errors import LoginRequiredError, RepoCoreError, Unauthorized
-from binstar_client.repocore.telemetry import ChannelEvents, UploadEvents
+from binstar_client.repocore.telemetry import ChannelEvents, UploadEvents, UpgradeEvents
 from binstar_client.repocore.package_utils import PackageType, determine_package_type, windows_glob
 from binstar_client.repocore.resolve import (
     classify_and_resolve,
@@ -103,16 +103,21 @@ def _extract_limit_from_error(error: Exception) -> Optional[int]:
     return int(limit_match.group(1)) if limit_match else None
 
 
-def prompt_upgrade(limit: Optional[int]) -> None:
+def _prompt_upgrade(api, app_name: str, limit: Optional[int]) -> None:
     """Prompt user to upgrade when they hit the private channel limit."""
     limit_text = f" of {limit}" if limit else ""
     console.print(f"\n[yellow]You have reached the limit{limit_text} for private channels.[/yellow]")
     console.print("Upgrade your plan to create more private channels.")
 
+    UpgradeEvents.impressed(api, app_name)
+
     if typer.confirm("\nWould you like to view upgrade options?", default=True):
+        UpgradeEvents.accepted(api, app_name)
         upgrade_url = "https://anaconda.com/pricing"
         console.print(f"Opening [cyan]{upgrade_url}[/cyan] in your browser...")
         webbrowser.open(upgrade_url)
+    else:
+        UpgradeEvents.dismissed(api, app_name)
 
 
 @app.callback(invoke_without_command=True)
@@ -484,7 +489,7 @@ def create_command(
         if "limit" in error_msg and "private" in error_msg:
             limit_value = _extract_limit_from_error(error)
             ChannelEvents.limit(api, app.info.name, channel_path=channel_path, action="create", limit=limit_value)
-            prompt_upgrade(limit_value)
+            _prompt_upgrade(api, app.info.name, limit_value)
         ChannelEvents.created(**event_kwargs)
         raise error
     if response.created:
@@ -649,7 +654,7 @@ def modify_command(
             if "limit" in error_msg and "private" in error_msg:
                 limit_value = _extract_limit_from_error(error)
                 ChannelEvents.limit(api, app.info.name, channel_path=name, action="modify", limit=limit_value)
-                prompt_upgrade(limit_value)
+                _prompt_upgrade(api, app.info.name, limit_value)
         ChannelEvents.modified(api, app.info.name, channel_path=name, privacy=privacy, error=bool(error))
         if error:
             raise error
