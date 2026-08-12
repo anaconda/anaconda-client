@@ -9,6 +9,7 @@ import argparse
 import logging
 import os
 import re
+import webbrowser
 from glob import glob
 from typing import List, Optional, Tuple, cast
 
@@ -100,6 +101,18 @@ def _extract_limit_from_error(error: Exception) -> Optional[int]:
     """Extract channel limit number from error message."""
     limit_match = re.search(r'has reached the limit of (\d+)', str(error))
     return int(limit_match.group(1)) if limit_match else None
+
+
+def prompt_upgrade(limit: Optional[int]) -> None:
+    """Prompt user to upgrade when they hit the private channel limit."""
+    limit_text = f" of {limit}" if limit else ""
+    console.print(f"\n[yellow]You have reached the limit{limit_text} for private channels.[/yellow]")
+    console.print("Upgrade your plan to create more private channels.")
+
+    if typer.confirm("\nWould you like to view upgrade options?", default=True):
+        upgrade_url = "https://anaconda.com/pricing"
+        console.print(f"Opening [cyan]{upgrade_url}[/cyan] in your browser...")
+        webbrowser.open(upgrade_url)
 
 
 @app.callback(invoke_without_command=True)
@@ -471,6 +484,7 @@ def create_command(
         if "limit" in error_msg and "private" in error_msg:
             limit_value = _extract_limit_from_error(error)
             ChannelEvents.limit(api, app.info.name, channel_path=channel_path, action="create", limit=limit_value)
+            prompt_upgrade(limit_value)
         ChannelEvents.created(**event_kwargs)
         raise error
     if response.created:
@@ -635,6 +649,7 @@ def modify_command(
             if "limit" in error_msg and "private" in error_msg:
                 limit_value = _extract_limit_from_error(error)
                 ChannelEvents.limit(api, app.info.name, channel_path=name, action="modify", limit=limit_value)
+                prompt_upgrade(limit_value)
         ChannelEvents.modified(api, app.info.name, channel_path=name, privacy=privacy, error=bool(error))
         if error:
             raise error
