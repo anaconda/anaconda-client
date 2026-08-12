@@ -1338,7 +1338,7 @@ class TestRepoCoreChannelsCLI:
 
         assert result.exit_code == 0
         assert "No change" in result.output
-        assert "already public" in result.output
+        assert "already unlocked (public)" in result.output
         assert "Success" not in result.output
         mock_api.update_channel.assert_called_once_with("myorg/dev", privacy="public")
 
@@ -1355,6 +1355,7 @@ class TestRepoCoreChannelsCLI:
 
         assert result.exit_code == 0
         assert "No change" in result.output
+        assert "already unfrozen" in result.output
         assert "Success" not in result.output
         mock_api.update_channel.assert_called_once_with("myorg/dev", indexing_behavior="default")
 
