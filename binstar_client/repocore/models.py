@@ -42,6 +42,9 @@ class Channel(BaseModel):
     updated: str = ""
     parent: Optional[str] = None
     owners: list[str] = Field(default_factory=list)
+    # The caller's access level on the channel (viewer/collaborator/owner). Only
+    # populated by GET /account/channels; the flat GET /channels listing omits it.
+    access: Optional[str] = None
 
     _handle_description = field_validator("description", mode="before")(_handle_none_as_empty_string)
 

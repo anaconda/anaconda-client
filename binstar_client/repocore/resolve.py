@@ -52,31 +52,54 @@ def _org_channel(owner: str, channel_name: str) -> ResolvedChannel:
 
 _CHANNEL_PAGE_SIZE = 100
 
+# Access levels (from ``GET /account/channels``) that permit writing to a
+# channel — uploading, sharing, modifying. "viewer" is read-only and cannot be
+# an upload target, so it is filtered out of resolution.
+_WRITABLE_ACCESS = frozenset({"collaborator", "owner"})
 
-def _iter_readable_channels(api):
-    """Yield the caller's own + shared channels, paging ``GET /account/channels``.
+
+def _is_writable(channel) -> bool:
+    """Whether ``channel``'s access permits writing (upload/share/modify).
+
+    Resolution targets a channel the caller can write to, so read-only
+    ("viewer") channels are excluded.
+
+    ``access`` is only populated when the server reports it (SpiceDB enabled).
+    When it is ``None`` — an older/other backend that does not report access at
+    all — we treat the channel as writable rather than filter it out, preserving
+    the pre-access behavior where a non-writable channel simply 403s at upload
+    instead of silently vanishing from resolution here.
+    """
+    return channel.access is None or channel.access in _WRITABLE_ACCESS
+
+
+def _iter_writable_channels(api):
+    """Yield the caller's own + shared *writable* channels, paging ``GET /account/channels``.
 
     ``include_subchannels=True`` so the listing carries both namespaces
     (``parent is None``) and subchannels (namespace is ``parent``).
 
     Uses the account listing, not ``GET /channels``: resolution picks an upload
-    target, so it excludes public channels the user only reads. Not a write check
-    though — a read-only shared channel still appears and only 403s at upload.
+    target, so it excludes public channels the user only reads. Read-only
+    ("viewer") shared channels are also dropped via :func:`_is_writable`, so a
+    channel the caller cannot write to is never resolved as an upload/share/modify
+    target. When the server omits ``access`` (SpiceDB disabled), channels are
+    kept and a non-writable one 403s at upload as before.
     """
     offset = 0
     while True:
         channels, total, error = api.list_my_channels(offset=offset, limit=_CHANNEL_PAGE_SIZE, include_subchannels=True)
         if error:
             raise error
-        yield from channels
+        yield from (c for c in channels if _is_writable(c))
         offset += len(channels)
         # Stop on an empty/short page too, so an over-reported total can't loop forever.
         if not channels or len(channels) < _CHANNEL_PAGE_SIZE or offset >= total:
             break
 
 
-def _readable_namespaces(channels) -> List[str]:
-    """The distinct namespaces present in a readable-channel listing.
+def _writable_namespaces(channels) -> List[str]:
+    """The distinct namespaces present in a writable-channel listing.
 
     A top-level channel is itself a namespace; a subchannel's namespace is its
     ``parent``. Order is preserved and duplicates dropped so the picker is stable.
@@ -143,9 +166,10 @@ def resolve_namespace_and_channel(
     if namespace:
         return _repo_channel(namespace=namespace, channel_name=name)
 
-    # Own + shared channels only, so name matching and namespace resolution stay
-    # scoped to the user's channels rather than every public channel it can read.
-    channels = list(_iter_readable_channels(api))
+    # Own + shared writable channels only, so name matching and namespace
+    # resolution stay scoped to channels the user can actually write to rather
+    # than every public channel it can read (or a read-only shared channel).
+    channels = list(_iter_writable_channels(api))
 
     # First, does the bare name already name a subchannel? A subchannel is an
     # actual channel (has a parent namespace); a top-level channel is a namespace,
@@ -166,7 +190,7 @@ def resolve_namespace_and_channel(
 
     # No existing channel by that name — resolve the namespace it should live
     # under, so a brand-new channel name (e.g. `create`) still resolves.
-    namespaces = _readable_namespaces(channels)
+    namespaces = _writable_namespaces(channels)
 
     if not namespaces:
         if require_namespace:
@@ -239,12 +263,14 @@ def classify_and_resolve(
     repo_match = False
     if org_match:
         # Only fetch the (possibly expensive) channel listing to detect a real
-        # collision — where the bare name already *names* something on anaconda.com:
-        # a top-level namespace, or an existing readable subchannel by that name.
-        # The namespace *fallback* (placing a brand-new channel under some namespace)
-        # is not a collision: with no such name present, an org owner routes to org.
+        # collision — where the bare name already *names* something writable on
+        # anaconda.com: a top-level namespace, or an existing writable subchannel
+        # by that name. A read-only shared channel is not an upload target, so it
+        # is not a collision. The namespace *fallback* (placing a brand-new channel
+        # under some namespace) is not a collision either: with no such name
+        # present, an org owner routes to org.
         try:
-            channels = list(_iter_readable_channels(api))
+            channels = list(_iter_writable_channels(api))
             repo_match = any(c.name == name for c in channels)
         except Exception:
             repo_match = False
