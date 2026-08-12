@@ -285,7 +285,13 @@ def _iter_channels(api, include_all: bool):
 
 
 def _add_repo_rows(table: Table, api, namespace: Optional[str], include_all: bool) -> None:
-    """Append anaconda.com (repocore) namespace/channel rows to the table."""
+    """Append anaconda.com (repocore) namespace/channel rows to the table.
+
+    The Access column only exists when ``include_all`` is False (see
+    ``list_command``): ``GET /channels`` doesn't report the caller's access
+    level, so under ``--all`` the column is dropped rather than filled with
+    dashes that would misleadingly read as "no access".
+    """
     namespaces: list[str] = []
     subchannels: dict[str, list] = {}
     for channel in _iter_channels(api, include_all):
@@ -303,27 +309,31 @@ def _add_repo_rows(table: Table, api, namespace: Optional[str], include_all: boo
         namespaces = [ns for ns in namespaces if ns == namespace]
 
     for ns in namespaces:
-        table.add_row(ns, "", "", "", "", "")
+        table.add_row(ns, "", "", "", "", *([] if include_all else [""]))
         for channel in subchannels.get(ns, []):
-            table.add_row(
+            row = [
                 f"  {channel.path}",
                 channel.privacy,
                 channel.description,
                 str(channel.artifact_count),
                 str(channel.download_count),
-                # /account/channels reports the caller's access level; --all
-                # (GET /channels) omits it, so fall back to a dash.
-                channel.access or _NOT_APPLICABLE,
-            )
+            ]
+            if not include_all:
+                # /account/channels reports the caller's access level.
+                row.append(channel.access or _NOT_APPLICABLE)
+            table.add_row(*row)
 
 
-def _add_org_rows(table: Table, aserver_api) -> None:
+def _add_org_rows(table: Table, aserver_api, include_all: bool) -> None:
     """Append anaconda.org owner rows to the table.
 
     anaconda.org owners are not repocore channels: they have no namespace and no
     channel-level privacy (both shown as a dash). Labels are intentionally *not*
     listed here — a label is not a channel, and `anaconda channel list` lists
     channels. Use ``anaconda label`` to work with labels.
+
+    Emits one fewer cell per row under ``include_all``, which drops the Access
+    column entirely (see ``list_command``).
     """
     login = aserver_api.user()["login"]
     owners = [login]
@@ -333,19 +343,15 @@ def _add_org_rows(table: Table, aserver_api) -> None:
         # Org membership lookup is best-effort; fall back to just the user.
         logger.debug("Could not list anaconda.org organizations, using user only: %s", exc)
 
+    # Access is the last column and only present when not --all.
+    cell_count = 5 if include_all else 6
+
     # Group header for the whole anaconda.org section: no namespace exists here,
     # so the Namespace / Channel column is a dash and owners are listed beneath it.
-    table.add_row(_NOT_APPLICABLE, _NOT_APPLICABLE, _NOT_APPLICABLE, _NOT_APPLICABLE, _NOT_APPLICABLE, _NOT_APPLICABLE)
+    table.add_row(*([_NOT_APPLICABLE] * cell_count))
 
     for owner in owners:
-        table.add_row(
-            f"  {owner}",
-            _NOT_APPLICABLE,
-            _NOT_APPLICABLE,
-            _NOT_APPLICABLE,
-            _NOT_APPLICABLE,
-            _NOT_APPLICABLE,
-        )
+        table.add_row(f"  {owner}", *([_NOT_APPLICABLE] * (cell_count - 1)))
 
 
 @app.command(name="list", help="List all channels")
@@ -381,7 +387,11 @@ def list_command(
     table.add_column("Description")
     table.add_column("Artifacts", justify="right")
     table.add_column("Downloads", justify="right")
-    table.add_column("Access")
+    # --all lists channels via GET /channels, which doesn't report the caller's
+    # access level. Drop the column entirely rather than dashing it out — a dash
+    # would read as "no access" instead of "not reported".
+    if not include_all:
+        table.add_column("Access")
 
     # An explicit --source means the user asked for exactly that, so report any
     # failure. "all" queries both backends, but most users are logged into only
@@ -412,7 +422,7 @@ def list_command(
         try:
             params = getattr(ctx.obj, "params", {})
             aserver_api = get_server_api(params.get("token"), params.get("site"))
-            _add_org_rows(table, aserver_api)
+            _add_org_rows(table, aserver_api, include_all)
         except Exception as exc:
             _note_failure("anaconda.org owners", exc)
 

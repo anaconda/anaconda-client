@@ -982,9 +982,10 @@ class TestRepoCoreChannelsCLI:
 
         assert result.exit_code == 0
         assert "public-only" in result.output
-        # --all uses GET /channels, which omits access; the Access column still renders
-        # (its header is present) but carries no access value for these channels.
-        assert "Access" in result.output
+        # --all uses GET /channels, which doesn't report the caller's access level,
+        # so the Access column is dropped entirely rather than shown with dashes
+        # (a dash would misleadingly read as "no access").
+        assert "Access" not in result.output
         mock_api.list_all_channels.assert_called()
         mock_api.list_my_channels.assert_not_called()
 
