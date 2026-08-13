@@ -25,7 +25,8 @@ class RepoCoreError(Exception):
 class Unauthorized(RepoCoreError):
     def __init__(self, message=None):
         base_msg = message or "The provided token does not allow you to perform this operation"
-        self.msg = base_msg + ". You may need to run 'anaconda login'"
+        separator = " " if base_msg.endswith(".") else ". "
+        self.msg = base_msg + separator + "You may need to run 'anaconda login'"
         super().__init__(self.msg)
 
 

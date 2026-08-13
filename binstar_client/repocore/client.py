@@ -117,7 +117,7 @@ class RepoCoreClient(BaseClient):
             pass
         return f"Error {action} (status {response.status_code})"
 
-    def _manage_response(self, response, action="", success_codes=[200], empty_success_codes=[204]):
+    def _manage_response(self, response, action="", success_codes=None, empty_success_codes=None):
         """Manages server responses
 
         Defaults to success_codes of only 200 and No Content success code of 204.
@@ -135,6 +135,11 @@ class RepoCoreClient(BaseClient):
                 - response_data: The response JSON or None
                 - error: Exception to raise if not None, None if successful
         """
+        if success_codes is None:
+            success_codes = [200]
+        if empty_success_codes is None:
+            empty_success_codes = [204]
+
         response_data = None
         try:
             response_data = response.json()
@@ -193,6 +198,8 @@ class RepoCoreClient(BaseClient):
         data, error = self._manage_response(response, f"getting channel {channel}")
         if error:
             return None, error
+        if not data:
+            return None, RepoCoreError("Server returned empty response")
         return Channel(**data), None
 
     def update_channel(self, channel: str, **data) -> tuple[Optional[ChannelUpdateResponse], Optional[Exception]]:
@@ -278,6 +285,8 @@ class RepoCoreClient(BaseClient):
         )
         if error:
             return None, error
+        if not result:
+            return None, RepoCoreError("Server returned empty response")
         return ChannelCreationResponse(status_code=response.status_code, **result), None
 
     def upload_file(self, filepath: str, channel: str, package_type: str):

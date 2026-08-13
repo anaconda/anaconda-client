@@ -71,6 +71,8 @@ class ChannelModifiedEvent(TelemetryEvent):
     channel_path: str = Field(alias="channel.path")
     privacy: Optional[str] = None
     indexing_behavior: Optional[str] = None
+    privacy_changed: Optional[bool] = Field(default=None, alias="privacy.changed")
+    indexing_behavior_changed: Optional[bool] = Field(default=None, alias="indexing_behavior.changed")
 
 
 class UpgradePromptImpressedEvent(TelemetryEvent):

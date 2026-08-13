@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
 
-from binstar_client.repocore.telemetry import Attributes, ChannelEvents, UpgradeEvents, UploadEvents
+from binstar_client.repocore.telemetry import Attributes, ChannelEvents, UpgradeEvents, UploadEvents, _check_error
 from binstar_client.repocore.telemetry_models import (
     ChannelAccessedEvent,
     ChannelCreatedEvent,
@@ -127,3 +127,36 @@ class TestAttributes:
         assert result["user_email"] is not None
         assert result["organization.ids"] == ["org1"]
         assert result["account.tier"] == ["pro"]
+
+    def test_attributes_partial_success_on_exception(self):
+        mock_client = MagicMock()
+        mock_user = {"id": "user456"}
+        mock_client.account = {
+            "user": mock_user,
+            "subscriptions": [{"org_id": "org3", "product_code": "enterprise"}],
+        }
+
+        def email_side_effect(key, default=None):
+            if key == "email":
+                raise Exception("Email fetch failed")
+            return mock_user.get(key, default)
+
+        mock_user_obj = MagicMock()
+        mock_user_obj.get = MagicMock(side_effect=email_side_effect)
+        mock_client.account["user"] = mock_user_obj
+
+        attrs = Attributes(mock_client)
+        assert attrs.user_id == "user456"
+        assert attrs.user_email is None
+        assert attrs.organization_ids == ["org3"]
+        assert attrs.account_tiers == ["enterprise"]
+
+
+class TestErrorSuffixIdempotence:
+    def test_error_suffix_is_idempotent(self):
+        event = ChannelCreatedEvent(channel_path="test/channel", privacy="private")
+        assert event.event_name == "channel.created"
+        _check_error(event, error=True)
+        assert event.event_name == "channel.created.error"
+        _check_error(event, error=True)
+        assert event.event_name == "channel.created.error"
