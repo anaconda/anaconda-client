@@ -103,7 +103,7 @@ def _extract_limit_from_error(error: Exception) -> Optional[int]:
     return int(limit_match.group(1)) if limit_match else None
 
 
-def _prompt_upgrade(api, app_name: str, limit: Optional[int]) -> None:
+def _prompt_upgrade(api, app_name: Optional[str], limit: Optional[int]) -> None:
     """Prompt user to upgrade when they hit the private channel limit."""
     limit_text = f" of {limit}" if limit else ""
     console.print(f"\n[yellow]You have reached the limit{limit_text} for private channels.[/yellow]")

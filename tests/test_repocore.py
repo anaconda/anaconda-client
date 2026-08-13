@@ -1474,6 +1474,38 @@ class TestRepoCoreChannelsCLI:
         assert result.exit_code == 1
         assert "At least one option is required" in result.output
 
+    def test_channels_modify_all_no_change(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_my_channels.return_value = _namespace_channels("myorg")
+        mock_api.update_channel.return_value = (ChannelUpdateResponse(changed=False), None)
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(app, ["modify", "dev", "--privacy", "private", "--indexing-behavior", "default"])
+
+        assert result.exit_code == 0
+        assert "No change" in result.output
+        assert mock_api.update_channel.call_count == 2
+        mock_api.update_channel.assert_any_call("myorg/dev", privacy="private")
+        mock_api.update_channel.assert_any_call("myorg/dev", indexing_behavior="default")
+
+    def test_channels_modify_all_changed(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_my_channels.return_value = _namespace_channels("myorg")
+        mock_api.update_channel.return_value = (ChannelUpdateResponse(changed=True), None)
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(app, ["modify", "dev", "--privacy", "private", "--indexing-behavior", "frozen"])
+
+        assert result.exit_code == 0
+        assert "Success" in result.output
+        assert mock_api.update_channel.call_count == 2
+        mock_api.update_channel.assert_any_call("myorg/dev", privacy="private")
+        mock_api.update_channel.assert_any_call("myorg/dev", indexing_behavior="frozen")
+
     def test_upload_single_file_with_explicit_channel(self):
         runner = CliRunner()
         app = _get_channels_app()
