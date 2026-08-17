@@ -1,6 +1,6 @@
 import hashlib
 
-from anaconda_cli_base.telemetry import count as _base_count
+from anaconda_cli_base.telemetry import log_event
 
 from .telemetry_models import (
     TelemetryEvent,
@@ -94,7 +94,7 @@ def _check_account_attrs(api) -> Attributes:
     return api.account_attributes
 
 
-def _count(event: TelemetryEvent, api, app_name: str | None, error: bool = False) -> None:
+def _event(event: TelemetryEvent, api, app_name: str | None, error: bool = False) -> None:
     """Helper to track telemetry events with user attributes."""
     try:
         _check_error(event, error)
@@ -102,7 +102,7 @@ def _count(event: TelemetryEvent, api, app_name: str | None, error: bool = False
         all_attributes = {**user_attrs.to_dict(), **event.attribute_dump()}
         if app_name is None:
             app_name = ""
-        _base_count(event.event_name, app_name, attributes=all_attributes)
+        log_event("", event.event_name, app_name, all_attributes)
     except Exception:
         pass  # nosec B110
 
@@ -114,49 +114,49 @@ class ChannelEvents:
     def created(api, app_name: str | None, error: bool = False, **kwargs) -> None:
         """Track channel creation event."""
         event = ChannelCreatedEvent(**kwargs)
-        _count(event, api, app_name, error)
+        _event(event, api, app_name, error)
 
     @staticmethod
     def created_exists(api, app_name: str | None, error: bool = False, **kwargs) -> None:
         """Track channel creation event when channel already exists."""
         event = ChannelCreatedExistsEvent(**kwargs)
-        _count(event, api, app_name, error)
+        _event(event, api, app_name, error)
 
     @staticmethod
     def accessed(api, app_name: str | None, error: bool = False, **kwargs) -> None:
         """Track channel access event."""
         event = ChannelAccessedEvent(**kwargs)
-        _count(event, api, app_name, error)
+        _event(event, api, app_name, error)
 
     @staticmethod
     def limit(api, app_name: str | None, **kwargs) -> None:
         """Track channel limit reached event."""
         event = ChannelLimitReachedEvent(**kwargs)
-        _count(event, api, app_name)
+        _event(event, api, app_name)
 
     @staticmethod
     def removed(api, app_name: str | None, error: bool = False, **kwargs) -> None:
         """Track channel removal event."""
         event = ChannelRemovedEvent(**kwargs)
-        _count(event, api, app_name, error)
+        _event(event, api, app_name, error)
 
     @staticmethod
     def modified(api, app_name: str | None, error: bool = False, **kwargs) -> None:
         """Track channel modification event."""
         event = ChannelModifiedEvent(**kwargs)
-        _count(event, api, app_name, error)
+        _event(event, api, app_name, error)
 
     @staticmethod
     def share(api, app_name: str | None, error: bool = False, **kwargs) -> None:
         """Track channel sharing event."""
         event = MemberInvitedEvent(**kwargs)
-        _count(event, api, app_name, error)
+        _event(event, api, app_name, error)
 
     @staticmethod
     def unshare(api, app_name: str | None, error: bool = False, **kwargs) -> None:
         """Track channel unsharing event."""
         event = MemberRemovedEvent(**kwargs)
-        _count(event, api, app_name, error)
+        _event(event, api, app_name, error)
 
 
 class UpgradeEvents:
@@ -166,19 +166,19 @@ class UpgradeEvents:
     def impressed(api, app_name: str | None) -> None:
         """Track upgrade prompt impression event."""
         event = UpgradePromptImpressedEvent()
-        _count(event, api, app_name)
+        _event(event, api, app_name)
 
     @staticmethod
     def accepted(api, app_name: str | None) -> None:
         """Track upgrade prompt acceptance event."""
         event = UpgradePromptAcceptedEvent()
-        _count(event, api, app_name)
+        _event(event, api, app_name)
 
     @staticmethod
     def dismissed(api, app_name: str | None) -> None:
         """Track upgrade prompt dismissal event."""
         event = UpgradePromptDismissedEvent()
-        _count(event, api, app_name)
+        _event(event, api, app_name)
 
 
 class UploadEvents:
@@ -188,4 +188,4 @@ class UploadEvents:
     def uploaded(api, app_name: str | None, error: bool = False, **kwargs) -> None:
         """Track package upload event."""
         event = PackageUploadedEvent(**kwargs)
-        _count(event, api, app_name, error)
+        _event(event, api, app_name, error)
