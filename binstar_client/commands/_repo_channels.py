@@ -25,7 +25,7 @@ from binstar_client.commands import show as show_mod
 from binstar_client.commands import upload as upload_mod
 from binstar_client import errors as dotorg_errors
 from binstar_client.repocore import RepoCoreClient
-from binstar_client.repocore.errors import LoginRequiredError, RepoCoreError, Unauthorized
+from binstar_client.repocore.errors import LoginRequiredError, RepoCoreError, Unauthenticated, Unauthorized
 from binstar_client.repocore.telemetry import ChannelEvents, UploadEvents, UpgradeEvents
 from binstar_client.repocore.package_utils import PackageType, determine_package_type, windows_glob
 from binstar_client.repocore.resolve import (
@@ -54,9 +54,9 @@ _PAGE_SIZE = 100
 
 def _is_not_logged_in(exc: Exception) -> bool:
     """True if ``exc`` is a not-logged-in signal from either backend — repocore's
-    ``Unauthorized`` / ``LoginRequiredError`` or anaconda.org's ``Unauthorized``.
+    ``Unauthenticated`` / ``LoginRequiredError`` or anaconda.org's ``Unauthorized``.
     """
-    return isinstance(exc, (Unauthorized, LoginRequiredError, dotorg_errors.Unauthorized))
+    return isinstance(exc, (Unauthenticated, LoginRequiredError, dotorg_errors.Unauthorized))
 
 
 app = typer.Typer(

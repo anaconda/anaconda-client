@@ -9,7 +9,7 @@ from typing import Optional
 
 from anaconda_auth.client import BaseClient
 
-from binstar_client.repocore.errors import InvalidName, RepoCoreError, Unauthorized
+from binstar_client.repocore.errors import InvalidName, RepoCoreError, Unauthenticated, Unauthorized
 from binstar_client.repocore.models import (
     Artifact,
     ArtifactFile,
@@ -153,7 +153,10 @@ class RepoCoreClient(BaseClient):
 
         msg = self._extract_error_message(response, action)
 
-        if response.status_code in (401, 403):
+        if response.status_code == 401:
+            return response_data, Unauthenticated(msg)
+
+        if response.status_code == 403:
             return response_data, Unauthorized(msg)
 
         return response_data, RepoCoreError(msg)

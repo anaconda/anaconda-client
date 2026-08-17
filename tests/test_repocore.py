@@ -17,6 +17,7 @@ from binstar_client.repocore import (
 from binstar_client.repocore.errors import (
     InvalidName,
     RepoCoreError,
+    Unauthenticated,
     Unauthorized,
 )
 
@@ -362,14 +363,15 @@ class TestRepoCoreClientAPI:
         assert error is None
         assert result.changed is False
 
-    def test_manage_response_401_raises_unauthorized(self):
+    def test_manage_response_401_raises_unauthenticated(self):
         client = _make_client()
         mock_response = _mock_response(401, {"error": {"code": "auth_required", "message": "Invalid token"}})
 
         result, error = client._manage_response(mock_response, "test action")
         assert result == {"error": {"code": "auth_required", "message": "Invalid token"}}
-        assert isinstance(error, Unauthorized)
+        assert isinstance(error, Unauthenticated)
         assert "Invalid token" in str(error)
+        assert "anaconda login" in str(error)
 
     def test_manage_response_403(self):
         client = _make_client()
@@ -378,6 +380,7 @@ class TestRepoCoreClientAPI:
         result, error = client._manage_response(mock_response, "test action")
         assert result == {"message": "forbidden"}
         assert isinstance(error, Unauthorized)
+        assert "anaconda login" not in str(error)
 
     def test_manage_response_500(self):
         client = _make_client()
@@ -1142,7 +1145,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
-        mock_api.list_my_channels.side_effect = Unauthorized("Please run `anaconda login`.")
+        mock_api.list_my_channels.side_effect = Unauthenticated("Please run `anaconda login`.")
 
         aserver = MagicMock()
         aserver.user.return_value = {"login": "user1"}
@@ -1776,7 +1779,7 @@ class TestRepoCoreChannelsCLI:
         app = _get_channels_app()
         mock_api = MagicMock()
         mock_api.list_my_channels.return_value = _namespace_channels("testorg")
-        mock_api.upload_file.side_effect = Unauthorized()
+        mock_api.upload_file.side_effect = Unauthenticated()
 
         with (
             _patch_repo_api(mock_api),
@@ -1787,8 +1790,8 @@ class TestRepoCoreChannelsCLI:
             result = runner.invoke(app, ["upload", "test-1.0-py39_0.conda", "--channel", "dev"])
 
         assert result.exit_code == 1
-        assert isinstance(result.exception, Unauthorized)
-        assert "does not allow you to perform this operation" in str(result.exception)
+        assert isinstance(result.exception, Unauthenticated)
+        assert "Authentication required" in str(result.exception)
         assert "anaconda login" in str(result.exception)
 
     def test_upload_repocore_error(self):
@@ -1829,7 +1832,7 @@ class TestRepoCoreChannelsCLI:
         app = _get_channels_app()
         mock_api = MagicMock()
         mock_api.list_my_channels.return_value = _namespace_channels("testorg")
-        mock_api.upload_file.side_effect = Unauthorized()
+        mock_api.upload_file.side_effect = Unauthenticated()
 
         with (
             _patch_repo_api(mock_api),
@@ -1840,8 +1843,8 @@ class TestRepoCoreChannelsCLI:
             result = runner.invoke(app, ["upload", "test-1.0-py39_0.conda", "--channel", "dev"])
 
         assert result.exit_code == 1
-        assert isinstance(result.exception, Unauthorized)
-        assert "does not allow you to perform this operation" in str(result.exception)
+        assert isinstance(result.exception, Unauthenticated)
+        assert "Authentication required" in str(result.exception)
         assert "anaconda login" in str(result.exception)
 
     def test_upload_error_response(self):
