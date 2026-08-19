@@ -103,21 +103,25 @@ def _extract_limit_from_error(error: Exception) -> Optional[int]:
     return int(limit_match.group(1)) if limit_match else None
 
 
-def _prompt_upgrade(api, app_name: Optional[str], limit: Optional[int]) -> None:
-    """Prompt user to upgrade when they hit the private channel limit."""
+def _prompt_upgrade(api, app_name: Optional[str], limit: Optional[int], action: str) -> None:
+    """Prompt user to upgrade when they hit a limit."""
     limit_text = f" of {limit}" if limit else ""
-    console.print(f"\n[yellow]You have reached the limit{limit_text} for private channels.[/yellow]")
-    console.print("Upgrade your plan to create more private channels.")
+    if action == "share":
+        console.print(f"\n[yellow]You have reached the limit{limit_text} for collaborators.[/yellow]")
+        console.print("Upgrade your plan to add more collaborators.")
+    else:
+        console.print(f"\n[yellow]You have reached the limit{limit_text} for private channels.[/yellow]")
+        console.print("Upgrade your plan to create more private channels.")
 
-    UpgradeEvents.impressed(api, app_name)
+    UpgradeEvents.impressed(api, app_name, action)
 
     if typer.confirm("\nWould you like to view upgrade options?", default=True):
-        UpgradeEvents.accepted(api, app_name)
+        UpgradeEvents.accepted(api, app_name, action)
         upgrade_url = "https://anaconda.com/pricing"
         console.print(f"Opening [cyan]{upgrade_url}[/cyan] in your browser...")
         webbrowser.open(upgrade_url)
     else:
-        UpgradeEvents.dismissed(api, app_name)
+        UpgradeEvents.dismissed(api, app_name, action)
 
 
 def _print_modify_result(result, channel_name: str, description: str) -> None:
@@ -514,7 +518,7 @@ def create_command(
         if "limit" in error_msg and "private" in error_msg:
             limit_value = _extract_limit_from_error(error)
             ChannelEvents.limit(api, app.info.name, channel_path=channel_path, action="create", limit=limit_value)
-            _prompt_upgrade(api, app.info.name, limit_value)
+            _prompt_upgrade(api, app.info.name, limit_value, "create")
         ChannelEvents.created(**event_kwargs)
         raise error
     if response.created:
@@ -683,7 +687,7 @@ def modify_command(
             if "limit" in error_msg and "private" in error_msg:
                 limit_value = _extract_limit_from_error(error)
                 ChannelEvents.limit(api, app.info.name, channel_path=name, action="modify", limit=limit_value)
-                _prompt_upgrade(api, app.info.name, limit_value)
+                _prompt_upgrade(api, app.info.name, limit_value, "modify")
             ChannelEvents.modified(api, app.info.name, error=True, **telemetry_kwargs)
             raise error
         telemetry_kwargs["privacy_changed"] = result.changed
@@ -916,6 +920,10 @@ def share_command(
         else:
             ChannelEvents.unshare(**event_kwargs)
         if error:
+            error_msg = str(error).lower()
+            if "maximum number of collaborators" in error_msg:
+                ChannelEvents.collaborator_limit(api, app.info.name, channel_path=ch, action="share")
+                _prompt_upgrade(api, app.info.name, None, "share")
             raise error
         console.print(f"[green]Success![/green] {action.capitalize()}d channel '[cyan]{ch}[/cyan]' with {user}")
 

@@ -12,6 +12,7 @@ from binstar_client.repocore.telemetry_models import (
     ChannelLimitReachedEvent,
     ChannelRemovedEvent,
     ChannelModifiedEvent,
+    CollaboratorLimitReachedEvent,
     MemberInvitedEvent,
     MemberRemovedEvent,
     PackageUploadedEvent,
@@ -61,12 +62,15 @@ class TestPydanticTelemetryModels:
         assert event.indexing_behavior == "frozen"
 
     def test_upgrade_events_models(self):
-        impressed = UpgradePromptImpressedEvent()
-        accepted = UpgradePromptAcceptedEvent()
-        dismissed = UpgradePromptDismissedEvent()
+        impressed = UpgradePromptImpressedEvent(action="create")
+        accepted = UpgradePromptAcceptedEvent(action="create")
+        dismissed = UpgradePromptDismissedEvent(action="create")
         assert impressed.event_name == "upgrade_prompt.impressed"
+        assert impressed.action == "create"
         assert accepted.event_name == "upgrade.accepted"
+        assert accepted.action == "create"
         assert dismissed.event_name == "upgrade_prompt.dismissed"
+        assert dismissed.action == "create"
 
     def test_package_uploaded_event_model(self):
         event = PackageUploadedEvent(channel="myorg/dev", package_type="conda", package_name="test-pkg")
@@ -86,6 +90,12 @@ class TestPydanticTelemetryModels:
         event = MemberRemovedEvent(channel_path="myorg/dev", user="testuser")
         assert event.event_name == "member.removed"
         assert event.channel_path == "myorg/dev"
+
+    def test_collaborator_limit_reached_event_model(self):
+        event = CollaboratorLimitReachedEvent(channel_path="myorg/dev", action="share")
+        assert event.event_name == "collaborator.limit_reached"
+        assert event.channel_path == "myorg/dev"
+        assert event.action == "share"
 
 
 class TestAttributes:

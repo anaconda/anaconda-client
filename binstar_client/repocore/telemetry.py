@@ -16,6 +16,7 @@ from .telemetry_models import (
     PackageUploadedEvent,
     MemberInvitedEvent,
     MemberRemovedEvent,
+    CollaboratorLimitReachedEvent,
 )
 
 
@@ -158,26 +159,32 @@ class ChannelEvents:
         event = MemberRemovedEvent(**kwargs)
         _event(event, api, app_name, error)
 
+    @staticmethod
+    def collaborator_limit(api, app_name: str | None, **kwargs) -> None:
+        """Track collaborator limit reached event."""
+        event = CollaboratorLimitReachedEvent(**kwargs)
+        _event(event, api, app_name)
+
 
 class UpgradeEvents:
     """Upgrade prompt events"""
 
     @staticmethod
-    def impressed(api, app_name: str | None) -> None:
+    def impressed(api, app_name: str | None, action: str) -> None:
         """Track upgrade prompt impression event."""
-        event = UpgradePromptImpressedEvent()
+        event = UpgradePromptImpressedEvent(action=action)
         _event(event, api, app_name)
 
     @staticmethod
-    def accepted(api, app_name: str | None) -> None:
+    def accepted(api, app_name: str | None, action: str) -> None:
         """Track upgrade prompt acceptance event."""
-        event = UpgradePromptAcceptedEvent()
+        event = UpgradePromptAcceptedEvent(action=action)
         _event(event, api, app_name)
 
     @staticmethod
-    def dismissed(api, app_name: str | None) -> None:
+    def dismissed(api, app_name: str | None, action: str) -> None:
         """Track upgrade prompt dismissal event."""
-        event = UpgradePromptDismissedEvent()
+        event = UpgradePromptDismissedEvent(action=action)
         _event(event, api, app_name)
 
 
