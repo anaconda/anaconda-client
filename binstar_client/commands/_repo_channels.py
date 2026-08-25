@@ -513,14 +513,12 @@ def create_command(
         channel_name=resolved.channel_name, namespace=resolved.namespace, privacy=privacy
     )
     channel_path = f"{resolved.namespace}/{resolved.channel_name}" if resolved.namespace else resolved.channel_name
-    operation_org_id = getattr(response, 'org_id', None) if response else None
     event_kwargs = {
         "api": api,
         "app_name": app.info.name,
         "namespace": resolved.namespace,
         "channel_path": channel_path,
         "privacy": privacy,
-        "operation_org_id": operation_org_id,
         "error": bool(error),
     }
     if error:

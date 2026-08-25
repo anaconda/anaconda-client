@@ -111,6 +111,11 @@ class TestAttributes:
         assert len(attrs.user_email) == 64
         assert attrs.organization_id is None
         assert attrs.account_tier is None
+        result = attrs.to_dict()
+        assert result["user.id"] == "user123"
+        assert result["user.email"] is not None
+        assert result["organization.id"] == ""
+        assert result["account.tier"] == ""
 
     def test_attributes_with_namespace(self):
         mock_client = MagicMock()
@@ -140,6 +145,9 @@ class TestAttributes:
         assert attrs.user_id == "user123"
         assert attrs.organization_id is None
         assert attrs.account_tier is None
+        result = attrs.to_dict()
+        assert result["organization.id"] == ""
+        assert result["account.tier"] == ""
 
     def test_attributes_with_exception(self):
         mock_client = MagicMock()
@@ -150,6 +158,15 @@ class TestAttributes:
         assert attrs.user_email is None
         assert attrs.organization_id is None
         assert attrs.account_tier is None
+        result = attrs.to_dict()
+        assert result["user.id"] == ""
+        assert result["user.email"] == ""
+        assert result["organization.id"] == ""
+        assert result["account.tier"] == ""
+        assert isinstance(result["user.id"], str)
+        assert isinstance(result["user.email"], str)
+        assert isinstance(result["organization.id"], str)
+        assert isinstance(result["account.tier"], str)
 
     def test_attributes_to_dict(self):
         mock_client = MagicMock()
@@ -163,10 +180,14 @@ class TestAttributes:
         attrs = Attributes(mock_client, namespace="myorg")
         result = attrs.to_dict()
 
-        assert result["user_id"] == "user123"
-        assert result["user_email"] is not None
+        assert result["user.id"] == "user123"
+        assert result["user.email"] is not None
         assert result["organization.id"] == "org1"
         assert result["account.tier"] == "pro"
+        assert isinstance(result["user.id"], str)
+        assert isinstance(result["user.email"], str)
+        assert isinstance(result["organization.id"], str)
+        assert isinstance(result["account.tier"], str)
 
     def test_attributes_with_none_active_subscription(self):
         mock_client = MagicMock()

@@ -70,13 +70,13 @@ class Attributes:
         """Export user attributes as a dictionary for telemetry.
 
         Returns:
-            Dictionary with user_id, user_email, organization.id, and account.tier
+            Dictionary with user.id, user.email, organization.id, and account.tier
         """
         return {
-            "user_id": self.user_id,
-            "user_email": self.user_email,
-            "organization.id": self.organization_id,
-            "account.tier": self.account_tier,
+            "user.id": self.user_id or "",
+            "user.email": self.user_email or "",
+            "organization.id": self.organization_id or "",
+            "account.tier": self.account_tier or "",
         }
 
 
