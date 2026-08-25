@@ -99,19 +99,47 @@ class TestPydanticTelemetryModels:
 
 
 class TestAttributes:
-    def test_attributes_with_valid_account(self):
+    def test_attributes_with_valid_account_no_namespace(self):
         mock_client = MagicMock()
         mock_client.account = {
             "user": {"id": "user123", "email": "test@example.com"},
-            "subscriptions": [{"org_id": "org1", "product_code": "pro"}, {"org_id": "org2", "product_code": "team"}],
         }
 
         attrs = Attributes(mock_client)
         assert attrs.user_id == "user123"
         assert attrs.user_email is not None
         assert len(attrs.user_email) == 64
-        assert attrs.organization_ids == ["org1", "org2"]
-        assert attrs.account_tiers == ["pro", "team"]
+        assert attrs.organization_id is None
+        assert attrs.account_tier is None
+
+    def test_attributes_with_namespace(self):
+        mock_client = MagicMock()
+        mock_client.account = {
+            "user": {"id": "user123", "email": "test@example.com"},
+        }
+        mock_client.get_user_organizations.return_value = [
+            {"id": "org1", "name": "myorg", "active_subscription": {"product_code": "pro"}},
+            {"id": "org2", "name": "teamorg", "active_subscription": {"product_code": "team"}},
+        ]
+
+        attrs = Attributes(mock_client, namespace="myorg")
+        assert attrs.user_id == "user123"
+        assert attrs.user_email is not None
+        assert len(attrs.user_email) == 64
+        assert attrs.organization_id == "org1"
+        assert attrs.account_tier == "pro"
+
+    def test_attributes_with_namespace_not_found(self):
+        mock_client = MagicMock()
+        mock_client.account = {"user": {"id": "user123", "email": "test@example.com"}}
+        mock_client.get_user_organizations.return_value = [
+            {"id": "org1", "name": "myorg", "active_subscription": {"product_code": "pro"}},
+        ]
+
+        attrs = Attributes(mock_client, namespace="unknownorg")
+        assert attrs.user_id == "user123"
+        assert attrs.organization_id is None
+        assert attrs.account_tier is None
 
     def test_attributes_with_exception(self):
         mock_client = MagicMock()
@@ -120,46 +148,37 @@ class TestAttributes:
         attrs = Attributes(mock_client)
         assert attrs.user_id is None
         assert attrs.user_email is None
-        assert attrs.organization_ids == []
-        assert attrs.account_tiers == []
+        assert attrs.organization_id is None
+        assert attrs.account_tier is None
 
     def test_attributes_to_dict(self):
         mock_client = MagicMock()
         mock_client.account = {
             "user": {"id": "user123", "email": "test@example.com"},
-            "subscriptions": [{"org_id": "org1", "product_code": "pro"}],
         }
+        mock_client.get_user_organizations.return_value = [
+            {"id": "org1", "name": "myorg", "active_subscription": {"product_code": "pro"}},
+        ]
 
-        attrs = Attributes(mock_client)
+        attrs = Attributes(mock_client, namespace="myorg")
         result = attrs.to_dict()
 
         assert result["user_id"] == "user123"
         assert result["user_email"] is not None
-        assert result["organization.ids"] == ["org1"]
-        assert result["account.tier"] == ["pro"]
+        assert result["organization.id"] == "org1"
+        assert result["account.tier"] == "pro"
 
-    def test_attributes_partial_success_on_exception(self):
+    def test_attributes_with_none_active_subscription(self):
         mock_client = MagicMock()
-        mock_user = {"id": "user456"}
-        mock_client.account = {
-            "user": mock_user,
-            "subscriptions": [{"org_id": "org3", "product_code": "enterprise"}],
-        }
+        mock_client.account = {"user": {"id": "user456"}}
+        mock_client.get_user_organizations.return_value = [
+            {"id": "org3", "name": "freeorg", "active_subscription": None},
+        ]
 
-        def email_side_effect(key, default=None):
-            if key == "email":
-                raise Exception("Email fetch failed")
-            return mock_user.get(key, default)
-
-        mock_user_obj = MagicMock()
-        mock_user_obj.get = MagicMock(side_effect=email_side_effect)
-        mock_client.account["user"] = mock_user_obj
-
-        attrs = Attributes(mock_client)
+        attrs = Attributes(mock_client, namespace="freeorg")
         assert attrs.user_id == "user456"
-        assert attrs.user_email is None
-        assert attrs.organization_ids == ["org3"]
-        assert attrs.account_tiers == ["enterprise"]
+        assert attrs.organization_id == "org3"
+        assert attrs.account_tier == "free_subscription"
 
 
 class TestErrorSuffixIdempotence:
