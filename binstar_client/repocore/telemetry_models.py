@@ -135,3 +135,4 @@ class CollaboratorLimitReachedEvent(TelemetryEvent):
     errorable: bool = False
     channel_path: str = Field(alias="channel.path")
     action: str
+    limit: Optional[int] = None

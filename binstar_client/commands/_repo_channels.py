@@ -10,6 +10,7 @@ import logging
 import os
 import re
 import webbrowser
+from enum import Enum
 from glob import glob
 from typing import List, Optional, Tuple, cast
 
@@ -97,9 +98,27 @@ class _DotOrgCredentials(BaseModel):
             return False
 
 
-def _extract_limit_from_error(error: Exception) -> Optional[int]:
-    """Extract channel limit number from error message."""
-    limit_match = re.search(r'has reached the limit of (\d+)', str(error))
+class LimitAction(str, Enum):
+    """Actions that can trigger limit errors."""
+
+    CREATE = "create"
+    SHARE = "share"
+
+
+def _extract_limit_from_error(error: Exception, action: LimitAction = LimitAction.CREATE) -> Optional[int]:
+    """Extract limit number from error message.
+
+    Args:
+        error: The error exception containing the limit message
+        action: The action being performed (CREATE or SHARE)
+
+    Returns:
+        The limit value if found, otherwise None
+    """
+    if action == LimitAction.CREATE:
+        limit_match = re.search(r'has reached the limit of (\d+)', str(error))
+    else:
+        limit_match = re.search(r'can only have (\d+)', str(error))
     return int(limit_match.group(1)) if limit_match else None
 
 
@@ -921,9 +940,10 @@ def share_command(
             ChannelEvents.unshare(**event_kwargs)
         if error:
             error_msg = str(error).lower()
-            if "maximum number of collaborators" in error_msg:
-                ChannelEvents.collaborator_limit(api, app.info.name, channel_path=ch, action="share")
-                _prompt_upgrade(api, app.info.name, None, "share")
+            if "collaborators" in error_msg and "can only have" in error_msg:
+                limit_value = _extract_limit_from_error(error, LimitAction.SHARE)
+                ChannelEvents.collaborator_limit(api, app.info.name, channel_path=ch, action="share", limit=limit_value)
+                _prompt_upgrade(api, app.info.name, limit_value, "share")
             raise error
         console.print(f"[green]Success![/green] {action.capitalize()}d channel '[cyan]{ch}[/cyan]' with {user}")
 

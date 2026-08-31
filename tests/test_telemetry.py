@@ -97,6 +97,9 @@ class TestPydanticTelemetryModels:
         assert event.channel_path == "myorg/dev"
         assert event.action == "share"
 
+        event_with_limit = CollaboratorLimitReachedEvent(channel_path="myorg/dev", action="share", limit=5)
+        assert event_with_limit.limit == 5
+
 
 class TestAttributes:
     def test_attributes_with_valid_account(self):
