@@ -165,13 +165,13 @@ def namespace_known_to_user(api, namespace: str) -> bool:
         if namespace in {org.name for org in api.list_user_organizations()}:
             return True
     except Exception:
-        pass
+        pass  # nosec B110
 
     try:
         if namespace in _writable_namespaces(list(_iter_writable_channels(api))):
             return True
     except Exception:
-        pass
+        pass  # nosec B110
 
     return False
 
