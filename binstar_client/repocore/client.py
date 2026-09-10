@@ -274,6 +274,16 @@ class RepoCoreClient(BaseClient):
             return [], error
         return [Channel(**item) for item in (data or {}).get("items", [])], None
 
+    def create_namespace_url(self) -> str:
+        """Web URL to create a brand-new namespace (an anaconda.com organization).
+
+        The CLI never auto-creates a namespace on the user's behalf (aside from
+        the reserved per-username namespace); this is where a user is sent to
+        create one explicitly first. Uses the same base URL the client's API
+        calls resolve to, so it honors ``--site``/``--at``.
+        """
+        return join(self._base_uri, "app", "organizations", "create")
+
     def create_namespace_channel(
         self, channel_name: str, namespace: Optional[str] = None, privacy: str = "private"
     ) -> tuple[Optional[ChannelCreationResponse], Optional[Exception]]:
