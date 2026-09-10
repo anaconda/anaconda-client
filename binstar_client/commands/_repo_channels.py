@@ -29,6 +29,7 @@ from binstar_client.repocore.telemetry import ChannelEvents, UploadEvents
 from binstar_client.repocore.package_utils import PackageType, determine_package_type, windows_glob
 from binstar_client.repocore.resolve import (
     classify_and_resolve,
+    namespace_known_to_user as _namespace_known_to_user,
     resolve_channels_with_namespaces as _resolve_channels_with_namespaces,
     resolve_namespace_and_channel as _resolve_namespace_and_channel,
     resolve_no_namespace as _resolve_no_namespace,
@@ -470,6 +471,14 @@ def create_command(
 
     api = ctx.obj.repo_api
     resolved = _resolve_namespace_and_channel(api, name, namespace, require_namespace=False)
+
+    if resolved.namespace and not _namespace_known_to_user(api, resolved.namespace):
+        console.print(
+            f"[yellow]Namespace '{resolved.namespace}' doesn't exist yet.[/yellow]\n"
+            f"Create it at: [cyan]{api.create_namespace_url()}[/cyan] "
+            "(you'll already be signed in), then re-run this command."
+        )
+        raise typer.Exit(1)
 
     if public:
         privacy = "public"

@@ -136,6 +136,46 @@ def resolve_no_namespace(api, name: str) -> ResolvedChannel:
     return _repo_channel(namespace=None, channel_name=name)
 
 
+def namespace_known_to_user(api, namespace: str) -> bool:
+    """Whether ``namespace`` already exists for the caller.
+
+    "Known" means creating a channel under it cannot cause the repocore
+    backend to silently provision a brand-new namespace behind the user's
+    back. A namespace counts as known when it is:
+      * the caller's own username — the sanctioned exception (repocore
+        reserves this automatically for book-keeping/subscriptions), or
+      * returned by ``list_user_organizations`` (the caller is already a
+        member), or
+      * the namespace of a channel the caller can already write to (it
+        exists even if it doesn't surface via org membership, e.g. a
+        channel shared from an org the caller isn't a member of).
+
+    Best-effort: any lookup failure counts as "not known", so callers err
+    toward requiring explicit namespace creation rather than risking an
+    unintended auto-created namespace.
+    """
+    try:
+        username = (api.account.get("user") or {}).get("username") or ""
+    except Exception:
+        username = ""
+    if username and namespace == username:
+        return True
+
+    try:
+        if namespace in {org.name for org in api.list_user_organizations()}:
+            return True
+    except Exception:
+        pass  # nosec B110
+
+    try:
+        if namespace in _writable_namespaces(list(_iter_writable_channels(api))):
+            return True
+    except Exception:
+        pass  # nosec B110
+
+    return False
+
+
 def resolve_namespace_and_channel(
     api, name: str, namespace: Optional[str] = None, require_namespace: bool = True
 ) -> ResolvedChannel:

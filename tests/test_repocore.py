@@ -210,6 +210,16 @@ class TestRepoCoreClientAPI:
         assert result == []
         assert isinstance(result, list)
 
+    def test_create_namespace_url(self):
+        client = _make_client()
+        client._base_uri = "https://anaconda.com"
+        assert client.create_namespace_url() == "https://anaconda.com/app/organizations/create"
+
+    def test_create_namespace_url_honors_base_uri(self):
+        client = _make_client()
+        client._base_uri = "https://repo.example.com"
+        assert client.create_namespace_url() == "https://repo.example.com/app/organizations/create"
+
     def test_list_all_channels(self):
         client = _make_client()
         payload = {
@@ -793,6 +803,53 @@ class TestResolveNamespaceAndChannel:
         assert resolved.namespace is None
         assert resolved.channel_name == "dev"
 
+    def test_namespace_known_own_username(self):
+        from binstar_client.repocore.resolve import namespace_known_to_user
+
+        mock_api = MagicMock()
+        mock_api.account.get.return_value = {"username": "testuser"}
+
+        assert namespace_known_to_user(mock_api, "testuser") is True
+
+    def test_namespace_known_org_membership(self):
+        from binstar_client.repocore.resolve import namespace_known_to_user
+
+        mock_api = MagicMock()
+        mock_api.account.get.return_value = {"username": "testuser"}
+        mock_api.list_user_organizations.return_value = [Namespace(name="my-team")]
+
+        assert namespace_known_to_user(mock_api, "my-team") is True
+
+    def test_namespace_known_writable_channel(self):
+        from binstar_client.repocore.resolve import namespace_known_to_user
+
+        mock_api = MagicMock()
+        mock_api.account.get.return_value = {"username": "testuser"}
+        mock_api.list_user_organizations.return_value = []
+        mock_api.list_my_channels.return_value = _namespace_channels("shared-org")
+
+        assert namespace_known_to_user(mock_api, "shared-org") is True
+
+    def test_namespace_unknown(self):
+        from binstar_client.repocore.resolve import namespace_known_to_user
+
+        mock_api = MagicMock()
+        mock_api.account.get.return_value = {"username": "testuser"}
+        mock_api.list_user_organizations.return_value = []
+        mock_api.list_my_channels.return_value = _namespace_channels()
+
+        assert namespace_known_to_user(mock_api, "brand-new-org") is False
+
+    def test_namespace_unknown_lookup_failures_swallowed(self):
+        from binstar_client.repocore.resolve import namespace_known_to_user
+
+        mock_api = MagicMock()
+        mock_api.account.get.side_effect = Exception("API Error")
+        mock_api.list_user_organizations.side_effect = Exception("API Error")
+        mock_api.list_my_channels.side_effect = Exception("API Error")
+
+        assert namespace_known_to_user(mock_api, "brand-new-org") is False
+
     def test_no_namespaces_require_false(self):
         from binstar_client.commands._repo_channels import _resolve_namespace_and_channel
 
@@ -1191,6 +1248,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
+        mock_api.list_my_channels.return_value = _namespace_channels("myns")
         mock_api.create_namespace_channel.return_value = (
             ChannelCreationResponse(channel_path="myns/dev", status_code=201),
             None,
@@ -1209,6 +1267,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
+        mock_api.list_my_channels.return_value = _namespace_channels("myns")
         mock_api.create_namespace_channel.return_value = (
             ChannelCreationResponse(channel_path="myns/dev", status_code=201),
             None,
@@ -1263,6 +1322,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
+        mock_api.list_my_channels.return_value = _namespace_channels("myns")
         mock_api.create_namespace_channel.return_value = (
             ChannelCreationResponse(channel_path="myns/dev", status_code=201),
             None,
@@ -1283,6 +1343,7 @@ class TestRepoCoreChannelsCLI:
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
+        mock_api.list_my_channels.return_value = _namespace_channels("myns")
         mock_api.create_namespace_channel.return_value = (
             ChannelCreationResponse(channel_path="myns/dev", status_code=201),
             None,
@@ -1310,6 +1371,62 @@ class TestRepoCoreChannelsCLI:
         assert result.exit_code == 1
         assert "mutually exclusive" in result.output
         mock_api.create_namespace_channel.assert_not_called()
+
+    def test_channels_create_unknown_namespace_flag_blocks(self):
+        """A --namespace that doesn't exist is not auto-created; the user is
+        pointed at the web UI instead."""
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_my_channels.return_value = _namespace_channels()
+        mock_api.list_user_organizations.return_value = []
+        type(mock_api).account = PropertyMock(return_value={"user": {"username": "testuser"}})
+        mock_api.create_namespace_url.return_value = "https://anaconda.com/app/organizations/create"
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(app, ["create", "dev", "--namespace", "neworg", "--public"])
+
+        assert result.exit_code == 1
+        assert "Namespace 'neworg' doesn't exist yet." in result.output
+        assert "https://anaconda.com/app/organizations/create" in result.output
+        mock_api.create_namespace_channel.assert_not_called()
+
+    def test_channels_create_unknown_namespace_slash_blocks(self):
+        """A namespace/channel slash form for a nonexistent namespace is not
+        auto-created; the user is pointed at the web UI instead."""
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_my_channels.return_value = _namespace_channels()
+        mock_api.list_user_organizations.return_value = []
+        type(mock_api).account = PropertyMock(return_value={"user": {"username": "testuser"}})
+        mock_api.create_namespace_url.return_value = "https://anaconda.example.com/app/organizations/create"
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(app, ["create", "neworg/dev", "--public"])
+
+        assert result.exit_code == 1
+        assert "Namespace 'neworg' doesn't exist yet." in result.output
+        assert "https://anaconda.example.com/app/organizations/create" in result.output
+        mock_api.create_namespace_channel.assert_not_called()
+
+    def test_channels_create_unknown_namespace_does_not_say_organization(self):
+        """The block message avoids the word 'organization' in prose (the URL
+        path itself legitimately contains it as the app's fixed route)."""
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_my_channels.return_value = _namespace_channels()
+        mock_api.list_user_organizations.return_value = []
+        type(mock_api).account = PropertyMock(return_value={"user": {"username": "testuser"}})
+        mock_api.create_namespace_url.return_value = "https://anaconda.com/app/organizations/create"
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(app, ["create", "neworg/dev", "--public"])
+
+        assert result.exit_code == 1
+        prose = result.output.replace("https://anaconda.com/app/organizations/create", "")
+        assert "organization" not in prose
 
     def test_channels_create_no_namespaces_no_username(self):
         runner = CliRunner()
