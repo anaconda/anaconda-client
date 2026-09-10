@@ -45,6 +45,7 @@ requirements:
     - urllib3 >=1.26.4
     - anaconda-cli-base >=0.9.1
     - anaconda-auth >=0.11.0
+    - pypng
 
 test:
   requires:
