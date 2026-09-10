@@ -16,3 +16,5 @@ urllib3>=1.26.4
 anaconda-auth>=0.11.0
 anaconda-cli-base>=0.9.1
 anaconda-opentelemetry>=1.2.2
+# click 8.5.0 deprecates click.utils.get_binary_stream, which typer<0.26.0 still imports
+click==8.4.1
