@@ -80,13 +80,15 @@ class UpgradePromptImpressedEvent(TelemetryEvent):
 
     event_name: str = "upgrade_prompt.impressed"
     errorable: bool = False
+    action: str
 
 
-class UpgradePromptConvertedEvent(TelemetryEvent):
-    """Upgrade prompt conversion event."""
+class UpgradePromptAcceptedEvent(TelemetryEvent):
+    """Upgrade prompt acceptance event."""
 
-    event_name: str = "upgrade_prompt.converted"
+    event_name: str = "upgrade.accepted"
     errorable: bool = False
+    action: str
 
 
 class UpgradePromptDismissedEvent(TelemetryEvent):
@@ -94,6 +96,7 @@ class UpgradePromptDismissedEvent(TelemetryEvent):
 
     event_name: str = "upgrade_prompt.dismissed"
     errorable: bool = False
+    action: str
 
 
 class PackageUploadedEvent(TelemetryEvent):
@@ -123,3 +126,13 @@ class MemberRemovedEvent(TelemetryEvent):
     errorable: bool = True
     channel_path: str = Field(alias="channel.path")
     user: str
+
+
+class CollaboratorLimitReachedEvent(TelemetryEvent):
+    """Collaborator limit reached event."""
+
+    event_name: str = "collaborator.limit_reached"
+    errorable: bool = False
+    channel_path: str = Field(alias="channel.path")
+    action: str
+    limit: Optional[int] = None

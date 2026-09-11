@@ -9,6 +9,8 @@ import argparse
 import logging
 import os
 import re
+import webbrowser
+from enum import Enum
 from glob import glob
 from typing import List, Optional, Tuple, cast
 
@@ -24,8 +26,8 @@ from binstar_client.commands import show as show_mod
 from binstar_client.commands import upload as upload_mod
 from binstar_client import errors as dotorg_errors
 from binstar_client.repocore import RepoCoreClient
-from binstar_client.repocore.errors import LoginRequiredError, RepoCoreError, Unauthorized
-from binstar_client.repocore.telemetry import ChannelEvents, UploadEvents
+from binstar_client.repocore.errors import LoginRequiredError, RepoCoreError, Unauthenticated, Unauthorized
+from binstar_client.repocore.telemetry import ChannelEvents, UploadEvents, UpgradeEvents
 from binstar_client.repocore.package_utils import PackageType, determine_package_type, windows_glob
 from binstar_client.repocore.resolve import (
     classify_and_resolve,
@@ -54,9 +56,9 @@ _PAGE_SIZE = 100
 
 def _is_not_logged_in(exc: Exception) -> bool:
     """True if ``exc`` is a not-logged-in signal from either backend — repocore's
-    ``Unauthorized`` / ``LoginRequiredError`` or anaconda.org's ``Unauthorized``.
+    ``Unauthenticated`` / ``LoginRequiredError`` or anaconda.org's ``Unauthorized``.
     """
-    return isinstance(exc, (Unauthorized, LoginRequiredError, dotorg_errors.Unauthorized))
+    return isinstance(exc, (Unauthenticated, LoginRequiredError, dotorg_errors.Unauthorized))
 
 
 app = typer.Typer(
@@ -97,10 +99,49 @@ class _DotOrgCredentials(BaseModel):
             return False
 
 
-def _extract_limit_from_error(error: Exception) -> Optional[int]:
-    """Extract channel limit number from error message."""
-    limit_match = re.search(r'has reached the limit of (\d+)', str(error))
+class LimitAction(str, Enum):
+    """Actions that can trigger limit errors."""
+
+    CREATE = "create"
+    SHARE = "share"
+
+
+def _extract_limit_from_error(error: Exception, action: LimitAction = LimitAction.CREATE) -> Optional[int]:
+    """Extract limit number from error message.
+
+    Args:
+        error: The error exception containing the limit message
+        action: The action being performed (CREATE or SHARE)
+
+    Returns:
+        The limit value if found, otherwise None
+    """
+    if action == LimitAction.CREATE:
+        limit_match = re.search(r'has reached the limit of (\d+)', str(error))
+    else:
+        limit_match = re.search(r'can only have (\d+)', str(error))
     return int(limit_match.group(1)) if limit_match else None
+
+
+def _prompt_upgrade(api, app_name: Optional[str], limit: Optional[int], action: str) -> None:
+    """Prompt user to upgrade when they hit a limit."""
+    limit_text = f" of {limit}" if limit else ""
+    if action == "share":
+        console.print(f"\n[yellow]You have reached the limit{limit_text} for collaborators.[/yellow]")
+        console.print("Upgrade your plan to add more collaborators.")
+    else:
+        console.print(f"\n[yellow]You have reached the limit{limit_text} for private channels.[/yellow]")
+        console.print("Upgrade your plan to create more private channels.")
+
+    UpgradeEvents.impressed(api, app_name, action)
+
+    if typer.confirm("\nWould you like to view upgrade options?", default=True):
+        UpgradeEvents.accepted(api, app_name, action)
+        upgrade_url = api._pricing_page
+        console.print(f"Opening [cyan]{upgrade_url}[/cyan] in your browser...")
+        webbrowser.open(upgrade_url)
+    else:
+        UpgradeEvents.dismissed(api, app_name, action)
 
 
 def _print_modify_result(result, channel_name: str, description: str) -> None:
@@ -505,6 +546,7 @@ def create_command(
         if "limit" in error_msg and "private" in error_msg:
             limit_value = _extract_limit_from_error(error)
             ChannelEvents.limit(api, app.info.name, channel_path=channel_path, action="create", limit=limit_value)
+            _prompt_upgrade(api, app.info.name, limit_value, "create")
         ChannelEvents.created(**event_kwargs)
         raise error
     if response.created:
@@ -673,6 +715,7 @@ def modify_command(
             if "limit" in error_msg and "private" in error_msg:
                 limit_value = _extract_limit_from_error(error)
                 ChannelEvents.limit(api, app.info.name, channel_path=name, action="modify", limit=limit_value)
+                _prompt_upgrade(api, app.info.name, limit_value, "modify")
             ChannelEvents.modified(api, app.info.name, error=True, **telemetry_kwargs)
             raise error
         telemetry_kwargs["privacy_changed"] = result.changed
@@ -905,6 +948,11 @@ def share_command(
         else:
             ChannelEvents.unshare(**event_kwargs)
         if error:
+            error_msg = str(error).lower()
+            if "collaborators" in error_msg and "can only have" in error_msg:
+                limit_value = _extract_limit_from_error(error, LimitAction.SHARE)
+                ChannelEvents.collaborator_limit(api, app.info.name, channel_path=ch, action="share", limit=limit_value)
+                _prompt_upgrade(api, app.info.name, limit_value, "share")
             raise error
         console.print(f"[green]Success![/green] {action.capitalize()}d channel '[cyan]{ch}[/cyan]' with {user}")
 
