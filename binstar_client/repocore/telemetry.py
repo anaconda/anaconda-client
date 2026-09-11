@@ -86,6 +86,13 @@ def _check_error(event: TelemetryEvent, error: bool) -> None:
         event.event_name += '.error'
 
 
+def _check_account_attrs(api) -> Attributes:
+    """Check and cache account attributes on the api object."""
+    if not hasattr(api, 'account_attributes'):
+        api.account_attributes = Attributes(api)
+    return api.account_attributes
+
+
 def _event(event: TelemetryEvent, api, app_name: str | None, namespace: str | None = None, error: bool = False) -> None:
     """Helper to track telemetry events with user attributes."""
     try:
