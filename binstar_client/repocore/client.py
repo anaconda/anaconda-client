@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 REPO_API_PATH = "/api/repo"
 AUTH_API_PATH = "/api/auth"
 ACCOUNT_API_PATH = "/api"
+PRICING_PAGE_PATH = "/pricing"
 
 
 class RepoCoreClient(BaseClient):
@@ -57,6 +58,10 @@ class RepoCoreClient(BaseClient):
     @property
     def _account_api_base(self):
         return self._base_uri + ACCOUNT_API_PATH
+
+    @property
+    def _pricing_page(self):
+        return self._base_uri + PRICING_PAGE_PATH
 
     @property
     def _channels_url(self):

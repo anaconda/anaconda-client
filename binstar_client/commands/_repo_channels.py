@@ -137,7 +137,7 @@ def _prompt_upgrade(api, app_name: Optional[str], limit: Optional[int], action: 
 
     if typer.confirm("\nWould you like to view upgrade options?", default=True):
         UpgradeEvents.accepted(api, app_name, action)
-        upgrade_url = "https://anaconda.com/pricing"
+        upgrade_url = api._pricing_page
         console.print(f"Opening [cyan]{upgrade_url}[/cyan] in your browser...")
         webbrowser.open(upgrade_url)
     else:
