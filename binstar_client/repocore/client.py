@@ -174,6 +174,18 @@ class RepoCoreClient(BaseClient):
             raise error
         return [Namespace(**org) for org in data or []]
 
+    def get_user_organizations(self):
+        """Get raw user organizations data for telemetry.
+
+        Returns organization data with id and active_subscription fields.
+        """
+        url = join(self._auth_api_base, "organizations", "my")
+        response = self.get(url)
+        data, error = self._manage_response(response, "getting user organizations")
+        if error:
+            raise error
+        return data or []
+
     def create_channel(self, channel: str, privacy: Optional[str] = None):
         self._validate_channel_name(channel)
 
