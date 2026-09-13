@@ -1,4 +1,3 @@
-# -*- coding: utf8 -*-
 from __future__ import annotations
 
 import collections
@@ -23,7 +22,8 @@ except ImportError:
 from binstar_client.errors import BinstarError
 from binstar_client.utils import conda, paths
 from binstar_client.utils.appdirs import EnvAppDirs
-from .yaml import yaml_load, yaml_dump
+
+from .yaml import yaml_dump, yaml_load
 
 logger = logging.getLogger('binstar')
 
@@ -113,7 +113,7 @@ def recursive_update(config, update_dict):
             updated_value_dict = recursive_update(config.get(update_key, {}), updated_value)
             config[update_key] = updated_value_dict
         else:
-            config[update_key] = update_dict[update_key]
+            config[update_key] = updated_value
 
     return config
 
@@ -253,13 +253,9 @@ def load_config(config_file):
     except yaml.YAMLError:
         backup_file = config_file + '.bak'
         shutil.copyfile(config_file, backup_file)
-        warn_msg = (
-            'Config file `{}` has invalid structure and couldn\'t be read. \nFile content was backed up to `{}`'.format(
-                config_file, backup_file
-            )
-        )
+        warn_msg = f'Config file `{config_file}` has invalid structure and couldn\'t be read. \nFile content was backed up to `{backup_file}`'
     except PermissionError:
-        warn_msg = 'Not enough rights to access config file `{}`! Please review file permissions.'.format(config_file)
+        warn_msg = f'Not enough rights to access config file `{config_file}`! Please review file permissions.'
     except OSError as error:
         logger.exception(error)
 
@@ -338,7 +334,7 @@ def save_config(data, config_file):
         os.replace(temp_file, config_file)
 
     except (OSError, yaml.YAMLError) as error:
-        raise BinstarError("Config file `{}` couldn't be saved! Changes may be lost.".format(config_file)) from error
+        raise BinstarError(f"Config file `{config_file}` couldn't be saved! Changes may be lost.") from error
 
 
 def set_config(data, user=True):

@@ -1,28 +1,23 @@
-# -*- coding: utf8 -*-
-
 """Package type detection and meta-data extraction."""
 
 from __future__ import annotations
 
-__all__ = ['detect_package_meta', 'detect_package_extension', 'detect_package_type', 'get_attrs']
+__all__ = ['detect_package_extension', 'detect_package_meta', 'detect_package_type', 'get_attrs']
 
 import collections
-
 import functools
-
 import logging
 import tarfile
 import typing
-
 from os import path
 
-from binstar_client.utils.config import PackageType
-from binstar_client.inspect_package.conda import inspect_conda_package
 from binstar_client.inspect_package import conda_installer
+from binstar_client.inspect_package.conda import inspect_conda_package
+from binstar_client.inspect_package.env import inspect_env_package
+from binstar_client.inspect_package.ipynb import inspect_ipynb_package
 from binstar_client.inspect_package.pypi import inspect_pypi_package
 from binstar_client.inspect_package.r import inspect_r_package
-from binstar_client.inspect_package.ipynb import inspect_ipynb_package
-from binstar_client.inspect_package.env import inspect_env_package
+from binstar_client.utils.config import PackageType
 
 if typing.TYPE_CHECKING:
     import typing_extensions
@@ -40,8 +35,8 @@ class Meta(typing.NamedTuple):
     extension: str
 
 
-Raw: typing_extensions.TypeAlias = typing.Optional[str]
-OptMeta: typing_extensions.TypeAlias = typing.Optional[Meta]
+Raw: typing_extensions.TypeAlias = str | None
+OptMeta: typing_extensions.TypeAlias = Meta | None
 
 
 def checker_for(package_type: PackageType) -> typing.Callable[[typing.Callable[P, Raw]], typing.Callable[P, OptMeta]]:
@@ -50,7 +45,7 @@ def checker_for(package_type: PackageType) -> typing.Callable[[typing.Callable[P
     def wrapper(function: typing.Callable[P, Raw]) -> typing.Callable[P, OptMeta]:
         @functools.wraps(function)
         def wrapped(*args: P.args, **kwargs: P.kwargs) -> OptMeta:
-            extension: typing.Optional[str] = function(*args, **kwargs)
+            extension: str | None = function(*args, **kwargs)
             if extension is None:
                 return None
             return Meta(package_type=package_type, extension=extension)
@@ -83,7 +78,7 @@ def detector_for(package_type: PackageType) -> typing.Callable[[RawDetector], De
     return register
 
 
-def find_postfix(value: str, *options: str) -> typing.Optional[str]:
+def find_postfix(value: str, *options: str) -> str | None:
     """Find a first applicable postfix for a :code:`value` from available :code:`options`."""
     option: str
     for option in options:
@@ -93,7 +88,7 @@ def find_postfix(value: str, *options: str) -> typing.Optional[str]:
 
 
 @detector_for(PackageType.CONDA)
-def is_conda(filename: str) -> typing.Optional[str]:
+def is_conda(filename: str) -> str | None:
     """
     Check if :code:`filename` is a conda package.
 
@@ -117,7 +112,7 @@ def is_conda(filename: str) -> typing.Optional[str]:
 
 
 @detector_for(PackageType.STANDARD_PYTHON)
-def is_pypi(filename: str) -> typing.Optional[str]:
+def is_pypi(filename: str) -> str | None:
     """
     Check if :code:`filename` is a python package.
 
@@ -128,7 +123,7 @@ def is_pypi(filename: str) -> typing.Optional[str]:
     if filename.endswith('.whl'):
         logger.debug('This is a %s wheel package', package_type_label)
         return '.whl'
-    result: typing.Optional[str] = find_postfix(filename, '.tar.gz', 'tgz')
+    result: str | None = find_postfix(filename, '.tar.gz', 'tgz')
     if result is None:
         logger.debug('This is not a %s package (expected .tgz, .tar.gz or .whl)', package_type_label)
         return None
@@ -141,14 +136,14 @@ def is_pypi(filename: str) -> typing.Optional[str]:
 
 
 @detector_for(PackageType.STANDARD_R)
-def is_r(filename: str) -> typing.Optional[str]:
+def is_r(filename: str) -> str | None:
     """
     Check if :code:`filename` is an r package.
 
     :return: File extension if it is an r package, otherwise - :code:`None`.
     """
     logger.debug('Testing if %s is an R package ..', filename)
-    result: typing.Optional[str] = find_postfix(filename, '.tar.gz', 'tgz')
+    result: str | None = find_postfix(filename, '.tar.gz', 'tgz')
     if result is None:
         logger.debug('This not is an R package (expected .tgz, .tar.gz).')
         return None
@@ -170,28 +165,28 @@ def is_r(filename: str) -> typing.Optional[str]:
 
 
 @detector_for(PackageType.NOTEBOOK)
-def is_ipynb(filename: str) -> typing.Optional[str]:
+def is_ipynb(filename: str) -> str | None:
     """
     Check if :code:`filename` is a notebook.
 
     :return: File extension if it is a notebook, otherwise - :code:`None`.
     """
     logger.debug('Testing if %s is an ipynb file ..', filename)
-    result: typing.Optional[str] = find_postfix(filename, '.ipynb')
+    result: str | None = find_postfix(filename, '.ipynb')
     if result is None:
         logger.debug('Not an ipynb file')
     return result
 
 
 @detector_for(PackageType.ENV)
-def is_environment(filename: str) -> typing.Optional[str]:
+def is_environment(filename: str) -> str | None:
     """
     Check if :code:`filename` is an environment.
 
     :return: File extension if it is an environment, otherwise - :code:`None`.
     """
     logger.debug('Testing if %s is an environment file ..', filename)
-    result: typing.Optional[str] = find_postfix(filename, '.yml', '.yaml')
+    result: str | None = find_postfix(filename, '.yml', '.yaml')
     if result is None:
         logger.debug('Not an environment file')
     return result
@@ -201,7 +196,7 @@ is_installer: typing.Final[Detector] = detector_for(PackageType.INSTALLER)(conda
 
 
 @detector_for(PackageType.PROJECT)
-def is_project(filename: str) -> typing.Optional[str]:
+def is_project(filename: str) -> str | None:
     """
     Check if :code:`filename` is a project.
 
@@ -210,22 +205,22 @@ def is_project(filename: str) -> typing.Optional[str]:
     logger.debug('Testing if %s is a project ..', filename)
     if path.isdir(filename):
         return ''
-    result: typing.Optional[str] = find_postfix(filename, '.py')
+    result: str | None = find_postfix(filename, '.py')
     if result is None:
         logger.debug('Not a project')
     return result
 
 
-def complete_package_meta(filename: typing.Union[str, bytes], package_type: PackageType) -> OptMeta:
+def complete_package_meta(filename: str | bytes, package_type: PackageType) -> OptMeta:
     """Collect package metadata on a :code:`filename` with known :code:`package_type`."""
     if isinstance(filename, bytes):
         filename = filename.decode('utf-8', errors='ignore')
 
-    detector: typing.Optional[Detector] = DETECTORS.get(package_type, None)
+    detector: Detector | None = DETECTORS.get(package_type, None)
     return detector and detector(filename)
 
 
-def detect_package_meta(filename: typing.Union[str, bytes]) -> OptMeta:
+def detect_package_meta(filename: str | bytes) -> OptMeta:
     """Detect package type of a :code:`filename` with additional metadata on it."""
     if isinstance(filename, bytes):
         filename = filename.decode('utf-8', errors='ignore')
@@ -239,13 +234,13 @@ def detect_package_meta(filename: typing.Union[str, bytes]) -> OptMeta:
     return None
 
 
-def detect_package_extension(filename: typing.Union[str, bytes]) -> typing.Optional[str]:
+def detect_package_extension(filename: str | bytes) -> str | None:
     """Detect an extension of a package located at :code:`filename`."""
     result: OptMeta = detect_package_meta(filename)
     return result and result.extension
 
 
-def detect_package_type(filename: typing.Union[str, bytes]) -> typing.Optional[PackageType]:
+def detect_package_type(filename: str | bytes) -> PackageType | None:
     """Detect a package type of a :code:`filename`."""
     result: OptMeta = detect_package_meta(filename)
     return result and result.package_type
@@ -253,10 +248,10 @@ def detect_package_type(filename: typing.Union[str, bytes]) -> typing.Optional[P
 
 # ======================================================================================================================
 
-PackageAttributes: typing_extensions.TypeAlias = typing.Dict[str, typing.Any]
-ReleaseAttributes: typing_extensions.TypeAlias = typing.Dict[str, typing.Any]
-FileAttributes: typing_extensions.TypeAlias = typing.Dict[str, typing.Any]
-Attributes: typing_extensions.TypeAlias = typing.Tuple[PackageAttributes, ReleaseAttributes, FileAttributes]
+PackageAttributes: typing_extensions.TypeAlias = dict[str, typing.Any]
+ReleaseAttributes: typing_extensions.TypeAlias = dict[str, typing.Any]
+FileAttributes: typing_extensions.TypeAlias = dict[str, typing.Any]
+Attributes: typing_extensions.TypeAlias = tuple[PackageAttributes, ReleaseAttributes, FileAttributes]
 
 
 class Inspector(typing.Protocol):

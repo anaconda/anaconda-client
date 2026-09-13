@@ -1,11 +1,10 @@
-# -*- coding: utf8 -*-
 """Tests for package copy operations."""
 
 import json
 
 from binstar_client.errors import Conflict
-from tests.urlmock import urlpatch
 from tests.fixture import CLITestCase, main
+from tests.urlmock import urlpatch
 
 
 class Test(CLITestCase):

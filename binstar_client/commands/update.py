@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Update public attributes of the package or the attributes of the package release."""
 
 from __future__ import annotations
@@ -15,9 +14,7 @@ import typer
 import yaml
 
 from binstar_client import errors
-from binstar_client.utils import get_server_api
-from binstar_client.utils import parse_specs
-from binstar_client.utils import detect
+from binstar_client.utils import detect, get_server_api, parse_specs
 
 logger = logging.getLogger('binstar.update')
 
@@ -25,9 +22,9 @@ logger = logging.getLogger('binstar.update')
 Attributes = typing.Mapping[str, typing.Any]
 
 
-def get_attributes(package: str, args: argparse.Namespace) -> typing.Tuple[Attributes, Attributes]:
+def get_attributes(package: str, args: argparse.Namespace) -> tuple[Attributes, Attributes]:
     """Parse source for attribute details."""
-    loader: typing.Optional[typing.Callable[[typing.TextIO], detect.PackageAttributes]] = None
+    loader: typing.Callable[[typing.TextIO], detect.PackageAttributes] | None = None
     if package.endswith('.json'):
         loader = json.load
     elif package.endswith(('.yml', '.yaml')):
@@ -37,7 +34,7 @@ def get_attributes(package: str, args: argparse.Namespace) -> typing.Tuple[Attri
         with open(package, 'rt', encoding='utf-8') as stream:
             return (loader(stream),) * 2
 
-    package_type: typing.Optional[detect.PackageType]
+    package_type: detect.PackageType | None
     if args.package_type:
         package_type = detect.PackageType(args.package_type)
     else:
@@ -155,7 +152,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             show_default=False,
             callback=file_type,
         ),
-        package_type: typing.Optional[str] = typer.Option(
+        package_type: str | None = typer.Option(
             None,
             '-t',
             '--package-type',

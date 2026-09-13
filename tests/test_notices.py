@@ -1,4 +1,3 @@
-# -*- coding: utf8 -*-
 """Tests for channel notice commands."""
 
 import io
@@ -13,7 +12,6 @@ from rich.console import Console
 from binstar_client.errors import UserError
 from tests.fixture import CLITestCase, main
 from tests.urlmock import urlpatch
-
 
 NOTICE_UUID = '550e8400-e29b-41d4-a716-446655440000'
 
@@ -89,9 +87,8 @@ class TestNotices(CLITestCase):
 
     @urlpatch
     def test_delete_missing_notice_id(self, urls):
-        with _patch_notice_console_print():
-            with self.assertRaises(UserError) as ctx:
-                main(['--show-traceback', 'channel', 'notice', 'delete', 'myteam'])
+        with _patch_notice_console_print(), self.assertRaises(UserError) as ctx:
+            main(['--show-traceback', 'channel', 'notice', 'delete', 'myteam'])
 
         self.assertIn("Missing argument 'Notice ID'", str(ctx.exception))
         self.assertIn('anaconda channel notice list myteam', self.stream.getvalue())

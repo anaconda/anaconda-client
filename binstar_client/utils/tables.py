@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Utility to print tables to terminal."""
 
 __all__ = ()
@@ -24,11 +22,11 @@ def lcm(left: int, right: int) -> int:
 
 
 ANY: 'typing_extensions.Final[str]' = '*'
-COMBINATIONS: 'typing_extensions.Final[typing.Dict[int, typing.Sequence[typing.Tuple[int, ...]]]]' = {}
+COMBINATIONS: 'typing_extensions.Final[dict[int, typing.Sequence[tuple[int, ...]]]]' = {}
 EMPTY: 'typing_extensions.Final[str]' = '∅'
 
 
-class ValuesView(typing.Mapping[typing.Tuple[str, ...], str]):
+class ValuesView(typing.Mapping[tuple[str, ...], str]):
     """
     Helper view which allows parent collection to have patterns as its keys.
 
@@ -54,15 +52,15 @@ class ValuesView(typing.Mapping[typing.Tuple[str, ...], str]):
 
     def __init__(
         self,
-        content: typing.Mapping[typing.Tuple[str, ...], str],
+        content: typing.Mapping[tuple[str, ...], str],
         key_length: int,
         *,
-        default: typing.Optional[str] = None,
+        default: str | None = None,
     ) -> None:
         """Initialize new :class:`~ValuesView` instance."""
-        self.__content: 'typing_extensions.Final[typing.Mapping[typing.Tuple[str, ...], str]]' = content
-        self.__default: 'typing_extensions.Final[typing.Optional[str]]' = default
-        self.__key_length: 'typing_extensions.Final[int]' = key_length
+        self.__content: typing_extensions.Final[typing.Mapping[tuple[str, ...], str]] = content
+        self.__default: typing_extensions.Final[str | None] = default
+        self.__key_length: typing_extensions.Final[int] = key_length
 
         if key_length not in COMBINATIONS:
             COMBINATIONS[key_length] = [
@@ -71,12 +69,12 @@ class ValuesView(typing.Mapping[typing.Tuple[str, ...], str]):
                 for indexes in itertools.combinations(range(self.__key_length), step)
             ]
 
-    def __getitem__(self, key: typing.Tuple[str, ...]) -> str:
+    def __getitem__(self, key: tuple[str, ...]) -> str:
         """Retrieve a value for the :code:`key`."""
         if len(key) != self.__key_length:
             raise ValueError('invalid length of a key')
 
-        combination: typing.Tuple[int, ...]
+        combination: tuple[int, ...]
         for combination in COMBINATIONS[self.__key_length]:
             current_key = tuple(ANY if (index in combination) else value for index, value in enumerate(key))
             try:
@@ -89,7 +87,7 @@ class ValuesView(typing.Mapping[typing.Tuple[str, ...], str]):
 
         raise KeyError(f'no value found for {key}')
 
-    def __iter__(self) -> typing.Iterator[typing.Tuple[str, ...]]:
+    def __iter__(self) -> typing.Iterator[tuple[str, ...]]:
         """Iterate through registered keys and patterns."""
         return iter(self.__content)
 
@@ -117,17 +115,17 @@ class TableDesign:
 
     def __init__(self) -> None:
         """Initialize new :class:`~TableDesign` instance."""
-        self.__horizontal: 'typing_extensions.Final[typing.Dict[typing.Tuple[str, ...], str]]' = {}
-        self.__horizontal_view: 'typing_extensions.Final[ValuesView]' = ValuesView(self.__horizontal, 2, default='')
+        self.__horizontal: typing_extensions.Final[dict[tuple[str, ...], str]] = {}
+        self.__horizontal_view: typing_extensions.Final[ValuesView] = ValuesView(self.__horizontal, 2, default='')
 
-        self.__intersection: 'typing_extensions.Final[typing.Dict[typing.Tuple[str, ...], str]]' = {}
-        self.__intersection_view: 'typing_extensions.Final[ValuesView]' = ValuesView(self.__intersection, 4, default='')
+        self.__intersection: typing_extensions.Final[dict[tuple[str, ...], str]] = {}
+        self.__intersection_view: typing_extensions.Final[ValuesView] = ValuesView(self.__intersection, 4, default='')
 
-        self.__vertical: 'typing_extensions.Final[typing.Dict[typing.Tuple[str, ...], str]]' = {}
-        self.__vertical_view: 'typing_extensions.Final[ValuesView]' = ValuesView(self.__vertical, 2, default='')
+        self.__vertical: typing_extensions.Final[dict[tuple[str, ...], str]] = {}
+        self.__vertical_view: typing_extensions.Final[ValuesView] = ValuesView(self.__vertical, 2, default='')
 
     @property
-    def horizontal(self) -> ValuesView:  # noqa: D401
+    def horizontal(self) -> ValuesView:
         """Horizontal borders between cells above it and below it."""
         return self.__horizontal_view
 
@@ -158,7 +156,7 @@ class TableDesign:
             This would create a new :class:`~TableDesign` with requested modifications. There would be no modifications
             to the original instance.
         """
-        result: 'TableDesign' = self.__copy()
+        result: TableDesign = self.__copy()
         result.__horizontal[EMPTY, ANY] = horizontal
         result.__horizontal[ANY, EMPTY] = horizontal
         result.__intersection[EMPTY, EMPTY, EMPTY, ANY] = corner_nw
@@ -185,7 +183,7 @@ class TableDesign:
             This would create a new :class:`~TableDesign` with requested modifications. There would be no modifications
             to the original instance.
         """
-        result: 'TableDesign' = self.__copy()
+        result: TableDesign = self.__copy()
         result.__intersection[EMPTY, EMPTY, kind, kind] = top
         result.__intersection[EMPTY, kind, EMPTY, kind] = left
         result.__intersection[kind, EMPTY, kind, EMPTY] = right
@@ -207,7 +205,7 @@ class TableDesign:
             This would create a new :class:`~TableDesign` with requested modifications. There would be no modifications
             to the original instance.
         """
-        result: 'TableDesign' = self.__copy()
+        result: TableDesign = self.__copy()
         result.__horizontal[kind, kind] = horizontal
         result.__intersection[kind, kind, kind, kind] = intersection
         result.__vertical[kind, kind] = vertical
@@ -227,7 +225,7 @@ class TableDesign:
             This would create a new :class:`~TableDesign` with requested modifications. There would be no modifications
             to the original instance.
         """
-        result: 'TableDesign' = self.__copy()
+        result: TableDesign = self.__copy()
         result.__horizontal[top_kind, bottom_kind] = value
         return result
 
@@ -247,7 +245,7 @@ class TableDesign:
             This would create a new :class:`~TableDesign` with requested modifications. There would be no modifications
             to the original instance.
         """
-        result: 'TableDesign' = self.__copy()
+        result: TableDesign = self.__copy()
         result.__intersection[top_left_kind, top_right_kind, bottom_left_kind, bottom_right_kind] = value
         return result
 
@@ -265,7 +263,7 @@ class TableDesign:
             This would create a new :class:`~TableDesign` with requested modifications. There would be no modifications
             to the original instance.
         """
-        result: 'TableDesign' = self.__copy()
+        result: TableDesign = self.__copy()
         result.__vertical[left_kind, right_kind] = value
         return result
 
@@ -275,7 +273,7 @@ class TableDesign:
 
         Used for safe modifications without any changes to the original value.
         """
-        result: 'TableDesign' = TableDesign()
+        result: TableDesign = TableDesign()
         result.__horizontal.update(self.__horizontal)
         result.__intersection.update(self.__intersection)
         result.__vertical.update(self.__vertical)
@@ -304,7 +302,7 @@ class TableCell:
         if value is None:
             value = ''
 
-        self.alignment: 'Alignment' = alignment
+        self.alignment: Alignment = alignment
         self.kind: str = kind
         self.value: str = str(value)
 
@@ -334,20 +332,20 @@ class TableCore:
 
     def __init__(self, *, default: TableCell) -> None:
         """Initialize new :class:`~TableCore` instance."""
-        self.__columns: typing.Optional[int] = 0
-        self.__content: 'typing_extensions.Final[typing.List[typing.List[typing.Optional[TableCell]]]]' = []
+        self.__columns: int | None = 0
+        self.__content: typing_extensions.Final[list[list[TableCell | None]]] = []
         self.__default: TableCell = default
-        self.__rows: typing.Optional[int] = 0
+        self.__rows: int | None = 0
 
     @property
-    def columns(self) -> int:  # noqa: D401
+    def columns(self) -> int:
         """Total number o columns in this table."""
         if self.__columns is None:
             self.__columns = max(map(len, self.__content))
         return self.__columns
 
     @property
-    def default(self) -> TableCell:  # noqa: D401
+    def default(self) -> TableCell:
         """Default cell content to show for empty cells."""
         return self.__default
 
@@ -357,15 +355,15 @@ class TableCore:
         self.__default = value
 
     @property
-    def rows(self) -> int:  # noqa: D401
+    def rows(self) -> int:
         """Total number of rows in this table."""
         if self.__rows is None:
             self.__rows = len(self.__content)
         return self.__rows
 
-    def append_row(self, values: typing.Iterable[typing.Optional[TableCell]]) -> None:
+    def append_row(self, values: typing.Iterable[TableCell | None]) -> None:
         """Append new row to the bottom of this table."""
-        row: typing.List[typing.Optional[TableCell]] = list(values)
+        row: list[TableCell | None] = list(values)
         self.__content.append(row)
         if self.__columns is not None:
             self.__columns = max(self.__columns, len(row))
@@ -374,7 +372,7 @@ class TableCore:
 
     def remove_column(self, column: int) -> None:
         """Remove a single column from the table."""
-        row: typing.List[typing.Optional[TableCell]]
+        row: list[TableCell | None]
         for row in self.__content:
             try:
                 del row[column]
@@ -397,8 +395,8 @@ class TableCore:
         empty_row = [EMPTY_CELL] * self.columns
         widths: typing.Sequence[int] = self.__render_analysis(design=design)
 
-        current: typing.Sequence[typing.Optional[TableCell]]
-        previous: typing.Sequence[typing.Optional[TableCell]] = empty_row
+        current: typing.Sequence[TableCell | None]
+        previous: typing.Sequence[TableCell | None] = empty_row
         for current in self.__content:
             yield from self.__render_separator(above_row=previous, below_row=current, widths=widths, design=design)
             yield from self.__render_row(row=current, widths=widths, design=design)
@@ -411,7 +409,7 @@ class TableCore:
         empty_columns: bool = False,
         empty_rows: bool = False,
         empty_values: bool = False,
-    ) -> typing.Tuple[typing.List[int], typing.List[int]]:
+    ) -> tuple[list[int], list[int]]:
         """
         Remove trailing empty cells from each row.
 
@@ -423,9 +421,9 @@ class TableCore:
 
         :return: Lists of removed columns and rows
         """
-        removed_columns: typing.List[int] = []
+        removed_columns: list[int] = []
         removed_columns_offset: int = 0
-        removed_rows: typing.List[int] = []
+        removed_rows: list[int] = []
         removed_rows_offset: int = 0
 
         index: int = 0
@@ -458,7 +456,7 @@ class TableCore:
             no_column: bool = True
             has_value: bool = False
 
-            row: typing.List[typing.Optional[TableCell]]
+            row: list[TableCell | None]
             for row in self.__content:
                 try:
                     has_value |= row[index] is not None
@@ -484,7 +482,7 @@ class TableCore:
         # return result
         return removed_columns, removed_rows
 
-    def __iterate_row(self, row: typing.Iterable[typing.Optional[TableCell]]) -> typing.Iterator[TableCell]:
+    def __iterate_row(self, row: typing.Iterable[TableCell | None]) -> typing.Iterator[TableCell]:
         """
         Iterate all cells in a single row.
 
@@ -495,19 +493,19 @@ class TableCore:
 
     def __render_analysis(self, design: TableDesign) -> typing.Sequence[int]:
         """Measure each column and vertical border."""
-        curr: typing.Sequence[typing.Optional[TableCell]]
+        curr: typing.Sequence[TableCell | None]
         curr_cell: TableCell
         curr_prev: str
 
-        prev: typing.Sequence[typing.Optional[TableCell]]
+        prev: typing.Sequence[TableCell | None]
         prev_cell: TableCell
         prev_prev: str
 
         index: int
         temp: int
 
-        steps: typing.List[int] = [1] * (2 * self.columns + 1)
-        widths: typing.List[int] = [0] * (2 * self.columns + 1)
+        steps: list[int] = [1] * (2 * self.columns + 1)
+        widths: list[int] = [0] * (2 * self.columns + 1)
 
         # analysis
         prev = [EMPTY_CELL] * self.columns
@@ -561,12 +559,12 @@ class TableCore:
 
     def __render_row(
         self,
-        row: typing.Sequence[typing.Optional[TableCell]],
+        row: typing.Sequence[TableCell | None],
         widths: typing.Iterable[int],
         design: TableDesign,
     ) -> typing.Iterator[str]:
         """Render a row with values."""
-        cell: typing.Optional[TableCell]
+        cell: TableCell | None
         result: str = ''
         previous_kind: str = EMPTY
         widths = iter(widths)
@@ -578,15 +576,15 @@ class TableCore:
 
     def __render_separator(
         self,
-        above_row: typing.Sequence[typing.Optional[TableCell]],
-        below_row: typing.Sequence[typing.Optional[TableCell]],
+        above_row: typing.Sequence[TableCell | None],
+        below_row: typing.Sequence[TableCell | None],
         widths: typing.Iterable[int],
         design: TableDesign,
     ) -> typing.Iterator[str]:
         """Render a string that contains of horizontal separators and intersections."""
-        above_cell: typing.Optional[TableCell]
+        above_cell: TableCell | None
         above_kind: str = EMPTY
-        below_cell: typing.Optional[TableCell]
+        below_cell: TableCell | None
         below_kind: str = EMPTY
         good: bool = False
         result: str = ''
@@ -608,21 +606,21 @@ class TableCore:
                 design.intersection[above_kind, EMPTY, below_kind, EMPTY],
             )
 
-    def __delitem__(self, cell: typing.Tuple[int, int]) -> None:
+    def __delitem__(self, cell: tuple[int, int]) -> None:
         """Remove a single cell from the table (set it to empty)."""
         try:
             self.__content[cell[0]][cell[1]] = None
         except IndexError:
             pass
 
-    def __getitem__(self, cell: typing.Tuple[int, int]) -> TableCell:
+    def __getitem__(self, cell: tuple[int, int]) -> TableCell:
         """Retrieve a single cell from the table."""
         try:
             return self.__content[cell[0]][cell[1]] or self.__default
         except IndexError:
             return self.__default
 
-    def __setitem__(self, cell: typing.Tuple[int, int], value: TableCell) -> None:
+    def __setitem__(self, cell: tuple[int, int], value: TableCell) -> None:
         """Update a single cell in a table."""
         while len(self.__content) <= cell[0]:
             self.__content.append([])
@@ -656,14 +654,14 @@ class SimpleTable:
         heading_columns: int = 0,
     ) -> None:
         """Initialize new :class:`~SimpleTable` instance."""
-        self.__alignment: typing.Dict[typing.Tuple[int, int], 'Alignment'] = {(-1, -1): '<'}
+        self.__alignment: dict[tuple[int, int], Alignment] = {(-1, -1): '<'}
         self.__clean: bool = True
-        self.__core: 'typing_extensions.Final[TableCore]' = TableCore(default=TableCell(kind=CELL, value=''))
-        self.__heading_columns: 'typing_extensions.Final[int]' = heading_columns
-        self.__heading_rows: 'typing_extensions.Final[int]' = heading_rows
+        self.__core: typing_extensions.Final[TableCore] = TableCore(default=TableCell(kind=CELL, value=''))
+        self.__heading_columns: typing_extensions.Final[int] = heading_columns
+        self.__heading_rows: typing_extensions.Final[int] = heading_rows
 
     @property
-    def alignment(self) -> 'Alignment':  # noqa: D401
+    def alignment(self) -> 'Alignment':
         """Default alignment value for all cells."""
         return self.__alignment[-1, -1]
 
@@ -673,12 +671,12 @@ class SimpleTable:
         self.__alignment[-1, -1] = value
 
     @property
-    def columns(self) -> int:  # noqa: D401
+    def columns(self) -> int:
         """Number of columns in this table."""
         return self.__core.columns
 
     @property
-    def rows(self) -> int:  # noqa: D401
+    def rows(self) -> int:
         """Number of rows in this table."""
         return self.__core.rows
 
@@ -694,7 +692,7 @@ class SimpleTable:
 
     def align_column(self, column: int, alignment: 'Alignment') -> None:
         """Align each cell in a single column of the table."""
-        new_alignment: typing.Dict[typing.Tuple[int, int], 'Alignment'] = {
+        new_alignment: dict[tuple[int, int], Alignment] = {
             key: value for key, value in self.__alignment.items() if key[1] != column
         }
         new_alignment[-1, column] = alignment
@@ -703,7 +701,7 @@ class SimpleTable:
 
     def align_row(self, row: int, alignment: 'Alignment') -> None:
         """Aline each cell in a single row of the table."""
-        new_alignment: typing.Dict[typing.Tuple[int, int], 'Alignment'] = {
+        new_alignment: dict[tuple[int, int], Alignment] = {
             key: value for key, value in self.__alignment.items() if key[0] != row
         }
         new_alignment[row, -1] = alignment
@@ -718,7 +716,7 @@ class SimpleTable:
     def remove_column(self, column: int) -> None:
         """Remove a single column from the table."""
         self.__core.remove_column(column)
-        new_alignment: typing.Dict[typing.Tuple[int, int], 'Alignment'] = {
+        new_alignment: dict[tuple[int, int], Alignment] = {
             (key_row, key_column - (key_column > column)): value
             for (key_row, key_column), value in self.__alignment.items()
             if key_column != column
@@ -729,7 +727,7 @@ class SimpleTable:
     def remove_row(self, row: int) -> None:
         """Remove a single row from the table."""
         self.__core.remove_row(row)
-        new_alignment: typing.Dict[typing.Tuple[int, int], 'Alignment'] = {
+        new_alignment: dict[tuple[int, int], Alignment] = {
             (key_row - (key_row > row), key_column): value
             for (key_row, key_column), value in self.__alignment.items()
             if key_row != row
@@ -760,7 +758,7 @@ class SimpleTable:
             empty_values=empty_values,
         )
 
-        new_alignment: typing.Dict[typing.Tuple[int, int], 'Alignment'] = {
+        new_alignment: dict[tuple[int, int], Alignment] = {
             (
                 key_row - sum(key_row > row for row in removed_rows),
                 key_column - sum(key_column > column for column in removed_columns),
@@ -785,7 +783,7 @@ class SimpleTable:
                 else:
                     kind = CELL
 
-                alignment: 'Alignment' = (
+                alignment: Alignment = (
                     self.__alignment.get((row, column), None)  # type: ignore
                     or self.__alignment.get((row, -1), None)
                     or self.__alignment.get((-1, column), None)
@@ -806,15 +804,15 @@ class SimpleTable:
 
         self.__clean = True
 
-    def __delitem__(self, cell: typing.Tuple[int, int]) -> None:
+    def __delitem__(self, cell: tuple[int, int]) -> None:
         """Remove a single cell from the table (set it to default)."""
         del self.__core[cell]
 
-    def __getitem__(self, cell: typing.Tuple[int, int]) -> str:
+    def __getitem__(self, cell: tuple[int, int]) -> str:
         """Retrieve a value of a single cell in the table."""
         return self.__core[cell].value
 
-    def __setitem__(self, cell: typing.Tuple[int, int], value: str) -> None:
+    def __setitem__(self, cell: tuple[int, int], value: str) -> None:
         """Update a value of a single cell in the table."""
         self.__core[cell] = TableCell(kind=CELL, value=value)
         self.__clean = False
@@ -837,20 +835,20 @@ class SimpleTableWithAliases(SimpleTable):
 
     def __init__(
         self,
-        aliases: typing.Union[typing.Iterable[typing.Union[str, typing.Tuple[str, str]]], typing.Mapping[str, str]],
+        aliases: typing.Iterable[str | tuple[str, str]] | typing.Mapping[str, str],
         heading_rows: int = 0,
         heading_columns: int = 0,
     ) -> None:
         """Initialize new :class:`~SimpleTableWithAliases` instance."""
         super().__init__(heading_rows=heading_rows, heading_columns=heading_columns)
 
-        column_aliases: typing.List[str] = []
-        column_titles: typing.List[str] = []
+        column_aliases: list[str] = []
+        column_titles: list[str] = []
         column_titles_ready: bool = False
 
         if isinstance(aliases, typing.Mapping):
-            raw_aliases: typing.Tuple[str, ...]
-            raw_titles: typing.Tuple[str, ...]
+            raw_aliases: tuple[str, ...]
+            raw_titles: tuple[str, ...]
             raw_aliases, raw_titles = zip(*aliases.items())
 
             column_aliases.extend(map(str, raw_aliases))
@@ -858,7 +856,7 @@ class SimpleTableWithAliases(SimpleTable):
             column_titles_ready = True
 
         else:
-            item: typing.Union[str, typing.Tuple[str, str]]
+            item: str | tuple[str, str]
             for item in aliases:
                 if isinstance(item, str):
                     column_aliases.append(item)
@@ -871,17 +869,17 @@ class SimpleTableWithAliases(SimpleTable):
                     column_titles.append(str(title))
                     column_titles_ready = True
 
-        self.__aliases: 'typing_extensions.Final[typing.List[str]]' = column_aliases
+        self.__aliases: typing_extensions.Final[list[str]] = column_aliases
         if column_titles_ready:
             super().append_row(column_titles)
 
-    def align_cell(self, row: int, column: typing.Union[int, str], alignment: 'Alignment') -> None:
+    def align_cell(self, row: int, column: int | str, alignment: 'Alignment') -> None:
         """Align a single cell in the table."""
         if isinstance(column, str):
             column = self.__aliases.index(column)
         super().align_cell(row=row, column=column, alignment=alignment)
 
-    def align_column(self, column: typing.Union[int, str], alignment: 'Alignment') -> None:
+    def align_column(self, column: int | str, alignment: 'Alignment') -> None:
         """Align each cell in a single column of the table."""
         if isinstance(column, str):
             column = self.__aliases.index(column)
@@ -889,43 +887,43 @@ class SimpleTableWithAliases(SimpleTable):
 
     def append_row(
         self,
-        values: typing.Union[typing.Iterable[typing.Any], typing.Mapping[str, typing.Any]],
+        values: typing.Iterable[typing.Any] | typing.Mapping[str, typing.Any],
         *,
         strict: bool = False,
     ) -> None:
         """Append new row to the bottom of this table."""
         if isinstance(values, typing.Mapping):
-            old_values: typing.Dict[str, typing.Any] = dict(values)
+            old_values: dict[str, typing.Any] = dict(values)
             values = [old_values.pop(alias, None) for alias in self.__aliases]
             if strict and old_values:
                 raise ValueError(f'unexpected values: {list(old_values)}')
 
         super().append_row(values)
 
-    def remove_column(self, column: typing.Union[int, str]) -> None:
+    def remove_column(self, column: int | str) -> None:
         """Remove a single column from the table."""
         if isinstance(column, str):
             column = self.__aliases.index(column)
         super().remove_column(column)
 
-    def __normalize_cell_index(self, cell: typing.Tuple[int, typing.Union[int, str]]) -> typing.Tuple[int, int]:
+    def __normalize_cell_index(self, cell: tuple[int, int | str]) -> tuple[int, int]:
         """Normalize value of a cell index."""
         row: int
-        column: typing.Union[int, str]
+        column: int | str
         row, column = cell
         if isinstance(column, str):
             column = self.__aliases.index(column)
         return row, column
 
-    def __delitem__(self, cell: typing.Tuple[int, typing.Union[int, str]]) -> None:
+    def __delitem__(self, cell: tuple[int, int | str]) -> None:
         """Remove a single cell from the table (set it to default)."""
         super().__delitem__(self.__normalize_cell_index(cell))
 
-    def __getitem__(self, cell: typing.Tuple[int, typing.Union[int, str]]) -> str:
+    def __getitem__(self, cell: tuple[int, int | str]) -> str:
         """Retrieve a value of a single cell in the table."""
         return super().__getitem__(self.__normalize_cell_index(cell))
 
-    def __setitem__(self, cell: typing.Tuple[int, typing.Union[int, str]], value: str) -> None:
+    def __setitem__(self, cell: tuple[int, int | str], value: str) -> None:
         """Update a value of a single cell in the table."""
         super().__setitem__(self.__normalize_cell_index(cell), value)
 

@@ -41,7 +41,7 @@ class NoMetadataError(BinstarError):
 
 class DestinationPathExists(BinstarError):
     def __init__(self, location):
-        self.msg = "destination path '{}' already exists.".format(location)
+        self.msg = f"destination path '{location}' already exists."
         self.location = location
         super().__init__(self.msg)
 

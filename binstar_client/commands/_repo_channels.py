@@ -15,31 +15,39 @@ from glob import glob
 from typing import List, Optional, Tuple, cast
 
 import typer
+from anaconda_cli_base.console import Table, console, select_from_list
 from pydantic import BaseModel
 from rich.panel import Panel
 
-from anaconda_cli_base.console import Table, console, select_from_list
 from binstar_client import __version__
+from binstar_client import errors as dotorg_errors
 from binstar_client.commands import _channel_notices as channel_notices
 from binstar_client.commands import remove as remove_mod
 from binstar_client.commands import show as show_mod
 from binstar_client.commands import upload as upload_mod
-from binstar_client import errors as dotorg_errors
 from binstar_client.repocore import RepoCoreClient
 from binstar_client.repocore.errors import LoginRequiredError, RepoCoreError, Unauthenticated, Unauthorized
-from binstar_client.repocore.telemetry import ChannelEvents, UploadEvents, UpgradeEvents
 from binstar_client.repocore.package_utils import PackageType, determine_package_type, windows_glob
 from binstar_client.repocore.resolve import (
     classify_and_resolve,
+)
+from binstar_client.repocore.resolve import (
     namespace_known_to_user as _namespace_known_to_user,
+)
+from binstar_client.repocore.resolve import (
     resolve_channels_with_namespaces as _resolve_channels_with_namespaces,
+)
+from binstar_client.repocore.resolve import (
     resolve_namespace_and_channel as _resolve_namespace_and_channel,
+)
+from binstar_client.repocore.resolve import (
     resolve_no_namespace as _resolve_no_namespace,
 )
+from binstar_client.repocore.telemetry import ChannelEvents, UpgradeEvents, UploadEvents
 from binstar_client.utils import get_server_api, parse_specs
 from binstar_client.utils.console_utils import configure_console_encoding
 
-__all__ = ["app", "_resolve_namespace_and_channel", "_resolve_no_namespace", "_resolve_channels_with_namespaces"]
+__all__ = ["_resolve_channels_with_namespaces", "_resolve_namespace_and_channel", "_resolve_no_namespace", "app"]
 
 logger = logging.getLogger("binstar.channel")
 
@@ -80,8 +88,8 @@ class _DotOrgCredentials(BaseModel):
     site alias, so only ``--site`` is carried here as ``site``.
     """
 
-    token: Optional[str] = None
-    site: Optional[str] = None
+    token: str | None = None
+    site: str | None = None
 
     @classmethod
     def from_ctx(cls, ctx) -> "_DotOrgCredentials":
@@ -106,7 +114,7 @@ class LimitAction(str, Enum):
     SHARE = "share"
 
 
-def _extract_limit_from_error(error: Exception, action: LimitAction = LimitAction.CREATE) -> Optional[int]:
+def _extract_limit_from_error(error: Exception, action: LimitAction = LimitAction.CREATE) -> int | None:
     """Extract limit number from error message.
 
     Args:
@@ -123,7 +131,7 @@ def _extract_limit_from_error(error: Exception, action: LimitAction = LimitActio
     return int(limit_match.group(1)) if limit_match else None
 
 
-def _prompt_upgrade(api, app_name: Optional[str], limit: Optional[int], action: str) -> None:
+def _prompt_upgrade(api, app_name: str | None, limit: int | None, action: str) -> None:
     """Prompt user to upgrade when they hit a limit."""
     limit_text = f" of {limit}" if limit else ""
     if action == "share":
@@ -155,13 +163,13 @@ def _print_modify_result(result, channel_name: str, description: str) -> None:
 @app.callback(invoke_without_command=True)
 def _callback(
     ctx: typer.Context,
-    organization: Optional[str] = typer.Option(None, "-o", "--organization", hidden=True),
-    copy: Tuple[str, str] = typer.Option(("", ""), "--copy", hidden=True, show_default=False),
+    organization: str | None = typer.Option(None, "-o", "--organization", hidden=True),
+    copy: tuple[str, str] = typer.Option(("", ""), "--copy", hidden=True, show_default=False),
     list_: bool = typer.Option(False, "--list", hidden=True),
-    show_legacy: Optional[str] = typer.Option(None, "--show", hidden=True),
-    lock: Optional[str] = typer.Option(None, "--lock", hidden=True),
-    unlock: Optional[str] = typer.Option(None, "--unlock", hidden=True),
-    remove_legacy: Optional[str] = typer.Option(None, "--remove", hidden=True),
+    show_legacy: str | None = typer.Option(None, "--show", hidden=True),
+    lock: str | None = typer.Option(None, "--lock", hidden=True),
+    unlock: str | None = typer.Option(None, "--unlock", hidden=True),
+    remove_legacy: str | None = typer.Option(None, "--remove", hidden=True),
 ) -> None:
     """Manage your Anaconda repository channels."""
     from anaconda_cli_base.cli import ContextExtras
@@ -233,9 +241,9 @@ def _upload_file_to_channel(
 
 def _process_and_upload_files(
     api,
-    file_patterns: List[str],
-    resolved_channels: List[str],
-    package_type: Optional[PackageType],
+    file_patterns: list[str],
+    resolved_channels: list[str],
+    package_type: PackageType | None,
     from_deprecated_channel_flag: bool,
 ) -> None:
     """Process file patterns and upload each file to all resolved channels."""
@@ -256,11 +264,11 @@ def _process_and_upload_files(
 
 
 def _upload_to_dotorg(
-    files: List[str],
+    files: list[str],
     owner: str,
-    labels: List[str],
+    labels: list[str],
     org_upload_args,
-    package_type: Optional[str] = None,
+    package_type: str | None = None,
 ) -> None:
     """Delegate an owner-only channel upload to the anaconda.org Uploader.
 
@@ -334,7 +342,7 @@ def _iter_channels(api, include_all: bool):
             break
 
 
-def _add_repo_rows(table: Table, api, namespace: Optional[str], include_all: bool) -> None:
+def _add_repo_rows(table: Table, api, namespace: str | None, include_all: bool) -> None:
     """Append anaconda.com (repocore) namespace/channel rows to the table.
 
     The Access column only exists when ``include_all`` is False (see
@@ -409,7 +417,7 @@ def _add_org_rows(table: Table, aserver_api, include_all: bool) -> None:
 @app.command(name="list", help="List all channels")
 def list_command(
     ctx: typer.Context,
-    namespace: Optional[str] = typer.Option(None, "--namespace", "-n", help="Filter to a specific namespace"),
+    namespace: str | None = typer.Option(None, "--namespace", "-n", help="Filter to a specific namespace"),
     source: str = typer.Option(
         "all",
         "--source",
@@ -450,7 +458,7 @@ def list_command(
     # one — so a not-logged-in error on the other is expected and stays quiet.
     explicit_source = source != "all"
 
-    notes: List[str] = []
+    notes: list[str] = []
     error_occurred = False
 
     def _note_failure(label: str, exc: Exception) -> None:
@@ -500,7 +508,7 @@ def list_command(
 def create_command(
     ctx: typer.Context,
     name: str = typer.Argument(..., help="Channel name to create (or namespace/channel)"),
-    namespace: Optional[str] = typer.Option(None, "--namespace", "-n", help="Namespace to create the channel under"),
+    namespace: str | None = typer.Option(None, "--namespace", "-n", help="Namespace to create the channel under"),
     private: bool = typer.Option(False, "--private", help="Create as a private channel (default)"),
     public: bool = typer.Option(False, "--public", help="Create as a public channel"),
 ) -> None:
@@ -561,7 +569,7 @@ def create_command(
 def remove_command(
     ctx: typer.Context,
     name: str = typer.Argument(..., help="Channel name to remove"),
-    namespace: Optional[str] = typer.Option(None, "--namespace", "-n", help="Namespace the channel belongs to"),
+    namespace: str | None = typer.Option(None, "--namespace", "-n", help="Namespace the channel belongs to"),
 ) -> None:
     """Remove a channel."""
     api = ctx.obj.repo_api
@@ -578,7 +586,7 @@ def remove_command(
 def show_command(
     ctx: typer.Context,
     name: str = typer.Argument(..., help="Channel name to show"),
-    namespace: Optional[str] = typer.Option(None, "--namespace", "-n", help="Namespace the channel belongs to"),
+    namespace: str | None = typer.Option(None, "--namespace", "-n", help="Namespace the channel belongs to"),
     full_details: bool = typer.Option(False, "--full-details", help="Show full details including subchannels"),
     packages: bool = typer.Option(False, "--packages", "-p", help="Also list the packages in the channel."),
     files: bool = typer.Option(
@@ -676,9 +684,9 @@ def show_command(
 def modify_command(
     ctx: typer.Context,
     name: str = typer.Argument(..., help="Channel name to modify"),
-    namespace: Optional[str] = typer.Option(None, "--namespace", "-n", help="Namespace the channel belongs to"),
-    privacy: Optional[str] = typer.Option(None, "--privacy", "-p", help="Set channel privacy: public or private"),
-    indexing_behavior: Optional[str] = typer.Option(
+    namespace: str | None = typer.Option(None, "--namespace", "-n", help="Namespace the channel belongs to"),
+    privacy: str | None = typer.Option(None, "--privacy", "-p", help="Set channel privacy: public or private"),
+    indexing_behavior: str | None = typer.Option(
         None, "--indexing-behavior", "-i", help="Set indexing behavior: default or frozen"
     ),
 ) -> None:
@@ -736,13 +744,13 @@ def modify_command(
 
 def _do_upload(
     api,
-    files: List[str],
-    channels: List[str],
-    namespace: Optional[str],
-    package_type: Optional[str],
+    files: list[str],
+    channels: list[str],
+    namespace: str | None,
+    package_type: str | None,
     from_deprecated_channel_flag: bool,
     dotorg_creds: _DotOrgCredentials,
-    labels: Optional[List[str]] = None,
+    labels: list[str] | None = None,
     org_upload_args: object = None,
 ) -> None:
     """Classify each channel and upload to anaconda.com and/or anaconda.org.
@@ -793,17 +801,18 @@ def _do_upload(
 
 def upload_command(
     ctx: "typer.Context",
-    files: List[str],
-    channel: Optional[List[str]] = None,
-    namespace: Optional[str] = None,
-    package_type: Optional[str] = None,
+    files: list[str],
+    channel: list[str] | None = None,
+    namespace: str | None = None,
+    package_type: str | None = None,
     from_deprecated_channel_flag: bool = False,
-    labels: Optional[List[str]] = None,
+    labels: list[str] | None = None,
     org_upload_args: object = None,
 ) -> None:
     """Programmatic entry for uploads (used by the ``anaconda upload`` bridge)."""
     if ctx is None:
         from anaconda_cli_base.cli import ContextExtras
+
         from binstar_client import __version__
 
         # Carry --site/--token from the `anaconda upload` bridge, if provided.
@@ -836,29 +845,29 @@ def upload_command(
 @app.command(name="upload", help="Upload packages to channels")
 def _upload_cli(
     ctx: typer.Context,
-    files: List[str] = typer.Argument(
+    files: list[str] = typer.Argument(
         ...,
         help="Files to upload",
     ),
-    channel: Optional[List[str]] = typer.Option(
+    channel: list[str] | None = typer.Option(
         None,
         "--channel",
         "-c",
         help="Target channel(s) in format 'namespace/channel' or 'channel'. Can be specified multiple times.",
     ),
-    namespace: Optional[str] = typer.Option(
+    namespace: str | None = typer.Option(
         None,
         "--namespace",
         "-n",
         help="Namespace for the channel (alternative to namespace/channel format)",
     ),
-    label: Optional[List[str]] = typer.Option(
+    label: list[str] | None = typer.Option(
         None,
         "--label",
         "-l",
         help="anaconda.org label to apply (only when the target resolves to anaconda.org).",
     ),
-    package_type: Optional[PackageType] = typer.Option(
+    package_type: PackageType | None = typer.Option(
         None,
         "--package-type",
         "-t",
@@ -884,25 +893,25 @@ def _upload_cli(
 def share_command(
     ctx: typer.Context,
     user: str = typer.Argument(..., help="User ID, email, or username to share with"),
-    channel: Optional[List[str]] = typer.Option(
+    channel: list[str] | None = typer.Option(
         None,
         "--channel",
         "-c",
         help="Channel(s) to share in format 'namespace/channel' or 'channel'. Can be specified multiple times.",
     ),
-    namespace: Optional[str] = typer.Option(
+    namespace: str | None = typer.Option(
         None,
         "--namespace",
         "-n",
         help="Namespace for the channel (alternative to namespace/channel format)",
     ),
-    access: Optional[str] = typer.Option(
+    access: str | None = typer.Option(
         None,
         "--access",
         "-r",
         help="Access level to grant: viewer (read) or collaborator (write). Defaults to viewer.",
     ),
-    role: Optional[str] = typer.Option(
+    role: str | None = typer.Option(
         None,
         "--role",
         hidden=True,
@@ -988,7 +997,7 @@ def _find_file_by_name(api, channel: str, filename: str):
     Returns a list of matching ``(family, name, ckey)`` tuples so the caller can
     report ambiguity (the same filename under more than one package/subdir).
     """
-    matches: List[Tuple[str, str, str]] = []
+    matches: list[tuple[str, str, str]] = []
     for artifact in _iter_all_artifacts(api, channel):
         for f in _iter_artifact_files(api, channel, artifact.family, artifact.name):
             if f.filename == filename:
@@ -1156,13 +1165,13 @@ def remove_package_command(
             "the package spec 'package/version/filename'."
         ),
     ),
-    channel: Optional[List[str]] = typer.Option(
+    channel: list[str] | None = typer.Option(
         None,
         "--channel",
         "-c",
         help="Channel 'namespace/channel'/'channel', or an anaconda.org owner.",
     ),
-    namespace: Optional[str] = typer.Option(None, "--namespace", "-n", help="Namespace the channel belongs to"),
+    namespace: str | None = typer.Option(None, "--namespace", "-n", help="Namespace the channel belongs to"),
     force: bool = typer.Option(False, "--force", "-f", help="Skip the confirmation prompt."),
 ) -> None:
     """Remove a single package file from a channel.

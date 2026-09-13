@@ -9,8 +9,7 @@ from typing import Optional
 
 import typer
 
-from binstar_client.utils import config
-from binstar_client.utils import get_server_api
+from binstar_client.utils import config, get_server_api
 from binstar_client.utils.pprint import pprint_packages
 
 logger = logging.getLogger('binstar.search')
@@ -100,13 +99,13 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             help='Search string',
             show_default=False,
         ),
-        package_type: Optional[str] = typer.Option(
+        package_type: str | None = typer.Option(
             None,
             '-t',
             '--package-type',
             help='Only search for packages of this type',
         ),
-        platform: Optional[Platform] = typer.Option(
+        platform: Platform | None = typer.Option(
             None,
             '-p',
             '--platform',
