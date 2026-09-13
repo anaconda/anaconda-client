@@ -12,7 +12,7 @@ if typing.TYPE_CHECKING:
 def multipart_files_upload(
     url: str,
     data: typing.MutableMapping,
-    files: typing.Optional[typing.Mapping[str, tuple]] = None,
+    files: typing.Mapping[str, tuple] | None = None,
     progress_bar: typing.Optional['tqdm.tqdm'] = None,
     **request_kwargs: typing.Any,
 ) -> requests.Response:

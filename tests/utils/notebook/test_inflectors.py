@@ -1,4 +1,5 @@
 import unittest
+
 from binstar_client.utils.notebook import inflection
 
 

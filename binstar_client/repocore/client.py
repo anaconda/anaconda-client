@@ -174,7 +174,7 @@ class RepoCoreClient(BaseClient):
             raise error
         return [Namespace(**org) for org in data or []]
 
-    def create_channel(self, channel: str, privacy: Optional[str] = None):
+    def create_channel(self, channel: str, privacy: str | None = None):
         self._validate_channel_name(channel)
 
         if self.is_subchannel(channel):
@@ -200,7 +200,7 @@ class RepoCoreClient(BaseClient):
         )
         return result, error
 
-    def get_namespace_channel(self, channel: str) -> tuple[Optional[Channel], Optional[Exception]]:
+    def get_namespace_channel(self, channel: str) -> tuple[Channel | None, Exception | None]:
         url = self._get_channel_url(channel)
         response = self.get(url)
         data, error = self._manage_response(response, f"getting channel {channel}")
@@ -210,7 +210,7 @@ class RepoCoreClient(BaseClient):
             return None, RepoCoreError("Server returned empty response")
         return Channel(**data), None
 
-    def update_channel(self, channel: str, **data) -> tuple[Optional[ChannelUpdateResponse], Optional[Exception]]:
+    def update_channel(self, channel: str, **data) -> tuple[ChannelUpdateResponse | None, Exception | None]:
         """Update a channel; ``changed`` reflects the endpoint's ``{"changed": bool}``
         body (``false`` when the channel already held every submitted value)."""
         url = self._get_channel_url(channel)
@@ -222,7 +222,7 @@ class RepoCoreClient(BaseClient):
 
     def list_all_channels(
         self, offset: int = 0, limit: int = 100, include_subchannels: bool = True
-    ) -> tuple[list[Channel], int, Optional[Exception]]:
+    ) -> tuple[list[Channel], int, Exception | None]:
         """List every channel the caller can read, including channels shared with them.
 
         Hits ``GET /channels`` — the server scopes the result to the token's
@@ -247,7 +247,7 @@ class RepoCoreClient(BaseClient):
 
     def list_my_channels(
         self, offset: int = 0, limit: int = 100, include_subchannels: bool = True
-    ) -> tuple[list[Channel], int, Optional[Exception]]:
+    ) -> tuple[list[Channel], int, Exception | None]:
         """List only the channels the caller owns or has had shared with them.
 
         Hits ``GET /account/channels`` — unlike ``list_all_channels`` this excludes
@@ -271,7 +271,7 @@ class RepoCoreClient(BaseClient):
         items = [Channel(**item) for item in (data or {}).get("items", [])]
         return items, (data or {}).get("total_count", len(items)), None
 
-    def get_channels(self, channel: str, offset: int = 0, limit: int = 50) -> tuple[list[Channel], Optional[Exception]]:
+    def get_channels(self, channel: str, offset: int = 0, limit: int = 50) -> tuple[list[Channel], Exception | None]:
         url = join(self._channels_url, channel, "subchannels")
         response = self.get(url, params={"offset": offset, "limit": limit})
         data, error = self._manage_response(response, f"getting channel {channel} subchannels")
@@ -290,8 +290,8 @@ class RepoCoreClient(BaseClient):
         return join(self._base_uri, "app", "organizations", "create")
 
     def create_namespace_channel(
-        self, channel_name: str, namespace: Optional[str] = None, privacy: str = "private"
-    ) -> tuple[Optional[ChannelCreationResponse], Optional[Exception]]:
+        self, channel_name: str, namespace: str | None = None, privacy: str = "private"
+    ) -> tuple[ChannelCreationResponse | None, Exception | None]:
         url = join(self._api_base, "namespace-channels")
         data = {"channel_name": channel_name, "privacy": privacy}
 
@@ -342,10 +342,10 @@ class RepoCoreClient(BaseClient):
         channel: str,
         offset: int = 0,
         limit: int = 100,
-        query: Optional[str] = None,
-        artifact_family: Optional[str] = None,
-        platform: Optional[str] = None,
-        sort: Optional[str] = None,
+        query: str | None = None,
+        artifact_family: str | None = None,
+        platform: str | None = None,
+        sort: str | None = None,
     ) -> tuple[list[Artifact], int]:
         """List packages (artifacts) in a channel.
 

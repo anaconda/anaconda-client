@@ -4,7 +4,6 @@ from anaconda_cli_base.deprecations import DeprecationHandler
 
 from binstar_client import __version__
 
-
 DEPRECATION_MESSAGE_NOTEBOOKS_PROJECTS_ENVIRONMENTS_REMOVED = " ".join(
     [
         "The Projects, Notebooks, and Environments features have been removed.",

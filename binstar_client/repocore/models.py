@@ -40,11 +40,11 @@ class Channel(BaseModel):
     indexing_behavior: str = "default"
     created: str = ""
     updated: str = ""
-    parent: Optional[str] = None
+    parent: str | None = None
     owners: list[str] = Field(default_factory=list)
     # The caller's access level on the channel (viewer/collaborator/owner). Only
     # populated by GET /account/channels; the flat GET /channels listing omits it.
-    access: Optional[str] = None
+    access: str | None = None
 
     _handle_description = field_validator("description", mode="before")(_handle_none_as_empty_string)
 
@@ -56,7 +56,7 @@ class Channel(BaseModel):
         return [o for o in v if o]
 
     @property
-    def namespace(self) -> Optional[str]:
+    def namespace(self) -> str | None:
         """The channel's namespace: its parent top-level channel, if any."""
         return self.parent
 
@@ -118,7 +118,7 @@ class ChannelCreationResponse(BaseModel):
 
     channel_path: str
     status_code: int
-    org_id: Optional[str] = None
+    org_id: str | None = None
 
     @property
     def created(self) -> bool:
@@ -148,11 +148,11 @@ class ResolvedChannel(BaseModel):
     "not populated / do not validate here".
     """
 
-    namespace: Optional[str]
+    namespace: str | None
     channel_name: str
     target: str = "repo"
-    owner: Optional[str] = None
-    accepted_package_types: FrozenSet[str] = frozenset()
+    owner: str | None = None
+    accepted_package_types: frozenset[str] = frozenset()
 
     @model_validator(mode="after")
     def _require_dotorg_owner(self) -> "ResolvedChannel":
@@ -161,7 +161,7 @@ class ResolvedChannel(BaseModel):
             raise ValueError('ResolvedChannel with target="org" must have an owner')
         return self
 
-    def accepts_package_type(self, package_type: Optional[str]) -> bool:
+    def accepts_package_type(self, package_type: str | None) -> bool:
         """Return whether ``package_type`` is acceptable for this target.
 
         ``None`` (autodetect) is always acceptable; validation of a detected type

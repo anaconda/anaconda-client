@@ -1,4 +1,3 @@
-# -*- coding: utf8 -*-
 """Tests for group management commands."""
 
 from binstar_client import errors

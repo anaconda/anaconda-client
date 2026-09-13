@@ -1,41 +1,38 @@
 """Test entrypoint to anaconda-cli-base"""
 
+import logging
 import shlex
 import sys
-import logging
 from argparse import Namespace
+from collections.abc import Callable, Generator
 from importlib import reload
 from pathlib import Path
 from socket import gethostname
-from typing import Any, Callable, Dict, Generator, List, Optional, Union
-
-import pytest
-from pytest import FixtureRequest
-from pytest import LogCaptureFixture
-from pytest import MonkeyPatch
-from typer import Typer
-from typer import rich_utils
-from typer.models import CommandInfo, TyperInfo
-from typer.testing import CliRunner
+from typing import Any, Dict, List, Optional, Union
 
 import anaconda_cli_base.cli
+import pytest
+from pytest import FixtureRequest, LogCaptureFixture, MonkeyPatch
+from typer import Typer, rich_utils
+from typer.models import CommandInfo, TyperInfo
+from typer.testing import CliRunner
 
 import binstar_client.plugins
 import binstar_client.scripts.cli
 from binstar_client import commands
 from binstar_client.plugins import (
     ALL_SUBCOMMANDS,
-    NON_HIDDEN_SUBCOMMANDS,
     DEPRECATED_SUBCOMMANDS,
+    NON_HIDDEN_SUBCOMMANDS,
     SUBCOMMANDS_WITH_NEW_CLI,
 )
-from binstar_client.utils.spec import parse_specs, group_spec
+from binstar_client.utils.spec import group_spec, parse_specs
 
 BASE_COMMANDS = {"login", "logout", "whoami"}
 HIDDEN_SUBCOMMANDS = ALL_SUBCOMMANDS - BASE_COMMANDS - NON_HIDDEN_SUBCOMMANDS
 
 
-def _find_registered_subcommand(typer_app: Typer, name: str) -> Optional[Union[CommandInfo, TyperInfo]]:
+def _find_registered_subcommand(typer_app: Typer, name: str) -> CommandInfo | TyperInfo | None:
     # Note: channel may be a Typer group (repo channels app) or a flat legacy command depending on CLI wiring.
     for subcmd in typer_app.registered_commands:
         if subcmd.name == name:
@@ -70,7 +67,7 @@ class MockedCliInvoker:
         self._invoked = False
         self.parser = parser
 
-    def invoke(self, args: List[str], prefix_args: Optional[List[str]] = None) -> Any:
+    def invoke(self, args: list[str], prefix_args: list[str] | None = None) -> Any:
         """Invoke the CLI with a list of arguments.
 
         The optional prefix_args are passed after the `anaconda` entrypoint.
@@ -84,7 +81,7 @@ class MockedCliInvoker:
         """Assert that the mocked main function was called once."""
         self._main_mock.assert_called_once()
 
-    def assert_main_args_contains(self, expected: Dict) -> None:
+    def assert_main_args_contains(self, expected: dict) -> None:
         """Return True if the args passed to the main function is a superset of the kwargs provided."""
         assert self._invoked, "cli_mocker was never invoked"
 
@@ -316,9 +313,9 @@ def test_top_level_options_passed_through(cmd: str, monkeypatch: MonkeyPatch, as
     ],
 )
 def test_whoami_arg_parsing(
-    prefix_args: List[str],
-    args: List[str],
-    mods: Dict[str, Any],
+    prefix_args: list[str],
+    args: list[str],
+    mods: dict[str, Any],
     cli_mocker: InvokerFactory,
     request: FixtureRequest,
 ) -> None:
@@ -343,7 +340,7 @@ class CLICase:
     def __init__(
         self,
         args: str = "",
-        mods: Optional[Dict[str, Any]] = None,
+        mods: dict[str, Any] | None = None,
         *,
         id: str,
         prefix: bool = False,
@@ -367,11 +364,11 @@ class CLICase:
         CLICase(id="defaults"),
         CLICase("-l some-label", dict(labels=["some-label"]), id="labels-short-single"),
         CLICase("--label some-label", dict(labels=["some-label"]), id="labels-long-single"),
-        CLICase("-l some-label -l another", dict(labels=["some-label", "another"]), id="labels-short-multiple"),  # noqa: E501
+        CLICase("-l some-label -l another", dict(labels=["some-label", "another"]), id="labels-short-multiple"),
         CLICase(
             "--label some-label --label another", dict(labels=["some-label", "another"]), id="labels-long-multiple"
-        ),  # noqa: E501
-        CLICase("-l some-label --label another", dict(labels=["some-label", "another"]), id="labels-mixed-multiple"),  # noqa: E501
+        ),
+        CLICase("-l some-label --label another", dict(labels=["some-label", "another"]), id="labels-mixed-multiple"),
         # Note: -c/--channel now delegates to new channel upload, so it's no longer tested here
         CLICase("--no-progress", dict(no_progress=True), id="no-progress"),
         CLICase("-u username", dict(user="username"), id="username-short"),
@@ -381,7 +378,7 @@ class CLICase:
         CLICase("--package my_package", dict(package="my_package"), id="package-long"),
         CLICase("--version 1.2.3", dict(version="1.2.3"), id="version-long"),
         CLICase("-v 1.2.3", dict(version="1.2.3"), id="version-short"),
-        CLICase("--summary 'Some package summary'", dict(summary="Some package summary"), id="summary-long"),  # noqa: E501
+        CLICase("--summary 'Some package summary'", dict(summary="Some package summary"), id="summary-long"),
         CLICase("-s 'Some package summary'", dict(summary="Some package summary"), id="summary-short"),
         CLICase("--package-type conda", dict(package_type="conda"), id="package-type-long"),
         CLICase("-t conda", dict(package_type="conda"), id="package-type-short"),
@@ -389,9 +386,9 @@ class CLICase:
             "--description 'Some package description'",
             dict(description="Some package description"),
             id="description-long",
-        ),  # noqa: E501
-        CLICase("-d 'Some package description'", dict(description="Some package description"), id="description-short"),  # noqa: E501
-        CLICase("--thumbnail /path/to/thumbnail", dict(thumbnail="/path/to/thumbnail"), id="thumbnail-long"),  # noqa: E501
+        ),
+        CLICase("-d 'Some package description'", dict(description="Some package description"), id="description-short"),
+        CLICase("--thumbnail /path/to/thumbnail", dict(thumbnail="/path/to/thumbnail"), id="thumbnail-long"),
         CLICase("--private", dict(private=True), id="private-long"),
         CLICase("--register", dict(auto_register=True), id="register-long"),
         CLICase("--no-register", dict(auto_register=False), id="no-register-long"),
@@ -403,7 +400,7 @@ class CLICase:
         CLICase("--force", dict(mode="force"), id="force-long"),
         CLICase("--skip-existing", dict(mode="skip"), id="skip-existing-long"),
         CLICase("-m", dict(force_metadata_update=True), id="force-metadata-update-short"),
-        CLICase("--force-metadata-update", dict(force_metadata_update=True), id="force-metadata-update-long"),  # noqa: E501
+        CLICase("--force-metadata-update", dict(force_metadata_update=True), id="force-metadata-update-long"),
         CLICase("--token TOKEN", dict(token="TOKEN"), id="token", prefix=True),  # nosec
         CLICase("--site my-site.com", dict(site="my-site.com"), id="site", prefix=True),
         CLICase("--disable-ssl-warnings", dict(disable_ssl_warnings=True), id="disable-ssl-warnings", prefix=True),
@@ -417,7 +414,7 @@ class CLICase:
 def test_upload_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
     filename = "some-file"
     args = ["upload"] + case.args + [filename]
-    defaults: Dict[str, Any] = dict(
+    defaults: dict[str, Any] = dict(
         token=None,
         site=None,
         files=[[filename]],
@@ -491,7 +488,7 @@ def test_upload_mutually_exclusive_options(opts, error_opt, conflict_opt, mocker
 )
 def test_copy_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
     args = ["copy"] + case.args + ["some-spec"]
-    defaults: Dict[str, Any] = dict(
+    defaults: dict[str, Any] = dict(
         spec=parse_specs("some-spec"),
         to_owner=None,
         from_label="main",
@@ -520,7 +517,7 @@ def test_copy_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
 )
 def test_move_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
     args = ["move"] + case.args + ["some-spec"]
-    defaults: Dict[str, Any] = dict(
+    defaults: dict[str, Any] = dict(
         token=None,
         site=None,
         spec=parse_specs("some-spec"),
@@ -609,7 +606,7 @@ def test_channel_mutually_exclusive_options_required(mocker):
     assert result.exit_code == 2, result.output
     assert "one of --copy, --list, --show, --lock, --unlock, or --remove must be provided" in result.output, (
         result.output
-    )  # noqa: E501
+    )
 
     mock.assert_not_called()
 
@@ -845,12 +842,12 @@ def test_remove_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
             "--create --scopes repo --scopes conda:download",
             dict(create=True, scopes=["repo", "conda:download"]),
             id="scopes-multiple-long",
-        ),  # noqa: E501
+        ),
         CLICase(
             "--create -s repo -s conda:download",
             dict(create=True, scopes=["repo", "conda:download"]),
             id="scopes-multiple-short",
-        ),  # noqa: E501
+        ),
         CLICase("--token TOKEN", dict(token="TOKEN"), id="token", prefix=True),  # nosec
         CLICase("--site my-site.com", dict(site="my-site.com"), id="site", prefix=True),
     ],
@@ -870,7 +867,7 @@ def test_auth_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
         def __eq__(self, other):
             return other is not None
 
-    defaults: Dict[str, Any] = dict(
+    defaults: dict[str, Any] = dict(
         token=None,
         site=None,
         name=f"binstar_token:{gethostname()}",
@@ -958,7 +955,7 @@ def test_auth_mutually_exclusive_options_required(mocker, monkeypatch):
 def test_config_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
     args = ["config"] + case.args + ["--type", "int"]
 
-    defaults: Dict[str, Any] = dict(
+    defaults: dict[str, Any] = dict(
         token=None,
         site=None,
         set=[],
@@ -1002,7 +999,7 @@ def test_package_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
 
     args = ["package"] + case.args + [spec]
 
-    defaults: Dict[str, Any] = dict(
+    defaults: dict[str, Any] = dict(
         token=None,
         site=None,
         spec=parse_specs(spec),
@@ -1028,7 +1025,7 @@ def test_package_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
     [
         pytest.param(
             ["--add-collaborator", "joe", "--list-collaborators"], "'--list-collaborators'", "'--add-collaborator'"
-        ),  # noqa: E501
+        ),
         pytest.param(["--add-collaborator", "joe", "--create"], "'--create'", "'--add-collaborator'"),
     ],
 )
@@ -1056,7 +1053,7 @@ def test_package_mutually_exclusive_options_required(mocker):
     assert result.exit_code == 2, result.output
     assert "one of --add-collaborator, --list-collaborators, or --create must be provided" in result.output, (
         result.output
-    )  # noqa: E501
+    )
 
     mock.assert_not_called()
 
@@ -1079,7 +1076,7 @@ def test_package_mutually_exclusive_options_required(mocker):
 def test_download_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
     args = ["download"] + case.args + ["handle"]
 
-    defaults: Dict[str, Any] = dict(
+    defaults: dict[str, Any] = dict(
         token=None,
         site=None,
         handle="handle",
