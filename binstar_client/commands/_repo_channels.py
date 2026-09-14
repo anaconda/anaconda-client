@@ -135,15 +135,15 @@ def _prompt_upgrade(
         console.print(f"\n[yellow]You have reached the limit{limit_text} for private channels.[/yellow]")
         console.print("Upgrade your plan to create more private channels.")
 
-    UpgradeEvents.impressed(api, app_name, action, namespace)
+    UpgradeEvents.impressed(api, app_name, namespace, action=action)
 
     if typer.confirm("\nWould you like to view upgrade options?", default=True):
-        UpgradeEvents.accepted(api, app_name, action, namespace)
+        UpgradeEvents.accepted(api, app_name, namespace, action=action)
         upgrade_url = api._pricing_page
         console.print(f"Opening [cyan]{upgrade_url}[/cyan] in your browser...")
         webbrowser.open(upgrade_url)
     else:
-        UpgradeEvents.dismissed(api, app_name, action, namespace)
+        UpgradeEvents.dismissed(api, app_name, namespace, action=action)
 
 
 def _print_modify_result(result, channel_name: str, description: str) -> None:
@@ -225,7 +225,11 @@ def _upload_file_to_channel(
     console.print(f"Uploading [cyan]{filepath}[/cyan] to channel [cyan]{channel}[/cyan]...")
     _, error = api.upload_file(filepath, channel, pkg_type)
     package_name = os.path.basename(filepath)
-    namespace = channel.split("/")[0] if "/" in channel else None
+    try:
+        api._validate_channel_name(channel)
+        namespace = channel.split("/")[0] if "/" in channel else None
+    except Exception:
+        namespace = None
     UploadEvents.uploaded(
         api,
         app.info.name,
@@ -541,12 +545,14 @@ def create_command(
         channel_name=resolved.channel_name, namespace=resolved.namespace, privacy=privacy
     )
     channel_path = f"{resolved.namespace}/{resolved.channel_name}" if resolved.namespace else resolved.channel_name
+    operation_org_id = getattr(response, 'org_id', None) if response else None
     event_kwargs = {
         "api": api,
         "app_name": app.info.name,
         "namespace": resolved.namespace,
         "channel_path": channel_path,
         "privacy": privacy,
+        "operation_org_id": operation_org_id,
         "error": bool(error),
     }
     if error:

@@ -86,18 +86,22 @@ def _check_error(event: TelemetryEvent, error: bool) -> None:
         event.event_name += '.error'
 
 
-def _check_account_attrs(api) -> Attributes:
-    """Check and cache account attributes on the api object."""
-    if not hasattr(api, 'account_attributes'):
-        api.account_attributes = Attributes(api)
-    return api.account_attributes
+def _get_cached_attrs(api, namespace: str | None) -> Attributes:
+    """Return cached Attributes for (api, namespace), constructing once per pair."""
+    cache = getattr(api, '_telemetry_attr_cache', None)
+    if cache is None:
+        cache = {}
+        api._telemetry_attr_cache = cache
+    if namespace not in cache:
+        cache[namespace] = Attributes(api, namespace)
+    return cache[namespace]
 
 
 def _event(event: TelemetryEvent, api, app_name: str | None, namespace: str | None = None, error: bool = False) -> None:
     """Helper to track telemetry events with user attributes."""
     try:
         _check_error(event, error)
-        user_attrs = Attributes(api, namespace)
+        user_attrs = _get_cached_attrs(api, namespace)
         all_attributes = {**user_attrs.to_dict(), **event.attribute_dump()}
         if app_name is None:
             app_name = ""
@@ -168,19 +172,19 @@ class UpgradeEvents:
     """Upgrade prompt events"""
 
     @staticmethod
-    def impressed(api, app_name: str | None, action: str, namespace: str | None = None) -> None:
+    def impressed(api, app_name: str | None, namespace: str | None = None, *, action: str) -> None:
         """Track upgrade prompt impression event."""
         event = UpgradePromptImpressedEvent(action=action)
         _event(event, api, app_name, namespace)
 
     @staticmethod
-    def accepted(api, app_name: str | None, action: str, namespace: str | None = None) -> None:
+    def accepted(api, app_name: str | None, namespace: str | None = None, *, action: str) -> None:
         """Track upgrade prompt acceptance event."""
         event = UpgradePromptAcceptedEvent(action=action)
         _event(event, api, app_name, namespace)
 
     @staticmethod
-    def dismissed(api, app_name: str | None, action: str, namespace: str | None = None) -> None:
+    def dismissed(api, app_name: str | None, namespace: str | None = None, *, action: str) -> None:
         """Track upgrade prompt dismissal event."""
         event = UpgradePromptDismissedEvent(action=action)
         _event(event, api, app_name, namespace)
