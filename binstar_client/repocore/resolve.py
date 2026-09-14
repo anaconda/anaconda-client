@@ -118,22 +118,36 @@ def resolve_no_namespace(api, name: str) -> ResolvedChannel:
     Returns ResolvedChannel with namespace and channel_name.
 
     Checks for username:
-      1. If None or get user request errors, return empty namespace
+      1. If None or get user request errors, prompt for a new username and
+         send a PUT to /api/auth/account/profile to set it
       2. If truthy ask user to confirm creation of new namespace
     """
     try:
-        username = (api.account.get("user") or {}).get("username") or ""
+        profile, _ = api.get_profile()
+        username = (profile or {}).get("username") or ""
     except Exception:
         username = ""
 
-    if username:
-        confirm = typer.confirm(
-            f"No namespaces found. A namespace can be created with your username. Use your username '{username}' as the namespace?"
-        )
-        if confirm:
-            return _repo_channel(namespace=username, channel_name=name)
-        raise typer.Exit(0)
-    return _repo_channel(namespace=None, channel_name=name)
+    if not username:
+        console.print("\n[yellow]Your account does not have a username set.[/yellow]")
+        if not typer.confirm("Would you like to create a username?", default=True):
+            raise typer.Exit(0)
+        new_username = typer.prompt("Username")
+        if not new_username:
+            raise typer.Exit(1)
+        _, error = api.update_profile(username=new_username)
+        if error:
+            console.print(f"[red]Error:[/red] Failed to set username: {error}")
+            raise typer.Exit(1)
+        username = new_username
+        console.print(f"Username set to [cyan]{username}[/cyan].")
+
+    confirm = typer.confirm(
+        f"No namespaces found. A namespace can be created with your username. Use your username '{username}' as the namespace?"
+    )
+    if confirm:
+        return _repo_channel(namespace=username, channel_name=name)
+    raise typer.Exit(0)
 
 
 def namespace_known_to_user(api, namespace: str) -> bool:
@@ -155,7 +169,8 @@ def namespace_known_to_user(api, namespace: str) -> bool:
     unintended auto-created namespace.
     """
     try:
-        username = (api.account.get("user") or {}).get("username") or ""
+        profile, _ = api.get_profile()
+        username = (profile or {}).get("username") or ""
     except Exception:
         username = ""
     if username and namespace == username:
@@ -231,7 +246,7 @@ def resolve_namespace_and_channel(
     # No existing channel by that name — resolve the namespace it should live
     # under, so a brand-new channel name (e.g. `create`) still resolves.
     namespaces = _writable_namespaces(channels)
-
+    namespaces = []
     if not namespaces:
         if require_namespace:
             console.print(
