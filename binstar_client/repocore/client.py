@@ -412,14 +412,14 @@ class RepoCoreClient(BaseClient):
         return result
 
     def get_profile(self) -> tuple[Optional[dict], Optional[Exception]]:
-        """Get the authenticated user's profile via GET /api/auth/account/profile."""
+        """Get the authenticated user's profile"""
         url = join(self._auth_api_base, "account", "profile")
         response = self.get(url)
         result, error = self._manage_response(response, "getting profile", success_codes=[200])
         return result, error
 
     def update_profile(self, **data) -> tuple[Optional[dict], Optional[Exception]]:
-        """Update the authenticated user's profile via PUT /api/auth/account/profile."""
+        """Update the authenticated user's profile"""
         url = join(self._auth_api_base, "account", "profile")
         response = self.put(url, json=data)
         result, error = self._manage_response(response, "updating profile", success_codes=[200])
