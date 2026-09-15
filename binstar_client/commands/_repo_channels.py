@@ -609,7 +609,7 @@ def show_command(
 
     # Classify the name the same way `channel upload`/`remove-package` do: a bare
     # name matching an anaconda.org owner routes to dotorg, otherwise anaconda.com.
-    resolved = classify_and_resolve(api, name, namespace, owner_probe=dotorg_creds.owner_probe)
+    resolved = classify_and_resolve(api, name, namespace, owner_probe=dotorg_creds.owner_probe, owner_only=False)
 
     if resolved.target == "org":
         # anaconda.org packages/files listings don't apply; `anaconda show OWNER`
@@ -761,7 +761,7 @@ def _do_upload(
         raise typer.Exit(1)
 
     resolved = _resolve_channels_with_namespaces(
-        api, channels, namespace, from_deprecated_channel_flag, owner_probe=dotorg_creds.owner_probe
+        api, channels, namespace, from_deprecated_channel_flag, owner_probe=dotorg_creds.owner_probe, owner_only=False
     )
 
     org_targets = [r for r in resolved if r.target == "org"]
