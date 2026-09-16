@@ -29,8 +29,31 @@ REPO_PACKAGE_TYPES: FrozenSet[str] = frozenset(pt.value for pt in RepoPackageTyp
 ORG_PACKAGE_TYPES: FrozenSet[str] = frozenset(pt.value for pt in OrgPackageType)
 
 
+_BETA_NOTICE = "[yellow]Note:[/yellow] Private channels are in BETA."
+
+# The notice is a per-invocation heads-up, not a per-channel one: `upload -c a -c b`
+# resolves several channels but should still say this once.
+_beta_notice_shown = False
+
+
+def _notify_repo_beta() -> None:
+    """Print the anaconda.com BETA notice once per process.
+
+    Called from :func:`_repo_channel` — the single point every ``target="repo"``
+    resolution passes through — so any command that resolves an anaconda.com
+    channel reports it without having to opt in. anaconda.org (``target="org"``)
+    resolutions are unaffected.
+    """
+    global _beta_notice_shown
+    if _beta_notice_shown:
+        return
+    _beta_notice_shown = True
+    console.print(_BETA_NOTICE)
+
+
 def _repo_channel(namespace: Optional[str], channel_name: str) -> ResolvedChannel:
     """Build a repocore (anaconda.com) ResolvedChannel with its accepted types."""
+    _notify_repo_beta()
     return ResolvedChannel(
         namespace=namespace,
         channel_name=channel_name,
@@ -368,13 +391,5 @@ def resolve_channels_with_namespaces(
             if from_deprecated_channel_flag:
                 console.print("-c/--channel no longer equals labels, did you mean --label?")
             raise
-        if resolved.target == "org":
-            console.print(f"Resolved to anaconda.org owner: [cyan]{resolved.owner}[/cyan]")
-        else:
-            if resolved.namespace:
-                full_channel = f"{resolved.namespace}/{resolved.channel_name}"
-            else:
-                full_channel = resolved.channel_name
-            console.print(f"Resolved channel: [cyan]{full_channel}[/cyan]")
         resolved_channels.append(resolved)
     return resolved_channels
