@@ -4,6 +4,7 @@
 conda-package-handling>=1.7.3
 defusedxml>=0.7.1
 nbformat>=4.4.0
+pypng
 python-dateutil>=2.6.1
 pytz>=2021.3
 pyyaml>=3.12
