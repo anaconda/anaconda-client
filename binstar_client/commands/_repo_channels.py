@@ -374,6 +374,21 @@ def _add_repo_rows(table: Table, api, namespace: Optional[str], include_all: boo
             table.add_row(*row)
 
 
+def _set_error_caption(table: Table, label: str, exc: Exception) -> None:
+    """Attach the reason a section is missing to the table itself.
+
+    A failed section is otherwise indistinguishable from an empty one, so the
+    error rides along with the table (a caption, not a row: the columns are far
+    too narrow to hold a message without shredding it across lines).
+
+    ``caption_style`` is overridden because Rich's default caption style is
+    ``dim italic``, which would wash the error out to near-invisible.
+    """
+    table.caption_style = "bold red"
+    caption = f"{label} unavailable: {exc}"
+    table.caption = f"{table.caption}\n{caption}" if table.caption else caption
+
+
 def _add_org_rows(table: Table, aserver_api, include_all: bool) -> None:
     """Append anaconda.org owner rows to the table.
 
@@ -468,7 +483,11 @@ def list_command(
         try:
             _add_repo_rows(table, ctx.obj.repo_api, namespace, include_all)
         except Exception as exc:
-            _note_failure("repo channels", exc)
+            # Reported on the table rather than as a note below it: an empty repo
+            # section is a legitimate result (no readable or writable channels),
+            # so a failed one has to say why.
+            error_occurred = True
+            _set_error_caption(table, "repo channels", exc)
 
     if source in ("all", "org"):
         try:
