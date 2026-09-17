@@ -483,9 +483,6 @@ def list_command(
         try:
             _add_repo_rows(table, ctx.obj.repo_api, namespace, include_all)
         except Exception as exc:
-            # Reported on the table rather than as a note below it: an empty repo
-            # section is a legitimate result (no readable or writable channels),
-            # so a failed one has to say why.
             error_occurred = True
             _set_error_caption(table, "repo channels", exc)
 
