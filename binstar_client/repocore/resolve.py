@@ -5,6 +5,7 @@ Extracted from ``binstar_client.commands._repo_channels`` so both the
 can share a single resolver.
 """
 
+import logging
 import os
 import sys
 from datetime import datetime, timezone
@@ -16,6 +17,8 @@ from anaconda_cli_base.console import console, select_from_list
 from binstar_client.repocore.models import ResolvedChannel
 from binstar_client.repocore.package_utils import PackageType as RepoPackageType
 from binstar_client.utils.config import PackageType as OrgPackageType, dirs
+
+logger = logging.getLogger("binstar.repocore.resolve")
 
 # A callable that reports whether ``name`` is a valid anaconda.org owner
 # (user or organization). Injected by callers so this module stays free of
@@ -70,7 +73,9 @@ def _record_beta_notice_shown() -> None:
         with open(_BETA_NOTICE_MARKER_FILE, "w", encoding="utf-8") as marker:
             marker.write(f"{timestamp}\n")
     except Exception:  # pylint: disable=broad-except
-        pass
+        # Best effort only: the notice simply shows again next time. Debug
+        # level keeps this out of the console unless the user passes --verbose.
+        logger.debug("Could not record beta notice marker", exc_info=True)
 
 
 def _notify_repo_beta() -> None:
