@@ -1217,8 +1217,12 @@ class TestRepoCoreChannelsCLI:
         # Not-logged-into-dotorg is silent under the default all-sources listing.
         assert "unavailable" not in result.output
 
-    def test_channels_list_all_suppresses_repo_auth_failure(self):
-        """Logged into anaconda.org but not repo: `list` (default all) is quiet."""
+    def test_channels_list_reports_repo_failure_on_table(self):
+        """Logged into anaconda.org but not repo: the repo failure rides on the table.
+
+        An empty repo section is a legitimate result (no readable or writable
+        channels), so a failed one has to say why.
+        """
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
@@ -1235,8 +1239,21 @@ class TestRepoCoreChannelsCLI:
             result = runner.invoke(app, ["list"])
 
         assert result.exit_code == 0
-        # org section rendered; repo auth failure suppressed.
+        # org section still rendered, with the repo failure reported alongside it.
         assert "user1" in result.output
+        assert "repo channels unavailable" in result.output
+
+    def test_channels_list_empty_repo_has_no_error(self):
+        """No readable or writable channels is not an error: nothing extra is shown."""
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_my_channels.return_value = ([], 0, None)
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(app, ["list", "--source", "repo"])
+
+        assert result.exit_code == 0
         assert "unavailable" not in result.output
 
     def test_channels_list_all_reports_repo_non_auth_failure(self):
