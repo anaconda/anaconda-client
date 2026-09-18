@@ -5,7 +5,9 @@ Extracted from ``binstar_client.commands._repo_channels`` so both the
 can share a single resolver.
 """
 
+import os
 import sys
+from datetime import datetime, timezone
 from typing import Callable, FrozenSet, List, Optional
 
 import typer
@@ -13,7 +15,7 @@ import typer
 from anaconda_cli_base.console import console, select_from_list
 from binstar_client.repocore.models import ResolvedChannel
 from binstar_client.repocore.package_utils import PackageType as RepoPackageType
-from binstar_client.utils.config import PackageType as OrgPackageType
+from binstar_client.utils.config import PackageType as OrgPackageType, dirs
 
 # A callable that reports whether ``name`` is a valid anaconda.org owner
 # (user or organization). Injected by callers so this module stays free of
@@ -31,24 +33,64 @@ ORG_PACKAGE_TYPES: FrozenSet[str] = frozenset(pt.value for pt in OrgPackageType)
 
 _BETA_NOTICE = "[yellow]Note:[/yellow] Private channels are in BETA."
 
-# The notice is a per-invocation heads-up, not a per-channel one: `upload -c a -c b`
-# resolves several channels but should still say this once.
+# Marker file in the user data dir recording that the beta notice has been
+# shown. Absent (the default) means "show it". Once shown, we write the file so
+# the notice does not repeat. A separate file is used so the user's config file
+# is never modified. Only its existence is checked; the UTC timestamp it holds
+# is informational, for answering "when did this user last see the notice?".
+_BETA_NOTICE_MARKER_FILE = os.path.join(dirs.user_data_dir, "beta-notice-shown")
+
+# Show the notice at most once per command invocation, not once per resolved
+# channel: `upload -c a -c b` resolves several channels but should say this once.
 _beta_notice_shown = False
 
 
+def _beta_notice_already_shown() -> bool:
+    """Whether the notice has been recorded as shown via the marker file.
+
+    Any failure means "not shown", so an error makes the notice repeat rather
+    than silently suppressing it.
+    """
+    try:
+        return os.path.exists(_BETA_NOTICE_MARKER_FILE)
+    except Exception:  # pylint: disable=broad-except
+        return False
+
+
+def _record_beta_notice_shown() -> None:
+    """Persist that the notice has been shown, best effort.
+
+    Writes the marker file in the user data dir (creating the directory if
+    needed) containing the UTC timestamp of this showing. Any failure is
+    swallowed: the worst case is the notice showing again next time.
+    """
+    try:
+        os.makedirs(os.path.dirname(_BETA_NOTICE_MARKER_FILE), exist_ok=True)
+        timestamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        with open(_BETA_NOTICE_MARKER_FILE, "w", encoding="utf-8") as marker:
+            marker.write(f"{timestamp}\n")
+    except Exception:  # pylint: disable=broad-except
+        pass
+
+
 def _notify_repo_beta() -> None:
-    """Print the anaconda.com BETA notice once per process.
+    """Print the anaconda.com BETA notice once, then record it so it stops.
 
     Called from :func:`_repo_channel` — the single point every ``target="repo"``
     resolution passes through — so any command that resolves an anaconda.com
-    channel reports it without having to opt in. anaconda.org (``target="org"``)
-    resolutions are unaffected.
+    channel reports it. anaconda.org (``target="org"``) resolutions are unaffected.
+
+    The notice repeats on every invocation until it has been shown once; after
+    that the marker file suppresses it.
     """
     global _beta_notice_shown
     if _beta_notice_shown:
         return
     _beta_notice_shown = True
+    if _beta_notice_already_shown():
+        return
     console.print(_BETA_NOTICE)
+    _record_beta_notice_shown()
 
 
 def _repo_channel(namespace: Optional[str], channel_name: str) -> ResolvedChannel:
