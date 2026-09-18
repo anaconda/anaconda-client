@@ -1,0 +1,27 @@
+# Delegates @claude PR reviews to the org reusable workflow (internal-actions).
+name: '[Bot] Code Review'
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  pull_request_review:
+    types: [submitted]
+  pull_request:
+    types: [opened, reopened]
+
+jobs:
+  claude-code-review:
+    name: Claude Code Review
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+      actions: read
+    if: |
+      (github.event_name == 'pull_request') ||
+      (github.event_name == 'issue_comment' && github.event.issue.pull_request && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude'))
+    uses: anaconda/internal-actions/.github/workflows/bot-code-review.yml@main
