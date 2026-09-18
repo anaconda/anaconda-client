@@ -391,5 +391,13 @@ def resolve_channels_with_namespaces(
             if from_deprecated_channel_flag:
                 console.print("-c/--channel no longer equals labels, did you mean --label?")
             raise
+        if resolved.target == "org":
+            console.print(f"Resolved to anaconda.org owner: [cyan]{resolved.owner}[/cyan]")
+        else:
+            if resolved.namespace:
+                full_channel = f"{resolved.namespace}/{resolved.channel_name}"
+            else:
+                full_channel = resolved.channel_name
+            console.print(f"Resolved channel: [cyan]{full_channel}[/cyan]")
         resolved_channels.append(resolved)
     return resolved_channels
