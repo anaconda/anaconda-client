@@ -1195,7 +1195,9 @@ class TestRepoCoreChannelsCLI:
         output = " ".join(result.output.split())
         assert "My dotorg profile" in output
         assert "The org one" in output
-        # 10 + 5 + (None -> 0)
+        # Artifacts: 3 packages for user1, 1 for org1.
+        assert "3" in output
+        # Downloads: 10 + 5 + (None -> 0).
         assert "15" in output
         assert "100" in output
 

@@ -389,30 +389,33 @@ def _set_error_caption(table: Table, label: str, exc: Exception) -> None:
     table.caption = f"{table.caption}\n{caption}" if table.caption else caption
 
 
-def _dotorg_owner_downloads(aserver_api, owner: str) -> Optional[int]:
-    """Best-effort total download count for an anaconda.org owner.
+def _dotorg_owner_stats(aserver_api, owner: str) -> tuple[Optional[int], Optional[int]]:
+    """Best-effort (package count, download count) for an anaconda.org owner.
 
-    Sums ``ndownloads`` over ``GET /packages/{owner}`` — one request per owner;
-    anaconda.org has no owner-level stats endpoint. Returns None when the
-    listing fails, so the row falls back to a dash.
+    Derived from a single ``GET /packages/{owner}`` — anaconda.org has no
+    owner-level stats endpoint, and per-file artifact counts would cost one
+    request per package. The package count is the Artifacts cell: on the repo
+    side an artifact is a package too (see ``Artifact``), so the column compares
+    like-for-like. Returns None (a dash) when the listing fails.
     """
     try:
-        return sum((pkg.get("ndownloads") or 0) for pkg in aserver_api.user_packages(owner))
+        packages = aserver_api.user_packages(owner)
+        return len(packages), sum((pkg.get("ndownloads") or 0) for pkg in packages)
     except Exception as exc:
         logger.debug("Could not list anaconda.org packages for %s: %s", owner, exc)
-        return None
+        return None, None
 
 
 def _add_org_rows(table: Table, aserver_api, include_all: bool) -> None:
     """Append anaconda.org owner rows to the table.
 
-    anaconda.org owners are not repocore channels: they have no namespace, no
-    channel-level privacy, and no owner-level artifact count (dashes).
-    Description is the owner's profile description and Downloads sums per-package
-    ``ndownloads`` — both best-effort (a dash when unavailable). Labels are
-    intentionally *not* listed here — a label is not a channel, and
-    `anaconda channel list` lists channels. Use ``anaconda label`` to work with
-    labels.
+    anaconda.org owners are not repocore channels: they have no namespace and no
+    channel-level privacy (dashes). Description is the owner's profile
+    description, Artifacts is the number of packages the owner has, and
+    Downloads sums per-package ``ndownloads`` — all best-effort (a dash when
+    unavailable). Labels are intentionally *not* listed here — a label is not a
+    channel, and `anaconda channel list` lists channels. Use ``anaconda label``
+    to work with labels.
 
     Emits one fewer cell per row under ``include_all``, which drops the Access
     column entirely (see ``list_command``).
@@ -438,20 +441,20 @@ def _add_org_rows(table: Table, aserver_api, include_all: bool) -> None:
 
     for owner in owners:
         # Indent the owner in the first (Namespace / Channel) column, then dash
-        # the columns that have no dotorg equivalent (Privacy, Artifacts, Access).
+        # the columns that have no dotorg equivalent (Privacy, Access).
         description = descriptions.get(owner)
         if description:
             # Keep the cell to a single short line; profile descriptions can be long.
             description = " ".join(str(description).split())
             if len(description) > 60:
                 description = description[:59].rstrip() + "…"
-        downloads = _dotorg_owner_downloads(aserver_api, owner)
+        package_count, downloads = _dotorg_owner_stats(aserver_api, owner)
 
         row = [
             f"  {owner}",
             _NOT_APPLICABLE,
             description or _NOT_APPLICABLE,
-            _NOT_APPLICABLE,
+            str(package_count) if package_count is not None else _NOT_APPLICABLE,
             str(downloads) if downloads is not None else _NOT_APPLICABLE,
         ]
         if not include_all:
