@@ -389,21 +389,42 @@ def _set_error_caption(table: Table, label: str, exc: Exception) -> None:
     table.caption = f"{table.caption}\n{caption}" if table.caption else caption
 
 
+def _dotorg_owner_downloads(aserver_api, owner: str) -> Optional[int]:
+    """Best-effort total download count for an anaconda.org owner.
+
+    Sums ``ndownloads`` over ``GET /packages/{owner}`` — one request per owner;
+    anaconda.org has no owner-level stats endpoint. Returns None when the
+    listing fails, so the row falls back to a dash.
+    """
+    try:
+        return sum((pkg.get("ndownloads") or 0) for pkg in aserver_api.user_packages(owner))
+    except Exception as exc:
+        logger.debug("Could not list anaconda.org packages for %s: %s", owner, exc)
+        return None
+
+
 def _add_org_rows(table: Table, aserver_api, include_all: bool) -> None:
     """Append anaconda.org owner rows to the table.
 
-    anaconda.org owners are not repocore channels: they have no namespace and no
-    channel-level privacy (both shown as a dash). Labels are intentionally *not*
-    listed here — a label is not a channel, and `anaconda channel list` lists
-    channels. Use ``anaconda label`` to work with labels.
+    anaconda.org owners are not repocore channels: they have no namespace, no
+    channel-level privacy, and no owner-level artifact count (dashes).
+    Description is the owner's profile description and Downloads sums per-package
+    ``ndownloads`` — both best-effort (a dash when unavailable). Labels are
+    intentionally *not* listed here — a label is not a channel, and
+    `anaconda channel list` lists channels. Use ``anaconda label`` to work with
+    labels.
 
     Emits one fewer cell per row under ``include_all``, which drops the Access
     column entirely (see ``list_command``).
     """
-    login = aserver_api.user()["login"]
+    user_info = aserver_api.user()
+    login = user_info["login"]
+    descriptions = {login: user_info.get("description") or None}
     owners = [login]
     try:
-        owners += [org["login"] for org in aserver_api.user_orgs()]
+        for org in aserver_api.user_orgs():
+            owners.append(org["login"])
+            descriptions[org["login"]] = org.get("description") or None
     except Exception as exc:
         # Org membership lookup is best-effort; fall back to just the user.
         logger.debug("Could not list anaconda.org organizations, using user only: %s", exc)
@@ -416,9 +437,26 @@ def _add_org_rows(table: Table, aserver_api, include_all: bool) -> None:
     table.add_row(*([_NOT_APPLICABLE] * cell_count))
 
     for owner in owners:
-        # Indent the owner in the first (Namespace / Channel) column, then fill
-        # every remaining column with a dash.
-        table.add_row(f"  {owner}", *([_NOT_APPLICABLE] * (cell_count - 1)))
+        # Indent the owner in the first (Namespace / Channel) column, then dash
+        # the columns that have no dotorg equivalent (Privacy, Artifacts, Access).
+        description = descriptions.get(owner)
+        if description:
+            # Keep the cell to a single short line; profile descriptions can be long.
+            description = " ".join(str(description).split())
+            if len(description) > 60:
+                description = description[:59].rstrip() + "…"
+        downloads = _dotorg_owner_downloads(aserver_api, owner)
+
+        row = [
+            f"  {owner}",
+            _NOT_APPLICABLE,
+            description or _NOT_APPLICABLE,
+            _NOT_APPLICABLE,
+            str(downloads) if downloads is not None else _NOT_APPLICABLE,
+        ]
+        if not include_all:
+            row.append(_NOT_APPLICABLE)
+        table.add_row(*row)
 
 
 @app.command(name="list", help="List all channels")
