@@ -34,14 +34,14 @@ REPO_PACKAGE_TYPES: FrozenSet[str] = frozenset(pt.value for pt in RepoPackageTyp
 ORG_PACKAGE_TYPES: FrozenSet[str] = frozenset(pt.value for pt in OrgPackageType)
 
 
-_BETA_NOTICE = "[yellow]Note:[/yellow] Private channels are in BETA."
+_BETA_NOTICE = "[yellow]Note:[/yellow] Anaconda.com private channels are in BETA."
 
-# Marker file in the user data dir recording that the beta notice has been
+# Marker file in the user cache dir recording that the beta notice has been
 # shown. Absent (the default) means "show it". Once shown, we write the file so
 # the notice does not repeat. A separate file is used so the user's config file
 # is never modified. Only its existence is checked; the UTC timestamp it holds
 # is informational, for answering "when did this user last see the notice?".
-_BETA_NOTICE_MARKER_FILE = os.path.join(dirs.user_data_dir, "beta-notice-shown")
+_BETA_NOTICE_MARKER_FILE = os.path.join(dirs.user_cache_dir, "private_channel_beta_notice_shown")
 
 # Show the notice at most once per command invocation, not once per resolved
 # channel: `upload -c a -c b` resolves several channels but should say this once.
@@ -63,7 +63,7 @@ def _beta_notice_already_shown() -> bool:
 def _record_beta_notice_shown() -> None:
     """Persist that the notice has been shown, best effort.
 
-    Writes the marker file in the user data dir (creating the directory if
+    Writes the marker file in the user cache dir (creating the directory if
     needed) containing the UTC timestamp of this showing. Any failure is
     swallowed: the worst case is the notice showing again next time.
     """
