@@ -22,11 +22,18 @@ class RepoCoreError(Exception):
         )
 
 
+class Unauthenticated(RepoCoreError):
+    def __init__(self, message=None):
+        base_msg = message or "Authentication required"
+        separator = " " if base_msg.endswith(".") else ". "
+        self.msg = base_msg + separator + "You may need to run 'anaconda login'"
+        super().__init__(self.msg)
+
+
 class Unauthorized(RepoCoreError):
     def __init__(self, message=None):
         base_msg = message or "The provided token does not allow you to perform this operation"
-        separator = " " if base_msg.endswith(".") else ". "
-        self.msg = base_msg + separator + "You may need to run 'anaconda login'"
+        self.msg = base_msg
         super().__init__(self.msg)
 
 

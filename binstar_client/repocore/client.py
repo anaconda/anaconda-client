@@ -9,7 +9,7 @@ from typing import Optional
 
 from anaconda_auth.client import BaseClient
 
-from binstar_client.repocore.errors import InvalidName, RepoCoreError, Unauthorized
+from binstar_client.repocore.errors import InvalidName, RepoCoreError, Unauthenticated, Unauthorized
 from binstar_client.repocore.models import (
     Artifact,
     ArtifactFile,
@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 REPO_API_PATH = "/api/repo"
 AUTH_API_PATH = "/api/auth"
 ACCOUNT_API_PATH = "/api"
+PRICING_PAGE_PATH = "/pricing"
 
 
 class RepoCoreClient(BaseClient):
@@ -57,6 +58,10 @@ class RepoCoreClient(BaseClient):
     @property
     def _account_api_base(self):
         return self._base_uri + ACCOUNT_API_PATH
+
+    @property
+    def _pricing_page(self):
+        return self._base_uri + PRICING_PAGE_PATH
 
     @property
     def _channels_url(self):
@@ -153,7 +158,10 @@ class RepoCoreClient(BaseClient):
 
         msg = self._extract_error_message(response, action)
 
-        if response.status_code in (401, 403):
+        if response.status_code == 401:
+            return response_data, Unauthenticated(msg)
+
+        if response.status_code == 403:
             return response_data, Unauthorized(msg)
 
         return response_data, RepoCoreError(msg)
@@ -402,6 +410,20 @@ class RepoCoreClient(BaseClient):
         if error:
             raise error
         return result
+
+    def get_profile(self) -> tuple[Optional[dict], Optional[Exception]]:
+        """Get the authenticated user's profile"""
+        url = join(self._auth_api_base, "account", "profile")
+        response = self.get(url)
+        result, error = self._manage_response(response, "getting profile", success_codes=[200])
+        return result, error
+
+    def update_profile(self, **data) -> tuple[Optional[dict], Optional[Exception]]:
+        """Update the authenticated user's profile"""
+        url = join(self._auth_api_base, "account", "profile")
+        response = self.put(url, json=data)
+        result, error = self._manage_response(response, "updating profile", success_codes=[200])
+        return result, error
 
     def share_channel(self, namespace: str, channel_name: str, user: str, action: str = "share", grant: str = "read"):
         url = join(self._api_base, "namespaces", namespace, "channels", channel_name, "sharing")
