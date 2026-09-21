@@ -118,22 +118,36 @@ def resolve_no_namespace(api, name: str) -> ResolvedChannel:
     Returns ResolvedChannel with namespace and channel_name.
 
     Checks for username:
-      1. If None or get user request errors, return empty namespace
+      1. If None or get user request errors, prompt for a new username and
+         send a PUT to /api/auth/account/profile to set it
       2. If truthy ask user to confirm creation of new namespace
     """
     try:
-        username = (api.account.get("user") or {}).get("username") or ""
+        profile, _ = api.get_profile()
+        username = (profile or {}).get("username") or ""
     except Exception:
         username = ""
 
-    if username:
-        confirm = typer.confirm(
-            f"No namespaces found. A namespace can be created with your username. Use your username '{username}' as the namespace?"
-        )
-        if confirm:
-            return _repo_channel(namespace=username, channel_name=name)
-        raise typer.Exit(0)
-    return _repo_channel(namespace=None, channel_name=name)
+    if not username:
+        console.print("\n[yellow]Your account does not have a username set.[/yellow]")
+        if not typer.confirm("Would you like to create a username?", default=True):
+            raise typer.Exit(0)
+        new_username = typer.prompt("Username")
+        if not new_username:
+            raise typer.Exit(1)
+        _, error = api.update_profile(username=new_username)
+        if error:
+            console.print(f"[red]Error:[/red] Failed to set username: {error}")
+            raise typer.Exit(1)
+        username = new_username
+        console.print(f"Username set to [cyan]{username}[/cyan].")
+
+    confirm = typer.confirm(
+        f"No namespaces found. A namespace can be created with your username. Use your username '{username}' as the namespace?"
+    )
+    if confirm:
+        return _repo_channel(namespace=username, channel_name=name)
+    raise typer.Exit(0)
 
 
 def namespace_known_to_user(api, namespace: str) -> bool:
@@ -155,7 +169,8 @@ def namespace_known_to_user(api, namespace: str) -> bool:
     unintended auto-created namespace.
     """
     try:
-        username = (api.account.get("user") or {}).get("username") or ""
+        profile, _ = api.get_profile()
+        username = (profile or {}).get("username") or ""
     except Exception:
         username = ""
     if username and namespace == username:
@@ -177,12 +192,16 @@ def namespace_known_to_user(api, namespace: str) -> bool:
 
 
 def resolve_namespace_and_channel(
-    api, name: str, namespace: Optional[str] = None, require_namespace: bool = True
+    api, name: str, namespace: Optional[str] = None, require_namespace: bool = True, owner_only: bool = True
 ) -> ResolvedChannel:
     """Resolve namespace and channel name from the given inputs.
 
     Returns ResolvedChannel with namespace and channel_name. namespace may be None if require_namespace=False
     and no namespaces are available (lets create delegate to the API).
+
+    When ``owner_only=True`` (default), only channels with ``access='owner'`` are
+    considered during resolution. Pass ``False`` for read-oriented commands (show,
+    list, upload) that should also see collaborator/shared channels.
 
     Resolution order:
       1. name contains "/" AND --namespace provided → error (ambiguous)
@@ -209,7 +228,8 @@ def resolve_namespace_and_channel(
     # Own + shared writable channels only, so name matching and namespace
     # resolution stay scoped to channels the user can actually write to rather
     # than every public channel it can read (or a read-only shared channel).
-    channels = list(_iter_writable_channels(api))
+    all_channels = list(_iter_writable_channels(api))
+    channels = [c for c in all_channels if not owner_only or c.access is None or c.access == "owner"]
 
     # First, does the bare name already name a subchannel? A subchannel is an
     # actual channel (has a parent namespace); a top-level channel is a namespace,
@@ -231,7 +251,6 @@ def resolve_namespace_and_channel(
     # No existing channel by that name — resolve the namespace it should live
     # under, so a brand-new channel name (e.g. `create`) still resolves.
     namespaces = _writable_namespaces(channels)
-
     if not namespaces:
         if require_namespace:
             console.print(
@@ -281,6 +300,7 @@ def classify_and_resolve(
     name: str,
     namespace: Optional[str] = None,
     owner_probe: Optional[OwnerProbe] = None,
+    owner_only: bool = True,
 ) -> ResolvedChannel:
     """Resolve ``name`` to an upload target, spanning anaconda.com and anaconda.org.
 
@@ -292,11 +312,14 @@ def classify_and_resolve(
       * matches only an anaconda.org owner                                  -> target="org"
       * otherwise -> anaconda.com channel resolution (existing behavior)
 
+    When ``owner_only=True`` (default), resolution considers only owned channels.
+    Pass ``False`` for read-oriented commands (show, list, upload).
+
     Returns a ResolvedChannel whose ``target`` field says which system to use.
     """
     # Qualified names and explicit namespaces are unambiguously anaconda.com.
     if "/" in name or namespace:
-        return resolve_namespace_and_channel(api, name, namespace, require_namespace=False)
+        return resolve_namespace_and_channel(api, name, namespace, require_namespace=False, owner_only=owner_only)
 
     org_match = owner_probe is not None and owner_probe(name)
 
@@ -322,7 +345,7 @@ def classify_and_resolve(
         return _org_channel(owner=name, channel_name=name)
 
     # anaconda.com: treat the bare name as a channel and resolve its namespace.
-    return resolve_namespace_and_channel(api, name, namespace, require_namespace=False)
+    return resolve_namespace_and_channel(api, name, namespace, require_namespace=False, owner_only=owner_only)
 
 
 def resolve_channels_with_namespaces(
@@ -331,6 +354,7 @@ def resolve_channels_with_namespaces(
     namespace: Optional[str],
     from_deprecated_channel_flag: bool,
     owner_probe: Optional[OwnerProbe] = None,
+    owner_only: bool = True,
 ) -> List[ResolvedChannel]:
     """Resolve channel names to :class:`ResolvedChannel` targets.
 
@@ -339,7 +363,7 @@ def resolve_channels_with_namespaces(
     resolved_channels = []
     for ch in channels:
         try:
-            resolved = classify_and_resolve(api, ch, namespace, owner_probe=owner_probe)
+            resolved = classify_and_resolve(api, ch, namespace, owner_probe=owner_probe, owner_only=owner_only)
         except (typer.Exit, SystemExit):
             if from_deprecated_channel_flag:
                 console.print("-c/--channel no longer equals labels, did you mean --label?")
