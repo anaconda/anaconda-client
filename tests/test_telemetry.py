@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
 
+from binstar_client.repocore.models import Namespace
 from binstar_client.repocore.telemetry import Attributes, ChannelEvents, UpgradeEvents, UploadEvents, _check_error
 from binstar_client.repocore.telemetry_models import (
     ChannelAccessedEvent,
@@ -125,9 +126,9 @@ class TestAttributes:
         mock_client.account = {
             "user": {"id": "user123", "email": "test@example.com"},
         }
-        mock_client.get_user_organizations.return_value = [
-            {"id": "org1", "name": "myorg", "active_subscription": {"product_code": "pro"}},
-            {"id": "org2", "name": "teamorg", "active_subscription": {"product_code": "team"}},
+        mock_client.list_user_organizations.return_value = [
+            Namespace(id="org1", name="myorg", active_subscription={"product_code": "pro"}),
+            Namespace(id="org2", name="teamorg", active_subscription={"product_code": "team"}),
         ]
 
         attrs = Attributes(mock_client, namespace="myorg")
@@ -140,8 +141,8 @@ class TestAttributes:
     def test_attributes_with_namespace_not_found(self):
         mock_client = MagicMock()
         mock_client.account = {"user": {"id": "user123", "email": "test@example.com"}}
-        mock_client.get_user_organizations.return_value = [
-            {"id": "org1", "name": "myorg", "active_subscription": {"product_code": "pro"}},
+        mock_client.list_user_organizations.return_value = [
+            Namespace(id="org1", name="myorg", active_subscription={"product_code": "pro"}),
         ]
 
         attrs = Attributes(mock_client, namespace="unknownorg")
@@ -176,8 +177,8 @@ class TestAttributes:
         mock_client.account = {
             "user": {"id": "user123", "email": "test@example.com"},
         }
-        mock_client.get_user_organizations.return_value = [
-            {"id": "org1", "name": "myorg", "active_subscription": {"product_code": "pro"}},
+        mock_client.list_user_organizations.return_value = [
+            Namespace(id="org1", name="myorg", active_subscription={"product_code": "pro"}),
         ]
 
         attrs = Attributes(mock_client, namespace="myorg")
@@ -195,8 +196,8 @@ class TestAttributes:
     def test_attributes_with_none_active_subscription(self):
         mock_client = MagicMock()
         mock_client.account = {"user": {"id": "user456"}}
-        mock_client.get_user_organizations.return_value = [
-            {"id": "org3", "name": "freeorg", "active_subscription": None},
+        mock_client.list_user_organizations.return_value = [
+            Namespace(id="org3", name="freeorg", active_subscription=None),
         ]
 
         attrs = Attributes(mock_client, namespace="freeorg")

@@ -51,20 +51,14 @@ class Attributes:
 
         if namespace:
             try:
-                organizations = client.get_user_organizations()
+                organizations = client.list_user_organizations()
             except Exception:
                 pass  # nosec B110
             else:
-                org_lookup = {}
                 for org in organizations:
-                    org_name = org.get("name")
-                    org_id = org.get("id") or ""
-                    product_code = (org.get("active_subscription") or {}).get("product_code") or "free_subscription"
-                    if org_name:
-                        org_lookup[org_name] = (org_id, product_code)
-
-                if namespace in org_lookup:
-                    self.organization_id, self.account_tier = org_lookup[namespace]
+                    if org.name == namespace:
+                        self.organization_id, self.account_tier = org.id, org.product_code
+                        break
 
     def to_dict(self) -> dict:
         """Export user attributes as a dictionary for telemetry.
