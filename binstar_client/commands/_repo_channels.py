@@ -369,8 +369,10 @@ def _add_repo_rows(table: Table, api, namespace: Optional[str], include_all: boo
                 str(channel.download_count),
             ]
             if not include_all:
-                # /account/channels reports the caller's access level.
-                row.append(channel.access or _NOT_APPLICABLE)
+                # /account/channels reports the caller's access level; default
+                # to viewer when the endpoint omits it (a read-only listing is
+                # still access).
+                row.append(channel.access or "viewer")
             table.add_row(*row)
 
 
@@ -393,14 +395,14 @@ _DOTORG_PERM_RANK = {"read": 0, "write": 1, "admin": 2}
 _RANK_ACCESS = {0: "viewer", 1: "collaborator", 2: "owner"}
 
 
-def _dotorg_owner_access(aserver_api, owner: str, is_self: bool) -> Optional[str]:
+def _dotorg_owner_access(aserver_api, owner: str, is_self: bool) -> str:
     """The caller's access level on an anaconda.org owner, in repo vocabulary.
 
     Your own account is always "owner". For orgs, ``GET /groups/{owner}``
     returns the caller's groups with their permission (read/write/admin); the
     strongest maps to viewer/collaborator/owner. One small request per org —
     unlike ``/packages/{owner}``, the payload is a handful of group names.
-    Returns None (a dash) when the lookup fails.
+    Defaults to "viewer" when the lookup fails or lists no groups.
     """
     if is_self:
         return "owner"
@@ -409,15 +411,16 @@ def _dotorg_owner_access(aserver_api, owner: str, is_self: bool) -> Optional[str
         ranks = [_DOTORG_PERM_RANK.get(group.get("permission"), 0) for group in groups]
     except Exception as exc:
         logger.debug("Could not list anaconda.org groups for %s: %s", owner, exc)
-        return None
-    return _RANK_ACCESS[max(ranks)] if ranks else None
+        return "viewer"
+    return _RANK_ACCESS[max(ranks)] if ranks else "viewer"
 
 
 def _add_org_rows(table: Table, aserver_api, include_all: bool) -> None:
     """Append anaconda.org owner rows to the table.
 
-    anaconda.org owners are not repocore channels: they have no namespace and no
-    channel-level privacy (dashes). Description is the owner's profile
+    anaconda.org owners are not repocore channels: they have no namespace
+    (dash). Their content is public by default, so Privacy shows "public".
+    Description is the owner's profile
     description — free, since ``user()``/``user_orgs()`` already fetch it.
     Access (owner/collaborator/viewer) comes from the caller's group permissions
     in the org. Artifacts and Downloads stay dashed: anaconda.org has no
@@ -451,8 +454,8 @@ def _add_org_rows(table: Table, aserver_api, include_all: bool) -> None:
 
     for owner in owners:
         # Indent the owner in the first (Namespace / Channel) column, then dash
-        # the columns that have no dotorg equivalent (Privacy) or would require
-        # a large response (Artifacts, Downloads).
+        # the columns that have no dotorg equivalent (Namespace) or would require
+        # a large response (Artifacts, Downloads). Privacy defaults to public.
         description = descriptions.get(owner)
         if description:
             # Keep the cell to a single short line; profile descriptions can be long.
@@ -462,14 +465,13 @@ def _add_org_rows(table: Table, aserver_api, include_all: bool) -> None:
 
         row = [
             f"  {owner}",
-            _NOT_APPLICABLE,
+            "public",
             description or _NOT_APPLICABLE,
             _NOT_APPLICABLE,
             _NOT_APPLICABLE,
         ]
         if not include_all:
-            access = _dotorg_owner_access(aserver_api, owner, owner == login)
-            row.append(access or _NOT_APPLICABLE)
+            row.append(_dotorg_owner_access(aserver_api, owner, owner == login))
         table.add_row(*row)
 
 

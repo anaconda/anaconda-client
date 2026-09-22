@@ -1027,8 +1027,10 @@ class TestRepoCoreChannelsCLI:
                     download_count=5,
                     access="owner",
                 ),
+                # No access reported: the Access cell defaults to viewer.
+                Channel(name="staging", privacy="public", parent="main"),
             ],
-            2,
+            3,
             None,
         )
 
@@ -1041,6 +1043,8 @@ class TestRepoCoreChannelsCLI:
         # The Access column surfaces the caller's access level from /account/channels.
         assert "Access" in result.output
         assert "owner" in result.output
+        # "staging" omits access, so its cell defaults to viewer.
+        assert "viewer" in result.output
         # Default path hits /account/channels, not the broad /channels listing.
         mock_api.list_my_channels.assert_called()
         mock_api.list_all_channels.assert_not_called()
@@ -1199,6 +1203,8 @@ class TestRepoCoreChannelsCLI:
         output = " ".join(result.output.split())
         assert "My dotorg profile" in output
         assert "The org one" in output
+        # Privacy: dotorg owners are public by default.
+        assert "public" in output
         # Access: your own account is owner; org access comes from the strongest
         # group permission (read -> viewer, write -> collaborator).
         assert "owner" in output
@@ -1208,8 +1214,8 @@ class TestRepoCoreChannelsCLI:
         # org section doesn't pay for a large response per owner.
         aserver.user_packages.assert_not_called()
 
-    def test_channels_list_org_groups_failure_dashes_access(self):
-        """A failed groups lookup only costs that row its Access cell."""
+    def test_channels_list_org_groups_failure_defaults_to_viewer(self):
+        """A failed groups lookup defaults the row's Access to viewer."""
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
@@ -1227,6 +1233,7 @@ class TestRepoCoreChannelsCLI:
 
         assert result.exit_code == 0
         assert "org1" in result.output
+        assert "viewer" in result.output
 
     def test_channels_list_org_failure_isolated(self):
         runner = CliRunner()
