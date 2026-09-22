@@ -359,14 +359,13 @@ def _add_repo_rows(table: Table, api, namespace: Optional[str], include_all: boo
         namespaces = [ns for ns in namespaces if ns == namespace]
 
     for ns in namespaces:
-        table.add_row(ns, "", "", "", "", *([] if include_all else [""]))
+        table.add_row(ns, "", "", "", *([] if include_all else [""]))
         for channel in subchannels.get(ns, []):
             row = [
                 f"  {channel.path}",
                 channel.privacy,
                 channel.description,
                 str(channel.artifact_count),
-                str(channel.download_count),
             ]
             if not include_all:
                 # /account/channels reports the caller's access level; default
@@ -423,12 +422,12 @@ def _add_org_rows(table: Table, aserver_api, include_all: bool) -> None:
     Description is the owner's profile
     description — free, since ``user()``/``user_orgs()`` already fetch it.
     Access (owner/collaborator/viewer) comes from the caller's group permissions
-    in the org. Artifacts and Downloads stay dashed: anaconda.org has no
-    owner-level stats endpoint, so those would cost one ``GET /packages/{owner}``
-    request per owner — too slow for a listing (until the backend exposes stats
-    directly). Labels are intentionally *not* listed here — a label is not a
-    channel, and `anaconda channel list` lists channels. Use ``anaconda label``
-    to work with labels.
+    in the org. Artifacts stays dashed: anaconda.org has no owner-level stats
+    endpoint, so it would cost one ``GET /packages/{owner}`` request per owner —
+    too slow for a listing (until the backend exposes stats directly). Labels
+    are intentionally *not* listed here — a label is not a channel, and
+    `anaconda channel list` lists channels. Use ``anaconda label`` to work with
+    labels.
 
     Emits one fewer cell per row under ``include_all``, which drops the Access
     column entirely (see ``list_command``).
@@ -446,7 +445,7 @@ def _add_org_rows(table: Table, aserver_api, include_all: bool) -> None:
         logger.debug("Could not list anaconda.org organizations, using user only: %s", exc)
 
     # Access is the last column and only present when not --all.
-    cell_count = 5 if include_all else 6
+    cell_count = 4 if include_all else 5
 
     # Group header for the whole anaconda.org section: no namespace exists here,
     # so the Namespace / Channel column is a dash and owners are listed beneath it.
@@ -455,7 +454,7 @@ def _add_org_rows(table: Table, aserver_api, include_all: bool) -> None:
     for owner in owners:
         # Indent the owner in the first (Namespace / Channel) column, then dash
         # the columns that have no dotorg equivalent (Namespace) or would require
-        # a large response (Artifacts, Downloads). Privacy defaults to public.
+        # a large response (Artifacts). Privacy defaults to public.
         description = descriptions.get(owner)
         if description:
             # Keep the cell to a single short line; profile descriptions can be long.
@@ -467,7 +466,6 @@ def _add_org_rows(table: Table, aserver_api, include_all: bool) -> None:
             f"  {owner}",
             "public",
             description or _NOT_APPLICABLE,
-            _NOT_APPLICABLE,
             _NOT_APPLICABLE,
         ]
         if not include_all:
@@ -507,7 +505,6 @@ def list_command(
     table.add_column("Privacy")
     table.add_column("Description")
     table.add_column("Artifacts", justify="right")
-    table.add_column("Downloads", justify="right")
     # --all lists channels via GET /channels, which doesn't report the caller's
     # access level. Drop the column entirely rather than dashing it out — a dash
     # would read as "no access" instead of "not reported".
@@ -558,7 +555,7 @@ def list_command(
         for note in notes:
             console.print(f"[dim]{note}[/dim]")
         console.print(
-            "[dim]To see more information (artifacts, downloads) about a channel visit: "
+            "[dim]To see more information about a channel visit: "
             "anaconda.org/channels/<CHANNEL_NAME>[/dim]"
         )
 

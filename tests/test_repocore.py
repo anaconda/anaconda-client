@@ -1212,7 +1212,7 @@ class TestRepoCoreChannelsCLI:
         assert "owner" in output
         assert "viewer" in output
         assert "collaborator" in output
-        # No per-owner package listing: Artifacts/Downloads stay dashed so the
+        # No per-owner package listing: the Artifacts cell stays dashed so the
         # org section doesn't pay for a large response per owner.
         aserver.user_packages.assert_not_called()
 
