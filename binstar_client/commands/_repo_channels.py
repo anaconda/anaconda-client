@@ -26,7 +26,6 @@ from binstar_client.commands import show as show_mod
 from binstar_client.commands import upload as upload_mod
 from binstar_client import errors as dotorg_errors
 from binstar_client.repocore import RepoCoreClient
-from binstar_client.repocore.client import split_channel_name
 from binstar_client.repocore.errors import LoginRequiredError, RepoCoreError, Unauthenticated, Unauthorized
 from binstar_client.repocore.telemetry import ChannelEvents, UploadEvents, UpgradeEvents
 from binstar_client.repocore.package_utils import PackageType, determine_package_type, windows_glob
@@ -221,17 +220,17 @@ def _callback(
 
 
 def _upload_file_to_channel(
-    api, filepath: str, channel: str, pkg_type: str, from_deprecated_channel_flag: bool
+    api,
+    filepath: str,
+    channel: str,
+    pkg_type: str,
+    from_deprecated_channel_flag: bool,
+    namespace: Optional[str] = None,
 ) -> None:
     """Upload a single file to a single channel."""
     console.print(f"Uploading [cyan]{filepath}[/cyan] to channel [cyan]{channel}[/cyan]...")
     _, error = api.upload_file(filepath, channel, pkg_type)
     package_name = os.path.basename(filepath)
-    try:
-        api._validate_channel_name(channel)
-        namespace, _ = split_channel_name(channel) if "/" in channel else (None, channel)
-    except Exception:
-        namespace = None
     UploadEvents.uploaded(
         api,
         app.info.name,
@@ -249,11 +248,15 @@ def _upload_file_to_channel(
 def _process_and_upload_files(
     api,
     file_patterns: List[str],
-    resolved_channels: List[str],
+    resolved_channels: List[tuple],
     package_type: Optional[PackageType],
     from_deprecated_channel_flag: bool,
 ) -> None:
-    """Process file patterns and upload each file to all resolved channels."""
+    """Process file patterns and upload each file to all resolved channels.
+
+    ``resolved_channels`` is a list of ``(channel_str, namespace)`` pairs where
+    ``namespace`` is the org name (or ``None`` for top-level channels).
+    """
     for file_pattern in file_patterns:
         for filepath in windows_glob(file_pattern):
             if not os.path.exists(filepath):
@@ -266,8 +269,8 @@ def _process_and_upload_files(
 
             pkg_type = determine_package_type(filepath, package_type)
 
-            for ch in resolved_channels:
-                _upload_file_to_channel(api, filepath, ch, pkg_type, from_deprecated_channel_flag)
+            for ch, ns in resolved_channels:
+                _upload_file_to_channel(api, filepath, ch, pkg_type, from_deprecated_channel_flag, namespace=ns)
 
 
 def _upload_to_dotorg(
@@ -823,7 +826,9 @@ def _do_upload(
 
         # Validated above, so the string is a valid repocore type here (or None).
         repo_package_type = PackageType(package_type) if package_type else None
-        repo_channels = [f"{r.namespace}/{r.channel_name}" if r.namespace else r.channel_name for r in repo_targets]
+        repo_channels = [
+            (f"{r.namespace}/{r.channel_name}" if r.namespace else r.channel_name, r.namespace) for r in repo_targets
+        ]
         _process_and_upload_files(api, files, repo_channels, repo_package_type, from_deprecated_channel_flag)
 
     for r in org_targets:
