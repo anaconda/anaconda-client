@@ -1048,6 +1048,8 @@ class TestRepoCoreChannelsCLI:
         # Default path hits /account/channels, not the broad /channels listing.
         mock_api.list_my_channels.assert_called()
         mock_api.list_all_channels.assert_not_called()
+        # The footer points at the per-channel web page for full stats.
+        assert "anaconda.org/channels/<CHANNEL_NAME>" in result.output
 
     def test_channels_list_all_uses_broad_listing(self):
         """`--all` pages GET /channels (every readable channel) instead of the

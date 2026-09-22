@@ -557,6 +557,10 @@ def list_command(
         console.print(table)
         for note in notes:
             console.print(f"[dim]{note}[/dim]")
+        console.print(
+            "[dim]To see more information (artifacts, downloads) about a channel visit: "
+            "anaconda.org/channels/<CHANNEL_NAME>[/dim]"
+        )
 
     if console.height and table.row_count > console.height:
         with console.pager():
