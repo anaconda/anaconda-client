@@ -30,6 +30,7 @@ from binstar_client.repocore.errors import LoginRequiredError, RepoCoreError, Un
 from binstar_client.repocore.telemetry import ChannelEvents, UploadEvents, UpgradeEvents
 from binstar_client.repocore.package_utils import PackageType, determine_package_type, windows_glob
 from binstar_client.repocore.resolve import (
+    _notify_repo_beta,
     classify_and_resolve,
     namespace_known_to_user as _namespace_known_to_user,
     resolve_channels_with_namespaces as _resolve_channels_with_namespaces,
@@ -493,6 +494,10 @@ def list_command(
         notes.append(f"{label} unavailable: {exc}")
 
     if source in ("all", "repo"):
+        # list never resolves a channel, so it doesn't pass through _repo_channel —
+        # emit the BETA notice here whenever anaconda.com is a query target,
+        # regardless of whether the listing succeeds or returns any channels.
+        _notify_repo_beta()
         try:
             _add_repo_rows(table, ctx.obj.repo_api, namespace, include_all)
         except Exception as exc:
