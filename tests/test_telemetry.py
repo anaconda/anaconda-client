@@ -68,7 +68,7 @@ class TestPydanticTelemetryModels:
         dismissed = UpgradePromptDismissedEvent(action="create")
         assert impressed.event_name == "upgrade_prompt.impressed"
         assert impressed.action == "create"
-        assert accepted.event_name == "upgrade.accepted"
+        assert accepted.event_name == "upgrade_prompt.accepted"
         assert accepted.action == "create"
         assert dismissed.event_name == "upgrade_prompt.dismissed"
         assert dismissed.action == "create"

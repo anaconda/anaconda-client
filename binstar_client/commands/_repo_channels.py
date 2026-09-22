@@ -26,6 +26,7 @@ from binstar_client.commands import show as show_mod
 from binstar_client.commands import upload as upload_mod
 from binstar_client import errors as dotorg_errors
 from binstar_client.repocore import RepoCoreClient
+from binstar_client.repocore.client import split_channel_name
 from binstar_client.repocore.errors import LoginRequiredError, RepoCoreError, Unauthenticated, Unauthorized
 from binstar_client.repocore.telemetry import ChannelEvents, UploadEvents, UpgradeEvents
 from binstar_client.repocore.package_utils import PackageType, determine_package_type, windows_glob
@@ -228,7 +229,7 @@ def _upload_file_to_channel(
     package_name = os.path.basename(filepath)
     try:
         api._validate_channel_name(channel)
-        namespace = channel.split("/")[0] if "/" in channel else None
+        namespace, _ = split_channel_name(channel) if "/" in channel else (None, channel)
     except Exception:
         namespace = None
     UploadEvents.uploaded(
