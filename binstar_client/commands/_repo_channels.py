@@ -389,21 +389,28 @@ def _set_error_caption(table: Table, label: str, exc: Exception) -> None:
     table.caption = f"{table.caption}\n{caption}" if table.caption else caption
 
 
-def _dotorg_owner_stats(aserver_api, owner: str) -> tuple[Optional[int], Optional[int]]:
-    """Best-effort (package count, download count) for an anaconda.org owner.
+_DOTORG_PERM_RANK = {"read": 0, "write": 1, "admin": 2}
+_RANK_ACCESS = {0: "viewer", 1: "collaborator", 2: "owner"}
 
-    Derived from a single ``GET /packages/{owner}`` — anaconda.org has no
-    owner-level stats endpoint, and per-file artifact counts would cost one
-    request per package. The package count is the Artifacts cell: on the repo
-    side an artifact is a package too (see ``Artifact``), so the column compares
-    like-for-like. Returns None (a dash) when the listing fails.
+
+def _dotorg_owner_access(aserver_api, owner: str, is_self: bool) -> Optional[str]:
+    """The caller's access level on an anaconda.org owner, in repo vocabulary.
+
+    Your own account is always "owner". For orgs, ``GET /groups/{owner}``
+    returns the caller's groups with their permission (read/write/admin); the
+    strongest maps to viewer/collaborator/owner. One small request per org —
+    unlike ``/packages/{owner}``, the payload is a handful of group names.
+    Returns None (a dash) when the lookup fails.
     """
+    if is_self:
+        return "owner"
     try:
-        packages = aserver_api.user_packages(owner)
-        return len(packages), sum((pkg.get("ndownloads") or 0) for pkg in packages)
+        groups = aserver_api.groups(owner).get("groups") or []
+        ranks = [_DOTORG_PERM_RANK.get(group.get("permission"), 0) for group in groups]
     except Exception as exc:
-        logger.debug("Could not list anaconda.org packages for %s: %s", owner, exc)
-        return None, None
+        logger.debug("Could not list anaconda.org groups for %s: %s", owner, exc)
+        return None
+    return _RANK_ACCESS[max(ranks)] if ranks else None
 
 
 def _add_org_rows(table: Table, aserver_api, include_all: bool) -> None:
@@ -411,9 +418,12 @@ def _add_org_rows(table: Table, aserver_api, include_all: bool) -> None:
 
     anaconda.org owners are not repocore channels: they have no namespace and no
     channel-level privacy (dashes). Description is the owner's profile
-    description, Artifacts is the number of packages the owner has, and
-    Downloads sums per-package ``ndownloads`` — all best-effort (a dash when
-    unavailable). Labels are intentionally *not* listed here — a label is not a
+    description — free, since ``user()``/``user_orgs()`` already fetch it.
+    Access (owner/collaborator/viewer) comes from the caller's group permissions
+    in the org. Artifacts and Downloads stay dashed: anaconda.org has no
+    owner-level stats endpoint, so those would cost one ``GET /packages/{owner}``
+    request per owner — too slow for a listing (until the backend exposes stats
+    directly). Labels are intentionally *not* listed here — a label is not a
     channel, and `anaconda channel list` lists channels. Use ``anaconda label``
     to work with labels.
 
@@ -441,24 +451,25 @@ def _add_org_rows(table: Table, aserver_api, include_all: bool) -> None:
 
     for owner in owners:
         # Indent the owner in the first (Namespace / Channel) column, then dash
-        # the columns that have no dotorg equivalent (Privacy, Access).
+        # the columns that have no dotorg equivalent (Privacy) or would require
+        # a large response (Artifacts, Downloads).
         description = descriptions.get(owner)
         if description:
             # Keep the cell to a single short line; profile descriptions can be long.
             description = " ".join(str(description).split())
             if len(description) > 60:
                 description = description[:59].rstrip() + "…"
-        package_count, downloads = _dotorg_owner_stats(aserver_api, owner)
 
         row = [
             f"  {owner}",
             _NOT_APPLICABLE,
             description or _NOT_APPLICABLE,
-            str(package_count) if package_count is not None else _NOT_APPLICABLE,
-            str(downloads) if downloads is not None else _NOT_APPLICABLE,
+            _NOT_APPLICABLE,
+            _NOT_APPLICABLE,
         ]
         if not include_all:
-            row.append(_NOT_APPLICABLE)
+            access = _dotorg_owner_access(aserver_api, owner, owner == login)
+            row.append(access or _NOT_APPLICABLE)
         table.add_row(*row)
 
 

@@ -1169,19 +1169,23 @@ class TestRepoCoreChannelsCLI:
         mock_api.list_my_channels.assert_not_called()
         mock_api.list_all_channels.assert_not_called()
 
-    def test_channels_list_org_shows_description_and_downloads(self):
-        """The org section surfaces each owner's profile description and the sum
-        of per-package ``ndownloads`` instead of a wall of dashes."""
+    def test_channels_list_org_shows_description_only(self):
+        """The org section surfaces each owner's profile description (free — it
+        rides along on the user/orgs lookups) but never pays for per-owner
+        package listings just to fill stats columns."""
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
 
         aserver = MagicMock()
         aserver.user.return_value = {"login": "user1", "description": "My dotorg profile"}
-        aserver.user_orgs.return_value = [{"login": "org1", "description": "The org one"}]
-        aserver.user_packages.side_effect = lambda owner: {
-            "user1": [{"ndownloads": 10}, {"ndownloads": 5}, {"ndownloads": None}],
-            "org1": [{"ndownloads": 100}],
+        aserver.user_orgs.return_value = [
+            {"login": "org1", "description": "The org one"},
+            {"login": "org2", "description": None},
+        ]
+        aserver.groups.side_effect = lambda owner: {
+            "org1": {"groups": [{"name": "Readers", "permission": "read"}]},
+            "org2": {"groups": [{"name": "Readers", "permission": "read"}, {"name": "Devs", "permission": "write"}]},
         }[owner]
 
         with (
@@ -1195,22 +1199,25 @@ class TestRepoCoreChannelsCLI:
         output = " ".join(result.output.split())
         assert "My dotorg profile" in output
         assert "The org one" in output
-        # Artifacts: 3 packages for user1, 1 for org1.
-        assert "3" in output
-        # Downloads: 10 + 5 + (None -> 0).
-        assert "15" in output
-        assert "100" in output
+        # Access: your own account is owner; org access comes from the strongest
+        # group permission (read -> viewer, write -> collaborator).
+        assert "owner" in output
+        assert "viewer" in output
+        assert "collaborator" in output
+        # No per-owner package listing: Artifacts/Downloads stay dashed so the
+        # org section doesn't pay for a large response per owner.
+        aserver.user_packages.assert_not_called()
 
-    def test_channels_list_org_stats_failures_fall_back_to_dashes(self):
-        """A failed package listing per owner only costs that cell its value."""
+    def test_channels_list_org_groups_failure_dashes_access(self):
+        """A failed groups lookup only costs that row its Access cell."""
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
 
         aserver = MagicMock()
         aserver.user.return_value = {"login": "user1"}
-        aserver.user_orgs.return_value = []
-        aserver.user_packages.side_effect = Exception("packages unavailable")
+        aserver.user_orgs.return_value = [{"login": "org1"}]
+        aserver.groups.side_effect = Exception("groups unavailable")
 
         with (
             _patch_repo_api(mock_api),
@@ -1219,7 +1226,7 @@ class TestRepoCoreChannelsCLI:
             result = runner.invoke(app, ["list", "--source", "org"])
 
         assert result.exit_code == 0
-        assert "user1" in result.output
+        assert "org1" in result.output
 
     def test_channels_list_org_failure_isolated(self):
         runner = CliRunner()
