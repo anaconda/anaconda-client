@@ -417,8 +417,8 @@ def _dotorg_owner_access(aserver_api, owner: str, is_self: bool) -> str:
 def _add_org_rows(table: Table, aserver_api, include_all: bool) -> None:
     """Append anaconda.org owner rows to the table.
 
-    anaconda.org owners are not repocore channels: they have no namespace
-    (dash). Their content is public by default, so Privacy shows "public".
+    anaconda.org owners are not repocore channels: they have no namespace.
+    Their content is public by default, so Privacy shows "public".
     Description is the owner's profile description — free, since
     ``user()``/``user_orgs()`` already fetch it. Access
     (owner/collaborator/viewer) comes from the caller's group permissions in
