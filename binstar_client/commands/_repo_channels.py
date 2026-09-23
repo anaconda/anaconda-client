@@ -360,18 +360,18 @@ def _add_repo_rows(table: Table, api, namespace: Optional[str], include_all: boo
         namespaces = [ns for ns in namespaces if ns == namespace]
 
     for ns in namespaces:
-        table.add_row(ns, "", "", "", "", *([] if include_all else [""]))
+        table.add_row(ns, "", "", *([] if include_all else [""]))
         for channel in subchannels.get(ns, []):
             row = [
                 f"  {channel.path}",
                 channel.privacy,
                 channel.description,
-                str(channel.artifact_count),
-                str(channel.download_count),
             ]
             if not include_all:
-                # /account/channels reports the caller's access level.
-                row.append(channel.access or _NOT_APPLICABLE)
+                # /account/channels reports the caller's access level; default
+                # to viewer when the endpoint omits it (a read-only listing is
+                # still access).
+                row.append(channel.access or "viewer")
             table.add_row(*row)
 
 
@@ -390,36 +390,86 @@ def _set_error_caption(table: Table, label: str, exc: Exception) -> None:
     table.caption = f"{table.caption}\n{caption}" if table.caption else caption
 
 
+_DOTORG_PERM_RANK = {"read": 0, "write": 1, "admin": 2}
+_RANK_ACCESS = {0: "viewer", 1: "collaborator", 2: "owner"}
+
+
+def _dotorg_owner_access(aserver_api, owner: str, is_self: bool) -> str:
+    """The caller's access level on an anaconda.org owner, in repo vocabulary.
+
+    Your own account is always "owner". For orgs, ``GET /groups/{owner}``
+    returns the caller's groups with their permission (read/write/admin); the
+    strongest maps to viewer/collaborator/owner. One small request per org —
+    unlike ``/packages/{owner}``, the payload is a handful of group names.
+    Defaults to "viewer" when the lookup fails or lists no groups.
+    """
+    if is_self:
+        return "owner"
+    try:
+        groups = aserver_api.groups(owner).get("groups") or []
+        ranks = [_DOTORG_PERM_RANK.get(group.get("permission"), 0) for group in groups]
+    except Exception as exc:
+        logger.debug("Could not list anaconda.org groups for %s: %s", owner, exc)
+        return "viewer"
+    return _RANK_ACCESS[max(ranks)] if ranks else "viewer"
+
+
 def _add_org_rows(table: Table, aserver_api, include_all: bool) -> None:
     """Append anaconda.org owner rows to the table.
 
-    anaconda.org owners are not repocore channels: they have no namespace and no
-    channel-level privacy (both shown as a dash). Labels are intentionally *not*
-    listed here — a label is not a channel, and `anaconda channel list` lists
+    anaconda.org owners are not repocore channels: they have no namespace.
+    Their content is public by default, so Privacy shows "public".
+    Description is the owner's profile description — free, since
+    ``user()``/``user_orgs()`` already fetch it. Access
+    (owner/collaborator/viewer) comes from the caller's group permissions in
+    the org — one small request per org. Labels are intentionally *not* listed
+    here — a label is not a channel, and `anaconda channel list` lists
     channels. Use ``anaconda label`` to work with labels.
 
     Emits one fewer cell per row under ``include_all``, which drops the Access
     column entirely (see ``list_command``).
     """
-    login = aserver_api.user()["login"]
+    user_info = aserver_api.user()
+    login = user_info["login"]
+    descriptions = {login: user_info.get("description") or None}
     owners = [login]
     try:
-        owners += [org["login"] for org in aserver_api.user_orgs()]
+        for org in aserver_api.user_orgs():
+            owners.append(org["login"])
+            descriptions[org["login"]] = org.get("description") or None
     except Exception as exc:
         # Org membership lookup is best-effort; fall back to just the user.
         logger.debug("Could not list anaconda.org organizations, using user only: %s", exc)
 
     # Access is the last column and only present when not --all.
-    cell_count = 5 if include_all else 6
+    cell_count = 3 if include_all else 4
 
     # Group header for the whole anaconda.org section: no namespace exists here,
     # so the Namespace / Channel column is a dash and owners are listed beneath it.
     table.add_row(*([_NOT_APPLICABLE] * cell_count))
 
+    def _build_row(owner: str) -> list:
+        # Indent the owner in the first (Namespace / Channel) column, then dash
+        # the columns that have no dotorg equivalent (Namespace). Privacy
+        # defaults to public.
+        description = descriptions.get(owner)
+        if description:
+            # Keep the cell to a single short line; profile descriptions can be long.
+            description = " ".join(str(description).split())
+            if len(description) > 60:
+                description = description[:59].rstrip() + "…"
+
+        row = [
+            f"  {owner}",
+            "public",
+            description or _NOT_APPLICABLE,
+        ]
+        if not include_all:
+            row.append(_dotorg_owner_access(aserver_api, owner, owner == login))
+        return row
+
     for owner in owners:
-        # Indent the owner in the first (Namespace / Channel) column, then fill
-        # every remaining column with a dash.
-        table.add_row(f"  {owner}", *([_NOT_APPLICABLE] * (cell_count - 1)))
+        table.add_row(*_build_row(owner))
 
 
 @app.command(name="list", help="List all channels")
@@ -453,8 +503,6 @@ def list_command(
     table.add_column("Namespace / Channel", style="cyan")
     table.add_column("Privacy")
     table.add_column("Description")
-    table.add_column("Artifacts", justify="right")
-    table.add_column("Downloads", justify="right")
     # --all lists channels via GET /channels, which doesn't report the caller's
     # access level. Drop the column entirely rather than dashing it out — a dash
     # would read as "no access" instead of "not reported".
@@ -508,6 +556,7 @@ def list_command(
         console.print(table)
         for note in notes:
             console.print(f"[dim]{note}[/dim]")
+        console.print("[dim]To see more information about a channel visit: anaconda.org/channels/<CHANNEL_NAME>[/dim]")
 
     if console.height and table.row_count > console.height:
         with console.pager():

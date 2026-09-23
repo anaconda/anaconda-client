@@ -1,6 +1,7 @@
 """Tests for the repocore client and CLI commands."""
 
 import os
+import json
 
 from unittest.mock import MagicMock, PropertyMock, patch
 
@@ -1062,8 +1063,10 @@ class TestRepoCoreChannelsCLI:
                     download_count=5,
                     access="owner",
                 ),
+                # No access reported: the Access cell defaults to viewer.
+                Channel(name="staging", privacy="public", parent="main"),
             ],
-            2,
+            3,
             None,
         )
 
@@ -1076,9 +1079,13 @@ class TestRepoCoreChannelsCLI:
         # The Access column surfaces the caller's access level from /account/channels.
         assert "Access" in result.output
         assert "owner" in result.output
+        # "staging" omits access, so its cell defaults to viewer.
+        assert "viewer" in result.output
         # Default path hits /account/channels, not the broad /channels listing.
         mock_api.list_my_channels.assert_called()
         mock_api.list_all_channels.assert_not_called()
+        # The footer points at the per-channel web page for full stats.
+        assert "anaconda.org/channels/<CHANNEL_NAME>" in result.output
 
     def test_channels_list_all_uses_broad_listing(self):
         """`--all` pages GET /channels (every readable channel) instead of the
@@ -1203,6 +1210,66 @@ class TestRepoCoreChannelsCLI:
         # repocore namespaces must not be fetched for org-only listing
         mock_api.list_my_channels.assert_not_called()
         mock_api.list_all_channels.assert_not_called()
+
+    def test_channels_list_org_shows_description_and_access(self):
+        """The org section surfaces each owner's profile description and the
+        caller's access level, without per-owner package listings."""
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+
+        aserver = MagicMock()
+        aserver.user.return_value = {"login": "user1", "description": "My dotorg profile"}
+        aserver.user_orgs.return_value = [
+            {"login": "org1", "description": "The org one"},
+            {"login": "org2", "description": None},
+        ]
+        aserver.groups.side_effect = lambda owner: {
+            "org1": {"groups": [{"name": "Readers", "permission": "read"}]},
+            "org2": {"groups": [{"name": "Readers", "permission": "read"}, {"name": "Devs", "permission": "write"}]},
+        }[owner]
+
+        with (
+            _patch_repo_api(mock_api),
+            patch("binstar_client.commands._repo_channels.get_server_api", return_value=aserver),
+        ):
+            # Wide console so descriptions don't wrap across the table borders.
+            result = runner.invoke(app, ["list", "--source", "org"], env={"COLUMNS": "200"})
+
+        assert result.exit_code == 0
+        output = " ".join(result.output.split())
+        assert "My dotorg profile" in output
+        assert "The org one" in output
+        # Privacy: dotorg owners are public by default.
+        assert "public" in output
+        # Access: your own account is owner; org access comes from the strongest
+        # group permission (read -> viewer, write -> collaborator).
+        assert "owner" in output
+        assert "viewer" in output
+        assert "collaborator" in output
+        # No per-owner package listing: it's slow server-side and the column is gone.
+        aserver.user_packages.assert_not_called()
+
+    def test_channels_list_org_groups_failure_defaults_to_viewer(self):
+        """A failed groups lookup defaults the row's Access to viewer."""
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+
+        aserver = MagicMock()
+        aserver.user.return_value = {"login": "user1"}
+        aserver.user_orgs.return_value = [{"login": "org1"}]
+        aserver.groups.side_effect = Exception("groups unavailable")
+
+        with (
+            _patch_repo_api(mock_api),
+            patch("binstar_client.commands._repo_channels.get_server_api", return_value=aserver),
+        ):
+            result = runner.invoke(app, ["list", "--source", "org"])
+
+        assert result.exit_code == 0
+        assert "org1" in result.output
+        assert "viewer" in result.output
 
     def test_channels_list_org_failure_isolated(self):
         runner = CliRunner()
@@ -2636,7 +2703,6 @@ class TestPackageUtils:
         from binstar_client.repocore.package_utils import _detect_package_type
         import tempfile
         import tarfile
-        import json
         import os
 
         with tempfile.NamedTemporaryFile(suffix=".tar.bz2", delete=False) as tmp:
