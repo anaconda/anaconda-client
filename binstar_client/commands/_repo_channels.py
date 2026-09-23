@@ -10,6 +10,7 @@ import logging
 import os
 import re
 import webbrowser
+from concurrent.futures import ThreadPoolExecutor
 from enum import Enum
 from glob import glob
 from typing import List, Optional, Tuple, cast
@@ -359,13 +360,12 @@ def _add_repo_rows(table: Table, api, namespace: Optional[str], include_all: boo
         namespaces = [ns for ns in namespaces if ns == namespace]
 
     for ns in namespaces:
-        table.add_row(ns, "", "", "", *([] if include_all else [""]))
+        table.add_row(ns, "", "", *([] if include_all else [""]))
         for channel in subchannels.get(ns, []):
             row = [
                 f"  {channel.path}",
                 channel.privacy,
                 channel.description,
-                str(channel.artifact_count),
             ]
             if not include_all:
                 # /account/channels reports the caller's access level; default
@@ -392,6 +392,7 @@ def _set_error_caption(table: Table, label: str, exc: Exception) -> None:
 
 _DOTORG_PERM_RANK = {"read": 0, "write": 1, "admin": 2}
 _RANK_ACCESS = {0: "viewer", 1: "collaborator", 2: "owner"}
+_DOTORG_MAX_WORKERS = 8
 
 
 def _dotorg_owner_access(aserver_api, owner: str, is_self: bool) -> str:
@@ -419,15 +420,13 @@ def _add_org_rows(table: Table, aserver_api, include_all: bool) -> None:
 
     anaconda.org owners are not repocore channels: they have no namespace
     (dash). Their content is public by default, so Privacy shows "public".
-    Description is the owner's profile
-    description — free, since ``user()``/``user_orgs()`` already fetch it.
-    Access (owner/collaborator/viewer) comes from the caller's group permissions
-    in the org. Artifacts stays dashed: anaconda.org has no owner-level stats
-    endpoint, so it would cost one ``GET /packages/{owner}`` request per owner —
-    too slow for a listing (until the backend exposes stats directly). Labels
-    are intentionally *not* listed here — a label is not a channel, and
-    `anaconda channel list` lists channels. Use ``anaconda label`` to work with
-    labels.
+    Description is the owner's profile description — free, since
+    ``user()``/``user_orgs()`` already fetch it. Access
+    (owner/collaborator/viewer) comes from the caller's group permissions in
+    the org. Per-owner group lookups run concurrently, so the wall clock stays
+    close to one round trip. Labels are intentionally *not* listed here — a
+    label is not a channel, and `anaconda channel list` lists channels. Use
+    ``anaconda label`` to work with labels.
 
     Emits one fewer cell per row under ``include_all``, which drops the Access
     column entirely (see ``list_command``).
@@ -445,16 +444,16 @@ def _add_org_rows(table: Table, aserver_api, include_all: bool) -> None:
         logger.debug("Could not list anaconda.org organizations, using user only: %s", exc)
 
     # Access is the last column and only present when not --all.
-    cell_count = 4 if include_all else 5
+    cell_count = 3 if include_all else 4
 
     # Group header for the whole anaconda.org section: no namespace exists here,
     # so the Namespace / Channel column is a dash and owners are listed beneath it.
     table.add_row(*([_NOT_APPLICABLE] * cell_count))
 
-    for owner in owners:
+    def _build_row(owner: str) -> list:
         # Indent the owner in the first (Namespace / Channel) column, then dash
-        # the columns that have no dotorg equivalent (Namespace) or would require
-        # a large response (Artifacts). Privacy defaults to public.
+        # the columns that have no dotorg equivalent (Namespace). Privacy
+        # defaults to public.
         description = descriptions.get(owner)
         if description:
             # Keep the cell to a single short line; profile descriptions can be long.
@@ -466,10 +465,16 @@ def _add_org_rows(table: Table, aserver_api, include_all: bool) -> None:
             f"  {owner}",
             "public",
             description or _NOT_APPLICABLE,
-            _NOT_APPLICABLE,
         ]
         if not include_all:
             row.append(_dotorg_owner_access(aserver_api, owner, owner == login))
+        return row
+
+    # The per-owner group lookups are independent HTTP calls; run them
+    # concurrently to keep the listing snappy.
+    with ThreadPoolExecutor(max_workers=min(len(owners), _DOTORG_MAX_WORKERS)) as pool:
+        rows = list(pool.map(_build_row, owners))
+    for row in rows:
         table.add_row(*row)
 
 
@@ -504,7 +509,6 @@ def list_command(
     table.add_column("Namespace / Channel", style="cyan")
     table.add_column("Privacy")
     table.add_column("Description")
-    table.add_column("Artifacts", justify="right")
     # --all lists channels via GET /channels, which doesn't report the caller's
     # access level. Drop the column entirely rather than dashing it out — a dash
     # would read as "no access" instead of "not reported".
@@ -554,10 +558,7 @@ def list_command(
         console.print(table)
         for note in notes:
             console.print(f"[dim]{note}[/dim]")
-        console.print(
-            "[dim]To see more information about a channel visit: "
-            "anaconda.org/channels/<CHANNEL_NAME>[/dim]"
-        )
+        console.print("[dim]To see more information about a channel visit: anaconda.org/channels/<CHANNEL_NAME>[/dim]")
 
     if console.height and table.row_count > console.height:
         with console.pager():

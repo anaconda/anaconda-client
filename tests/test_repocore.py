@@ -1,5 +1,6 @@
 """Tests for the repocore client and CLI commands."""
 
+import json
 from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
@@ -1175,10 +1176,9 @@ class TestRepoCoreChannelsCLI:
         mock_api.list_my_channels.assert_not_called()
         mock_api.list_all_channels.assert_not_called()
 
-    def test_channels_list_org_shows_description_only(self):
-        """The org section surfaces each owner's profile description (free — it
-        rides along on the user/orgs lookups) but never pays for per-owner
-        package listings just to fill stats columns."""
+    def test_channels_list_org_shows_description_and_access(self):
+        """The org section surfaces each owner's profile description and the
+        caller's access level, without per-owner package listings."""
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
@@ -1212,8 +1212,7 @@ class TestRepoCoreChannelsCLI:
         assert "owner" in output
         assert "viewer" in output
         assert "collaborator" in output
-        # No per-owner package listing: the Artifacts cell stays dashed so the
-        # org section doesn't pay for a large response per owner.
+        # No per-owner package listing: it's slow server-side and the column is gone.
         aserver.user_packages.assert_not_called()
 
     def test_channels_list_org_groups_failure_defaults_to_viewer(self):
@@ -2669,7 +2668,6 @@ class TestPackageUtils:
         from binstar_client.repocore.package_utils import _detect_package_type
         import tempfile
         import tarfile
-        import json
         import os
 
         with tempfile.NamedTemporaryFile(suffix=".tar.bz2", delete=False) as tmp:
