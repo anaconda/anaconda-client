@@ -1,6 +1,8 @@
 """Tests for the repocore client and CLI commands."""
 
+import os
 import json
+
 from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
@@ -54,6 +56,39 @@ def _channels_with_access(*channels):
     """
     items = [Channel(name=name, privacy="private", parent=parent, access=access) for name, parent, access in channels]
     return (items, len(items), None)
+
+
+class TestRepoBetaNotice:
+    def test_notice_identifies_anaconda_com_and_records_cache_marker(self, tmp_path, monkeypatch):
+        from binstar_client.repocore import resolve
+
+        marker = tmp_path / "private_channel_beta_notice_shown"
+        monkeypatch.setattr(resolve, "_BETA_NOTICE_MARKER_FILE", str(marker))
+        monkeypatch.setattr(resolve, "_beta_notice_shown", False)
+
+        with patch("binstar_client.repocore.resolve.console.print") as print_notice:
+            resolve._notify_repo_beta()
+
+        print_notice.assert_called_once_with("[yellow]Note:[/yellow] Anaconda.com private channels are in BETA.")
+        assert marker.exists()
+
+    def test_notice_marker_uses_user_cache_dir(self):
+        from binstar_client.repocore.resolve import _BETA_NOTICE_MARKER_FILE, dirs
+
+        assert _BETA_NOTICE_MARKER_FILE == os.path.join(dirs.user_cache_dir, "private_channel_beta_notice_shown")
+
+    def test_existing_cache_marker_suppresses_notice(self, tmp_path, monkeypatch):
+        from binstar_client.repocore import resolve
+
+        marker = tmp_path / "private_channel_beta_notice_shown"
+        marker.touch()
+        monkeypatch.setattr(resolve, "_BETA_NOTICE_MARKER_FILE", str(marker))
+        monkeypatch.setattr(resolve, "_beta_notice_shown", False)
+
+        with patch("binstar_client.repocore.resolve.console.print") as print_notice:
+            resolve._notify_repo_beta()
+
+        print_notice.assert_not_called()
 
 
 class TestPydanticModels:
