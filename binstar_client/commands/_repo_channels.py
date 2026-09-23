@@ -10,7 +10,6 @@ import logging
 import os
 import re
 import webbrowser
-from concurrent.futures import ThreadPoolExecutor
 from enum import Enum
 from glob import glob
 from typing import List, Optional, Tuple, cast
@@ -392,7 +391,6 @@ def _set_error_caption(table: Table, label: str, exc: Exception) -> None:
 
 _DOTORG_PERM_RANK = {"read": 0, "write": 1, "admin": 2}
 _RANK_ACCESS = {0: "viewer", 1: "collaborator", 2: "owner"}
-_DOTORG_MAX_WORKERS = 8
 
 
 def _dotorg_owner_access(aserver_api, owner: str, is_self: bool) -> str:
@@ -423,10 +421,9 @@ def _add_org_rows(table: Table, aserver_api, include_all: bool) -> None:
     Description is the owner's profile description — free, since
     ``user()``/``user_orgs()`` already fetch it. Access
     (owner/collaborator/viewer) comes from the caller's group permissions in
-    the org. Per-owner group lookups run concurrently, so the wall clock stays
-    close to one round trip. Labels are intentionally *not* listed here — a
-    label is not a channel, and `anaconda channel list` lists channels. Use
-    ``anaconda label`` to work with labels.
+    the org — one small request per org. Labels are intentionally *not* listed
+    here — a label is not a channel, and `anaconda channel list` lists
+    channels. Use ``anaconda label`` to work with labels.
 
     Emits one fewer cell per row under ``include_all``, which drops the Access
     column entirely (see ``list_command``).
@@ -470,12 +467,8 @@ def _add_org_rows(table: Table, aserver_api, include_all: bool) -> None:
             row.append(_dotorg_owner_access(aserver_api, owner, owner == login))
         return row
 
-    # The per-owner group lookups are independent HTTP calls; run them
-    # concurrently to keep the listing snappy.
-    with ThreadPoolExecutor(max_workers=min(len(owners), _DOTORG_MAX_WORKERS)) as pool:
-        rows = list(pool.map(_build_row, owners))
-    for row in rows:
-        table.add_row(*row)
+    for owner in owners:
+        table.add_row(*_build_row(owner))
 
 
 @app.command(name="list", help="List all channels")
