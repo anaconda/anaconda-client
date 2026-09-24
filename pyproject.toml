@@ -12,11 +12,11 @@ classifiers = [
 ]
 description = "Client library and CLI plugin for anaconda.org"
 dynamic = ["dependencies", "optional-dependencies", "version"]
-license = {text = "BSD-3-Clause"}
+license = { text = "BSD-3-Clause" }
 name = "anaconda-client"
 readme = "README.md"
 requires-python = ">=3.10"
-urls = {source = "https://github.com/anaconda/anaconda-client"}
+urls = { source = "https://github.com/anaconda/anaconda-client" }
 
 [project.entry-points."anaconda_cli.subcommand"]
 org = "binstar_client.plugins:app"

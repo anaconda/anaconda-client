@@ -1,7 +1,7 @@
 import unittest
 
-from tests.utils.utils import data_dir
 from binstar_client.inspect_package.env import EnvInspector, inspect_env_package
+from tests.utils.utils import data_dir
 
 
 class EnvInspectorTestCase(unittest.TestCase):

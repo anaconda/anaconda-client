@@ -1,12 +1,9 @@
-# -*- coding: utf8 -*-
-
 """Tests for authentication commands."""
 
 import json
 import unittest.mock
 
 from binstar_client import errors
-
 from tests.fixture import CLITestCase, main
 from tests.urlmock import urlpatch
 from tests.utils.utils import data_dir

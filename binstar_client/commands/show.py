@@ -16,7 +16,7 @@ import typer
 
 from binstar_client.utils import get_server_api, parse_specs
 from binstar_client.utils.config import PackageType
-from binstar_client.utils.pprint import format_package_type, pprint_user, pprint_packages, pprint_orgs
+from binstar_client.utils.pprint import format_package_type, pprint_orgs, pprint_packages, pprint_user
 
 logger = logging.getLogger('binstar.show')
 
