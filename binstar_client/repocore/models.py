@@ -2,17 +2,41 @@
 
 from typing import FrozenSet, Optional
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 def _handle_none_as_empty_string(v):
     return v if v is not None else ""
 
 
+FREE_SUBSCRIPTION = "free_subscription"
+
+
+class Subscription(BaseModel):
+    """An organization's active subscription, as returned by the auth API."""
+
+    product_code: str = FREE_SUBSCRIPTION
+
+    _handle_product_code = field_validator("product_code", mode="before")(
+        lambda v: v or FREE_SUBSCRIPTION,
+    )
+
+
 class Namespace(BaseModel):
-    """Namespace/organization from the auth API."""
+    """Namespace/organization from the auth API (``GET /organizations/my``)."""
+
+    model_config = ConfigDict(extra="ignore")
 
     name: str
+    id: str = ""
+    active_subscription: Optional[Subscription] = None
+
+    _handle_id = field_validator("id", mode="before")(_handle_none_as_empty_string)
+
+    @property
+    def product_code(self) -> str:
+        """The subscription's product code, defaulting to the free tier."""
+        return self.active_subscription.product_code if self.active_subscription else FREE_SUBSCRIPTION
 
 
 class Channel(BaseModel):

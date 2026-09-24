@@ -124,7 +124,9 @@ def _extract_limit_from_error(error: Exception, action: LimitAction = LimitActio
     return int(limit_match.group(1)) if limit_match else None
 
 
-def _prompt_upgrade(api, app_name: Optional[str], limit: Optional[int], action: str) -> None:
+def _prompt_upgrade(
+    api, app_name: Optional[str], limit: Optional[int], action: str, namespace: Optional[str] = None
+) -> None:
     """Prompt user to upgrade when they hit a limit."""
     limit_text = f" of {limit}" if limit else ""
     if action == "share":
@@ -134,15 +136,15 @@ def _prompt_upgrade(api, app_name: Optional[str], limit: Optional[int], action: 
         console.print(f"\n[yellow]You have reached the limit{limit_text} for private channels.[/yellow]")
         console.print("Upgrade your plan to create more private channels.")
 
-    UpgradeEvents.impressed(api, app_name, action)
+    UpgradeEvents.impressed(api, app_name, namespace, action=action)
 
     if typer.confirm("\nWould you like to view upgrade options?", default=True):
-        UpgradeEvents.accepted(api, app_name, action)
+        UpgradeEvents.accepted(api, app_name, namespace, action=action)
         upgrade_url = api._pricing_page
         console.print(f"Opening [cyan]{upgrade_url}[/cyan] in your browser...")
         webbrowser.open(upgrade_url)
     else:
-        UpgradeEvents.dismissed(api, app_name, action)
+        UpgradeEvents.dismissed(api, app_name, namespace, action=action)
 
 
 def _print_modify_result(result, channel_name: str, description: str) -> None:
@@ -218,14 +220,25 @@ def _callback(
 
 
 def _upload_file_to_channel(
-    api, filepath: str, channel: str, pkg_type: str, from_deprecated_channel_flag: bool
+    api,
+    filepath: str,
+    channel: str,
+    pkg_type: str,
+    from_deprecated_channel_flag: bool,
+    namespace: Optional[str] = None,
 ) -> None:
     """Upload a single file to a single channel."""
     console.print(f"Uploading [cyan]{filepath}[/cyan] to channel [cyan]{channel}[/cyan]...")
     _, error = api.upload_file(filepath, channel, pkg_type)
     package_name = os.path.basename(filepath)
     UploadEvents.uploaded(
-        api, app.info.name, channel=channel, package_type=pkg_type, package_name=package_name, error=bool(error)
+        api,
+        app.info.name,
+        namespace,
+        channel=channel,
+        package_type=pkg_type,
+        package_name=package_name,
+        error=bool(error),
     )
     if error:
         raise error
@@ -235,11 +248,15 @@ def _upload_file_to_channel(
 def _process_and_upload_files(
     api,
     file_patterns: List[str],
-    resolved_channels: List[str],
+    resolved_channels: List[tuple],
     package_type: Optional[PackageType],
     from_deprecated_channel_flag: bool,
 ) -> None:
-    """Process file patterns and upload each file to all resolved channels."""
+    """Process file patterns and upload each file to all resolved channels.
+
+    ``resolved_channels`` is a list of ``(channel_str, namespace)`` pairs where
+    ``namespace`` is the org name (or ``None`` for top-level channels).
+    """
     for file_pattern in file_patterns:
         for filepath in windows_glob(file_pattern):
             if not os.path.exists(filepath):
@@ -252,8 +269,8 @@ def _process_and_upload_files(
 
             pkg_type = determine_package_type(filepath, package_type)
 
-            for ch in resolved_channels:
-                _upload_file_to_channel(api, filepath, ch, pkg_type, from_deprecated_channel_flag)
+            for ch, ns in resolved_channels:
+                _upload_file_to_channel(api, filepath, ch, pkg_type, from_deprecated_channel_flag, namespace=ns)
 
 
 def _upload_to_dotorg(
@@ -549,7 +566,7 @@ def list_command(
 
     channel_path = namespace if namespace else "all"
     ChannelEvents.accessed(
-        ctx.obj.repo_api, app.info.name, channel_path=channel_path, action="list", error=error_occurred
+        ctx.obj.repo_api, app.info.name, namespace, channel_path=channel_path, action="list", error=error_occurred
     )
 
     def _render() -> None:
@@ -606,6 +623,7 @@ def create_command(
     event_kwargs = {
         "api": api,
         "app_name": app.info.name,
+        "namespace": resolved.namespace,
         "channel_path": channel_path,
         "privacy": privacy,
         "operation_org_id": operation_org_id,
@@ -615,8 +633,10 @@ def create_command(
         error_msg = str(error).lower()
         if "limit" in error_msg and "private" in error_msg:
             limit_value = _extract_limit_from_error(error)
-            ChannelEvents.limit(api, app.info.name, channel_path=channel_path, action="create", limit=limit_value)
-            _prompt_upgrade(api, app.info.name, limit_value, "create")
+            ChannelEvents.limit(
+                api, app.info.name, resolved.namespace, channel_path=channel_path, action="create", limit=limit_value
+            )
+            _prompt_upgrade(api, app.info.name, limit_value, "create", resolved.namespace)
         ChannelEvents.created(**event_kwargs)
         raise error
     if response.created:
@@ -638,7 +658,7 @@ def remove_command(
     resolved = _resolve_namespace_and_channel(api, name, namespace)
     qualified = f"{resolved.namespace}/{resolved.channel_name}"
     _, error = api.remove_channel(qualified)
-    ChannelEvents.removed(api, app.info.name, channel_path=qualified, error=bool(error))
+    ChannelEvents.removed(api, app.info.name, resolved.namespace, channel_path=qualified, error=bool(error))
     if error:
         raise error
     console.print(f"[green]Success![/green] Channel '[cyan]{qualified}[/cyan]' removed.")
@@ -689,7 +709,7 @@ def show_command(
 
     name = f"{resolved.namespace}/{resolved.channel_name}" if resolved.namespace else resolved.channel_name
     channel_data, error = api.get_namespace_channel(name)
-    ChannelEvents.accessed(api, app.info.name, channel_path=name, action="show", error=bool(error))
+    ChannelEvents.accessed(api, app.info.name, resolved.namespace, channel_path=name, action="show", error=bool(error))
     if error:
         raise error
 
@@ -784,9 +804,11 @@ def modify_command(
             error_msg = str(error).lower()
             if "limit" in error_msg and "private" in error_msg:
                 limit_value = _extract_limit_from_error(error)
-                ChannelEvents.limit(api, app.info.name, channel_path=name, action="modify", limit=limit_value)
-                _prompt_upgrade(api, app.info.name, limit_value, "modify")
-            ChannelEvents.modified(api, app.info.name, error=True, **telemetry_kwargs)
+                ChannelEvents.limit(
+                    api, app.info.name, resolved.namespace, channel_path=name, action="modify", limit=limit_value
+                )
+                _prompt_upgrade(api, app.info.name, limit_value, "modify", resolved.namespace)
+            ChannelEvents.modified(api, app.info.name, resolved.namespace, error=True, **telemetry_kwargs)
             raise error
         telemetry_kwargs["privacy_changed"] = result.changed
         state_map = {"private": "locked", "authenticated": "soft-locked", "public": "unlocked"}
@@ -795,13 +817,13 @@ def modify_command(
     if indexing_behavior:
         result, error = api.update_channel(name, indexing_behavior=indexing_behavior)
         if error:
-            ChannelEvents.modified(api, app.info.name, error=True, **telemetry_kwargs)
+            ChannelEvents.modified(api, app.info.name, resolved.namespace, error=True, **telemetry_kwargs)
             raise error
         telemetry_kwargs["indexing_behavior_changed"] = result.changed
         state_map = {"frozen": "frozen", "default": "unfrozen"}
         _print_modify_result(result, name, state_map[indexing_behavior])
 
-    ChannelEvents.modified(api, app.info.name, error=False, **telemetry_kwargs)
+    ChannelEvents.modified(api, app.info.name, resolved.namespace, error=False, **telemetry_kwargs)
 
 
 def _do_upload(
@@ -853,7 +875,9 @@ def _do_upload(
 
         # Validated above, so the string is a valid repocore type here (or None).
         repo_package_type = PackageType(package_type) if package_type else None
-        repo_channels = [f"{r.namespace}/{r.channel_name}" if r.namespace else r.channel_name for r in repo_targets]
+        repo_channels = [
+            (f"{r.namespace}/{r.channel_name}" if r.namespace else r.channel_name, r.namespace) for r in repo_targets
+        ]
         _process_and_upload_files(api, files, repo_channels, repo_package_type, from_deprecated_channel_flag)
 
     for r in org_targets:
@@ -1012,7 +1036,14 @@ def share_command(
             raise typer.Exit(1)
         ch = f"{resolved.namespace}/{resolved.channel_name}"
         result, error = api.share_channel(resolved.namespace, resolved.channel_name, user, action=action, grant=grant)
-        event_kwargs = {"api": api, "app_name": app.info.name, "channel_path": ch, "user": user, "error": bool(error)}
+        event_kwargs = {
+            "api": api,
+            "app_name": app.info.name,
+            "namespace": resolved.namespace,
+            "channel_path": ch,
+            "user": user,
+            "error": bool(error),
+        }
         if action == "share":
             ChannelEvents.share(**event_kwargs, access=access)
         else:
@@ -1021,8 +1052,10 @@ def share_command(
             error_msg = str(error).lower()
             if "collaborators" in error_msg and "can only have" in error_msg:
                 limit_value = _extract_limit_from_error(error, LimitAction.SHARE)
-                ChannelEvents.collaborator_limit(api, app.info.name, channel_path=ch, action="share", limit=limit_value)
-                _prompt_upgrade(api, app.info.name, limit_value, "share")
+                ChannelEvents.collaborator_limit(
+                    api, app.info.name, resolved.namespace, channel_path=ch, action="share", limit=limit_value
+                )
+                _prompt_upgrade(api, app.info.name, limit_value, "share", resolved.namespace)
             raise error
         console.print(f"[green]Success![/green] {action.capitalize()}d channel '[cyan]{ch}[/cyan]' with {user}")
 

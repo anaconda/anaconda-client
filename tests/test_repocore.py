@@ -96,6 +96,19 @@ class TestPydanticModels:
         ns = Namespace(name="test-org")
         assert ns.name == "test-org"
         assert isinstance(ns, Namespace)
+        assert ns.id == ""
+        assert ns.active_subscription is None
+        assert ns.product_code == "free_subscription"
+
+    def test_namespace_model_subscription(self):
+        ns = Namespace(id="org1", name="test-org", active_subscription={"product_code": "pro"}, unknown="ignored")
+        assert ns.id == "org1"
+        assert ns.product_code == "pro"
+
+    def test_namespace_model_none_fields(self):
+        ns = Namespace(id=None, name="test-org", active_subscription=None)
+        assert ns.id == ""
+        assert ns.product_code == "free_subscription"
 
     def test_channel_model(self):
         ch = Channel(name="dev", privacy="private", description=None)

@@ -86,7 +86,7 @@ class UpgradePromptImpressedEvent(TelemetryEvent):
 class UpgradePromptAcceptedEvent(TelemetryEvent):
     """Upgrade prompt acceptance event."""
 
-    event_name: str = "upgrade.accepted"
+    event_name: str = "upgrade_prompt.accepted"
     errorable: bool = False
     action: str
 

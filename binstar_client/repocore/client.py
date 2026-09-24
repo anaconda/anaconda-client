@@ -23,6 +23,19 @@ from binstar_client.repocore.package_utils import PackageType
 logger = logging.getLogger(__name__)
 
 REPO_API_PATH = "/api/repo"
+
+
+def split_channel_name(channel: str) -> tuple[str, str]:
+    """Split a qualified 'namespace/channel' string into (namespace, channel).
+
+    Raises ValueError if the channel does not contain exactly one '/'.
+    """
+    parts = channel.split("/", 1)
+    if len(parts) != 2 or not parts[0] or not parts[1]:
+        raise ValueError(f"Channel name '{channel}' is not a valid 'namespace/channel' format")
+    return parts[0], parts[1]
+
+
 AUTH_API_PATH = "/api/auth"
 ACCOUNT_API_PATH = "/api"
 PRICING_PAGE_PATH = "/pricing"
@@ -86,16 +99,13 @@ class RepoCoreClient(BaseClient):
 
     def _get_channel_url(self, channel: str) -> str:
         if self.is_subchannel(channel):
-            parent, sub = channel.split("/", 1)
+            parent, sub = split_channel_name(channel)
             return join(self._channels_url, parent, "subchannels", sub)
         return join(self._channels_url, channel)
 
     def _validate_channel_name(self, name: str):
         if self.is_subchannel(name):
-            try:
-                channel, subchannel = name.split("/")
-            except ValueError:
-                raise InvalidName(f"Channel name {name} is not valid. It contains more than one '/'")
+            channel, subchannel = split_channel_name(name)
             self._validate_channel_name(channel)
             self._validate_channel_name(subchannel)
             return
@@ -167,6 +177,7 @@ class RepoCoreClient(BaseClient):
         return response_data, RepoCoreError(msg)
 
     def list_user_organizations(self) -> list[Namespace]:
+        """List the organizations (namespaces) the caller belongs to."""
         url = join(self._auth_api_base, "organizations", "my")
         response = self.get(url)
         data, error = self._manage_response(response, "getting user organizations")
@@ -178,7 +189,7 @@ class RepoCoreClient(BaseClient):
         self._validate_channel_name(channel)
 
         if self.is_subchannel(channel):
-            parent, subchannel = channel.split("/")
+            parent, subchannel = split_channel_name(channel)
             url = join(self._channels_url, parent, "subchannels")
             data = {"name": subchannel}
         else:

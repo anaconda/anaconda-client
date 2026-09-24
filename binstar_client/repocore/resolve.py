@@ -16,6 +16,7 @@ import typer
 from anaconda_cli_base.console import console, select_from_list
 from binstar_client.repocore.models import ResolvedChannel
 from binstar_client.repocore.package_utils import PackageType as RepoPackageType
+from binstar_client.repocore.client import split_channel_name
 from binstar_client.utils.config import PackageType as OrgPackageType, dirs
 
 logger = logging.getLogger("binstar.repocore.resolve")
@@ -289,8 +290,8 @@ def resolve_namespace_and_channel(
         raise typer.Exit(1)
 
     if "/" in name:
-        parts = name.split("/", 1)
-        return _repo_channel(namespace=parts[0], channel_name=parts[1])
+        namespace, channel_name = split_channel_name(name)
+        return _repo_channel(namespace=namespace, channel_name=channel_name)
 
     if namespace:
         return _repo_channel(namespace=namespace, channel_name=name)
