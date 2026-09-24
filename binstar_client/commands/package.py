@@ -2,8 +2,6 @@
 Anaconda repository package utilities
 """
 
-from __future__ import print_function
-
 import logging
 from argparse import Namespace
 from typing import Optional
@@ -112,7 +110,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             help='Package to operate on',
             parser=parse_specs,
         ),
-        add_collaborator: Optional[str] = typer.Option(
+        add_collaborator: str | None = typer.Option(
             None,
             help='username of the collaborator you want to add',
             callback=_exclusive_action,
@@ -127,16 +125,16 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             help='Create a package',
             callback=_exclusive_action,
         ),
-        summary: Optional[str] = typer.Option(
+        summary: str | None = typer.Option(
             None,
             help='Set the package short summary',
         ),
-        license_: Optional[str] = typer.Option(
+        license_: str | None = typer.Option(
             None,
             '--license',
             help='Set the package license',
         ),
-        license_url: Optional[str] = typer.Option(
+        license_url: str | None = typer.Option(
             None,
             help='Set the package license url',
         ),

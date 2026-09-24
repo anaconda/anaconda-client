@@ -2,16 +2,14 @@
 Copy packages from one account to another
 """
 
-from __future__ import unicode_literals, print_function
-
 import argparse
 import logging
 from typing import Optional
 
 import typer
 
-from binstar_client.utils import get_server_api, parse_specs
 from binstar_client import errors
+from binstar_client.utils import get_server_api, parse_specs
 
 logger = logging.getLogger('binstar.copy')
 
@@ -49,7 +47,7 @@ def main(args):
         '\nNOTE: copy command with --update option doesn`t copy already existing files.'
         + ' Try to use --replace to overwrite existing data'
     )
-    no_copied_files = 'Did not copy any files. Please check your inputs with\n\n\tanaconda show {}'.format(spec)
+    no_copied_files = f'Did not copy any files. Please check your inputs with\n\n\tanaconda show {spec}'
 
     logger.info('Copied %s files! %s', len(files), update_msg if args.update else '')
 
@@ -119,7 +117,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             ),
             callback=parse_specs,
         ),
-        to_owner: Optional[str] = typer.Option(
+        to_owner: str | None = typer.Option(
             None,
             help='User account to copy package to (default: your account)',
         ),

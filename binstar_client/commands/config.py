@@ -61,27 +61,27 @@ If no, then an upload will fail if the package name does not already exist on th
 
 """
 
-from __future__ import print_function
-
 import logging
 from argparse import Namespace, RawDescriptionHelpFormatter
-from typing import Callable, List, Optional
+from collections.abc import Callable
+from typing import List, Optional
 
 import click
 import typer
 
 from binstar_client.errors import ShowHelp
 from binstar_client.utils.config import (
-    SEARCH_PATH,
-    USER_CONFIG,
-    SYSTEM_CONFIG,
     CONFIGURATION_KEYS,
+    SEARCH_PATH,
+    SYSTEM_CONFIG,
+    USER_CONFIG,
     get_config,
-    save_config,
     load_config,
     load_file_configs,
+    save_config,
 )
-from ..utils.yaml import yaml_dump, safe_load
+
+from ..utils.yaml import safe_load, yaml_dump
 
 logger = logging.getLogger('binstar.config')
 
@@ -99,7 +99,7 @@ def recursive_set(config_data, key, value, type_):
         logger.warning('"%s" is not a known configuration key', key)
 
     if key in DEPRECATED:
-        message = '{} is deprecated: {}'.format(key, DEPRECATED[key])
+        message = f'{key} is deprecated: {DEPRECATED[key]}'
         logger.warning(message)
 
     config_data[key] = type_(value)
@@ -204,18 +204,18 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
     )
     def config_subcommand(
         ctx: typer.Context,
-        type_: Optional[str] = typer.Option(None, '--type', help='The type of the values in the set commands'),
-        set_: List[click.Tuple] = typer.Option(
+        type_: str | None = typer.Option(None, '--type', help='The type of the values in the set commands'),
+        set_: list[click.Tuple] = typer.Option(
             [],
             '--set',
             help='sets a new variable: name value',
             click_type=click.Tuple([str, str]),
         ),
-        get: Optional[str] = typer.Option(
+        get: str | None = typer.Option(
             None,
             help='get value: name',
         ),
-        remove: List[str] = typer.Option(
+        remove: list[str] = typer.Option(
             [],
             help='removes a variable',
         ),
@@ -230,7 +230,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             False,
             help='Display all identified config sources',
         ),
-        user: Optional[bool] = typer.Option(
+        user: bool | None = typer.Option(
             None,
             '-u',
             '--user',

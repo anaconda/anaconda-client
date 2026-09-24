@@ -2,8 +2,6 @@
 Manage your Anaconda repository channels.
 """
 
-from __future__ import unicode_literals, print_function
-
 import argparse
 import functools
 import logging
@@ -72,12 +70,12 @@ def _add_parser(subparsers, name, deprecated=False):
 
     subparser = subparsers.add_parser(
         name,
-        help='{}Manage your Anaconda repository {}s'.format(deprecated_warn, name),
+        help=f'{deprecated_warn}Manage your Anaconda repository {name}s',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description=f'Manage your Anaconda repository {name}s.',
     )
 
-    subparser.add_argument('-o', '--organization', help='Manage an organizations {}s'.format(name))
+    subparser.add_argument('-o', '--organization', help=f'Manage an organizations {name}s')
 
     if name == 'channel':
         channel_subparsers = subparser.add_subparsers(dest='channel_subcommand', metavar='SUBCOMMAND')
@@ -92,13 +90,11 @@ def _add_parser(subparsers, name, deprecated=False):
     group = subparser.add_mutually_exclusive_group(required=(name != 'channel'))
 
     group.add_argument('--copy', nargs=2, metavar=name.upper())
-    group.add_argument('--list', action='store_true', help='{}list all {}s for a user'.format(deprecated_warn, name))
-    group.add_argument(
-        '--show', metavar=name.upper(), help='{}Show all of the files in a {}'.format(deprecated_warn, name)
-    )
-    group.add_argument('--lock', metavar=name.upper(), help='{}Lock a {}'.format(deprecated_warn, name))
-    group.add_argument('--unlock', metavar=name.upper(), help='{}Unlock a {}'.format(deprecated_warn, name))
-    group.add_argument('--remove', metavar=name.upper(), help='{}Remove a {}'.format(deprecated_warn, name))
+    group.add_argument('--list', action='store_true', help=f'{deprecated_warn}list all {name}s for a user')
+    group.add_argument('--show', metavar=name.upper(), help=f'{deprecated_warn}Show all of the files in a {name}')
+    group.add_argument('--lock', metavar=name.upper(), help=f'{deprecated_warn}Lock a {name}')
+    group.add_argument('--unlock', metavar=name.upper(), help=f'{deprecated_warn}Unlock a {name}')
+    group.add_argument('--remove', metavar=name.upper(), help=f'{deprecated_warn}Remove a {name}')
     subparser.set_defaults(main=functools.partial(main, name=name, deprecated=deprecated))
 
 
@@ -107,7 +103,7 @@ def add_parser(subparsers):
     _add_parser(subparsers, name='channel', deprecated=True)
 
 
-def _parse_optional_tuple(value: Tuple[str, str]) -> Optional[List[str]]:
+def _parse_optional_tuple(value: tuple[str, str]) -> list[str] | None:
     # Convert a sentinel tuple of empty strings to None, since it is not possible with typer parser or callback
     if value == ('', ''):
         return None
@@ -141,13 +137,13 @@ def _run_channel_command(
     ctx: typer.Context,
     name: str,
     deprecated: bool,
-    organization: Optional[str],
-    copy: Optional[List[str]],
+    organization: str | None,
+    copy: list[str] | None,
     list_: bool,
-    show: Optional[str],
-    lock: Optional[str],
-    unlock: Optional[str],
-    remove: Optional[str],
+    show: str | None,
+    lock: str | None,
+    unlock: str | None,
+    remove: str | None,
 ) -> None:
     if not any([copy, list_, show, lock, unlock, remove]):
         raise typer.BadParameter('one of --copy, --list, --show, --lock, --unlock, or --remove must be provided')
@@ -177,13 +173,13 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
     )
     def label(
         ctx: typer.Context,
-        organization: Optional[str] = typer.Option(
+        organization: str | None = typer.Option(
             None,
             '-o',
             '--organization',
-            help='Manage an organizations {}s'.format(name),
+            help=f'Manage an organizations {name}s',
         ),
-        copy: Tuple[str, str] = typer.Option(
+        copy: tuple[str, str] = typer.Option(
             ('', ''),
             help=f'Copy a package from one {name} to another',
             show_default=False,
@@ -195,22 +191,22 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             help=f'List all {name}s for a user',
             callback=_exclusive_action,
         ),
-        show: Optional[str] = typer.Option(
+        show: str | None = typer.Option(
             None,
             help=f'Show all of the files in a {name}',
             callback=_exclusive_action,
         ),
-        lock: Optional[str] = typer.Option(
+        lock: str | None = typer.Option(
             None,
             help=f'Lock a {name}',
             callback=_exclusive_action,
         ),
-        unlock: Optional[str] = typer.Option(
+        unlock: str | None = typer.Option(
             None,
             help=f'Unlock a {name}',
             callback=_exclusive_action,
         ),
-        remove: Optional[str] = typer.Option(
+        remove: str | None = typer.Option(
             None,
             help=f'Remove a {name}',
             callback=_exclusive_action,
