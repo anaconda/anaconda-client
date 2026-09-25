@@ -154,7 +154,22 @@ class RepoCoreClient(BaseClient):
             raise error
         return [Namespace(**org) for org in data or []]
 
-    def create_channel(self, channel: str, privacy: Optional[str] = None):
+    def get_organization(self, org_name: str) -> Namespace | None:
+        """Get a single organization by name (namespace).
+
+        Returns None if the organization does not exist or the caller is not a
+        member of it. Raises on other request errors.
+        """
+        url = join(self._auth_api_base, "organizations", org_name)
+        response = self.get(url)
+        if response.status_code in (403, 404):
+            return None
+        data, error = self._manage_response(response, f"getting organization {org_name}")
+        if error:
+            raise error
+        return Namespace(**data) if data else None
+
+    def create_channel(self, channel: str, privacy: str | None = None):
         self._validate_channel_name(channel)
 
         if self.is_subchannel(channel):
@@ -180,7 +195,7 @@ class RepoCoreClient(BaseClient):
         )
         return result, error
 
-    def get_namespace_channel(self, channel: str) -> tuple[Optional[Channel], Optional[Exception]]:
+    def get_namespace_channel(self, channel: str) -> tuple[Channel | None, Exception | None]:
         url = self._get_channel_url(channel)
         response = self.get(url)
         data, error = self._manage_response(response, f"getting channel {channel}")
@@ -198,7 +213,7 @@ class RepoCoreClient(BaseClient):
 
     def list_all_channels(
         self, offset: int = 0, limit: int = 100, include_subchannels: bool = True
-    ) -> tuple[list[Channel], int, Optional[Exception]]:
+    ) -> tuple[list[Channel], int, Exception | None]:
         """List every channel the caller can read, including channels shared with them.
 
         Hits ``GET /channels`` — the server scopes the result to the token's
@@ -221,7 +236,7 @@ class RepoCoreClient(BaseClient):
         items = [Channel(**item) for item in (data or {}).get("items", [])]
         return items, (data or {}).get("total_count", len(items)), None
 
-    def get_channels(self, channel: str, offset: int = 0, limit: int = 50) -> tuple[list[Channel], Optional[Exception]]:
+    def get_channels(self, channel: str, offset: int = 0, limit: int = 50) -> tuple[list[Channel], Exception | None]:
         url = join(self._channels_url, channel, "subchannels")
         response = self.get(url, params={"offset": offset, "limit": limit})
         data, error = self._manage_response(response, f"getting channel {channel} subchannels")
@@ -230,8 +245,8 @@ class RepoCoreClient(BaseClient):
         return [Channel(**item) for item in (data or {}).get("items", [])], None
 
     def create_namespace_channel(
-        self, channel_name: str, namespace: Optional[str] = None, privacy: str = "private"
-    ) -> tuple[Optional[ChannelCreationResponse], Optional[Exception]]:
+        self, channel_name: str, namespace: str | None = None, privacy: str = "private"
+    ) -> tuple[ChannelCreationResponse | None, Exception | None]:
         url = join(self._api_base, "namespace-channels")
         data = {"channel_name": channel_name, "privacy": privacy}
 

@@ -4,14 +4,21 @@ from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
 
-from binstar_client.repocore.telemetry import Attributes, ChannelEvents, UpgradeEvents, UploadEvents
+from binstar_client.repocore.models import ActiveSubscription, Namespace
+from binstar_client.repocore.telemetry import (
+    Attributes,
+    ChannelEvents,
+    UpgradeEvents,
+    UploadEvents,
+    _extract_namespace,
+)
 from binstar_client.repocore.telemetry_models import (
     ChannelAccessedEvent,
     ChannelCreatedEvent,
     ChannelCreatedExistsEvent,
     ChannelLimitReachedEvent,
-    ChannelRemovedEvent,
     ChannelModifiedEvent,
+    ChannelRemovedEvent,
     MemberInvitedEvent,
     MemberRemovedEvent,
     PackageUploadedEvent,
@@ -100,8 +107,10 @@ class TestAttributes:
         assert attrs.user_id == "user123"
         assert attrs.user_email is not None
         assert len(attrs.user_email) == 64
-        assert attrs.organization_ids == ["org1", "org2"]
-        assert attrs.account_tiers == ["pro", "team"]
+        # organization.id and account.tier are derived from the channel
+        # namespace, not from the account's full subscription list
+        assert attrs.organization_id is None
+        assert attrs.account_tier is None
 
     def test_attributes_with_exception(self):
         mock_client = MagicMock()
@@ -110,20 +119,106 @@ class TestAttributes:
         attrs = Attributes(mock_client)
         assert attrs.user_id is None
         assert attrs.user_email is None
-        assert attrs.organization_ids == []
-        assert attrs.account_tiers == []
+        assert attrs.organization_id is None
+        assert attrs.account_tier is None
+
+    def test_set_organization_from_namespace(self):
+        mock_client = MagicMock()
+        mock_client.account = {"user": {"id": "user123", "email": "test@example.com"}}
+        mock_client.get_organization.return_value = Namespace(
+            name="myorg",
+            id="org1",
+            active_subscription=ActiveSubscription(product_code="pro"),
+        )
+
+        attrs = Attributes(mock_client)
+        attrs.set_organization_from_namespace(mock_client, "myorg")
+
+        mock_client.get_organization.assert_called_once_with("myorg")
+        assert attrs.organization_id == "org1"
+        assert attrs.account_tier == "pro"
+
+    def test_set_organization_from_namespace_no_subscription(self):
+        mock_client = MagicMock()
+        mock_client.account = {"user": {"id": "user123", "email": "test@example.com"}}
+        mock_client.get_organization.return_value = Namespace(name="myorg", id="org1")
+
+        attrs = Attributes(mock_client)
+        attrs.set_organization_from_namespace(mock_client, "myorg")
+
+        assert attrs.organization_id == "org1"
+        assert attrs.account_tier is None
+
+    def test_set_organization_from_namespace_no_namespace(self):
+        mock_client = MagicMock()
+        mock_client.account = {"user": {"id": "user123", "email": "test@example.com"}}
+
+        attrs = Attributes(mock_client)
+        attrs.set_organization_from_namespace(mock_client, None)
+
+        mock_client.get_organization.assert_not_called()
+        assert attrs.organization_id is None
+        assert attrs.account_tier is None
+
+    def test_set_organization_from_namespace_org_not_found(self):
+        mock_client = MagicMock()
+        mock_client.account = {"user": {"id": "user123", "email": "test@example.com"}}
+        mock_client.get_organization.return_value = None
+
+        attrs = Attributes(mock_client)
+        attrs.set_organization_from_namespace(mock_client, "myorg")
+
+        assert attrs.organization_id is None
+        assert attrs.account_tier is None
+
+    def test_set_organization_from_namespace_request_error(self):
+        mock_client = MagicMock()
+        mock_client.account = {"user": {"id": "user123", "email": "test@example.com"}}
+        mock_client.get_organization.side_effect = Exception("API Error")
+
+        attrs = Attributes(mock_client)
+        attrs.set_organization_from_namespace(mock_client, "myorg")
+
+        assert attrs.organization_id is None
+        assert attrs.account_tier is None
 
     def test_attributes_to_dict(self):
         mock_client = MagicMock()
         mock_client.account = {
             "user": {"id": "user123", "email": "test@example.com"},
-            "subscriptions": [{"org_id": "org1", "product_code": "pro"}],
         }
+        mock_client.get_organization.return_value = Namespace(
+            name="myorg",
+            id="org1",
+            active_subscription=ActiveSubscription(product_code="pro"),
+        )
 
         attrs = Attributes(mock_client)
+        attrs.set_organization_from_namespace(mock_client, "myorg")
         result = attrs.to_dict()
 
         assert result["user_id"] == "user123"
         assert result["user_email"] is not None
-        assert result["organization.ids"] == ["org1"]
-        assert result["account.tier"] == ["pro"]
+        # organization.id and account.tier are simple strings, not lists
+        assert result["organization.id"] == "org1"
+        assert result["account.tier"] == "pro"
+        assert "organization.ids" not in result
+        assert "account.tiers" not in result
+
+
+class TestExtractNamespace:
+    def test_from_channel_path(self):
+        event = ChannelAccessedEvent(channel_path="myorg/dev", action="show")
+        assert _extract_namespace(event) == "myorg"
+
+    def test_from_channel_field(self):
+        event = PackageUploadedEvent(channel="myorg/dev", package_type="conda", package_name="pkg")
+        assert _extract_namespace(event) == "myorg"
+
+    def test_bare_channel_name_has_no_namespace(self):
+        event = ChannelAccessedEvent(channel_path="dev", action="show")
+        assert _extract_namespace(event) is None
+
+    def test_event_without_channel(self):
+        event = UpgradePromptImpressedEvent()
+        assert _extract_namespace(event) is None

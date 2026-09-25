@@ -3,19 +3,19 @@ import hashlib
 from anaconda_cli_base.telemetry import count as _base_count
 
 from .telemetry_models import (
-    TelemetryEvent,
+    ChannelAccessedEvent,
     ChannelCreatedEvent,
     ChannelCreatedExistsEvent,
-    ChannelAccessedEvent,
     ChannelLimitReachedEvent,
-    ChannelRemovedEvent,
     ChannelModifiedEvent,
-    UpgradePromptImpressedEvent,
-    UpgradePromptConvertedEvent,
-    UpgradePromptDismissedEvent,
-    PackageUploadedEvent,
+    ChannelRemovedEvent,
     MemberInvitedEvent,
     MemberRemovedEvent,
+    PackageUploadedEvent,
+    TelemetryEvent,
+    UpgradePromptConvertedEvent,
+    UpgradePromptDismissedEvent,
+    UpgradePromptImpressedEvent,
 )
 
 
@@ -32,6 +32,9 @@ class Attributes:
             client: RepoCoreClient or any BaseClient instance with account property
         """
 
+        self.organization_id = None
+        self.account_tier = None
+
         try:
             account = client.account
             user = account.get("user", {})
@@ -43,27 +46,40 @@ class Attributes:
                 self.user_email = hashlib.sha256(user_email.encode()).hexdigest()
             else:
                 self.user_email = None
-
-            subscriptions = account.get("subscriptions", [])
-            self.organization_ids = [sub.get("org_id") or "" for sub in subscriptions]
-            self.account_tiers = [sub.get("product_code") or "" for sub in subscriptions]
         except Exception:
             self.user_id = None
             self.user_email = None
-            self.organization_ids = []
-            self.account_tiers = []
+
+    def set_organization_from_namespace(self, api, namespace: str | None) -> None:
+        """Resolve the organization for the given channel namespace and set
+        organization_id and account_tier from it.
+
+        Only the organization matching the namespace is queried, rather than
+        collecting every organization and subscription the user belongs to.
+        """
+        if not namespace:
+            return
+        try:
+            org = api.get_organization(namespace)
+        except Exception:
+            return
+        if org is None:
+            return
+        self.organization_id = org.id
+        if org.active_subscription is not None:
+            self.account_tier = org.active_subscription.product_code
 
     def to_dict(self) -> dict:
         """Export user attributes as a dictionary for telemetry.
 
         Returns:
-            Dictionary with user_id, user_email, organization.ids, and account.tier
+            Dictionary with user_id, user_email, organization.id, and account.tier
         """
         return {
             "user_id": self.user_id,
             "user_email": self.user_email,
-            "organization.ids": self.organization_ids,
-            "account.tier": self.account_tiers,
+            "organization.id": self.organization_id,
+            "account.tier": self.account_tier,
         }
 
 
@@ -80,10 +96,23 @@ def _check_account_attrs(api) -> Attributes:
     return api.account_attributes
 
 
+def _extract_namespace(event: TelemetryEvent) -> str | None:
+    """Extract the channel namespace from an event's channel path, if any.
+
+    Channel paths are qualified as ``namespace/channel``; a bare channel name
+    has no namespace (user namespace), which resolves to no organization.
+    """
+    for field_value in (getattr(event, "channel_path", None), getattr(event, "channel", None)):
+        if isinstance(field_value, str) and "/" in field_value:
+            return field_value.split("/", 1)[0]
+    return None
+
+
 def _count(event: TelemetryEvent, api, app_name: str | None, error: bool = False) -> None:
     """Helper to track telemetry events with user attributes."""
     _check_error(event, error)
     user_attrs = _check_account_attrs(api)
+    user_attrs.set_organization_from_namespace(api, _extract_namespace(event))
     all_attributes = {**user_attrs.to_dict(), **event.attribute_dump()}
     if app_name is None:
         app_name = ""

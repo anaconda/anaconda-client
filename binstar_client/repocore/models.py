@@ -9,10 +9,20 @@ def _handle_none_as_empty_string(v):
     return v if v is not None else ""
 
 
+class ActiveSubscription(BaseModel):
+    """An organization's active subscription, as embedded in auth API organization responses."""
+
+    product_code: str
+    expires_at: str | None = None
+    quantity: int | None = None
+
+
 class Namespace(BaseModel):
     """Namespace/organization from the auth API."""
 
     name: str
+    id: str | None = None
+    active_subscription: ActiveSubscription | None = None
 
 
 class Channel(BaseModel):
@@ -40,7 +50,7 @@ class Channel(BaseModel):
     indexing_behavior: str = "default"
     created: str = ""
     updated: str = ""
-    parent: Optional[str] = None
+    parent: str | None = None
     owners: list[str] = Field(default_factory=list)
 
     _handle_description = field_validator("description", mode="before")(_handle_none_as_empty_string)
@@ -53,7 +63,7 @@ class Channel(BaseModel):
         return [o for o in v if o]
 
     @property
-    def namespace(self) -> Optional[str]:
+    def namespace(self) -> str | None:
         """The channel's namespace: its parent top-level channel, if any."""
         return self.parent
 
@@ -68,7 +78,7 @@ class ChannelCreationResponse(BaseModel):
 
     channel_path: str
     status_code: int
-    org_id: Optional[str] = None
+    org_id: str | None = None
 
     @property
     def created(self) -> bool:
@@ -91,11 +101,11 @@ class ResolvedChannel(BaseModel):
     "not populated / do not validate here".
     """
 
-    namespace: Optional[str]
+    namespace: str | None
     channel_name: str
     target: str = "repo"
-    owner: Optional[str] = None
-    accepted_package_types: FrozenSet[str] = frozenset()
+    owner: str | None = None
+    accepted_package_types: frozenset[str] = frozenset()
 
     @model_validator(mode="after")
     def _require_dotorg_owner(self) -> "ResolvedChannel":
@@ -104,7 +114,7 @@ class ResolvedChannel(BaseModel):
             raise ValueError('ResolvedChannel with target="org" must have an owner')
         return self
 
-    def accepts_package_type(self, package_type: Optional[str]) -> bool:
+    def accepts_package_type(self, package_type: str | None) -> bool:
         """Return whether ``package_type`` is acceptable for this target.
 
         ``None`` (autodetect) is always acceptable; validation of a detected type

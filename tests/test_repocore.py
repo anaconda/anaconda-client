@@ -176,6 +176,42 @@ class TestRepoCoreClientAPI:
         assert result == []
         assert isinstance(result, list)
 
+    def test_get_organization(self):
+        client = _make_client()
+        mock_response = _mock_response(
+            200,
+            {
+                "name": "myorg",
+                "id": "org-uuid-1",
+                "active_subscription": {"product_code": "pro"},
+            },
+        )
+        client.get = MagicMock(return_value=mock_response)
+
+        result = client.get_organization("myorg")
+        assert isinstance(result, Namespace)
+        assert result.name == "myorg"
+        assert result.id == "org-uuid-1"
+        assert result.active_subscription.product_code == "pro"
+        call_url = client.get.call_args[0][0]
+        assert "/api/auth/organizations/myorg" in call_url
+
+    def test_get_organization_not_found(self):
+        client = _make_client()
+        client.get = MagicMock(return_value=_mock_response(404, {"message": "not found"}))
+        assert client.get_organization("myorg") is None
+
+    def test_get_organization_forbidden(self):
+        client = _make_client()
+        client.get = MagicMock(return_value=_mock_response(403, {"message": "not a member"}))
+        assert client.get_organization("myorg") is None
+
+    def test_get_organization_error_raises(self):
+        client = _make_client()
+        client.get = MagicMock(return_value=_mock_response(500, {"message": "server error"}))
+        with pytest.raises(RepoCoreError):
+            client.get_organization("myorg")
+
     def test_list_all_channels(self):
         client = _make_client()
         payload = {
@@ -397,8 +433,9 @@ class TestResolveNamespaceAndChannel:
         mock_api.list_user_organizations.assert_not_called()
 
     def test_ambiguous_slash_and_flag_exits(self):
-        from binstar_client.commands._repo_channels import _resolve_namespace_and_channel
         import typer
+
+        from binstar_client.commands._repo_channels import _resolve_namespace_and_channel
 
         mock_api = MagicMock()
         with pytest.raises(typer.Exit):
@@ -414,8 +451,9 @@ class TestResolveNamespaceAndChannel:
         assert resolved.channel_name == "dev"
 
     def test_no_namespaces_exits(self):
-        from binstar_client.commands._repo_channels import _resolve_namespace_and_channel
         import typer
+
+        from binstar_client.commands._repo_channels import _resolve_namespace_and_channel
 
         mock_api = MagicMock()
         mock_api.list_user_organizations.return_value = []
@@ -450,8 +488,9 @@ class TestResolveNamespaceAndChannel:
         assert resolved.channel_name == "dev"
 
     def test_no_namespaces_with_username_declined(self):
-        from binstar_client.commands._repo_channels import _resolve_no_namespace
         import typer
+
+        from binstar_client.commands._repo_channels import _resolve_no_namespace
 
         mock_api = MagicMock()
         mock_api.account.get.return_value = {"username": "testuser"}
@@ -1538,13 +1577,15 @@ class TestPackageUtils:
     def test_windows_glob_on_windows(self):
         from binstar_client.repocore.package_utils import windows_glob
 
-        with patch("binstar_client.repocore.package_utils.os.name", "nt"):
-            with patch(
+        with (
+            patch("binstar_client.repocore.package_utils.os.name", "nt"),
+            patch(
                 "binstar_client.repocore.package_utils.glob",
                 return_value=["pkg1-1.0-py39_0.conda", "pkg2-2.0-py39_0.conda"],
-            ):
-                result = windows_glob("*.conda")
-                assert result == ["pkg1-1.0-py39_0.conda", "pkg2-2.0-py39_0.conda"]
+            ),
+        ):
+            result = windows_glob("*.conda")
+            assert result == ["pkg1-1.0-py39_0.conda", "pkg2-2.0-py39_0.conda"]
 
     def test_windows_glob_on_posix(self):
         from binstar_client.repocore.package_utils import windows_glob
@@ -1567,11 +1608,12 @@ class TestPackageUtils:
             assert result == "pypi"
 
     def test_detect_package_type_conda(self):
-        from binstar_client.repocore.package_utils import _detect_package_type
-        import tempfile
-        import tarfile
         import json
         import os
+        import tarfile
+        import tempfile
+
+        from binstar_client.repocore.package_utils import _detect_package_type
 
         with tempfile.NamedTemporaryFile(suffix=".tar.bz2", delete=False) as tmp:
             tmp_name = tmp.name
