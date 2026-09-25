@@ -9,7 +9,7 @@ from typing import Optional
 
 from anaconda_auth.client import BaseClient
 
-from binstar_client.repocore.errors import InvalidName, RepoCoreError, Unauthorized
+from binstar_client.repocore.errors import InvalidName, RepoCoreError, Unauthenticated, Unauthorized
 from binstar_client.repocore.models import (
     Artifact,
     ArtifactFile,
@@ -23,8 +23,22 @@ from binstar_client.repocore.package_utils import PackageType
 logger = logging.getLogger(__name__)
 
 REPO_API_PATH = "/api/repo"
+
+
+def split_channel_name(channel: str) -> tuple[str, str]:
+    """Split a qualified 'namespace/channel' string into (namespace, channel).
+
+    Raises ValueError if the channel does not contain exactly one '/'.
+    """
+    parts = channel.split("/", 1)
+    if len(parts) != 2 or not parts[0] or not parts[1]:
+        raise ValueError(f"Channel name '{channel}' is not a valid 'namespace/channel' format")
+    return parts[0], parts[1]
+
+
 AUTH_API_PATH = "/api/auth"
 ACCOUNT_API_PATH = "/api"
+PRICING_PAGE_PATH = "/pricing"
 
 
 class RepoCoreClient(BaseClient):
@@ -59,6 +73,10 @@ class RepoCoreClient(BaseClient):
         return self._base_uri + ACCOUNT_API_PATH
 
     @property
+    def _pricing_page(self):
+        return self._base_uri + PRICING_PAGE_PATH
+
+    @property
     def _channels_url(self):
         return join(self._api_base, "channels")
 
@@ -81,16 +99,13 @@ class RepoCoreClient(BaseClient):
 
     def _get_channel_url(self, channel: str) -> str:
         if self.is_subchannel(channel):
-            parent, sub = channel.split("/", 1)
+            parent, sub = split_channel_name(channel)
             return join(self._channels_url, parent, "subchannels", sub)
         return join(self._channels_url, channel)
 
     def _validate_channel_name(self, name: str):
         if self.is_subchannel(name):
-            try:
-                channel, subchannel = name.split("/")
-            except ValueError:
-                raise InvalidName(f"Channel name {name} is not valid. It contains more than one '/'")
+            channel, subchannel = split_channel_name(name)
             self._validate_channel_name(channel)
             self._validate_channel_name(subchannel)
             return
@@ -153,12 +168,16 @@ class RepoCoreClient(BaseClient):
 
         msg = self._extract_error_message(response, action)
 
-        if response.status_code in (401, 403):
+        if response.status_code == 401:
+            return response_data, Unauthenticated(msg)
+
+        if response.status_code == 403:
             return response_data, Unauthorized(msg)
 
         return response_data, RepoCoreError(msg)
 
     def list_user_organizations(self) -> list[Namespace]:
+        """List the organizations (namespaces) the caller belongs to."""
         url = join(self._auth_api_base, "organizations", "my")
         response = self.get(url)
         data, error = self._manage_response(response, "getting user organizations")
@@ -170,7 +189,7 @@ class RepoCoreClient(BaseClient):
         self._validate_channel_name(channel)
 
         if self.is_subchannel(channel):
-            parent, subchannel = channel.split("/")
+            parent, subchannel = split_channel_name(channel)
             url = join(self._channels_url, parent, "subchannels")
             data = {"name": subchannel}
         else:
@@ -270,6 +289,16 @@ class RepoCoreClient(BaseClient):
         if error:
             return [], error
         return [Channel(**item) for item in (data or {}).get("items", [])], None
+
+    def create_namespace_url(self) -> str:
+        """Web URL to create a brand-new namespace (an anaconda.com organization).
+
+        The CLI never auto-creates a namespace on the user's behalf (aside from
+        the reserved per-username namespace); this is where a user is sent to
+        create one explicitly first. Uses the same base URL the client's API
+        calls resolve to, so it honors ``--site``/``--at``.
+        """
+        return join(self._base_uri, "app", "organizations", "create")
 
     def create_namespace_channel(
         self, channel_name: str, namespace: Optional[str] = None, privacy: str = "private"
@@ -392,6 +421,20 @@ class RepoCoreClient(BaseClient):
         if error:
             raise error
         return result
+
+    def get_profile(self) -> tuple[Optional[dict], Optional[Exception]]:
+        """Get the authenticated user's profile"""
+        url = join(self._auth_api_base, "account", "profile")
+        response = self.get(url)
+        result, error = self._manage_response(response, "getting profile", success_codes=[200])
+        return result, error
+
+    def update_profile(self, **data) -> tuple[Optional[dict], Optional[Exception]]:
+        """Update the authenticated user's profile"""
+        url = join(self._auth_api_base, "account", "profile")
+        response = self.put(url, json=data)
+        result, error = self._manage_response(response, "updating profile", success_codes=[200])
+        return result, error
 
     def share_channel(self, namespace: str, channel_name: str, user: str, action: str = "share", grant: str = "read"):
         url = join(self._api_base, "namespaces", namespace, "channels", channel_name, "sharing")

@@ -5,7 +5,10 @@ Extracted from ``binstar_client.commands._repo_channels`` so both the
 can share a single resolver.
 """
 
+import logging
+import os
 import sys
+from datetime import datetime, timezone
 from typing import Callable, FrozenSet, List, Optional
 
 import typer
@@ -13,7 +16,10 @@ import typer
 from anaconda_cli_base.console import console, select_from_list
 from binstar_client.repocore.models import ResolvedChannel
 from binstar_client.repocore.package_utils import PackageType as RepoPackageType
-from binstar_client.utils.config import PackageType as OrgPackageType
+from binstar_client.repocore.client import split_channel_name
+from binstar_client.utils.config import PackageType as OrgPackageType, dirs
+
+logger = logging.getLogger("binstar.repocore.resolve")
 
 # A callable that reports whether ``name`` is a valid anaconda.org owner
 # (user or organization). Injected by callers so this module stays free of
@@ -29,8 +35,73 @@ REPO_PACKAGE_TYPES: FrozenSet[str] = frozenset(pt.value for pt in RepoPackageTyp
 ORG_PACKAGE_TYPES: FrozenSet[str] = frozenset(pt.value for pt in OrgPackageType)
 
 
+_BETA_NOTICE = "[yellow]Note:[/yellow] Anaconda.com private channels are in BETA."
+
+# Marker file in the user cache dir recording that the beta notice has been
+# shown. Absent (the default) means "show it". Once shown, we write the file so
+# the notice does not repeat. A separate file is used so the user's config file
+# is never modified. Only its existence is checked; the UTC timestamp it holds
+# is informational, for answering "when did this user last see the notice?".
+_BETA_NOTICE_MARKER_FILE = os.path.join(dirs.user_cache_dir, "private_channel_beta_notice_shown")
+
+# Show the notice at most once per command invocation, not once per resolved
+# channel: `upload -c a -c b` resolves several channels but should say this once.
+_beta_notice_shown = False
+
+
+def _beta_notice_already_shown() -> bool:
+    """Whether the notice has been recorded as shown via the marker file.
+
+    Any failure means "not shown", so an error makes the notice repeat rather
+    than silently suppressing it.
+    """
+    try:
+        return os.path.exists(_BETA_NOTICE_MARKER_FILE)
+    except Exception:  # pylint: disable=broad-except
+        return False
+
+
+def _record_beta_notice_shown() -> None:
+    """Persist that the notice has been shown, best effort.
+
+    Writes the marker file in the user cache dir (creating the directory if
+    needed) containing the UTC timestamp of this showing. Any failure is
+    swallowed: the worst case is the notice showing again next time.
+    """
+    try:
+        os.makedirs(os.path.dirname(_BETA_NOTICE_MARKER_FILE), exist_ok=True)
+        timestamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        with open(_BETA_NOTICE_MARKER_FILE, "w", encoding="utf-8") as marker:
+            marker.write(f"{timestamp}\n")
+    except Exception:  # pylint: disable=broad-except
+        # Best effort only: the notice simply shows again next time. Debug
+        # level keeps this out of the console unless the user passes --verbose.
+        logger.debug("Could not record beta notice marker", exc_info=True)
+
+
+def _notify_repo_beta() -> None:
+    """Print the anaconda.com BETA notice once, then record it so it stops.
+
+    Called from :func:`_repo_channel` — the single point every ``target="repo"``
+    resolution passes through — so any command that resolves an anaconda.com
+    channel reports it. anaconda.org (``target="org"``) resolutions are unaffected.
+
+    The notice repeats on every invocation until it has been shown once; after
+    that the marker file suppresses it.
+    """
+    global _beta_notice_shown
+    if _beta_notice_shown:
+        return
+    _beta_notice_shown = True
+    if _beta_notice_already_shown():
+        return
+    console.print(_BETA_NOTICE)
+    _record_beta_notice_shown()
+
+
 def _repo_channel(namespace: Optional[str], channel_name: str) -> ResolvedChannel:
     """Build a repocore (anaconda.com) ResolvedChannel with its accepted types."""
+    _notify_repo_beta()
     return ResolvedChannel(
         namespace=namespace,
         channel_name=channel_name,
@@ -118,31 +189,90 @@ def resolve_no_namespace(api, name: str) -> ResolvedChannel:
     Returns ResolvedChannel with namespace and channel_name.
 
     Checks for username:
-      1. If None or get user request errors, return empty namespace
+      1. If None or get user request errors, prompt for a new username and
+         send a PUT to /api/auth/account/profile to set it
       2. If truthy ask user to confirm creation of new namespace
     """
     try:
-        username = (api.account.get("user") or {}).get("username") or ""
+        profile, _ = api.get_profile()
+        username = (profile or {}).get("username") or ""
     except Exception:
         username = ""
 
-    if username:
-        confirm = typer.confirm(
-            f"No namespaces found. A namespace can be created with your username. Use your username '{username}' as the namespace?"
-        )
-        if confirm:
-            return _repo_channel(namespace=username, channel_name=name)
-        raise typer.Exit(0)
-    return _repo_channel(namespace=None, channel_name=name)
+    if not username:
+        console.print("\n[yellow]Your account does not have a username set.[/yellow]")
+        if not typer.confirm("Would you like to create a username?", default=True):
+            raise typer.Exit(0)
+        new_username = typer.prompt("Username")
+        if not new_username:
+            raise typer.Exit(1)
+        _, error = api.update_profile(username=new_username)
+        if error:
+            console.print(f"[red]Error:[/red] Failed to set username: {error}")
+            raise typer.Exit(1)
+        username = new_username
+        console.print(f"Username set to [cyan]{username}[/cyan].")
+
+    confirm = typer.confirm(
+        f"No namespaces found. A namespace can be created with your username. Use your username '{username}' as the namespace?"
+    )
+    if confirm:
+        return _repo_channel(namespace=username, channel_name=name)
+    raise typer.Exit(0)
+
+
+def namespace_known_to_user(api, namespace: str) -> bool:
+    """Whether ``namespace`` already exists for the caller.
+
+    "Known" means creating a channel under it cannot cause the repocore
+    backend to silently provision a brand-new namespace behind the user's
+    back. A namespace counts as known when it is:
+      * the caller's own username — the sanctioned exception (repocore
+        reserves this automatically for book-keeping/subscriptions), or
+      * returned by ``list_user_organizations`` (the caller is already a
+        member), or
+      * the namespace of a channel the caller can already write to (it
+        exists even if it doesn't surface via org membership, e.g. a
+        channel shared from an org the caller isn't a member of).
+
+    Best-effort: any lookup failure counts as "not known", so callers err
+    toward requiring explicit namespace creation rather than risking an
+    unintended auto-created namespace.
+    """
+    try:
+        profile, _ = api.get_profile()
+        username = (profile or {}).get("username") or ""
+    except Exception:
+        username = ""
+    if username and namespace == username:
+        return True
+
+    try:
+        if namespace in {org.name for org in api.list_user_organizations()}:
+            return True
+    except Exception:
+        pass  # nosec B110
+
+    try:
+        if namespace in _writable_namespaces(list(_iter_writable_channels(api))):
+            return True
+    except Exception:
+        pass  # nosec B110
+
+    return False
 
 
 def resolve_namespace_and_channel(
-    api, name: str, namespace: Optional[str] = None, require_namespace: bool = True
+    api, name: str, namespace: Optional[str] = None, require_namespace: bool = True, owner_only: bool = True
 ) -> ResolvedChannel:
     """Resolve namespace and channel name from the given inputs.
 
     Returns ResolvedChannel with namespace and channel_name. namespace may be None if require_namespace=False
     and no namespaces are available (lets create delegate to the API).
+
+    When ``owner_only=True`` (default), only channels with ``access='owner'`` are
+    considered during resolution. Pass ``False`` for read-oriented commands (show,
+    list, upload) that should also see collaborator/shared channels.
 
     Resolution order:
       1. name contains "/" AND --namespace provided → error (ambiguous)
@@ -160,8 +290,8 @@ def resolve_namespace_and_channel(
         raise typer.Exit(1)
 
     if "/" in name:
-        parts = name.split("/", 1)
-        return _repo_channel(namespace=parts[0], channel_name=parts[1])
+        namespace, channel_name = split_channel_name(name)
+        return _repo_channel(namespace=namespace, channel_name=channel_name)
 
     if namespace:
         return _repo_channel(namespace=namespace, channel_name=name)
@@ -169,7 +299,8 @@ def resolve_namespace_and_channel(
     # Own + shared writable channels only, so name matching and namespace
     # resolution stay scoped to channels the user can actually write to rather
     # than every public channel it can read (or a read-only shared channel).
-    channels = list(_iter_writable_channels(api))
+    all_channels = list(_iter_writable_channels(api))
+    channels = [c for c in all_channels if not owner_only or c.access is None or c.access == "owner"]
 
     # First, does the bare name already name a subchannel? A subchannel is an
     # actual channel (has a parent namespace); a top-level channel is a namespace,
@@ -191,7 +322,6 @@ def resolve_namespace_and_channel(
     # No existing channel by that name — resolve the namespace it should live
     # under, so a brand-new channel name (e.g. `create`) still resolves.
     namespaces = _writable_namespaces(channels)
-
     if not namespaces:
         if require_namespace:
             console.print(
@@ -241,6 +371,7 @@ def classify_and_resolve(
     name: str,
     namespace: Optional[str] = None,
     owner_probe: Optional[OwnerProbe] = None,
+    owner_only: bool = True,
 ) -> ResolvedChannel:
     """Resolve ``name`` to an upload target, spanning anaconda.com and anaconda.org.
 
@@ -252,11 +383,14 @@ def classify_and_resolve(
       * matches only an anaconda.org owner                                  -> target="org"
       * otherwise -> anaconda.com channel resolution (existing behavior)
 
+    When ``owner_only=True`` (default), resolution considers only owned channels.
+    Pass ``False`` for read-oriented commands (show, list, upload).
+
     Returns a ResolvedChannel whose ``target`` field says which system to use.
     """
     # Qualified names and explicit namespaces are unambiguously anaconda.com.
     if "/" in name or namespace:
-        return resolve_namespace_and_channel(api, name, namespace, require_namespace=False)
+        return resolve_namespace_and_channel(api, name, namespace, require_namespace=False, owner_only=owner_only)
 
     org_match = owner_probe is not None and owner_probe(name)
 
@@ -282,7 +416,7 @@ def classify_and_resolve(
         return _org_channel(owner=name, channel_name=name)
 
     # anaconda.com: treat the bare name as a channel and resolve its namespace.
-    return resolve_namespace_and_channel(api, name, namespace, require_namespace=False)
+    return resolve_namespace_and_channel(api, name, namespace, require_namespace=False, owner_only=owner_only)
 
 
 def resolve_channels_with_namespaces(
@@ -291,6 +425,7 @@ def resolve_channels_with_namespaces(
     namespace: Optional[str],
     from_deprecated_channel_flag: bool,
     owner_probe: Optional[OwnerProbe] = None,
+    owner_only: bool = True,
 ) -> List[ResolvedChannel]:
     """Resolve channel names to :class:`ResolvedChannel` targets.
 
@@ -299,7 +434,7 @@ def resolve_channels_with_namespaces(
     resolved_channels = []
     for ch in channels:
         try:
-            resolved = classify_and_resolve(api, ch, namespace, owner_probe=owner_probe)
+            resolved = classify_and_resolve(api, ch, namespace, owner_probe=owner_probe, owner_only=owner_only)
         except (typer.Exit, SystemExit):
             if from_deprecated_channel_flag:
                 console.print("-c/--channel no longer equals labels, did you mean --label?")

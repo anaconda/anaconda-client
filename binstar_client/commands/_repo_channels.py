@@ -9,6 +9,8 @@ import argparse
 import logging
 import os
 import re
+import webbrowser
+from enum import Enum
 from glob import glob
 from typing import List, Optional, Tuple, cast
 
@@ -24,11 +26,13 @@ from binstar_client.commands import show as show_mod
 from binstar_client.commands import upload as upload_mod
 from binstar_client import errors as dotorg_errors
 from binstar_client.repocore import RepoCoreClient
-from binstar_client.repocore.errors import LoginRequiredError, RepoCoreError, Unauthorized
-from binstar_client.repocore.telemetry import ChannelEvents, UploadEvents
+from binstar_client.repocore.errors import LoginRequiredError, RepoCoreError, Unauthenticated, Unauthorized
+from binstar_client.repocore.telemetry import ChannelEvents, UploadEvents, UpgradeEvents
 from binstar_client.repocore.package_utils import PackageType, determine_package_type, windows_glob
 from binstar_client.repocore.resolve import (
+    _notify_repo_beta,
     classify_and_resolve,
+    namespace_known_to_user as _namespace_known_to_user,
     resolve_channels_with_namespaces as _resolve_channels_with_namespaces,
     resolve_namespace_and_channel as _resolve_namespace_and_channel,
     resolve_no_namespace as _resolve_no_namespace,
@@ -53,9 +57,9 @@ _PAGE_SIZE = 100
 
 def _is_not_logged_in(exc: Exception) -> bool:
     """True if ``exc`` is a not-logged-in signal from either backend — repocore's
-    ``Unauthorized`` / ``LoginRequiredError`` or anaconda.org's ``Unauthorized``.
+    ``Unauthenticated`` / ``LoginRequiredError`` or anaconda.org's ``Unauthorized``.
     """
-    return isinstance(exc, (Unauthorized, LoginRequiredError, dotorg_errors.Unauthorized))
+    return isinstance(exc, (Unauthenticated, LoginRequiredError, dotorg_errors.Unauthorized))
 
 
 app = typer.Typer(
@@ -96,10 +100,51 @@ class _DotOrgCredentials(BaseModel):
             return False
 
 
-def _extract_limit_from_error(error: Exception) -> Optional[int]:
-    """Extract channel limit number from error message."""
-    limit_match = re.search(r'has reached the limit of (\d+)', str(error))
+class LimitAction(str, Enum):
+    """Actions that can trigger limit errors."""
+
+    CREATE = "create"
+    SHARE = "share"
+
+
+def _extract_limit_from_error(error: Exception, action: LimitAction = LimitAction.CREATE) -> Optional[int]:
+    """Extract limit number from error message.
+
+    Args:
+        error: The error exception containing the limit message
+        action: The action being performed (CREATE or SHARE)
+
+    Returns:
+        The limit value if found, otherwise None
+    """
+    if action == LimitAction.CREATE:
+        limit_match = re.search(r'has reached the limit of (\d+)', str(error))
+    else:
+        limit_match = re.search(r'can only have (\d+)', str(error))
     return int(limit_match.group(1)) if limit_match else None
+
+
+def _prompt_upgrade(
+    api, app_name: Optional[str], limit: Optional[int], action: str, namespace: Optional[str] = None
+) -> None:
+    """Prompt user to upgrade when they hit a limit."""
+    limit_text = f" of {limit}" if limit else ""
+    if action == "share":
+        console.print(f"\n[yellow]You have reached the limit{limit_text} for collaborators.[/yellow]")
+        console.print("Upgrade your plan to add more collaborators.")
+    else:
+        console.print(f"\n[yellow]You have reached the limit{limit_text} for private channels.[/yellow]")
+        console.print("Upgrade your plan to create more private channels.")
+
+    UpgradeEvents.impressed(api, app_name, namespace, action=action)
+
+    if typer.confirm("\nWould you like to view upgrade options?", default=True):
+        UpgradeEvents.accepted(api, app_name, namespace, action=action)
+        upgrade_url = api._pricing_page
+        console.print(f"Opening [cyan]{upgrade_url}[/cyan] in your browser...")
+        webbrowser.open(upgrade_url)
+    else:
+        UpgradeEvents.dismissed(api, app_name, namespace, action=action)
 
 
 def _print_modify_result(result, channel_name: str, description: str) -> None:
@@ -175,14 +220,25 @@ def _callback(
 
 
 def _upload_file_to_channel(
-    api, filepath: str, channel: str, pkg_type: str, from_deprecated_channel_flag: bool
+    api,
+    filepath: str,
+    channel: str,
+    pkg_type: str,
+    from_deprecated_channel_flag: bool,
+    namespace: Optional[str] = None,
 ) -> None:
     """Upload a single file to a single channel."""
     console.print(f"Uploading [cyan]{filepath}[/cyan] to channel [cyan]{channel}[/cyan]...")
     _, error = api.upload_file(filepath, channel, pkg_type)
     package_name = os.path.basename(filepath)
     UploadEvents.uploaded(
-        api, app.info.name, channel=channel, package_type=pkg_type, package_name=package_name, error=bool(error)
+        api,
+        app.info.name,
+        namespace,
+        channel=channel,
+        package_type=pkg_type,
+        package_name=package_name,
+        error=bool(error),
     )
     if error:
         raise error
@@ -192,11 +248,15 @@ def _upload_file_to_channel(
 def _process_and_upload_files(
     api,
     file_patterns: List[str],
-    resolved_channels: List[str],
+    resolved_channels: List[tuple],
     package_type: Optional[PackageType],
     from_deprecated_channel_flag: bool,
 ) -> None:
-    """Process file patterns and upload each file to all resolved channels."""
+    """Process file patterns and upload each file to all resolved channels.
+
+    ``resolved_channels`` is a list of ``(channel_str, namespace)`` pairs where
+    ``namespace`` is the org name (or ``None`` for top-level channels).
+    """
     for file_pattern in file_patterns:
         for filepath in windows_glob(file_pattern):
             if not os.path.exists(filepath):
@@ -209,8 +269,8 @@ def _process_and_upload_files(
 
             pkg_type = determine_package_type(filepath, package_type)
 
-            for ch in resolved_channels:
-                _upload_file_to_channel(api, filepath, ch, pkg_type, from_deprecated_channel_flag)
+            for ch, ns in resolved_channels:
+                _upload_file_to_channel(api, filepath, ch, pkg_type, from_deprecated_channel_flag, namespace=ns)
 
 
 def _upload_to_dotorg(
@@ -317,51 +377,116 @@ def _add_repo_rows(table: Table, api, namespace: Optional[str], include_all: boo
         namespaces = [ns for ns in namespaces if ns == namespace]
 
     for ns in namespaces:
-        table.add_row(ns, "", "", "", "", *([] if include_all else [""]))
+        table.add_row(ns, "", "", *([] if include_all else [""]))
         for channel in subchannels.get(ns, []):
             row = [
                 f"  {channel.path}",
                 channel.privacy,
                 channel.description,
-                str(channel.artifact_count),
-                str(channel.download_count),
             ]
             if not include_all:
-                # /account/channels reports the caller's access level.
-                row.append(channel.access or _NOT_APPLICABLE)
+                # /account/channels reports the caller's access level; default
+                # to viewer when the endpoint omits it (a read-only listing is
+                # still access).
+                row.append(channel.access or "viewer")
             table.add_row(*row)
+
+
+def _set_error_caption(table: Table, label: str, exc: Exception) -> None:
+    """Attach the reason a section is missing to the table itself.
+
+    A failed section is otherwise indistinguishable from an empty one, so the
+    error rides along with the table (a caption, not a row: the columns are far
+    too narrow to hold a message without shredding it across lines).
+
+    ``caption_style`` is overridden because Rich's default caption style is
+    ``dim italic``, which would wash the error out to near-invisible.
+    """
+    table.caption_style = "bold red"
+    caption = f"{label} unavailable: {exc}"
+    table.caption = f"{table.caption}\n{caption}" if table.caption else caption
+
+
+_DOTORG_PERM_RANK = {"read": 0, "write": 1, "admin": 2}
+_RANK_ACCESS = {0: "viewer", 1: "collaborator", 2: "owner"}
+
+
+def _dotorg_owner_access(aserver_api, owner: str, is_self: bool) -> str:
+    """The caller's access level on an anaconda.org owner, in repo vocabulary.
+
+    Your own account is always "owner". For orgs, ``GET /groups/{owner}``
+    returns the caller's groups with their permission (read/write/admin); the
+    strongest maps to viewer/collaborator/owner. One small request per org —
+    unlike ``/packages/{owner}``, the payload is a handful of group names.
+    Defaults to "viewer" when the lookup fails or lists no groups.
+    """
+    if is_self:
+        return "owner"
+    try:
+        groups = aserver_api.groups(owner).get("groups") or []
+        ranks = [_DOTORG_PERM_RANK.get(group.get("permission"), 0) for group in groups]
+    except Exception as exc:
+        logger.debug("Could not list anaconda.org groups for %s: %s", owner, exc)
+        return "viewer"
+    return _RANK_ACCESS[max(ranks)] if ranks else "viewer"
 
 
 def _add_org_rows(table: Table, aserver_api, include_all: bool) -> None:
     """Append anaconda.org owner rows to the table.
 
-    anaconda.org owners are not repocore channels: they have no namespace and no
-    channel-level privacy (both shown as a dash). Labels are intentionally *not*
-    listed here — a label is not a channel, and `anaconda channel list` lists
+    anaconda.org owners are not repocore channels: they have no namespace.
+    Their content is public by default, so Privacy shows "public".
+    Description is the owner's profile description — free, since
+    ``user()``/``user_orgs()`` already fetch it. Access
+    (owner/collaborator/viewer) comes from the caller's group permissions in
+    the org — one small request per org. Labels are intentionally *not* listed
+    here — a label is not a channel, and `anaconda channel list` lists
     channels. Use ``anaconda label`` to work with labels.
 
     Emits one fewer cell per row under ``include_all``, which drops the Access
     column entirely (see ``list_command``).
     """
-    login = aserver_api.user()["login"]
+    user_info = aserver_api.user()
+    login = user_info["login"]
+    descriptions = {login: user_info.get("description") or None}
     owners = [login]
     try:
-        owners += [org["login"] for org in aserver_api.user_orgs()]
+        for org in aserver_api.user_orgs():
+            owners.append(org["login"])
+            descriptions[org["login"]] = org.get("description") or None
     except Exception as exc:
         # Org membership lookup is best-effort; fall back to just the user.
         logger.debug("Could not list anaconda.org organizations, using user only: %s", exc)
 
     # Access is the last column and only present when not --all.
-    cell_count = 5 if include_all else 6
+    cell_count = 3 if include_all else 4
 
     # Group header for the whole anaconda.org section: no namespace exists here,
     # so the Namespace / Channel column is a dash and owners are listed beneath it.
     table.add_row(*([_NOT_APPLICABLE] * cell_count))
 
+    def _build_row(owner: str) -> list:
+        # Indent the owner in the first (Namespace / Channel) column, then dash
+        # the columns that have no dotorg equivalent (Namespace). Privacy
+        # defaults to public.
+        description = descriptions.get(owner)
+        if description:
+            # Keep the cell to a single short line; profile descriptions can be long.
+            description = " ".join(str(description).split())
+            if len(description) > 60:
+                description = description[:59].rstrip() + "…"
+
+        row = [
+            f"  {owner}",
+            "public",
+            description or _NOT_APPLICABLE,
+        ]
+        if not include_all:
+            row.append(_dotorg_owner_access(aserver_api, owner, owner == login))
+        return row
+
     for owner in owners:
-        # Indent the owner in the first (Namespace / Channel) column, then fill
-        # every remaining column with a dash.
-        table.add_row(f"  {owner}", *([_NOT_APPLICABLE] * (cell_count - 1)))
+        table.add_row(*_build_row(owner))
 
 
 @app.command(name="list", help="List all channels")
@@ -395,8 +520,6 @@ def list_command(
     table.add_column("Namespace / Channel", style="cyan")
     table.add_column("Privacy")
     table.add_column("Description")
-    table.add_column("Artifacts", justify="right")
-    table.add_column("Downloads", justify="right")
     # --all lists channels via GET /channels, which doesn't report the caller's
     # access level. Drop the column entirely rather than dashing it out — a dash
     # would read as "no access" instead of "not reported".
@@ -423,10 +546,15 @@ def list_command(
         notes.append(f"{label} unavailable: {exc}")
 
     if source in ("all", "repo"):
+        # list never resolves a channel, so it doesn't pass through _repo_channel —
+        # emit the BETA notice here whenever anaconda.com is a query target,
+        # regardless of whether the listing succeeds or returns any channels.
+        _notify_repo_beta()
         try:
             _add_repo_rows(table, ctx.obj.repo_api, namespace, include_all)
         except Exception as exc:
-            _note_failure("repo channels", exc)
+            error_occurred = True
+            _set_error_caption(table, "repo channels", exc)
 
     if source in ("all", "org"):
         try:
@@ -438,13 +566,14 @@ def list_command(
 
     channel_path = namespace if namespace else "all"
     ChannelEvents.accessed(
-        ctx.obj.repo_api, app.info.name, channel_path=channel_path, action="list", error=error_occurred
+        ctx.obj.repo_api, app.info.name, namespace, channel_path=channel_path, action="list", error=error_occurred
     )
 
     def _render() -> None:
         console.print(table)
         for note in notes:
             console.print(f"[dim]{note}[/dim]")
+        console.print("[dim]To see more information about a channel visit: anaconda.org/channels/<CHANNEL_NAME>[/dim]")
 
     if console.height and table.row_count > console.height:
         with console.pager():
@@ -471,6 +600,14 @@ def create_command(
     api = ctx.obj.repo_api
     resolved = _resolve_namespace_and_channel(api, name, namespace, require_namespace=False)
 
+    if resolved.namespace and not _namespace_known_to_user(api, resolved.namespace):
+        console.print(
+            f"[yellow]Namespace '{resolved.namespace}' doesn't exist yet.[/yellow]\n"
+            f"Create it at: [cyan]{api.create_namespace_url()}[/cyan] "
+            "(you'll already be signed in), then re-run this command."
+        )
+        raise typer.Exit(1)
+
     if public:
         privacy = "public"
     elif private:
@@ -486,6 +623,7 @@ def create_command(
     event_kwargs = {
         "api": api,
         "app_name": app.info.name,
+        "namespace": resolved.namespace,
         "channel_path": channel_path,
         "privacy": privacy,
         "operation_org_id": operation_org_id,
@@ -495,7 +633,10 @@ def create_command(
         error_msg = str(error).lower()
         if "limit" in error_msg and "private" in error_msg:
             limit_value = _extract_limit_from_error(error)
-            ChannelEvents.limit(api, app.info.name, channel_path=channel_path, action="create", limit=limit_value)
+            ChannelEvents.limit(
+                api, app.info.name, resolved.namespace, channel_path=channel_path, action="create", limit=limit_value
+            )
+            _prompt_upgrade(api, app.info.name, limit_value, "create", resolved.namespace)
         ChannelEvents.created(**event_kwargs)
         raise error
     if response.created:
@@ -517,7 +658,7 @@ def remove_command(
     resolved = _resolve_namespace_and_channel(api, name, namespace)
     qualified = f"{resolved.namespace}/{resolved.channel_name}"
     _, error = api.remove_channel(qualified)
-    ChannelEvents.removed(api, app.info.name, channel_path=qualified, error=bool(error))
+    ChannelEvents.removed(api, app.info.name, resolved.namespace, channel_path=qualified, error=bool(error))
     if error:
         raise error
     console.print(f"[green]Success![/green] Channel '[cyan]{qualified}[/cyan]' removed.")
@@ -558,7 +699,7 @@ def show_command(
 
     # Classify the name the same way `channel upload`/`remove-package` do: a bare
     # name matching an anaconda.org owner routes to dotorg, otherwise anaconda.com.
-    resolved = classify_and_resolve(api, name, namespace, owner_probe=dotorg_creds.owner_probe)
+    resolved = classify_and_resolve(api, name, namespace, owner_probe=dotorg_creds.owner_probe, owner_only=False)
 
     if resolved.target == "org":
         # anaconda.org packages/files listings don't apply; `anaconda show OWNER`
@@ -568,7 +709,7 @@ def show_command(
 
     name = f"{resolved.namespace}/{resolved.channel_name}" if resolved.namespace else resolved.channel_name
     channel_data, error = api.get_namespace_channel(name)
-    ChannelEvents.accessed(api, app.info.name, channel_path=name, action="show", error=bool(error))
+    ChannelEvents.accessed(api, app.info.name, resolved.namespace, channel_path=name, action="show", error=bool(error))
     if error:
         raise error
 
@@ -663,8 +804,11 @@ def modify_command(
             error_msg = str(error).lower()
             if "limit" in error_msg and "private" in error_msg:
                 limit_value = _extract_limit_from_error(error)
-                ChannelEvents.limit(api, app.info.name, channel_path=name, action="modify", limit=limit_value)
-            ChannelEvents.modified(api, app.info.name, error=True, **telemetry_kwargs)
+                ChannelEvents.limit(
+                    api, app.info.name, resolved.namespace, channel_path=name, action="modify", limit=limit_value
+                )
+                _prompt_upgrade(api, app.info.name, limit_value, "modify", resolved.namespace)
+            ChannelEvents.modified(api, app.info.name, resolved.namespace, error=True, **telemetry_kwargs)
             raise error
         telemetry_kwargs["privacy_changed"] = result.changed
         state_map = {"private": "locked", "authenticated": "soft-locked", "public": "unlocked"}
@@ -673,13 +817,13 @@ def modify_command(
     if indexing_behavior:
         result, error = api.update_channel(name, indexing_behavior=indexing_behavior)
         if error:
-            ChannelEvents.modified(api, app.info.name, error=True, **telemetry_kwargs)
+            ChannelEvents.modified(api, app.info.name, resolved.namespace, error=True, **telemetry_kwargs)
             raise error
         telemetry_kwargs["indexing_behavior_changed"] = result.changed
         state_map = {"frozen": "frozen", "default": "unfrozen"}
         _print_modify_result(result, name, state_map[indexing_behavior])
 
-    ChannelEvents.modified(api, app.info.name, error=False, **telemetry_kwargs)
+    ChannelEvents.modified(api, app.info.name, resolved.namespace, error=False, **telemetry_kwargs)
 
 
 def _do_upload(
@@ -709,7 +853,7 @@ def _do_upload(
         raise typer.Exit(1)
 
     resolved = _resolve_channels_with_namespaces(
-        api, channels, namespace, from_deprecated_channel_flag, owner_probe=dotorg_creds.owner_probe
+        api, channels, namespace, from_deprecated_channel_flag, owner_probe=dotorg_creds.owner_probe, owner_only=False
     )
 
     org_targets = [r for r in resolved if r.target == "org"]
@@ -731,7 +875,9 @@ def _do_upload(
 
         # Validated above, so the string is a valid repocore type here (or None).
         repo_package_type = PackageType(package_type) if package_type else None
-        repo_channels = [f"{r.namespace}/{r.channel_name}" if r.namespace else r.channel_name for r in repo_targets]
+        repo_channels = [
+            (f"{r.namespace}/{r.channel_name}" if r.namespace else r.channel_name, r.namespace) for r in repo_targets
+        ]
         _process_and_upload_files(api, files, repo_channels, repo_package_type, from_deprecated_channel_flag)
 
     for r in org_targets:
@@ -890,12 +1036,26 @@ def share_command(
             raise typer.Exit(1)
         ch = f"{resolved.namespace}/{resolved.channel_name}"
         result, error = api.share_channel(resolved.namespace, resolved.channel_name, user, action=action, grant=grant)
-        event_kwargs = {"api": api, "app_name": app.info.name, "channel_path": ch, "user": user, "error": bool(error)}
+        event_kwargs = {
+            "api": api,
+            "app_name": app.info.name,
+            "namespace": resolved.namespace,
+            "channel_path": ch,
+            "user": user,
+            "error": bool(error),
+        }
         if action == "share":
             ChannelEvents.share(**event_kwargs, access=access)
         else:
             ChannelEvents.unshare(**event_kwargs)
         if error:
+            error_msg = str(error).lower()
+            if "collaborators" in error_msg and "can only have" in error_msg:
+                limit_value = _extract_limit_from_error(error, LimitAction.SHARE)
+                ChannelEvents.collaborator_limit(
+                    api, app.info.name, resolved.namespace, channel_path=ch, action="share", limit=limit_value
+                )
+                _prompt_upgrade(api, app.info.name, limit_value, "share", resolved.namespace)
             raise error
         console.print(f"[green]Success![/green] {action.capitalize()}d channel '[cyan]{ch}[/cyan]' with {user}")
 

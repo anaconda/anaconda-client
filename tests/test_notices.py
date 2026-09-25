@@ -17,6 +17,12 @@ from tests.urlmock import urlpatch
 
 NOTICE_UUID = '550e8400-e29b-41d4-a716-446655440000'
 
+# Every test that feeds an `--expires-at` literal to the CLI must freeze the clock:
+# the CLI rejects a past expiry, so an unfrozen test with a hardcoded timestamp is a
+# time bomb that starts failing the moment that timestamp goes by.
+FROZEN_NOW = '2026-06-01T12:00:00Z'
+FUTURE_EXPIRES_AT = '2026-09-16T12:00:00+00:00'
+
 NOTICE_ITEM = {
     'id': NOTICE_UUID,
     'owner_id': '507f1f77bcf86cd799439011',
@@ -25,7 +31,7 @@ NOTICE_ITEM = {
     'status': 'draft',
     'created_at': '2026-06-01T12:00:00+00:00',
     'updated_at': '2026-06-01T12:00:00+00:00',
-    'expires_at': '2026-09-16T12:00:00+00:00',
+    'expires_at': FUTURE_EXPIRES_AT,
 }
 
 
@@ -98,6 +104,7 @@ class TestNotices(CLITestCase):
         self.assertIn('Note: Find Notice IDs with', self.stream.getvalue())
 
     @urlpatch
+    @freezegun.freeze_time(FROZEN_NOW)
     def test_create_notice(self, urls):
         create = urls.register(
             method='POST',
@@ -119,7 +126,7 @@ class TestNotices(CLITestCase):
                     '--level',
                     'info',
                     '--expires-at',
-                    '2026-09-16T12:00:00+00:00',
+                    FUTURE_EXPIRES_AT,
                 ]
             )
 
@@ -132,6 +139,7 @@ class TestNotices(CLITestCase):
         self.assertIn(f'anaconda channel notice publish myteam {NOTICE_UUID}', self.stream.getvalue())
 
     @urlpatch
+    @freezegun.freeze_time(FROZEN_NOW)
     def test_create_notice_accepts_id_field(self, urls):
         """API returns `id` on create."""
         urls.register(
@@ -154,14 +162,14 @@ class TestNotices(CLITestCase):
                     '--level',
                     'info',
                     '--expires-at',
-                    '2026-09-16T12:00:00+00:00',
+                    FUTURE_EXPIRES_AT,
                 ]
             )
 
         self.assertIn(f"Notice '{NOTICE_UUID}' created successfully", self.stream.getvalue())
 
     @urlpatch
-    @freezegun.freeze_time('2026-06-01T12:00:00Z')
+    @freezegun.freeze_time(FROZEN_NOW)
     def test_create_notice_defaults_and_expires_after(self, urls):
         create = urls.register(
             method='POST',
@@ -191,6 +199,7 @@ class TestNotices(CLITestCase):
         self.assertEqual(body['expires_at'], '2026-07-01T12:00:00+00:00')
 
     @urlpatch
+    @freezegun.freeze_time(FROZEN_NOW)
     def test_create_notice_expires_options_conflict(self, urls):
         with self.assertRaises(UserError) as ctx:
             main(
@@ -203,7 +212,7 @@ class TestNotices(CLITestCase):
                     '--message',
                     'hello from api',
                     '--expires-at',
-                    '2026-09-16T12:00:00+00:00',
+                    FUTURE_EXPIRES_AT,
                     '--expires-after',
                     '7',
                 ]
@@ -212,7 +221,7 @@ class TestNotices(CLITestCase):
         self.assertIn('Use only one of --expires-at or --expires-after', str(ctx.exception))
 
     @urlpatch
-    @freezegun.freeze_time('2026-06-01T12:00:00Z')
+    @freezegun.freeze_time(FROZEN_NOW)
     def test_create_notice_rejects_past_expires_at(self, urls):
         with self.assertRaises(UserError) as ctx:
             main(
@@ -235,10 +244,11 @@ class TestNotices(CLITestCase):
     @unittest.mock.patch('binstar_client.commands._channel_notices.bool_input', return_value=False)
     @unittest.mock.patch('binstar_client.commands._channel_notices._is_interactive', return_value=True)
     @unittest.mock.patch('binstar_client.commands._channel_notices._prompt_input')
+    @freezegun.freeze_time(FROZEN_NOW)
     def test_create_notice_interactive(self, urls, input_mock, _is_interactive_mock, _bool_input_mock):
         input_mock.side_effect = [
             'interactive message',
-            '2026-09-16T12:00:00+00:00',
+            FUTURE_EXPIRES_AT,
         ]
         create = urls.register(
             method='POST',
@@ -421,6 +431,7 @@ class TestNotices(CLITestCase):
         self.assertIn(f"Not archiving notice '{NOTICE_UUID}'", self.stream.getvalue())
 
     @urlpatch
+    @freezegun.freeze_time(FROZEN_NOW)
     def test_validation_error(self, urls):
         urls.register(
             method='POST',
@@ -446,7 +457,7 @@ class TestNotices(CLITestCase):
                     '--level',
                     'info',
                     '--expires-at',
-                    '2026-09-16T12:00:00+00:00',
+                    FUTURE_EXPIRES_AT,
                 ]
             )
 
@@ -536,7 +547,7 @@ class TestNotices(CLITestCase):
     @unittest.mock.patch('binstar_client.commands._channel_notices.bool_input', return_value=False)
     @unittest.mock.patch('binstar_client.commands._channel_notices._is_interactive', return_value=True)
     @unittest.mock.patch('binstar_client.commands._channel_notices._prompt_input')
-    @freezegun.freeze_time('2026-06-01T12:00:00Z')
+    @freezegun.freeze_time(FROZEN_NOW)
     def test_create_notice_interactive_days(self, urls, input_mock, _is_interactive_mock, _bool_mock):
         input_mock.side_effect = ['hello', '30']
         create = urls.register(
@@ -556,7 +567,7 @@ class TestNotices(CLITestCase):
     @unittest.mock.patch('binstar_client.commands._channel_notices.bool_input', side_effect=[True, False])
     @unittest.mock.patch('binstar_client.commands._channel_notices._is_interactive', return_value=True)
     @unittest.mock.patch('binstar_client.commands._channel_notices._prompt_input')
-    @freezegun.freeze_time('2026-06-01T12:00:00Z')
+    @freezegun.freeze_time(FROZEN_NOW)
     def test_create_notice_interactive_blank_then_accept_default(
         self, urls, input_mock, _is_interactive_mock, _bool_mock
     ):
@@ -578,7 +589,7 @@ class TestNotices(CLITestCase):
     @unittest.mock.patch('binstar_client.commands._channel_notices.bool_input', side_effect=[False, False])
     @unittest.mock.patch('binstar_client.commands._channel_notices._is_interactive', return_value=True)
     @unittest.mock.patch('binstar_client.commands._channel_notices._prompt_input')
-    @freezegun.freeze_time('2026-06-01T12:00:00Z')
+    @freezegun.freeze_time(FROZEN_NOW)
     def test_create_notice_interactive_blank_then_decline_default(
         self, urls, input_mock, _is_interactive_mock, _bool_mock
     ):
@@ -600,8 +611,9 @@ class TestNotices(CLITestCase):
     @unittest.mock.patch('binstar_client.commands._channel_notices.bool_input', return_value=True)
     @unittest.mock.patch('binstar_client.commands._channel_notices._is_interactive', return_value=True)
     @unittest.mock.patch('binstar_client.commands._channel_notices._prompt_input')
+    @freezegun.freeze_time(FROZEN_NOW)
     def test_create_notice_interactive_publish_yes(self, urls, input_mock, _is_interactive_mock, _bool_mock):
-        input_mock.side_effect = ['hello', '2026-09-16T12:00:00+00:00']
+        input_mock.side_effect = ['hello', FUTURE_EXPIRES_AT]
         urls.register(
             method='POST',
             path='/myteam/notices',
@@ -640,7 +652,7 @@ class TestNotices(CLITestCase):
     @urlpatch
     @unittest.mock.patch('binstar_client.commands._channel_notices._is_interactive', return_value=True)
     @unittest.mock.patch('binstar_client.commands._channel_notices._prompt_input')
-    @freezegun.freeze_time('2026-06-01T12:00:00Z')
+    @freezegun.freeze_time(FROZEN_NOW)
     def test_update_interactive_days(self, urls, input_mock, _is_interactive_mock):
         input_mock.side_effect = ['', '14']
         update = urls.register(

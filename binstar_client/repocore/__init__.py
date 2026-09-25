@@ -1,6 +1,6 @@
 """Repocore API client for Anaconda repository channel management."""
 
-from binstar_client.repocore.client import REPO_API_PATH, AUTH_API_PATH, RepoCoreClient
+from binstar_client.repocore.client import REPO_API_PATH, AUTH_API_PATH, RepoCoreClient, split_channel_name
 from binstar_client.repocore.models import (
     Artifact,
     ArtifactFile,
@@ -20,6 +20,7 @@ __all__ = [
     "REPO_API_PATH",
     "AUTH_API_PATH",
     "RepoCoreClient",
+    "split_channel_name",
     "Artifact",
     "ArtifactFile",
     "Channel",

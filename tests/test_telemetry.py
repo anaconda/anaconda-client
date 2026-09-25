@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
 
+from binstar_client.repocore.models import Namespace
 from binstar_client.repocore.telemetry import Attributes, ChannelEvents, UpgradeEvents, UploadEvents, _check_error
 from binstar_client.repocore.telemetry_models import (
     ChannelAccessedEvent,
@@ -12,11 +13,12 @@ from binstar_client.repocore.telemetry_models import (
     ChannelLimitReachedEvent,
     ChannelRemovedEvent,
     ChannelModifiedEvent,
+    CollaboratorLimitReachedEvent,
     MemberInvitedEvent,
     MemberRemovedEvent,
     PackageUploadedEvent,
     TelemetryEvent,
-    UpgradePromptConvertedEvent,
+    UpgradePromptAcceptedEvent,
     UpgradePromptDismissedEvent,
     UpgradePromptImpressedEvent,
 )
@@ -61,12 +63,15 @@ class TestPydanticTelemetryModels:
         assert event.indexing_behavior == "frozen"
 
     def test_upgrade_events_models(self):
-        impressed = UpgradePromptImpressedEvent()
-        converted = UpgradePromptConvertedEvent()
-        dismissed = UpgradePromptDismissedEvent()
+        impressed = UpgradePromptImpressedEvent(action="create")
+        accepted = UpgradePromptAcceptedEvent(action="create")
+        dismissed = UpgradePromptDismissedEvent(action="create")
         assert impressed.event_name == "upgrade_prompt.impressed"
-        assert converted.event_name == "upgrade_prompt.converted"
+        assert impressed.action == "create"
+        assert accepted.event_name == "upgrade_prompt.accepted"
+        assert accepted.action == "create"
         assert dismissed.event_name == "upgrade_prompt.dismissed"
+        assert dismissed.action == "create"
 
     def test_package_uploaded_event_model(self):
         event = PackageUploadedEvent(channel="myorg/dev", package_type="conda", package_name="test-pkg")
@@ -87,21 +92,66 @@ class TestPydanticTelemetryModels:
         assert event.event_name == "member.removed"
         assert event.channel_path == "myorg/dev"
 
+    def test_collaborator_limit_reached_event_model(self):
+        event = CollaboratorLimitReachedEvent(channel_path="myorg/dev", action="share")
+        assert event.event_name == "collaborator.limit_reached"
+        assert event.channel_path == "myorg/dev"
+        assert event.action == "share"
+
+        event_with_limit = CollaboratorLimitReachedEvent(channel_path="myorg/dev", action="share", limit=5)
+        assert event_with_limit.limit == 5
+
 
 class TestAttributes:
-    def test_attributes_with_valid_account(self):
+    def test_attributes_with_valid_account_no_namespace(self):
         mock_client = MagicMock()
         mock_client.account = {
             "user": {"id": "user123", "email": "test@example.com"},
-            "subscriptions": [{"org_id": "org1", "product_code": "pro"}, {"org_id": "org2", "product_code": "team"}],
         }
 
         attrs = Attributes(mock_client)
         assert attrs.user_id == "user123"
         assert attrs.user_email is not None
         assert len(attrs.user_email) == 64
-        assert attrs.organization_ids == ["org1", "org2"]
-        assert attrs.account_tiers == ["pro", "team"]
+        assert attrs.organization_id is None
+        assert attrs.account_tier is None
+        result = attrs.to_dict()
+        assert result["user.id"] == "user123"
+        assert result["user.email"] is not None
+        assert result["organization.id"] == ""
+        assert result["account.tier"] == ""
+
+    def test_attributes_with_namespace(self):
+        mock_client = MagicMock()
+        mock_client.account = {
+            "user": {"id": "user123", "email": "test@example.com"},
+        }
+        mock_client.list_user_organizations.return_value = [
+            Namespace(id="org1", name="myorg", active_subscription={"product_code": "pro"}),
+            Namespace(id="org2", name="teamorg", active_subscription={"product_code": "team"}),
+        ]
+
+        attrs = Attributes(mock_client, namespace="myorg")
+        assert attrs.user_id == "user123"
+        assert attrs.user_email is not None
+        assert len(attrs.user_email) == 64
+        assert attrs.organization_id == "org1"
+        assert attrs.account_tier == "pro"
+
+    def test_attributes_with_namespace_not_found(self):
+        mock_client = MagicMock()
+        mock_client.account = {"user": {"id": "user123", "email": "test@example.com"}}
+        mock_client.list_user_organizations.return_value = [
+            Namespace(id="org1", name="myorg", active_subscription={"product_code": "pro"}),
+        ]
+
+        attrs = Attributes(mock_client, namespace="unknownorg")
+        assert attrs.user_id == "user123"
+        assert attrs.organization_id is None
+        assert attrs.account_tier is None
+        result = attrs.to_dict()
+        assert result["organization.id"] == ""
+        assert result["account.tier"] == ""
 
     def test_attributes_with_exception(self):
         mock_client = MagicMock()
@@ -110,46 +160,50 @@ class TestAttributes:
         attrs = Attributes(mock_client)
         assert attrs.user_id is None
         assert attrs.user_email is None
-        assert attrs.organization_ids == []
-        assert attrs.account_tiers == []
+        assert attrs.organization_id is None
+        assert attrs.account_tier is None
+        result = attrs.to_dict()
+        assert result["user.id"] == ""
+        assert result["user.email"] == ""
+        assert result["organization.id"] == ""
+        assert result["account.tier"] == ""
+        assert isinstance(result["user.id"], str)
+        assert isinstance(result["user.email"], str)
+        assert isinstance(result["organization.id"], str)
+        assert isinstance(result["account.tier"], str)
 
     def test_attributes_to_dict(self):
         mock_client = MagicMock()
         mock_client.account = {
             "user": {"id": "user123", "email": "test@example.com"},
-            "subscriptions": [{"org_id": "org1", "product_code": "pro"}],
         }
+        mock_client.list_user_organizations.return_value = [
+            Namespace(id="org1", name="myorg", active_subscription={"product_code": "pro"}),
+        ]
 
-        attrs = Attributes(mock_client)
+        attrs = Attributes(mock_client, namespace="myorg")
         result = attrs.to_dict()
 
-        assert result["user_id"] == "user123"
-        assert result["user_email"] is not None
-        assert result["organization.ids"] == ["org1"]
-        assert result["account.tier"] == ["pro"]
+        assert result["user.id"] == "user123"
+        assert result["user.email"] is not None
+        assert result["organization.id"] == "org1"
+        assert result["account.tier"] == "pro"
+        assert isinstance(result["user.id"], str)
+        assert isinstance(result["user.email"], str)
+        assert isinstance(result["organization.id"], str)
+        assert isinstance(result["account.tier"], str)
 
-    def test_attributes_partial_success_on_exception(self):
+    def test_attributes_with_none_active_subscription(self):
         mock_client = MagicMock()
-        mock_user = {"id": "user456"}
-        mock_client.account = {
-            "user": mock_user,
-            "subscriptions": [{"org_id": "org3", "product_code": "enterprise"}],
-        }
+        mock_client.account = {"user": {"id": "user456"}}
+        mock_client.list_user_organizations.return_value = [
+            Namespace(id="org3", name="freeorg", active_subscription=None),
+        ]
 
-        def email_side_effect(key, default=None):
-            if key == "email":
-                raise Exception("Email fetch failed")
-            return mock_user.get(key, default)
-
-        mock_user_obj = MagicMock()
-        mock_user_obj.get = MagicMock(side_effect=email_side_effect)
-        mock_client.account["user"] = mock_user_obj
-
-        attrs = Attributes(mock_client)
+        attrs = Attributes(mock_client, namespace="freeorg")
         assert attrs.user_id == "user456"
-        assert attrs.user_email is None
-        assert attrs.organization_ids == ["org3"]
-        assert attrs.account_tiers == ["enterprise"]
+        assert attrs.organization_id == "org3"
+        assert attrs.account_tier == "free_subscription"
 
 
 class TestErrorSuffixIdempotence:

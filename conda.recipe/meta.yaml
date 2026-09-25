@@ -46,6 +46,7 @@ requirements:
     - anaconda-cli-base >=0.9.1
     - anaconda-auth >=0.11.0
     - pypng
+    - anaconda-opentelemetry >=1.2.2
 
 test:
   requires:
