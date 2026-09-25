@@ -6,22 +6,15 @@ from urllib.parse import urlparse
 
 import requests
 
-try:
-    from PIL import Image
-except ImportError:
-    Image = None  # type: ignore
-
 from ...errors import PillowNotInstalled
+from ..image import Image, resize_and_convert as _resize_and_convert
 
 from binstar_client.deprecations import deprecated, DEPRECATE_IN_1_15_0, REMOVE_IN_2_0_0
-
-THUMB_SIZE = (340, 210)
 
 
 @deprecated(deprecate_in=DEPRECATE_IN_1_15_0, remove_in=REMOVE_IN_2_0_0)
 class DataURIConverter:
     def __init__(self, location, data=None):
-        self.check_pillow_installed()
         self.location = location
         self.data = data
 
@@ -47,14 +40,7 @@ class DataURIConverter:
         return b64
 
     def resize_and_convert(self, file):
-        if Image is None:
-            raise PillowNotInstalled()
-        image = Image.open(file)
-        image.thumbnail(THUMB_SIZE)
-        out = io.BytesIO()
-        image.save(out, format='png')
-        out.seek(0)
-        return out
+        return _resize_and_convert(file)
 
     def is_py3(self):
         return sys.version_info[0] == 3
