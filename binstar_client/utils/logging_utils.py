@@ -1,5 +1,3 @@
-# -*- coding: utf8 -*-
-
 """Utilities to configure logging for the application."""
 
 from __future__ import annotations
@@ -20,13 +18,13 @@ from . import config
 def _custom_excepthook(
     logger: logging.Logger,
     show_traceback: bool = False,
-) -> typing.Callable[[typing.Type[BaseException], BaseException, typing.Optional[types.TracebackType]], None]:
+) -> typing.Callable[[type[BaseException], BaseException, types.TracebackType | None], None]:
     """Generate custom exception hook to log captured exceptions."""
 
     def excepthook(
-        exc_type: typing.Type[BaseException],
+        exc_type: type[BaseException],
         exc_value: BaseException,
-        exc_traceback: typing.Optional[types.TracebackType],
+        exc_traceback: types.TracebackType | None,
     ) -> None:
         if issubclass(exc_type, KeyboardInterrupt):
             return

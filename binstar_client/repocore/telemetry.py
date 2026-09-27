@@ -3,20 +3,20 @@ import hashlib
 from anaconda_cli_base.telemetry import log_event
 
 from .telemetry_models import (
-    TelemetryEvent,
+    ChannelAccessedEvent,
     ChannelCreatedEvent,
     ChannelCreatedExistsEvent,
-    ChannelAccessedEvent,
     ChannelLimitReachedEvent,
-    ChannelRemovedEvent,
     ChannelModifiedEvent,
-    UpgradePromptImpressedEvent,
-    UpgradePromptAcceptedEvent,
-    UpgradePromptDismissedEvent,
-    PackageUploadedEvent,
+    ChannelRemovedEvent,
+    CollaboratorLimitReachedEvent,
     MemberInvitedEvent,
     MemberRemovedEvent,
-    CollaboratorLimitReachedEvent,
+    PackageUploadedEvent,
+    TelemetryEvent,
+    UpgradePromptAcceptedEvent,
+    UpgradePromptDismissedEvent,
+    UpgradePromptImpressedEvent,
 )
 
 

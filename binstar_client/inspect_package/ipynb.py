@@ -1,16 +1,13 @@
-from __future__ import absolute_import, print_function, unicode_literals
-
 import os
 import re
 from datetime import datetime
 
 import nbformat
 
+from binstar_client.deprecations import DEPRECATE_IN_1_15_0, REMOVE_IN_2_0_0, deprecated
+
 from ..utils.notebook.data_uri import data_uri_from
 from ..utils.notebook.inflection import parameterize
-
-
-from binstar_client.deprecations import deprecated, DEPRECATE_IN_1_15_0, REMOVE_IN_2_0_0
 
 
 @deprecated(deprecate_in=DEPRECATE_IN_1_15_0, remove_in=REMOVE_IN_2_0_0)

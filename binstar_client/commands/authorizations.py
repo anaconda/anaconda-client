@@ -8,8 +8,6 @@ See also:
 
 """
 
-from __future__ import print_function
-
 import argparse
 import datetime
 import getpass
@@ -25,8 +23,7 @@ from dateutil.parser import parse as parse_date
 
 from binstar_client import errors
 from binstar_client.commands.login import LEGACY_INTERACTIVE_LOGIN, get_anaconda_unified_token
-from binstar_client.utils import get_server_api
-from binstar_client.utils import tables
+from binstar_client.utils import get_server_api, tables
 
 if typing.TYPE_CHECKING:
     import typing_extensions
@@ -80,7 +77,7 @@ TIME_DELTA_GROUPS: 'typing_extensions.Final[typing.Sequence[TimeDeltaGroup]]' = 
 )
 
 
-def format_timedelta(date: typing.Optional[datetime.datetime], expired: bool = True) -> str:
+def format_timedelta(date: datetime.datetime | None, expired: bool = True) -> str:
     if not date:
         return 'never'
 
@@ -94,7 +91,7 @@ def format_timedelta(date: typing.Optional[datetime.datetime], expired: bool = T
         result = ' ago'
 
     group: TimeDeltaGroup
-    delta: typing.Union[int, float] = (date - now).total_seconds()
+    delta: int | float = (date - now).total_seconds()
     for group in TIME_DELTA_GROUPS:
         if delta > group.amount > 0:
             if group.strict:
@@ -350,7 +347,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             default_factory=lambda: f'binstar_token:{socket.gethostname()}',
             help='A unique name so you can identify this token later. View your tokens at anaconda.org/settings/access',
         ),
-        organization: typing.Optional[str] = typer.Option(
+        organization: str | None = typer.Option(
             None,
             '-o',
             '--org',
@@ -361,11 +358,11 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             default='strong',
             help='Specify the strength of the token',
         ),
-        strong: typing.Optional[bool] = typer.Option(
+        strong: bool | None = typer.Option(
             None,
             help='Create a longer token (default)',
         ),
-        weak: typing.Optional[bool] = typer.Option(
+        weak: bool | None = typer.Option(
             None,
             '-w',
             '--weak',
@@ -375,11 +372,11 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             'http://anaconda.org',
             help='The url of the application that will use this token',
         ),
-        max_age: typing.Optional[int] = typer.Option(
+        max_age: int | None = typer.Option(
             None,
             help='The maximum age in seconds that this token will be valid for',
         ),
-        scopes: typing.Optional[typing.List[str]] = typer.Option(
+        scopes: list[str] | None = typer.Option(
             [],
             '-s',
             '--scopes',
@@ -390,31 +387,31 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
                 + 'this option multiple times, e.g. --scopes repo --scopes conda:download.'
             ),
         ),
-        out: typing.Optional[typer.FileTextWrite] = typer.Option(
+        out: typer.FileTextWrite | None = typer.Option(
             sys.stdout,
         ),
-        list_scopes: typing.Optional[bool] = typer.Option(
+        list_scopes: bool | None = typer.Option(
             False,
             '-x',
             '--list-scopes',
             help='List all authentication scopes',
             callback=_exclusive_action,
         ),
-        list_: typing.Optional[bool] = typer.Option(
+        list_: bool | None = typer.Option(
             False,
             '-l',
             '--list',
             help='List all user authentication tokens',
             callback=_exclusive_action,
         ),
-        create: typing.Optional[bool] = typer.Option(
+        create: bool | None = typer.Option(
             False,
             '-c',
             '--create',
             help='Create an authentication token',
             callback=_exclusive_action,
         ),
-        info: typing.Optional[bool] = typer.Option(
+        info: bool | None = typer.Option(
             False,
             '-i',
             '--info',
@@ -422,14 +419,14 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             help='Show information about the current authentication token',
             callback=_exclusive_action,
         ),
-        remove: typing.List[str] = typer.Option(
+        remove: list[str] = typer.Option(
             [],
             '-r',
             '--remove',
             help='Remove authentication tokens. Multiple token names can be provided',
             callback=_exclusive_action,
         ),
-        extra_args: typing.List[str] = typer.Argument(default=None, hidden=True, metavar=''),
+        extra_args: list[str] = typer.Argument(default=None, hidden=True, metavar=''),
     ) -> None:
         if not any([list_scopes, list_, create, info, remove]):
             raise typer.BadParameter('one of --list-scopes, --list, --list, --info, or --remove must be provided')

@@ -1,7 +1,5 @@
 """Authenticate a user."""
 
-from __future__ import unicode_literals
-
 import getpass
 import logging
 import os
@@ -9,14 +7,15 @@ import platform
 import re
 import socket
 import sys
-from urllib.parse import urlparse, urljoin
+from urllib.parse import urljoin, urlparse
 
 from anaconda_auth.actions import _do_auth_flow
 from anaconda_auth.config import AnacondaAuthSite
-from anaconda_auth.token import TokenInfo
 from anaconda_auth.exceptions import TokenNotFoundError
+from anaconda_auth.token import TokenInfo
+
 from binstar_client import errors
-from binstar_client.utils import get_config, get_server_api, store_token, bool_input
+from binstar_client.utils import bool_input, get_config, get_server_api, store_token
 
 LEGACY_INTERACTIVE_LOGIN = os.getenv("ANACONDA_CLIENT_LEGACY_INTERACTIVE_LOGIN", False)
 

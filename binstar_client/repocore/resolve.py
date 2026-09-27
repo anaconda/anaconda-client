@@ -8,16 +8,18 @@ can share a single resolver.
 import logging
 import os
 import sys
+from collections.abc import Callable
 from datetime import datetime, timezone
-from typing import Callable, FrozenSet, List, Optional
+from typing import FrozenSet, List, Optional
 
 import typer
-
 from anaconda_cli_base.console import console, select_from_list
+
+from binstar_client.repocore.client import split_channel_name
 from binstar_client.repocore.models import ResolvedChannel
 from binstar_client.repocore.package_utils import PackageType as RepoPackageType
-from binstar_client.repocore.client import split_channel_name
-from binstar_client.utils.config import PackageType as OrgPackageType, dirs
+from binstar_client.utils.config import PackageType as OrgPackageType
+from binstar_client.utils.config import dirs
 
 logger = logging.getLogger("binstar.repocore.resolve")
 
@@ -31,8 +33,8 @@ OwnerProbe = Callable[[str], bool]
 # ResolvedChannel so callers validate generically instead of re-encoding the
 # per-target type rules. anaconda.com and anaconda.org overlap but neither is a
 # superset (e.g. repo has "sdist"; org has "ipynb"/"file"/"env").
-REPO_PACKAGE_TYPES: FrozenSet[str] = frozenset(pt.value for pt in RepoPackageType)
-ORG_PACKAGE_TYPES: FrozenSet[str] = frozenset(pt.value for pt in OrgPackageType)
+REPO_PACKAGE_TYPES: frozenset[str] = frozenset(pt.value for pt in RepoPackageType)
+ORG_PACKAGE_TYPES: frozenset[str] = frozenset(pt.value for pt in OrgPackageType)
 
 
 _BETA_NOTICE = "[yellow]Note:[/yellow] Anaconda.com private channels are in BETA."
@@ -99,7 +101,7 @@ def _notify_repo_beta() -> None:
     _record_beta_notice_shown()
 
 
-def _repo_channel(namespace: Optional[str], channel_name: str) -> ResolvedChannel:
+def _repo_channel(namespace: str | None, channel_name: str) -> ResolvedChannel:
     """Build a repocore (anaconda.com) ResolvedChannel with its accepted types."""
     _notify_repo_beta()
     return ResolvedChannel(
@@ -169,13 +171,13 @@ def _iter_writable_channels(api):
             break
 
 
-def _writable_namespaces(channels) -> List[str]:
+def _writable_namespaces(channels) -> list[str]:
     """The distinct namespaces present in a writable-channel listing.
 
     A top-level channel is itself a namespace; a subchannel's namespace is its
     ``parent``. Order is preserved and duplicates dropped so the picker is stable.
     """
-    namespaces: List[str] = []
+    namespaces: list[str] = []
     for channel in channels:
         ns = channel.namespace or channel.name
         if ns not in namespaces:
@@ -263,7 +265,7 @@ def namespace_known_to_user(api, namespace: str) -> bool:
 
 
 def resolve_namespace_and_channel(
-    api, name: str, namespace: Optional[str] = None, require_namespace: bool = True, owner_only: bool = True
+    api, name: str, namespace: str | None = None, require_namespace: bool = True, owner_only: bool = True
 ) -> ResolvedChannel:
     """Resolve namespace and channel name from the given inputs.
 
@@ -369,8 +371,8 @@ def _prompt_repo_or_org(name: str) -> str:
 def classify_and_resolve(
     api,
     name: str,
-    namespace: Optional[str] = None,
-    owner_probe: Optional[OwnerProbe] = None,
+    namespace: str | None = None,
+    owner_probe: OwnerProbe | None = None,
     owner_only: bool = True,
 ) -> ResolvedChannel:
     """Resolve ``name`` to an upload target, spanning anaconda.com and anaconda.org.
@@ -421,12 +423,12 @@ def classify_and_resolve(
 
 def resolve_channels_with_namespaces(
     api,
-    channels: List[str],
-    namespace: Optional[str],
+    channels: list[str],
+    namespace: str | None,
     from_deprecated_channel_flag: bool,
-    owner_probe: Optional[OwnerProbe] = None,
+    owner_probe: OwnerProbe | None = None,
     owner_only: bool = True,
-) -> List[ResolvedChannel]:
+) -> list[ResolvedChannel]:
     """Resolve channel names to :class:`ResolvedChannel` targets.
 
     Each result carries a ``target`` of "repo" or "org"; callers dispatch on it.
