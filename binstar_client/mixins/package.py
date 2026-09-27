@@ -15,7 +15,7 @@ class PackageMixin:
         update=False,
     ):
         copy_path = '/'.join((owner, package, version, basename or ''))
-        url = '{}/copy/package/{}'.format(self.domain, copy_path)
+        url = f'{self.domain}/copy/package/{copy_path}'
 
         payload = {'to_owner': to_owner, 'from_channel': from_label, 'to_channel': to_label}
 

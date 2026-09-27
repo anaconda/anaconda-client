@@ -11,7 +11,7 @@ class TelemetryEvent(BaseModel):
     event_name: str
     errorable: bool = Field(default=False, description="Whether this event can be an error event")
 
-    def attribute_dump(self) -> Dict[str, Any]:
+    def attribute_dump(self) -> dict[str, Any]:
         """Export event attributes excluding event_name and errorable."""
         return {k: v for k, v in self.model_dump(by_alias=True).items() if k not in ['event_name', 'errorable']}
 
@@ -23,7 +23,7 @@ class ChannelCreatedEvent(TelemetryEvent):
     errorable: bool = True
     channel_path: str = Field(alias="channel.path")
     privacy: str
-    operation_org_id: Optional[str] = Field(default=None, alias="operation.org_id")
+    operation_org_id: str | None = Field(default=None, alias="operation.org_id")
 
 
 class ChannelCreatedExistsEvent(TelemetryEvent):
@@ -33,7 +33,7 @@ class ChannelCreatedExistsEvent(TelemetryEvent):
     errorable: bool = False
     channel_path: str = Field(alias="channel.path")
     privacy: str
-    operation_org_id: Optional[str] = Field(default=None, alias="operation.org_id")
+    operation_org_id: str | None = Field(default=None, alias="operation.org_id")
 
 
 class ChannelAccessedEvent(TelemetryEvent):
@@ -52,7 +52,7 @@ class ChannelLimitReachedEvent(TelemetryEvent):
     errorable: bool = False
     channel_path: str = Field(alias="channel.path")
     action: str
-    limit: Optional[int] = None
+    limit: int | None = None
 
 
 class ChannelRemovedEvent(TelemetryEvent):
@@ -69,10 +69,10 @@ class ChannelModifiedEvent(TelemetryEvent):
     event_name: str = "channel.modified"
     errorable: bool = True
     channel_path: str = Field(alias="channel.path")
-    privacy: Optional[str] = None
-    indexing_behavior: Optional[str] = None
-    privacy_changed: Optional[bool] = Field(default=None, alias="privacy.changed")
-    indexing_behavior_changed: Optional[bool] = Field(default=None, alias="indexing_behavior.changed")
+    privacy: str | None = None
+    indexing_behavior: str | None = None
+    privacy_changed: bool | None = Field(default=None, alias="privacy.changed")
+    indexing_behavior_changed: bool | None = Field(default=None, alias="indexing_behavior.changed")
 
 
 class UpgradePromptImpressedEvent(TelemetryEvent):
@@ -135,4 +135,4 @@ class CollaboratorLimitReachedEvent(TelemetryEvent):
     errorable: bool = False
     channel_path: str = Field(alias="channel.path")
     action: str
-    limit: Optional[int] = None
+    limit: int | None = None
