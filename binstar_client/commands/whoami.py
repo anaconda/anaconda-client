@@ -2,8 +2,6 @@
 Print the information of the current user
 """
 
-from __future__ import unicode_literals
-
 import argparse
 import logging
 from typing import Any, Dict
@@ -42,7 +40,7 @@ def mount_subcommand(
     name: str,
     hidden: bool,
     help_text: str,
-    context_settings: Dict[str, Any],
+    context_settings: dict[str, Any],
 ) -> None:
     @app.command(
         name=name,

@@ -1,5 +1,5 @@
-import tarfile
 import email.parser
+import tarfile
 from os import path
 
 # Python 3 requires BytesParser which doesn't exist in Python 2
