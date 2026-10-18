@@ -1,12 +1,10 @@
-# -*- coding: utf-8 -*-
-
 """Tests for binstar_client.utils.console_utils."""
 
 import io
 
 import pytest
 
-import binstar_client.utils.console_utils as console_utils
+from binstar_client.utils import console_utils
 
 BOX = "┏━┳┓"
 

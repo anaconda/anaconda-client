@@ -1,5 +1,3 @@
-# -*- coding: utf8 -*-
-
 """Utilities to manage file paths."""
 
 from __future__ import annotations
@@ -19,7 +17,7 @@ def expandvars(path: str) -> str:
 
     Missing conda-related variables might be injected from :data:`~binstar_client.utils.conda.CONDA_INFO`.
     """
-    mapping: typing.Dict[str, str] = {
+    mapping: dict[str, str] = {
         **typing.cast(typing.Mapping[str, str], conda.CONDA_INFO),
         **os.environ,
     }

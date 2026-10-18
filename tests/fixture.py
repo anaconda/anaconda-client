@@ -1,10 +1,8 @@
-# -*- coding: utf8 -*-
-
 """Base components to use in tests."""
 
 from __future__ import annotations
 
-__all__ = ['main', 'AnyIO', 'CLITestCase']
+__all__ = ['AnyIO', 'CLITestCase', 'main']
 
 import io
 import logging

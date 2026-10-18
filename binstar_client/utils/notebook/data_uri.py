@@ -11,9 +11,9 @@ try:
 except ImportError:
     Image = None  # type: ignore
 
-from ...errors import PillowNotInstalled
+from binstar_client.deprecations import DEPRECATE_IN_1_15_0, REMOVE_IN_2_0_0, deprecated
 
-from binstar_client.deprecations import deprecated, DEPRECATE_IN_1_15_0, REMOVE_IN_2_0_0
+from ...errors import PillowNotInstalled
 
 THUMB_SIZE = (340, 210)
 
@@ -43,7 +43,7 @@ class DataURIConverter:
             file.seek(0)
             b64 = self._encode(self.resize_and_convert(file).read())
         else:
-            raise IOError('{} not found'.format(self.location))
+            raise OSError(f'{self.location} not found')
         return b64
 
     def resize_and_convert(self, file):

@@ -14,7 +14,7 @@ from typing import List
 import typer
 
 from binstar_client import errors
-from binstar_client.utils import get_server_api, parse_specs, bool_input
+from binstar_client.utils import bool_input, get_server_api, parse_specs
 
 logger = logging.getLogger('binstar.remove')
 
@@ -91,7 +91,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
     )
     def remove_subcommand(
         ctx: typer.Context,
-        specs: List[str] = typer.Argument(
+        specs: list[str] = typer.Argument(
             show_default=False, parser=parse_specs, help='Package written as USER\\[/PACKAGE\\[/VERSION\\[/FILE]]]'
         ),
         force: bool = typer.Option(
