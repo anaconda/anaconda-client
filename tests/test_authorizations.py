@@ -1,4 +1,3 @@
-# -*- coding: utf8 -*-
 """Tests for anaconda-client authorizations and token management."""
 
 from binstar_client.errors import BinstarError

@@ -1,9 +1,9 @@
 import logging
 from os import path
 
-from ..utils.yaml import yaml_load
+from binstar_client.deprecations import DEPRECATE_IN_1_15_0, REMOVE_IN_2_0_0, deprecated
 
-from binstar_client.deprecations import deprecated, DEPRECATE_IN_1_15_0, REMOVE_IN_2_0_0
+from ..utils.yaml import yaml_load
 
 logger = logging.getLogger(__name__)
 

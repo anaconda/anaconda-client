@@ -1,6 +1,6 @@
 from fnmatch import fnmatch
-from zipfile import ZipFile
 from tarfile import TarFile
+from zipfile import ZipFile
 
 
 def extract_first(fileobj, pat):

@@ -1,19 +1,15 @@
-# -*- coding: utf8 -*-
-
 """Utilities to detect :code:`conda`."""
 
 from __future__ import annotations
 
-__all__ = ['find_conda', 'CONDA_INFO']
+__all__ = ['CONDA_INFO', 'find_conda']
 
 import itertools
-
 import json
 import os
 import subprocess  # nosec
 import sys
 import typing
-
 
 FLAGS: typing.Final[int] = subprocess.CREATE_NO_WINDOW if sys.platform == 'win32' else 0  # type: ignore
 
@@ -34,7 +30,7 @@ class Empty(typing.TypedDict):
     """
 
 
-def find_conda(*prefixes: str, use_env: bool = False) -> typing.Union[CondaInfo, Empty]:
+def find_conda(*prefixes: str, use_env: bool = False) -> CondaInfo | Empty:
     """
     Find :code:`conda` and collect essential details on it.
 
@@ -43,7 +39,7 @@ def find_conda(*prefixes: str, use_env: bool = False) -> typing.Union[CondaInfo,
 
                     If at least one variable is missing - usual detection will be used.
     """
-    commands: typing.List[str] = []
+    commands: list[str] = []
     command: str
     prefix: str
     root: str
@@ -76,11 +72,11 @@ def find_conda(*prefixes: str, use_env: bool = False) -> typing.Union[CondaInfo,
     return {}
 
 
-CONDA_INFO: typing.Union[CondaInfo, Empty]
+CONDA_INFO: CondaInfo | Empty
 
-CONDA_EXE: typing.Optional[str]
-CONDA_PREFIX: typing.Optional[str]
-CONDA_ROOT: typing.Optional[str]
+CONDA_EXE: str | None
+CONDA_PREFIX: str | None
+CONDA_ROOT: str | None
 
 
 def __getattr__(name: str) -> typing.Any:

@@ -1,5 +1,3 @@
-# -*- coding: utf8 -*-
-
 """
 
     anaconda upload CONDA_PACKAGE_1.tar.bz2
@@ -9,7 +7,7 @@ See Also:
 * Uploading a Conda Package: https://docs.anaconda.com/free/anacondaorg/user-guide/packages/conda-packages/#cloud-uploading-conda-packages
 * Uploading a Standard Python Package: https://docs.anaconda.com/free/anacondaorg/user-guide/packages/standard-python-packages/#uploading-stdpython-packages
 
-"""  # noqa: E501
+"""
 
 from __future__ import annotations
 
@@ -27,9 +25,8 @@ import typer
 import binstar_client
 from binstar_client import errors
 from binstar_client.deprecations import DEPRECATION_MESSAGE_NOTEBOOKS_PROJECTS_ENVIRONMENTS_REMOVED
-from binstar_client.utils import bool_input, DEFAULT_CONFIG, get_config, get_server_api
+from binstar_client.utils import DEFAULT_CONFIG, bool_input, detect, get_config, get_server_api
 from binstar_client.utils.config import PackageType
-from binstar_client.utils import detect
 
 if typing.TYPE_CHECKING:
     import typing_extensions
@@ -39,7 +36,7 @@ KeyT = typing.TypeVar('KeyT')
 CacheRecordT = typing.TypeVar('CacheRecordT', bound='CacheRecord')
 
 PackageKey: typing_extensions.TypeAlias = str
-ReleaseKey: typing_extensions.TypeAlias = typing.Tuple[str, str]
+ReleaseKey: typing_extensions.TypeAlias = tuple[str, str]
 
 
 logger = logging.getLogger('binstar.upload')
@@ -129,15 +126,15 @@ class CacheRecord:
 
     @staticmethod
     def cleanup(
-        storage: typing.Dict[KeyT, CacheRecordT],
-        action: typing.Optional[typing.Callable[[KeyT, CacheRecordT], typing.Any]] = None,
+        storage: dict[KeyT, CacheRecordT],
+        action: typing.Callable[[KeyT, CacheRecordT], typing.Any] | None = None,
     ) -> int:
         """
         Remove all empty records from :code:`storage`.
 
         Optional :code:`action` function might be called for each instance being removed.
         """
-        to_remove: typing.List[KeyT] = []
+        to_remove: list[KeyT] = []
 
         key: KeyT
         record: CacheRecordT
@@ -162,7 +159,7 @@ class PackageCacheRecord(CacheRecord):
         """Initialize new :class:`~PackageCacheRecord` instance."""
         super().__init__(empty=empty)
         self.name: typing.Final[str] = name
-        self.package_types: typing.List[PackageType] = list(package_types)
+        self.package_types: list[PackageType] = list(package_types)
 
     def update(self, package_type: PackageType) -> None:
         """Update record after a file is uploaded to this package."""
@@ -191,13 +188,13 @@ class PackageMeta:
     """Collected details on a package file being currently uploaded."""
 
     __slots__ = (
-        'filename',
-        'meta',
         '__file_attrs',
         '__name',
         '__package_attrs',
         '__release_attrs',
         '__version',
+        'filename',
+        'meta',
     )
 
     def __init__(self, filename: str, meta: detect.Meta) -> None:
@@ -205,26 +202,26 @@ class PackageMeta:
         self.filename: typing.Final[str] = filename
         self.meta: typing.Final[detect.Meta] = meta
 
-        self.__file_attrs: typing.Optional[detect.FileAttributes] = None
-        self.__name: typing.Optional[str] = None
-        self.__package_attrs: typing.Optional[detect.PackageAttributes] = None
-        self.__release_attrs: typing.Optional[detect.ReleaseAttributes] = None
-        self.__version: typing.Optional[str] = None
+        self.__file_attrs: detect.FileAttributes | None = None
+        self.__name: str | None = None
+        self.__package_attrs: detect.PackageAttributes | None = None
+        self.__release_attrs: detect.ReleaseAttributes | None = None
+        self.__version: str | None = None
 
     @property
-    def extension(self) -> str:  # noqa: D401
+    def extension(self) -> str:
         """File extension of the package file."""
         return self.meta.extension
 
     @property
-    def file_attrs(self) -> detect.FileAttributes:  # noqa: D401
+    def file_attrs(self) -> detect.FileAttributes:
         """Attributes of a file being uploaded."""
         if self.__file_attrs is None:
             self._update_attrs()
         return typing.cast(detect.FileAttributes, self.__file_attrs)
 
     @property
-    def name(self) -> str:  # noqa: D401
+    def name(self) -> str:
         """Name of a package for which file is being uploaded."""
         if self.__name is None:
             self._update_name()
@@ -236,36 +233,36 @@ class PackageMeta:
         self._update_name(value)
 
     @property
-    def package_attrs(self) -> detect.PackageAttributes:  # noqa: D401
+    def package_attrs(self) -> detect.PackageAttributes:
         """Attributes of a package for which file is being uploaded."""
         if self.__package_attrs is None:
             self._update_attrs()
         return typing.cast(detect.PackageAttributes, self.__package_attrs)
 
     @property
-    def package_key(self) -> PackageKey:  # noqa: D401
+    def package_key(self) -> PackageKey:
         """Key for accessing related cached package record."""
         return self.name
 
     @property
-    def package_type(self) -> PackageType:  # noqa: D401
+    def package_type(self) -> PackageType:
         """Type of a package being uploaded."""
         return self.meta.package_type
 
     @property
-    def release_attrs(self) -> detect.ReleaseAttributes:  # noqa: D401
+    def release_attrs(self) -> detect.ReleaseAttributes:
         """Attributes of a release for which file is being uploaded."""
         if self.__release_attrs is None:
             self._update_attrs()
         return typing.cast(detect.ReleaseAttributes, self.__release_attrs)
 
     @property
-    def release_key(self) -> ReleaseKey:  # noqa: D401
+    def release_key(self) -> ReleaseKey:
         """Key for accessing related cached release record."""
         return self.name, self.version
 
     @property
-    def version(self) -> str:  # noqa: D401
+    def version(self) -> str:
         """Version of a package being uploaded."""
         if self.__version is None:
             self._update_version()
@@ -285,7 +282,7 @@ class PackageMeta:
 
         :return: New basename.
         """
-        subdir: typing.Optional[str] = self.file_attrs.setdefault('attrs', {}).get('subdir', None)
+        subdir: str | None = self.file_attrs.setdefault('attrs', {}).get('subdir', None)
         if not subdir:
             try:
                 subdir, _ = self.file_attrs.get('basename', '').split('/', 1)
@@ -316,13 +313,13 @@ class PackageMeta:
             logger.error(message)
             raise errors.BinstarError(message) from error
 
-    def _update_name(self, value: typing.Optional[str] = None) -> None:
+    def _update_name(self, value: str | None = None) -> None:
         """Update value of a :attr:`~PackageMeta.name`."""
         name: str = self.package_attrs.get('name', '')
 
         if value:
             if name:
-                good_names: typing.List[str] = [name := name.lower()]
+                good_names: list[str] = [name := name.lower()]
                 if self.package_type is PackageType.STANDARD_PYTHON:
                     good_names.append(name.replace('-', '_'))
                 if value.lower() not in good_names:
@@ -344,7 +341,7 @@ class PackageMeta:
 
         self.__name = name
 
-    def _update_version(self, value: typing.Optional[str] = None) -> None:
+    def _update_version(self, value: str | None = None) -> None:
         """Update value of a :attr:`~PackageMeta.version`."""
         if not value:
             value = self.release_attrs.get('version', None)
@@ -363,43 +360,43 @@ class Uploader:
     """Manager for package uploads."""
 
     __slots__ = (
-        'arguments',
-        'uploaded_packages',
         '__api',
         '__config',
-        '__username',
         '__package_cache',
         '__release_cache',
+        '__username',
+        'arguments',
+        'uploaded_packages',
     )
 
     def __init__(self, arguments: argparse.Namespace) -> None:
         """Initialize new :class:`~Uploader` instance."""
         self.arguments: typing.Final[argparse.Namespace] = arguments
-        self.uploaded_packages: typing.Final[typing.List[UploadedPackage]] = []
+        self.uploaded_packages: typing.Final[list[UploadedPackage]] = []
 
-        self.__api: typing.Optional[binstar_client.Binstar] = None
-        self.__config: typing.Optional[typing.Mapping[str, typing.Any]] = None
-        self.__username: typing.Optional[str] = None
+        self.__api: binstar_client.Binstar | None = None
+        self.__config: typing.Mapping[str, typing.Any] | None = None
+        self.__username: str | None = None
 
-        self.__package_cache: typing.Final[typing.Dict[PackageKey, PackageCacheRecord]] = {}
-        self.__release_cache: typing.Final[typing.Dict[ReleaseKey, ReleaseCacheRecord]] = {}
+        self.__package_cache: typing.Final[dict[PackageKey, PackageCacheRecord]] = {}
+        self.__release_cache: typing.Final[dict[ReleaseKey, ReleaseCacheRecord]] = {}
 
     @property
-    def api(self) -> binstar_client.Binstar:  # noqa: D401
+    def api(self) -> binstar_client.Binstar:
         """Client used to access anaconda.org API."""
         if self.__api is None:
             self.__api = get_server_api(token=self.arguments.token, site=self.arguments.site, config=self.config)
         return self.__api
 
     @property
-    def config(self) -> typing.Mapping[str, typing.Any]:  # noqa: D401
+    def config(self) -> typing.Mapping[str, typing.Any]:
         """Configuration of the :code:`anaconda-client`."""
         if self.__config is None:
             self.__config = get_config(site=self.arguments.site)
         return self.__config
 
     @property
-    def username(self) -> str:  # noqa: D401
+    def username(self) -> str:
         """Name of the user or organization to upload packages to."""
         if self.__username is None:
             details: str = ''
@@ -452,7 +449,7 @@ class Uploader:
         If not forced - may return cached record.
         """
         key: typing.Final[PackageKey] = meta.package_key
-        cache_record: typing.Optional[PackageCacheRecord]
+        cache_record: PackageCacheRecord | None
         if (not force) and (cache_record := self.__package_cache.get(key, None)):
             return cache_record
 
@@ -470,7 +467,7 @@ class Uploader:
                 logger.error(message)
                 raise errors.UserError(message) from error
 
-            summary: typing.Optional[str] = self.arguments.summary
+            summary: str | None = self.arguments.summary
             if (summary is None) and ((summary := meta.package_attrs.get('summary', None)) is None):
                 message = (
                     f'Could not detect package summary for package type {meta.package_type.label.lower()}, '
@@ -502,7 +499,7 @@ class Uploader:
         If not forced - may return cached record.
         """
         key: typing.Final[ReleaseKey] = meta.release_key
-        cache_record: typing.Optional[ReleaseCacheRecord]
+        cache_record: ReleaseCacheRecord | None
         if (not force) and (cache_record := self.__release_cache.get(key, None)):
             return cache_record
 
@@ -512,7 +509,7 @@ class Uploader:
                 self.api.update_release(self.username, meta.name, meta.version, meta.release_attrs)
             cache_record = ReleaseCacheRecord(name=meta.name, version=meta.version, empty=False)
         except errors.NotFound:
-            announce: typing.Optional[str] = None
+            announce: str | None = None
             if self.arguments.mode == 'interactive':
                 logger.info('The release "%s/%s/%s" does not exist', self.username, meta.name, meta.version)
                 if not bool_input('Would you like to create it now?'):
@@ -621,7 +618,7 @@ class Uploader:
     def _upload_file(self, meta: PackageMeta) -> bool:
         """Perform upload of a file after its metadata and related package and release are prepared."""
         basename: str = meta.file_attrs['basename']
-        package_type: typing.Union[PackageType, str] = meta.file_attrs.pop('binstar_package_type', meta.package_type)
+        package_type: PackageType | str = meta.file_attrs.pop('binstar_package_type', meta.package_type)
 
         stream: typing.BinaryIO
         with open(meta.filename, 'rb') as stream:
@@ -654,7 +651,7 @@ class Uploader:
         return True
 
     @staticmethod
-    def detect_package_meta(filename: str, package_type: typing.Optional[PackageType] = None) -> detect.Meta:
+    def detect_package_meta(filename: str, package_type: PackageType | None = None) -> detect.Meta:
         """Detect primary details on package being uploaded."""
         if package_type is None:
             logger.info('Detecting file type...')
@@ -682,7 +679,7 @@ class Uploader:
         if package_type in package.package_types:
             return True
 
-        group: typing.Set[PackageType]
+        group: set[PackageType]
         for group in [{PackageType.CONDA, PackageType.STANDARD_PYTHON}]:
             if (not group.isdisjoint(package.package_types)) and (package_type in group):
                 return True
@@ -695,7 +692,7 @@ class Uploader:
         raise errors.BinstarError(message)
 
 
-def pathname_list(item: str) -> typing.List[str]:
+def pathname_list(item: str) -> list[str]:
     """Expand file patterns to lists of actual file names."""
     if (os.name == 'nt') and any(character in '*?' for character in item):
         return glob.glob(item)
@@ -896,8 +893,8 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
     )
     def upload(
         ctx: typer.Context,
-        files: typing.List[str] = typer.Argument(),
-        channels: typing.List[str] = typer.Option(
+        files: list[str] = typer.Argument(),
+        channels: list[str] = typer.Option(
             [],
             '-c',
             '--channel',
@@ -906,20 +903,20 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
                 label='channel',
             ),
         ),
-        labels: typing.List[str] = typer.Option(
+        labels: list[str] = typer.Option(
             [],
             '-l',
             '--label',
             help=label_help.format(deprecation='', label='label'),
         ),
         progress: bool = typer.Option(True, help='Show upload progress'),
-        user: typing.Optional[str] = typer.Option(
+        user: str | None = typer.Option(
             None,
             '-u',
             '--user',
             help='User account or Organization, defaults to the current user',
         ),
-        namespace: typing.Optional[str] = typer.Option(
+        namespace: str | None = typer.Option(
             None,
             '-n',
             '--namespace',
@@ -929,37 +926,37 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             False,
             help='Do not normalize a basename when uploading a conda package.',
         ),
-        package: typing.Optional[str] = typer.Option(
+        package: str | None = typer.Option(
             None,
             '-p',
             '--package',
             help='Defaults to the package name in the uploaded file',
         ),
-        version: typing.Optional[str] = typer.Option(
+        version: str | None = typer.Option(
             None,
             '-v',
             '--version',
             help='Defaults to the package version in the uploaded file',
         ),
-        summary: typing.Optional[str] = typer.Option(
+        summary: str | None = typer.Option(
             None,
             '-s',
             '--summary',
             help='Set the summary of the package',
         ),
-        package_type: typing.Optional[str] = typer.Option(
+        package_type: str | None = typer.Option(
             None,
             '-t',
             '--package-type',
             help='Set the package type. Defaults to autodetect.',
         ),
-        description: typing.Optional[str] = typer.Option(
+        description: str | None = typer.Option(
             None,
             '-d',
             '--description',
             help='Description of the file(s)',
         ),
-        thumbnail: typing.Optional[str] = typer.Option(None, help="Notebook's thumbnail image"),
+        thumbnail: str | None = typer.Option(None, help="Notebook's thumbnail image"),
         private: bool = typer.Option(
             False,
             help='Create the package with private access',
@@ -968,7 +965,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             DEFAULT_CONFIG.get('auto_register', True),
             help='Register new package namespace if it does not exist',
         ),
-        build_id: typing.Optional[str] = typer.Option(
+        build_id: str | None = typer.Option(
             None,
             help='Anaconda repository Build ID (internal only)',
         ),

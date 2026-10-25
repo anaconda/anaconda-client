@@ -1,4 +1,3 @@
-# -*- coding: utf8 -*-
 """Tests for metadata update commands."""
 
 import json

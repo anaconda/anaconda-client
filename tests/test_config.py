@@ -1,9 +1,8 @@
-# -*- coding: utf8 -*-
 """Tests for configuration management."""
 
+import os
 import shutil
 import tempfile
-import os
 import unittest.mock
 
 from tests.fixture import CLITestCase, main
