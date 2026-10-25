@@ -3,8 +3,7 @@ from urllib.parse import urlparse
 import nbformat
 
 from binstar_client.commands.download import parse
-from binstar_client.deprecations import deprecated, DEPRECATE_IN_1_15_0, REMOVE_IN_2_0_0
-
+from binstar_client.deprecations import DEPRECATE_IN_1_15_0, REMOVE_IN_2_0_0, deprecated
 
 deprecated.constant(
     deprecate_in=DEPRECATE_IN_1_15_0,
@@ -19,9 +18,9 @@ deprecated.constant(
 def notebook_url(upload_info):
     parsed = urlparse(upload_info['url'])
     if parsed.netloc == 'anaconda.org':
-        url = '{}://notebooks.{}{}'.format(parsed.scheme, parsed.netloc, parsed.path)
+        url = f'{parsed.scheme}://notebooks.{parsed.netloc}{parsed.path}'
     else:
-        url = '{}://{}/notebooks{}'.format(parsed.scheme, parsed.netloc, parsed.path)
+        url = f'{parsed.scheme}://{parsed.netloc}/notebooks{parsed.path}'
     return url
 
 
@@ -35,5 +34,5 @@ def has_environment(nb_file):
             data = file.read()
         notebook = nbformat.reader.reads(data)
         return 'environment' in notebook['metadata']
-    except (ValueError, AttributeError, KeyError, IOError, nbformat.reader.NotJSONError):
+    except (OSError, ValueError, AttributeError, KeyError, nbformat.reader.NotJSONError):
         return False

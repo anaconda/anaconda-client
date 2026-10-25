@@ -4,7 +4,8 @@ import time
 from os.path import basename
 
 from binstar_client import errors
-from binstar_client.deprecations import deprecated, DEPRECATE_IN_1_15_0, REMOVE_IN_2_0_0
+from binstar_client.deprecations import DEPRECATE_IN_1_15_0, REMOVE_IN_2_0_0, deprecated
+
 from .data_uri import data_uri_from
 from .inflection import parameterize
 
@@ -53,7 +54,7 @@ class Uploader:
             if force:
                 self.remove()
                 return self.upload()
-            msg = 'Conflict: {} already exist in {}/{}'.format(self.filepath, self.project, self.version)
+            msg = f'Conflict: {self.filepath} already exist in {self.project}/{self.version}'
             raise errors.BinstarError(msg) from error
 
     def remove(self):
