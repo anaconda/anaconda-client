@@ -209,7 +209,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             [],
             '--set',
             help='sets a new variable: name value',
-            click_type=click.Tuple([str, str]),
+            click_type=click.Tuple([str, str]),  # type: ignore[call-overload]
         ),
         get: Optional[str] = typer.Option(
             None,
