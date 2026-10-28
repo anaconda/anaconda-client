@@ -260,8 +260,8 @@ def _process_and_upload_files(
     for file_pattern in file_patterns:
         for filepath in windows_glob(file_pattern):
             if not os.path.exists(filepath):
-                console.print(f"[yellow]Warning:[/yellow] File not found: {filepath}")
-                continue
+                console.print(f"[red]Error:[/red] File not found: {filepath}")
+                raise typer.Exit(1)
 
             if os.path.getsize(filepath) == 0:
                 console.print(f"[red]Error:[/red] File is empty (0 bytes): {filepath}")
