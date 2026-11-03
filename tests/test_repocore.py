@@ -1149,6 +1149,58 @@ class TestRepoCoreChannelsCLI:
         assert "org-a" in result.output
         assert "org-b" not in result.output
 
+    def test_channels_list_missing_namespace_errors(self):
+        """A --namespace that matches nothing reports it instead of an empty table.
+
+        An empty table is indistinguishable from a namespace that does not
+        exist, so the user has no way to tell the filter was wrong.
+        """
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_my_channels.return_value = _namespace_channels("org-a")
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(app, ["list", "--namespace", "no-such-org"])
+
+        assert result.exit_code == 1
+        assert "This namespace doesn't exist" in result.output
+        assert "no-such-org" in result.output
+
+    def test_channels_list_missing_namespace_all_sources_errors(self):
+        """The default all-sources listing also reports a missing repo namespace."""
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_my_channels.return_value = _namespace_channels("org-a")
+
+        aserver = MagicMock()
+        aserver.user.return_value = {"login": "user1"}
+        aserver.user_orgs.return_value = []
+
+        with (
+            _patch_repo_api(mock_api),
+            patch("binstar_client.commands._repo_channels.get_server_api", return_value=aserver),
+        ):
+            result = runner.invoke(app, ["list", "--namespace", "no-such-org"])
+
+        assert result.exit_code == 1
+        assert "This namespace doesn't exist" in result.output
+
+    def test_channels_list_namespace_filter_listing_failure_is_not_missing_namespace(self):
+        """A failed repo listing is reported as unavailable, not as a missing namespace."""
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_my_channels.side_effect = RepoCoreError("Service Unavailable")
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(app, ["list", "--namespace", "org-a", "--source", "repo"])
+
+        assert result.exit_code == 0
+        assert "repo channels unavailable" in result.output
+        assert "This namespace doesn't exist" not in result.output
+
     def test_channels_list_includes_shared_channels(self):
         """A channel shared from a namespace the user doesn't own still appears.
 

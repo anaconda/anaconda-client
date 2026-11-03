@@ -352,13 +352,16 @@ def _iter_channels(api, include_all: bool):
             break
 
 
-def _add_repo_rows(table: Table, api, namespace: Optional[str], include_all: bool) -> None:
+def _add_repo_rows(table: Table, api, namespace: Optional[str], include_all: bool) -> bool:
     """Append anaconda.com (repocore) namespace/channel rows to the table.
 
     The Access column only exists when ``include_all`` is False (see
     ``list_command``): ``GET /channels`` doesn't report the caller's access
     level, so under ``--all`` the column is dropped rather than filled with
     dashes that would misleadingly read as "no access".
+
+    Returns whether the requested ``namespace`` exists in the listing. Always True when no
+    namespace filter is applied.
     """
     namespaces: list[str] = []
     subchannels: dict[str, list] = {}
@@ -374,7 +377,9 @@ def _add_repo_rows(table: Table, api, namespace: Optional[str], include_all: boo
                 namespaces.append(channel.parent)
 
     if namespace:
-        namespaces = [ns for ns in namespaces if ns == namespace]
+        if namespace not in namespaces:
+            return False
+        namespaces = [namespace]
 
     for ns in namespaces:
         table.add_row(ns, "", "", *([] if include_all else [""]))
@@ -390,6 +395,8 @@ def _add_repo_rows(table: Table, api, namespace: Optional[str], include_all: boo
                 # still access).
                 row.append(channel.access or "viewer")
             table.add_row(*row)
+
+    return True
 
 
 def _set_error_caption(table: Table, label: str, exc: Exception) -> None:
@@ -533,6 +540,10 @@ def list_command(
 
     notes: List[str] = []
     error_occurred = False
+    # A namespace filter that matches nothing is an error, not an empty listing:
+    # the user asked for something specific and it does not exist. Only validated
+    # when the repo listing actually succeeded — a failed listing says so itself.
+    namespace_exists = True
 
     def _note_failure(label: str, exc: Exception) -> None:
         """Record a source failure, but stay quiet about a backend the user just
@@ -551,10 +562,17 @@ def list_command(
         # regardless of whether the listing succeeds or returns any channels.
         _notify_repo_beta()
         try:
-            _add_repo_rows(table, ctx.obj.repo_api, namespace, include_all)
+            namespace_exists = _add_repo_rows(table, ctx.obj.repo_api, namespace, include_all)
         except Exception as exc:
             error_occurred = True
             _set_error_caption(table, "repo channels", exc)
+
+    if not namespace_exists:
+        ChannelEvents.accessed(
+            ctx.obj.repo_api, app.info.name, namespace, channel_path=namespace, action="list", error=True
+        )
+        console.print(f"[red]Error:[/red] This namespace doesn't exist: [cyan]{namespace}[/cyan]")
+        raise typer.Exit(1)
 
     if source in ("all", "org"):
         try:
