@@ -64,7 +64,9 @@ def main(arguments: argparse.Namespace) -> None:
     """Entrypoint of the :code:`upload` command.
 
     Routing:
-      * -c/--channel or -n/--namespace present -> anaconda.com (repo) upload command,
+      * -u/--user present -> anaconda.org, with -c/--channel accepted as a
+        deprecated alias for -l/--label. -n/--namespace is incompatible.
+      * otherwise, -c/--channel or -n/--namespace -> anaconda.com (repo) upload command,
         which classifies the target and may delegate back to anaconda.org for
         owner-only names. -l/--label is passed through for that org delegation.
       * neither present -> anaconda.org (legacy Uploader). Unchanged.
@@ -72,12 +74,14 @@ def main(arguments: argparse.Namespace) -> None:
     namespace = getattr(arguments, 'namespace', None)
     labels = getattr(arguments, 'labels', None) or []
 
+    if arguments.user and arguments.channels and not namespace:
+        logger.warning('-c/--channel is deprecated for anaconda.org labels. Use -l/--label instead.')
+        arguments.labels = labels + arguments.channels
+        arguments.channels = []
+
     if arguments.channels or namespace:
         if arguments.user:
-            logger.error(
-                '-c/--channel no longer equals labels, did you mean --label? '
-                '-c/--channel cannot be used with -u/--user.'
-            )
+            logger.error('-n/--namespace cannot be used with -u/--user.')
             raise SystemExit(1)
         if namespace and not arguments.channels:
             logger.error('-n/--namespace requires -c/--channel to name the channel.')
@@ -727,7 +731,7 @@ def add_parser(subparsers: typing.Any) -> None:
         action='append',
         default=[],
         dest='channels',
-        help=label_help.format(deprecation='[DEPRECATED]\n', label='channel'),
+        help='Target channel. With --user, deprecated alias for --label.',
         metavar='CHANNELS',
     )
     parser.add_argument(
@@ -901,10 +905,7 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             [],
             '-c',
             '--channel',
-            help=label_help.format(
-                deprecation=typer.style('(deprecated) ', fg=typer.colors.RED, bold=True),
-                label='channel',
-            ),
+            help='Target channel. With --user, deprecated alias for --label.',
         ),
         labels: typing.List[str] = typer.Option(
             [],

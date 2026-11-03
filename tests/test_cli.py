@@ -451,6 +451,25 @@ def test_upload_arg_parsing(case: CLICase, cli_mocker: InvokerFactory) -> None:
 
 
 @pytest.mark.parametrize(
+    "label_args, expected_labels",
+    [
+        (["--channel=main"], ["main"]),
+        (["-c", "dev", "--channel=testing"], ["dev", "testing"]),
+        (["--label=stable", "--channel=dev"], ["stable", "dev"]),
+    ],
+)
+def test_upload_user_and_channel_labels(label_args, expected_labels, cli_mocker: InvokerFactory) -> None:
+    mock = cli_mocker("binstar_client.commands.upload._dotorg_upload")
+    result = mock.invoke(
+        ["upload", "--user=cf-staging", *label_args, "--private", "--force-metadata-update", "some-file"]
+    )
+    assert result.exit_code == 0
+    mock.assert_main_args_contains(
+        dict(user="cf-staging", labels=expected_labels, channels=[], private=True, force_metadata_update=True)
+    )
+
+
+@pytest.mark.parametrize(
     "opts, error_opt, conflict_opt",
     [
         pytest.param(["--interactive", "--force"], "'--force'", "'-i' / '--interactive'"),
