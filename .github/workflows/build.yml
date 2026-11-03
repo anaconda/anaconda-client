@@ -11,17 +11,21 @@ jobs:
   build-conda-package:
     name: Build conda package
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1     # v7.0.1
       with:
         fetch-depth: 0
     - name: Create build environment
-      run: |
-        source $CONDA/bin/activate
-        conda create -n build --file ./etc/build.linux-64.lock
+      uses: conda-incubator/setup-miniconda@8ee1f361103df19b6f8c8655fd3967a8ecb162d5   # v4.0.1
+      with:
+        miniconda-version: latest
+        activate-environment: build
+        environment-file: etc/build.linux-64.lock
     - name: conda build
       run: |
-        source $CONDA/bin/activate && conda activate build
         mkdir -p ./conda-bld
         # TODO(mattkram): Remove anaconda-cloud/label/dev channel before release
         VERSION=`hatch version` \

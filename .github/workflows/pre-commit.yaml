@@ -25,6 +25,9 @@ concurrency:
 
 jobs:
   pre-commit:
+    defaults:
+      run:
+        shell: bash -el {0}
     runs-on:
       labels:
       - ubuntu-latest
@@ -39,21 +42,21 @@ jobs:
         key: pre-commit|${{ runner.arch }}-${{ hashFiles('.pre-commit-config.yaml', '.tflint.hcl') }}
 
     - name: Create conda environment
-      run: |
-        source $CONDA/bin/activate
-        conda env create -n pre-commit --file ./etc/pre-commit-environment.yml
+      uses: conda-incubator/setup-miniconda@8ee1f361103df19b6f8c8655fd3967a8ecb162d5   # v4.0.1
+      with:
+        miniconda-version: latest
+        activate-environment: pre-commit
+        environment-file: etc/pre-commit-environment.yml
 
     - name: Install pre-commit hooks
         # Ensure all hooks are installed so that the following pre-commit run step only measures
         # the time for the actual pre-commit run.
       run: |
-        source $CONDA/bin/activate && conda activate pre-commit
         make install-hooks
 
       # Adapted from https://github.com/pre-commit/action/blob/efd3bcfec120bd343786e46318186153b7bc8c68/action.yml#L19
     - name: Run pre-commit
       run: |
-        source $CONDA/bin/activate && conda activate pre-commit
         # /usr/bin/time -v measure the time and memory usage
         /usr/bin/time -v make pre-commit
 
