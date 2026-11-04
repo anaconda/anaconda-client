@@ -13,7 +13,7 @@ jobs:
 
   publish-conda-pkg-to-anaconda-dot-org:
     name: Publish conda package to Anaconda.org
-    runs-on: ubuntu-latest
+    runs-on: self-hosted-default
     needs: [build]
     steps:
     - name: Retrieve the source code
@@ -47,7 +47,7 @@ jobs:
 
   publish-wheel-to-anaconda-dot-org:
     name: Publish wheel to Anaconda.org
-    runs-on: ubuntu-latest
+    runs-on: self-hosted-default
     needs: [build]
     steps:
     - name: Retrieve the source code
