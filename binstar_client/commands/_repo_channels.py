@@ -352,32 +352,6 @@ def _iter_channels(api, include_all: bool):
             break
 
 
-def _repo_namespace_known(api, namespace: str) -> bool:
-    """Whether an anaconda.com namespace exists even though no channel lists it.
-
-    A freshly created organization has no channels, so ``GET /account/channels``
-    (and ``GET /channels``) never reports it — but ``GET /auth/organizations/my``
-    lists memberships regardless of content. The caller's own username namespace
-    is reserved by repocore and always exists.
-
-    Best-effort: a lookup failure counts as "known" so an outage is never
-    reported as a missing namespace.
-    """
-    try:
-        profile, _ = api.get_profile()
-        if namespace == (profile or {}).get("username"):
-            return True
-    except Exception as exc:
-        logger.debug("Could not read the profile while checking namespace %s: %s", namespace, exc)
-        return True
-
-    try:
-        return namespace in {org.name for org in api.list_user_organizations()}
-    except Exception as exc:
-        logger.debug("Could not list organizations while checking namespace %s: %s", namespace, exc)
-        return True
-
-
 def _add_repo_rows(table: Table, api, namespace: Optional[str], include_all: bool) -> None:
     """Append anaconda.com (repocore) namespace/channel rows to the table.
 
@@ -591,10 +565,11 @@ def list_command(
 
     # An empty table is indistinguishable from a namespace that does not exist, so
     # a filter that matched nothing is resolved against the account before the
-    # listing is shown. A missing namespace is an error; one that exists without
+    # listing is shown, using the same check `channel create` applies before it
+    # creates a channel. A missing namespace is an error; one that exists without
     # channels keeps the original empty table.
     if namespace and repo_rows_added == 0:
-        if not _repo_namespace_known(ctx.obj.repo_api, namespace):
+        if not _namespace_known_to_user(ctx.obj.repo_api, namespace):
             ChannelEvents.accessed(
                 ctx.obj.repo_api, app.info.name, namespace, channel_path=namespace, action="list", error=True
             )
