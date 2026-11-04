@@ -533,10 +533,6 @@ def list_command(
 
     notes: List[str] = []
     error_occurred = False
-    # Rows the repo listing produced for the requested namespace, so a filter that
-    # matched nothing can be told apart from a namespace that never existed.
-    # ``None`` means the question can't be asked: no repo source, or it failed.
-    repo_rows_added: Optional[int] = None
 
     def _note_failure(label: str, exc: Exception) -> None:
         """Record a source failure, but stay quiet about a backend the user just
@@ -554,27 +550,24 @@ def list_command(
         # emit the BETA notice here whenever anaconda.com is a query target,
         # regardless of whether the listing succeeds or returns any channels.
         _notify_repo_beta()
-        rows_before = table.row_count
         try:
             _add_repo_rows(table, ctx.obj.repo_api, namespace, include_all)
         except Exception as exc:
             error_occurred = True
             _set_error_caption(table, "repo channels", exc)
         else:
-            repo_rows_added = table.row_count - rows_before
-
-    # An empty table is indistinguishable from a namespace that does not exist, so
-    # a filter that matched nothing is resolved against the account before the
-    # listing is shown, using the same check `channel create` applies before it
-    # creates a channel. A missing namespace is an error; one that exists without
-    # channels keeps the original empty table.
-    if namespace and repo_rows_added == 0:
-        if not _namespace_known_to_user(ctx.obj.repo_api, namespace):
-            ChannelEvents.accessed(
-                ctx.obj.repo_api, app.info.name, namespace, channel_path=namespace, action="list", error=True
-            )
-            console.print(f"[red]Error:[/red] This namespace doesn't exist: [cyan]{namespace}[/cyan]")
-            raise typer.Exit(1)
+            # An empty table is indistinguishable from a namespace that does not
+            # exist, so a filter that matched nothing is resolved against the
+            # account, using the same check `channel create` applies before it
+            # creates a channel. A failed listing skips this: it reports itself as
+            # unavailable and must not be read as "no channels". A namespace that
+            # exists without channels keeps the original empty table.
+            if namespace and table.row_count == 0 and not _namespace_known_to_user(ctx.obj.repo_api, namespace):
+                ChannelEvents.accessed(
+                    ctx.obj.repo_api, app.info.name, namespace, channel_path=namespace, action="list", error=True
+                )
+                console.print(f"[red]Error:[/red] This namespace doesn't exist: [cyan]{namespace}[/cyan]")
+                raise typer.Exit(1)
 
     if source in ("all", "org"):
         try:
