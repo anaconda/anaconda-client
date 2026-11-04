@@ -352,16 +352,39 @@ def _iter_channels(api, include_all: bool):
             break
 
 
-def _add_repo_rows(table: Table, api, namespace: Optional[str], include_all: bool) -> bool:
+def _repo_namespace_known(api, namespace: str) -> bool:
+    """Whether an anaconda.com namespace exists even though no channel lists it.
+
+    A freshly created organization has no channels, so ``GET /account/channels``
+    (and ``GET /channels``) never reports it — but ``GET /auth/organizations/my``
+    lists memberships regardless of content. The caller's own username namespace
+    is reserved by repocore and always exists.
+
+    Best-effort: a lookup failure counts as "known" so an outage is never
+    reported as a missing namespace.
+    """
+    try:
+        profile, _ = api.get_profile()
+        if namespace == (profile or {}).get("username"):
+            return True
+    except Exception as exc:
+        logger.debug("Could not read the profile while checking namespace %s: %s", namespace, exc)
+        return True
+
+    try:
+        return namespace in {org.name for org in api.list_user_organizations()}
+    except Exception as exc:
+        logger.debug("Could not list organizations while checking namespace %s: %s", namespace, exc)
+        return True
+
+
+def _add_repo_rows(table: Table, api, namespace: Optional[str], include_all: bool) -> None:
     """Append anaconda.com (repocore) namespace/channel rows to the table.
 
     The Access column only exists when ``include_all`` is False (see
     ``list_command``): ``GET /channels`` doesn't report the caller's access
     level, so under ``--all`` the column is dropped rather than filled with
     dashes that would misleadingly read as "no access".
-
-    Returns whether the requested ``namespace`` exists in the listing. Always True when no
-    namespace filter is applied.
     """
     namespaces: list[str] = []
     subchannels: dict[str, list] = {}
@@ -377,9 +400,7 @@ def _add_repo_rows(table: Table, api, namespace: Optional[str], include_all: boo
                 namespaces.append(channel.parent)
 
     if namespace:
-        if namespace not in namespaces:
-            return False
-        namespaces = [namespace]
+        namespaces = [ns for ns in namespaces if ns == namespace]
 
     for ns in namespaces:
         table.add_row(ns, "", "", *([] if include_all else [""]))
@@ -395,8 +416,6 @@ def _add_repo_rows(table: Table, api, namespace: Optional[str], include_all: boo
                 # still access).
                 row.append(channel.access or "viewer")
             table.add_row(*row)
-
-    return True
 
 
 def _set_error_caption(table: Table, label: str, exc: Exception) -> None:
@@ -540,10 +559,10 @@ def list_command(
 
     notes: List[str] = []
     error_occurred = False
-    # A namespace filter that matches nothing is an error, not an empty listing:
-    # the user asked for something specific and it does not exist. Only validated
-    # when the repo listing actually succeeded — a failed listing says so itself.
-    namespace_exists = True
+    # Rows the repo listing produced for the requested namespace, so a filter that
+    # matched nothing can be told apart from a namespace that never existed.
+    # ``None`` means the question can't be asked: no repo source, or it failed.
+    repo_rows_added: Optional[int] = None
 
     def _note_failure(label: str, exc: Exception) -> None:
         """Record a source failure, but stay quiet about a backend the user just
@@ -561,18 +580,26 @@ def list_command(
         # emit the BETA notice here whenever anaconda.com is a query target,
         # regardless of whether the listing succeeds or returns any channels.
         _notify_repo_beta()
+        rows_before = table.row_count
         try:
-            namespace_exists = _add_repo_rows(table, ctx.obj.repo_api, namespace, include_all)
+            _add_repo_rows(table, ctx.obj.repo_api, namespace, include_all)
         except Exception as exc:
             error_occurred = True
             _set_error_caption(table, "repo channels", exc)
+        else:
+            repo_rows_added = table.row_count - rows_before
 
-    if not namespace_exists:
-        ChannelEvents.accessed(
-            ctx.obj.repo_api, app.info.name, namespace, channel_path=namespace, action="list", error=True
-        )
-        console.print(f"[red]Error:[/red] This namespace doesn't exist: [cyan]{namespace}[/cyan]")
-        raise typer.Exit(1)
+    # An empty table is indistinguishable from a namespace that does not exist, so
+    # a filter that matched nothing is resolved against the account before the
+    # listing is shown. A missing namespace is an error; one that exists without
+    # channels keeps the original empty table.
+    if namespace and repo_rows_added == 0:
+        if not _repo_namespace_known(ctx.obj.repo_api, namespace):
+            ChannelEvents.accessed(
+                ctx.obj.repo_api, app.info.name, namespace, channel_path=namespace, action="list", error=True
+            )
+            console.print(f"[red]Error:[/red] This namespace doesn't exist: [cyan]{namespace}[/cyan]")
+            raise typer.Exit(1)
 
     if source in ("all", "org"):
         try:
