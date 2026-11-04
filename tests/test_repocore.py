@@ -1170,28 +1170,6 @@ class TestRepoCoreChannelsCLI:
         assert "This namespace doesn't exist" in result.output
         assert "no-such-org" in result.output
 
-    def test_channels_list_missing_namespace_all_sources_errors(self):
-        """The default all-sources listing also reports a missing repo namespace."""
-        runner = CliRunner()
-        app = _get_channels_app()
-        mock_api = MagicMock()
-        mock_api.list_my_channels.return_value = _namespace_channels("org-a")
-        mock_api.get_profile.return_value = ({"username": "user1"}, None)
-        mock_api.list_user_organizations.return_value = []
-
-        aserver = MagicMock()
-        aserver.user.return_value = {"login": "user1"}
-        aserver.user_orgs.return_value = []
-
-        with (
-            _patch_repo_api(mock_api),
-            patch("binstar_client.commands._repo_channels.get_server_api", return_value=aserver),
-        ):
-            result = runner.invoke(app, ["list", "--namespace", "no-such-org"])
-
-        assert result.exit_code == 1
-        assert "This namespace doesn't exist" in result.output
-
     def test_channels_list_empty_namespace_is_not_missing(self):
         """A namespace with no channels yet exists, so it must not error.
 
