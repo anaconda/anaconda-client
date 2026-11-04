@@ -556,12 +556,6 @@ def list_command(
             error_occurred = True
             _set_error_caption(table, "repo channels", exc)
         else:
-            # An empty table is indistinguishable from a namespace that does not
-            # exist, so a filter that matched nothing is resolved against the
-            # account, using the same check `channel create` applies before it
-            # creates a channel. A failed listing skips this: it reports itself as
-            # unavailable and must not be read as "no channels". A namespace that
-            # exists without channels keeps the original empty table.
             if namespace and table.row_count == 0 and not _namespace_known_to_user(ctx.obj.repo_api, namespace):
                 ChannelEvents.accessed(
                     ctx.obj.repo_api, app.info.name, namespace, channel_path=namespace, action="list", error=True
