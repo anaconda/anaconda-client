@@ -262,6 +262,36 @@ def namespace_known_to_user(api, namespace: str) -> bool:
     return False
 
 
+def namespace_will_create_org(api, namespace: Optional[str]) -> bool:
+    """Whether creating a channel under ``namespace`` will provision a new organization.
+
+    repocore creates an organization named after the caller's username the first
+    time a channel is created in that namespace (unless it already exists). Any
+    other namespace must already exist, so it is never auto-created.
+
+    Best-effort: a failed lookup reports False. Claiming an organization was
+    created without evidence would be worse than staying quiet.
+    """
+    if not namespace:
+        return False
+
+    try:
+        profile, _ = api.get_profile()
+        username = (profile or {}).get("username") or ""
+    except Exception:
+        return False
+
+    if not username or namespace != username:
+        return False
+
+    try:
+        organizations = {org.name for org in api.list_user_organizations()}
+    except Exception:
+        return False
+
+    return namespace not in organizations
+
+
 def resolve_namespace_and_channel(
     api, name: str, namespace: Optional[str] = None, require_namespace: bool = True, owner_only: bool = True
 ) -> ResolvedChannel:

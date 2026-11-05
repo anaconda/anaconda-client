@@ -921,6 +921,50 @@ class TestResolveNamespaceAndChannel:
 
         assert namespace_known_to_user(mock_api, "brand-new-org") is False
 
+    def test_namespace_will_create_org_for_username_without_org(self):
+        from binstar_client.repocore.resolve import namespace_will_create_org
+
+        mock_api = MagicMock()
+        mock_api.get_profile.return_value = ({"username": "testuser"}, None)
+        mock_api.list_user_organizations.return_value = []
+
+        assert namespace_will_create_org(mock_api, "testuser") is True
+
+    def test_namespace_will_not_create_org_when_username_org_exists(self):
+        from binstar_client.repocore.resolve import namespace_will_create_org
+
+        mock_api = MagicMock()
+        mock_api.get_profile.return_value = ({"username": "testuser"}, None)
+        mock_api.list_user_organizations.return_value = [Namespace(name="testuser")]
+
+        assert namespace_will_create_org(mock_api, "testuser") is False
+
+    def test_namespace_will_not_create_org_for_other_namespace(self):
+        from binstar_client.repocore.resolve import namespace_will_create_org
+
+        mock_api = MagicMock()
+        mock_api.get_profile.return_value = ({"username": "testuser"}, None)
+        mock_api.list_user_organizations.return_value = []
+
+        assert namespace_will_create_org(mock_api, "my-team") is False
+
+    def test_namespace_will_not_create_org_without_namespace(self):
+        from binstar_client.repocore.resolve import namespace_will_create_org
+
+        assert namespace_will_create_org(MagicMock(), None) is False
+
+    def test_namespace_will_create_org_lookup_failures_report_false(self):
+        from binstar_client.repocore.resolve import namespace_will_create_org
+
+        mock_api = MagicMock()
+        mock_api.get_profile.side_effect = Exception("API Error")
+        assert namespace_will_create_org(mock_api, "testuser") is False
+
+        mock_api = MagicMock()
+        mock_api.get_profile.return_value = ({"username": "testuser"}, None)
+        mock_api.list_user_organizations.side_effect = Exception("API Error")
+        assert namespace_will_create_org(mock_api, "testuser") is False
+
     def test_no_namespaces_require_false(self):
         from binstar_client.commands._repo_channels import _resolve_namespace_and_channel
 
@@ -1582,6 +1626,100 @@ class TestRepoCoreChannelsCLI:
         assert result.exit_code == 1
         prose = result.output.replace("https://anaconda.com/app/organizations/create", "")
         assert "organization" not in prose
+
+    def test_channels_create_username_namespace_alerts_org_created(self):
+        """Creating a private channel in the username namespace tells the user
+        the organization provisioned for them, so they know where it lives."""
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.get_profile.return_value = ({"username": "testuser"}, None)
+        mock_api.list_user_organizations.return_value = []
+        mock_api.create_namespace_channel.return_value = (
+            ChannelCreationResponse(channel_path="testuser/dev", status_code=201),
+            None,
+        )
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(app, ["create", "testuser/dev", "--private"])
+
+        assert result.exit_code == 0
+        assert "An organization named 'testuser' was created for you." in result.output
+
+    def test_channels_create_public_username_namespace_does_not_alert_org_created(self):
+        """The ownership alert is scoped to private channels, which require an org."""
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.get_profile.return_value = ({"username": "testuser"}, None)
+        mock_api.list_user_organizations.return_value = []
+        mock_api.create_namespace_channel.return_value = (
+            ChannelCreationResponse(channel_path="testuser/dev", status_code=201),
+            None,
+        )
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(app, ["create", "testuser/dev", "--public"])
+
+        assert result.exit_code == 0
+        assert "was created for you" not in result.output
+        mock_api.list_user_organizations.assert_not_called()
+
+    def test_channels_create_username_namespace_no_alert_when_org_exists(self):
+        """An already-provisioned username organization is not announced again."""
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.get_profile.return_value = ({"username": "testuser"}, None)
+        mock_api.list_user_organizations.return_value = [Namespace(name="testuser")]
+        mock_api.create_namespace_channel.return_value = (
+            ChannelCreationResponse(channel_path="testuser/dev", status_code=201),
+            None,
+        )
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(app, ["create", "testuser/dev", "--private"])
+
+        assert result.exit_code == 0
+        assert "was created for you" not in result.output
+
+    def test_channels_create_username_namespace_no_alert_when_channel_exists(self):
+        """Re-running create does not claim an organization was just created."""
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.get_profile.return_value = ({"username": "testuser"}, None)
+        mock_api.list_user_organizations.return_value = []
+        mock_api.create_namespace_channel.return_value = (
+            ChannelCreationResponse(channel_path="testuser/dev", status_code=200),
+            None,
+        )
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(app, ["create", "testuser/dev", "--private"])
+
+        assert result.exit_code == 0
+        assert "was created for you" not in result.output
+
+    def test_channels_create_username_namespace_alerts_after_username_prompt(self):
+        """Accepting the username namespace from the no-namespace prompt also
+        announces the organization created for the user."""
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_my_channels.return_value = _namespace_channels()
+        mock_api.get_profile.return_value = ({"username": "testuser"}, None)
+        mock_api.list_user_organizations.return_value = []
+        mock_api.create_namespace_channel.return_value = (
+            ChannelCreationResponse(channel_path="testuser/newchannel", status_code=201),
+            None,
+        )
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(app, ["create", "newchannel", "--private"], input="y\n")
+
+        assert result.exit_code == 0
+        assert "An organization named 'testuser' was created for you." in result.output
 
     def test_channels_create_no_namespaces_no_username_prompts(self):
         runner = CliRunner()

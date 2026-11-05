@@ -33,6 +33,7 @@ from binstar_client.repocore.resolve import (
     _notify_repo_beta,
     classify_and_resolve,
     namespace_known_to_user as _namespace_known_to_user,
+    namespace_will_create_org as _namespace_will_create_org,
     resolve_channels_with_namespaces as _resolve_channels_with_namespaces,
     resolve_namespace_and_channel as _resolve_namespace_and_channel,
     resolve_no_namespace as _resolve_no_namespace,
@@ -615,6 +616,13 @@ def create_command(
     else:
         console.print()
         privacy = select_from_list("Channel privacy:", ["private", "public"])
+
+    # Private channels must be owned by an organization; the server provisions
+    # one named after the user's username the first time a private channel is
+    # created in that namespace. Detect that before the request so the user can
+    # be told where their channel and packages live.
+    creates_org = privacy == "private" and _namespace_will_create_org(api, resolved.namespace)
+
     response, error = api.create_namespace_channel(
         channel_name=resolved.channel_name, namespace=resolved.namespace, privacy=privacy
     )
@@ -642,6 +650,11 @@ def create_command(
     if response.created:
         ChannelEvents.created(**event_kwargs)
         console.print(f"[green]Success![/green] Channel '[cyan]{response.channel_path}[/cyan]' created ({privacy}).")
+        if creates_org:
+            console.print(
+                f"[yellow]Note:[/yellow] An organization named '[cyan]{resolved.namespace}[/cyan]' "
+                "was created for you. Your channel and its packages live in that organization."
+            )
     else:
         ChannelEvents.created_exists(**event_kwargs)
         console.print(f"Channel '[cyan]{response.channel_path}[/cyan]' already exists.")
