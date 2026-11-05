@@ -25,9 +25,7 @@ concurrency:
 
 jobs:
   pre-commit:
-    runs-on:
-      labels:
-      - ubuntu-latest
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
       with:
@@ -37,6 +35,11 @@ jobs:
       with:
         path: ~/.cache/pre-commit
         key: pre-commit|${{ runner.arch }}-${{ hashFiles('.pre-commit-config.yaml', '.tflint.hcl') }}
+
+    - name: Set up Miniconda
+      uses: conda-incubator/setup-miniconda@8ee1f361103df19b6f8c8655fd3967a8ecb162d5   # v4.0.1
+      with:
+        auto-activate-base: true
 
     - name: Create conda environment
       run: |
