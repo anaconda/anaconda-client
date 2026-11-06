@@ -1703,7 +1703,14 @@ class TestRepoCoreChannelsCLI:
 
     def test_channels_create_username_namespace_alerts_after_username_prompt(self):
         """Accepting the username namespace from the no-namespace prompt also
-        announces the organization created for the user."""
+        announces the organization created for the user.
+
+        CLI equivalent when the account has no writable namespaces:
+          anaconda channel create newchannel --private
+        then answer "y" to:
+          No namespaces found. A namespace can be created with your username.
+          Use your username '<username>' as the namespace? [y/N]
+        """
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()

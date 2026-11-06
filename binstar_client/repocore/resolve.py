@@ -285,7 +285,9 @@ def namespace_will_create_org(api, namespace: Optional[str]) -> bool:
         return False
 
     try:
-        organizations = {org.name for org in api.list_user_organizations()}
+        organizations = set()
+        for org in api.list_user_organizations():
+            organizations.add(org.name)
     except Exception:
         return False
 

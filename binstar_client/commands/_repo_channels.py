@@ -617,10 +617,6 @@ def create_command(
         console.print()
         privacy = select_from_list("Channel privacy:", ["private", "public"])
 
-    # Private channels must be owned by an organization; the server provisions
-    # one named after the user's username the first time a private channel is
-    # created in that namespace. Detect that before the request so the user can
-    # be told where their channel and packages live.
     creates_org = privacy == "private" and _namespace_will_create_org(api, resolved.namespace)
 
     response, error = api.create_namespace_channel(
