@@ -2013,8 +2013,8 @@ class TestRepoCoreChannelsCLI:
         ):
             result = runner.invoke(app, ["upload", "nonexistent-1.0-py39_0.conda", "--channel", "dev"])
 
-        assert result.exit_code == 0
-        assert "Warning" in result.output
+        assert result.exit_code == 1
+        assert "Error" in result.output
         assert "not found" in result.output
         mock_api.upload_file.assert_not_called()
 
