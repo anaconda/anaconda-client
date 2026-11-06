@@ -20,19 +20,20 @@ import os
 import sys
 import warnings
 from argparse import ArgumentParser
-from typing import Any
-from typing import Callable
-from typing import Optional
+from collections.abc import Callable
+from typing import Any, Optional
 
 import typer
 import typer.colors
-from anaconda_cli_base import console, __version__
-from anaconda_cli_base.cli import app as main_app, ContextExtras
-
+from anaconda_cli_base import __version__, console
+from anaconda_cli_base.cli import ContextExtras
+from anaconda_cli_base.cli import app as main_app
 
 from binstar_client import commands as command_module
 from binstar_client.scripts.cli import (
     _add_subparser_modules as add_subparser_modules,
+)
+from binstar_client.scripts.cli import (
     main as binstar_main,
 )
 from binstar_client.utils import logging_utils
@@ -107,46 +108,46 @@ app = typer.Typer(
 
 def cli_base_main_callback(
     ctx: typer.Context,
-    token: Optional[str] = typer.Option(
+    token: str | None = typer.Option(
         None,
         "-t",
         "--token",
         help="Authentication token to use. A token string or path to a file containing a token",
         hidden=True,
     ),
-    site: Optional[str] = typer.Option(
+    site: str | None = typer.Option(
         None,
         "-s",
         "--site",
         help="select the anaconda-client site to use",
         hidden=True,
     ),
-    disable_ssl_warnings: Optional[bool] = typer.Option(
+    disable_ssl_warnings: bool | None = typer.Option(
         False,
         help="Disable SSL warnings",
         hidden=True,
     ),
-    show_traceback: Optional[bool] = typer.Option(
+    show_traceback: bool | None = typer.Option(
         False,
         help="Show the full traceback for chalmers user errors",
         hidden=True,
     ),
-    verbose: Optional[bool] = typer.Option(
+    verbose: bool | None = typer.Option(
         False,
         "-v",
         "--verbose",
         help="Print debug information to the console.",
         hidden=False,
     ),
-    quiet: Optional[bool] = typer.Option(
+    quiet: bool | None = typer.Option(
         False,
         "-q",
         "--quiet",
         help="Only show warnings or errors on the console",
         hidden=True,
     ),
-    version: Optional[bool] = typer.Option(None, "-V", "--version", help="Show version and exit."),
-    show_help: Optional[bool] = typer.Option(
+    version: bool | None = typer.Option(None, "-V", "--version", help="Show version and exit."),
+    show_help: bool | None = typer.Option(
         False,
         "-h",
         "--help",
@@ -186,7 +187,7 @@ if not isinstance(main_app, functools.partial):
 @app.callback(invoke_without_command=True, no_args_is_help=True)
 def main(
     ctx: typer.Context,
-    show_help: Optional[bool] = typer.Option(
+    show_help: bool | None = typer.Option(
         False,
         "-h",
         "--help",
@@ -316,7 +317,7 @@ def _mount_subcommand(
         )(func)
 
 
-def _load_new_subcommand(name: str, help_text: str, app_: Optional[typer.Typer] = None, hidden: bool = False) -> None:
+def _load_new_subcommand(name: str, help_text: str, app_: typer.Typer | None = None, hidden: bool = False) -> None:
     """Load the new typer version of a subcommand from a commands module.
 
     Args:
@@ -375,7 +376,7 @@ def load_legacy_subcommands() -> None:
 load_legacy_subcommands()
 
 # Mount repocore channel command under `anaconda org channel` and `anaconda channel`
-from binstar_client.commands._repo_channels import app as channel_app  # noqa: E402
+from binstar_client.commands._repo_channels import app as channel_app
 
 app.add_typer(channel_app)
 if not isinstance(main_app, functools.partial):

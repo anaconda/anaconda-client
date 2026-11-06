@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Console/terminal helpers shared across CLI commands.
 
 Rich writes Unicode box-drawing borders (``┏━┳┃``) straight to ``sys.stdout``.

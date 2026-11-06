@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Script to prepare .coveragerc file for the current OS."""
 
 from __future__ import annotations
@@ -11,7 +9,6 @@ import sys
 import typing
 
 import jinja2
-
 
 ROOT: typing.Final[str] = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
@@ -37,7 +34,7 @@ data_file = .cache/.coverage
 
 def refresh_coveragerc() -> None:
     """Generate new .condarc file and put it in the project root."""
-    exclude: typing.List[str] = ['cov-linux', 'cov-osx', 'cov-skip', 'cov-unix', 'cov-win']
+    exclude: list[str] = ['cov-linux', 'cov-osx', 'cov-skip', 'cov-unix', 'cov-win']
     if os.name == 'nt':  # Windows
         exclude.remove('cov-win')
     else:  # Others, Unix-like

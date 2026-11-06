@@ -1,5 +1,3 @@
-from __future__ import print_function, unicode_literals
-
 import json
 import re
 import sys
@@ -516,7 +514,7 @@ def inspect_pypi_package_sdist(filename, fileobj):
         distribute = True
         if data is None:
             raise errors.NoMetadataError(
-                'Could not find *.egg-info/PKG-INFO file in {} sdist'.format(PackageType.STANDARD_PYTHON.label)
+                f'Could not find *.egg-info/PKG-INFO file in {PackageType.STANDARD_PYTHON.label} sdist'
             )
     config_items = python_version_check(data)
     attrs = dict(config_items)
@@ -562,7 +560,7 @@ def inspect_pypi_package_egg(filename, fileobj):
     data = extract_first(tar_file, 'EGG-INFO/PKG-INFO')
     if data is None:
         raise errors.NoMetadataError(
-            'Could not find EGG-INFO/PKG-INFO file in {} sdist'.format(PackageType.STANDARD_PYTHON.label)
+            f'Could not find EGG-INFO/PKG-INFO file in {PackageType.STANDARD_PYTHON.label} sdist'
         )
     attrs = dict(python_version_check(data))
 
@@ -604,7 +602,7 @@ def inspect_pypi_package_zip(filename, fileobj):
     data = extract_first(tar_file, '*/PKG-INFO')
     if data is None:
         raise errors.NoMetadataError(
-            'Could not find EGG-INFO/PKG-INFO file in {} sdist'.format(PackageType.STANDARD_PYTHON.label)
+            f'Could not find EGG-INFO/PKG-INFO file in {PackageType.STANDARD_PYTHON.label} sdist'
         )
 
     attrs = dict(Parser().parsestr(data.encode('UTF-8', 'replace')).items())
@@ -676,7 +674,7 @@ def inspect_pypi_package(filename, fileobj, *args, **kwargs):
 
     _, etx = path.splitext(filename)
     raise errors.NoMetadataError(
-        'Can not inspect {} package with file with extension {}'.format(PackageType.STANDARD_PYTHON, etx)
+        f'Can not inspect {PackageType.STANDARD_PYTHON} package with file with extension {etx}'
     )
 
 
@@ -692,6 +690,7 @@ def main():
 
     if filename.startswith('https://') or filename.startswith('http://'):
         import io
+
         import requests
 
         data = requests.get(filename, stream=True, timeout=10 * 60 * 60).raw.read()

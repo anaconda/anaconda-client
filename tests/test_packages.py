@@ -1,7 +1,7 @@
 import unittest
 
-from tests.urlmock import urlpatch
 from binstar_client import Binstar
+from tests.urlmock import urlpatch
 
 
 class Test(unittest.TestCase):

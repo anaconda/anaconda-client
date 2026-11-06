@@ -1,4 +1,3 @@
-# -*- coding: utf8 -*-
 """Tests for package upload commands."""
 
 import json
@@ -370,9 +369,9 @@ class Test(CLITestCase):
     def test_upload_invalid_package_type_errors_for_repo_target(self, mock_classify):
         """An invalid --package-type is rejected only once a repo target needs it
         (anaconda.org accepts a broader set, so main() no longer pre-rejects)."""
+        import typer
         from click.exceptions import Exit
 
-        import typer
         from binstar_client.repocore import ResolvedChannel
         from binstar_client.repocore.resolve import REPO_PACKAGE_TYPES
 

@@ -1,10 +1,7 @@
-from __future__ import print_function, unicode_literals
-
 import unittest
 
 from binstar_client.inspect_package import r
 from tests.utils.utils import data_dir
-
 
 expected_package_data = {
     'license': 'GPL-2 | GPL-3',

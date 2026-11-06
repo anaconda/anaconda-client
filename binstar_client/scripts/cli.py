@@ -1,5 +1,3 @@
-# -*- coding: utf8 -*-
-
 """Anaconda repository command line manager."""
 
 from __future__ import annotations
@@ -7,7 +5,6 @@ from __future__ import annotations
 __all__ = ('main',)
 
 import argparse
-from importlib import metadata
 import json
 import logging
 import os
@@ -15,19 +12,17 @@ import pkgutil
 import sys
 import types
 import typing
+from importlib import metadata
 
-from binstar_client import __version__
-from binstar_client import commands
-from binstar_client import errors
+from binstar_client import __version__, commands, errors
 from binstar_client.commands.login import interactive_login
 from binstar_client.utils import logging_utils
 from binstar_client.utils.console_utils import configure_console_encoding
 
-
 logger = logging.getLogger('binstar')
 
 
-def _get_entry_points(group: str) -> typing.List[metadata.EntryPoint]:
+def _get_entry_points(group: str) -> list[metadata.EntryPoint]:
     # The API was changed in Python 3.10, see https://docs.python.org/3/library/importlib.metadata.html#entry-points
     if sys.version_info.major == 3 and sys.version_info.minor < 10:
         return metadata.entry_points().get(group, [])
@@ -147,7 +142,7 @@ def _add_subparser_modules(parser, module=None, entry_point_name=None):
 
 def binstar_main(
     sub_command_module: types.ModuleType,
-    args: typing.Optional[typing.Sequence[str]] = None,
+    args: typing.Sequence[str] | None = None,
     exit_: bool = True,
 ) -> int:
     """Run `anaconda-client` cli utility."""
@@ -233,14 +228,14 @@ def binstar_main(
     return 0  # type: ignore
 
 
-def _load_main_plugin() -> typing.Optional[typing.Callable[[], typing.Any]]:
+def _load_main_plugin() -> typing.Callable[[], typing.Any] | None:
     """Allow loading a new CLI main entrypoint via plugin mechanisms. There can only be one."""
     plugin_group_name: typing.Final[str] = 'anaconda_cli.main'
 
-    plugin_mains: typing.List[metadata.EntryPoint] = _get_entry_points(plugin_group_name)
+    plugin_mains: list[metadata.EntryPoint] = _get_entry_points(plugin_group_name)
 
     if len(plugin_mains) > 1:
-        raise EnvironmentError(
+        raise OSError(
             'More than one `anaconda_cli.main` plugin is installed. Please ensure only one '
             'of the following packages are installed:\n\n' + '\n'.join(f'  * {ep.value}' for ep in plugin_mains)
         )
@@ -255,7 +250,7 @@ def _load_main_plugin() -> typing.Optional[typing.Callable[[], typing.Any]]:
 
 
 def main(
-    args: typing.Optional[typing.Sequence[str]] = None,
+    args: typing.Sequence[str] | None = None,
     *,
     exit_: bool = True,
     allow_plugin_main: bool = True,
@@ -268,7 +263,7 @@ def main(
     configure_console_encoding()
 
     if allow_plugin_main and (not os.environ.get('ANACONDA_CLIENT_FORCE_STANDALONE', '')):
-        plugged_in_main: typing.Optional[typing.Callable[[], typing.Any]] = _load_main_plugin()
+        plugged_in_main: typing.Callable[[], typing.Any] | None = _load_main_plugin()
         if plugged_in_main is not None:
             plugged_in_main()
             return
