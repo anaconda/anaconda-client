@@ -1,5 +1,3 @@
-from __future__ import print_function, unicode_literals
-
 # Standard libary imports
 import unittest
 from pathlib import Path
@@ -7,7 +5,6 @@ from pathlib import Path
 # Local imports
 from binstar_client.inspect_package import conda
 from binstar_client.utils.notebook.data_uri import data_uri_from
-
 
 HERE = Path(__file__).parent
 

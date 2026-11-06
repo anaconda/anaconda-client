@@ -1,8 +1,4 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
-from yaml import safe_load, safe_dump, SafeLoader
-
+from yaml import SafeLoader, safe_dump, safe_load
 
 SafeLoader.add_constructor('tag:yaml.org,2002:python/unicode', SafeLoader.construct_yaml_str)  # type: ignore
 

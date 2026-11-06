@@ -4,8 +4,6 @@ Created on Feb 22, 2014
 @author: sean
 """
 
-from __future__ import unicode_literals
-
 import json
 from collections import namedtuple
 from functools import wraps
@@ -83,17 +81,12 @@ class Registry:
             for header, value in rule.expected_headers.items():
                 if header not in prepared_request.headers:
                     raise Exception(
-                        '{}: header {} expected in {}'.format(prepared_request.url, header, prepared_request.headers),
+                        f'{prepared_request.url}: header {header} expected in {prepared_request.headers}',
                     )
 
                 if prepared_request.headers[header] != value:
                     raise Exception(
-                        '{}: header {} has unexpected value {} was expecting {}'.format(
-                            prepared_request.url,
-                            header,
-                            prepared_request.headers[header],
-                            value,
-                        ),
+                        f'{prepared_request.url}: header {header} has unexpected value {prepared_request.headers[header]} was expecting {value}',
                     )
 
         content = rule.content

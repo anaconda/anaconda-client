@@ -1,8 +1,7 @@
 """Tests for the repocore client and CLI commands."""
 
-import os
 import json
-
+import os
 from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
@@ -597,8 +596,9 @@ class TestResolveNamespaceAndChannel:
         mock_api.list_my_channels.assert_not_called()
 
     def test_ambiguous_slash_and_flag_exits(self):
-        from binstar_client.commands._repo_channels import _resolve_namespace_and_channel
         import typer
+
+        from binstar_client.commands._repo_channels import _resolve_namespace_and_channel
 
         mock_api = MagicMock()
         with pytest.raises(typer.Exit):
@@ -614,8 +614,9 @@ class TestResolveNamespaceAndChannel:
         assert resolved.channel_name == "dev"
 
     def test_no_namespaces_exits(self):
-        from binstar_client.commands._repo_channels import _resolve_namespace_and_channel
         import typer
+
+        from binstar_client.commands._repo_channels import _resolve_namespace_and_channel
 
         mock_api = MagicMock()
         mock_api.list_my_channels.return_value = _namespace_channels()
@@ -823,8 +824,9 @@ class TestResolveNamespaceAndChannel:
         assert resolved.channel_name == "dev"
 
     def test_no_namespaces_with_username_declined(self):
-        from binstar_client.commands._repo_channels import _resolve_no_namespace
         import typer
+
+        from binstar_client.commands._repo_channels import _resolve_no_namespace
 
         mock_api = MagicMock()
         mock_api.get_profile.return_value = ({"username": "testuser"}, None)
@@ -849,8 +851,9 @@ class TestResolveNamespaceAndChannel:
         assert resolved.channel_name == "dev"
 
     def test_no_namespaces_no_username_declines_creation(self):
-        from binstar_client.commands._repo_channels import _resolve_no_namespace
         import typer
+
+        from binstar_client.commands._repo_channels import _resolve_no_namespace
 
         mock_api = MagicMock()
         mock_api.get_profile.return_value = ({}, None)
@@ -2684,13 +2687,15 @@ class TestPackageUtils:
     def test_windows_glob_on_windows(self):
         from binstar_client.repocore.package_utils import windows_glob
 
-        with patch("binstar_client.repocore.package_utils.os.name", "nt"):
-            with patch(
+        with (
+            patch("binstar_client.repocore.package_utils.os.name", "nt"),
+            patch(
                 "binstar_client.repocore.package_utils.glob",
                 return_value=["pkg1-1.0-py39_0.conda", "pkg2-2.0-py39_0.conda"],
-            ):
-                result = windows_glob("*.conda")
-                assert result == ["pkg1-1.0-py39_0.conda", "pkg2-2.0-py39_0.conda"]
+            ),
+        ):
+            result = windows_glob("*.conda")
+            assert result == ["pkg1-1.0-py39_0.conda", "pkg2-2.0-py39_0.conda"]
 
     def test_windows_glob_on_posix(self):
         from binstar_client.repocore.package_utils import windows_glob
@@ -2713,10 +2718,11 @@ class TestPackageUtils:
             assert result == "pypi"
 
     def test_detect_package_type_conda(self):
-        from binstar_client.repocore.package_utils import _detect_package_type
-        import tempfile
-        import tarfile
         import os
+        import tarfile
+        import tempfile
+
+        from binstar_client.repocore.package_utils import _detect_package_type
 
         with tempfile.NamedTemporaryFile(suffix=".tar.bz2", delete=False) as tmp:
             tmp_name = tmp.name
