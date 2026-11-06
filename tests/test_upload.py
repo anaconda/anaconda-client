@@ -48,9 +48,9 @@ class Test(CLITestCase):
         registry.assertAllCalled()
 
     @urlpatch
-    def test_upload_conda(self, registry):
+    def test_upload_conda_with_user_and_channel(self, registry):
         registry.register(method='HEAD', path='/', status=200)
-        registry.register(method='GET', path='/user', content='{"login": "eggs"}')
+        registry.register(method='GET', path='/user/eggs', content='{"login": "eggs"}')
         registry.register(method='GET', path='/dist/eggs/foo/0.1/osx-64/foo-0.1-0.tar.bz2', status=404)
         registry.register(method='GET', path='/package/eggs/foo', content={'package_types': ['conda']})
         registry.register(method='GET', path='/release/eggs/foo/0.1', content='{}')
@@ -62,10 +62,11 @@ class Test(CLITestCase):
         registry.register(method='POST', path='/s3_url', status=201)
         registry.register(method='POST', path='/commit/eggs/foo/0.1/osx-64/foo-0.1-0.tar.bz2', status=200, content={})
 
-        main(['--show-traceback', 'upload', data_dir('foo-0.1-0.tar.bz2')])
+        main(['--show-traceback', 'upload', '--user=eggs', '--channel=dev', data_dir('foo-0.1-0.tar.bz2')])
 
         registry.assertAllCalled()
         self.assertIsNotNone(json.loads(staging_response.req.body).get('sha256'))
+        self.assertEqual(json.loads(staging_response.req.body)['channels'], ['dev'])
 
     @urlpatch
     def test_upload_conda_v2(self, registry):
@@ -321,10 +322,22 @@ class Test(CLITestCase):
         with self.assertRaises(errors.BinstarError):
             main(['--show-traceback', 'upload', '--private', data_dir('foo-0.1-0.tar.bz2')])
 
-    def test_upload_channel_and_user_flags_errors(self):
-        with self.assertRaises(SystemExit) as ctx:
-            main(['--show-traceback', 'upload', '-c', 'mychannel', '-u', 'myorg', data_dir('foo-0.1-0.tar.bz2')])
-        self.assertEqual(ctx.exception.code, 1)
+    def test_upload_namespace_and_user_flags_errors(self):
+        for channel_args in ([], ['-c', 'prod']):
+            with self.subTest(channel_args=channel_args), self.assertRaises(SystemExit) as ctx:
+                main(
+                    [
+                        '--show-traceback',
+                        'upload',
+                        '-n',
+                        'myns',
+                        '-u',
+                        'myorg',
+                        *channel_args,
+                        data_dir('foo-0.1-0.tar.bz2'),
+                    ]
+                )
+            self.assertEqual(ctx.exception.code, 1)
 
     @unittest.mock.patch('binstar_client.commands._repo_channels.upload_command')
     def test_upload_channel_flag_delegates_to_channel_upload(self, mock_upload_command):
