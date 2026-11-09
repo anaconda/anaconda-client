@@ -1147,7 +1147,79 @@ class TestRepoCoreChannelsCLI:
 
         assert result.exit_code == 0
         assert "org-a" in result.output
+        assert "org-a/dev" in result.output
         assert "org-b" not in result.output
+
+    def test_channels_list_missing_namespace_errors(self):
+        """A --namespace that matches nothing reports it instead of an empty table.
+
+        An empty table is indistinguishable from a namespace that does not
+        exist, so the user has no way to tell the filter was wrong.
+        """
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_my_channels.return_value = _namespace_channels("org-a")
+        mock_api.get_profile.return_value = ({"username": "user1"}, None)
+        mock_api.list_user_organizations.return_value = []
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(app, ["list", "--namespace", "no-such-org"])
+
+        assert result.exit_code == 1
+        assert "This namespace doesn't exist" in result.output
+        assert "no-such-org" in result.output
+
+    def test_channels_list_empty_namespace_is_not_missing(self):
+        """A namespace with no channels yet exists, so it must not error.
+
+        Newly created organizations have no channels, so the channel listing
+        never reports them; organization membership is the source of truth. The
+        table stays empty, as it did before the namespace check existed.
+        """
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_my_channels.return_value = _namespace_channels()
+        mock_api.get_profile.return_value = ({"username": "user1"}, None)
+        mock_api.list_user_organizations.return_value = [Namespace(name="namespace1")]
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(app, ["list", "--source", "repo", "--namespace", "namespace1"])
+
+        assert result.exit_code == 0
+        assert "This namespace doesn't exist" not in result.output
+        assert "namespace1" not in result.output
+
+    def test_channels_list_own_username_namespace_is_not_missing(self):
+        """The reserved per-username namespace exists even with no channels."""
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_my_channels.return_value = _namespace_channels()
+        mock_api.get_profile.return_value = ({"username": "user1"}, None)
+        mock_api.list_user_organizations.return_value = []
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(app, ["list", "--source", "repo", "--namespace", "user1"])
+
+        assert result.exit_code == 0
+        assert "This namespace doesn't exist" not in result.output
+        assert "user1" not in result.output
+
+    def test_channels_list_namespace_filter_listing_failure_is_not_missing_namespace(self):
+        """A failed repo listing is reported as unavailable, not as a missing namespace."""
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_my_channels.side_effect = RepoCoreError("Service Unavailable")
+
+        with _patch_repo_api(mock_api):
+            result = runner.invoke(app, ["list", "--namespace", "org-a", "--source", "repo"])
+
+        assert result.exit_code == 0
+        assert "repo channels unavailable" in result.output
+        assert "This namespace doesn't exist" not in result.output
 
     def test_channels_list_includes_shared_channels(self):
         """A channel shared from a namespace the user doesn't own still appears.

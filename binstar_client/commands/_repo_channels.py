@@ -555,6 +555,13 @@ def list_command(
         except Exception as exc:
             error_occurred = True
             _set_error_caption(table, "repo channels", exc)
+        else:
+            if namespace and table.row_count == 0 and not _namespace_known_to_user(ctx.obj.repo_api, namespace):
+                ChannelEvents.accessed(
+                    ctx.obj.repo_api, app.info.name, namespace, channel_path=namespace, action="list", error=True
+                )
+                console.print(f"[red]Error:[/red] This namespace doesn't exist: [cyan]{namespace}[/cyan]")
+                raise typer.Exit(1)
 
     if source in ("all", "org"):
         try:
