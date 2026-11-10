@@ -7,6 +7,8 @@ import unittest.mock
 
 from binstar_client import errors
 
+from anaconda_auth.exceptions import TokenNotFoundError
+
 from tests.fixture import CLITestCase, main
 from tests.urlmock import urlpatch
 from tests.utils.utils import data_dir
@@ -39,11 +41,22 @@ class Test(CLITestCase):
         self.assertTrue(store_token.called)
         self.assertEqual(store_token.call_args[0][0], 'a-token')
 
+    @unittest.mock.patch('binstar_client.commands.login.TokenInfo.load')
     @unittest.mock.patch('binstar_client.utils.config.load_token')
     @unittest.mock.patch('binstar_client.commands.login._do_auth_flow')
     @unittest.mock.patch('binstar_client.commands.login.store_token')
     @urlpatch
-    def test_login_unified(self, urls, store_token, _do_auth_flow, load_token):
+    def test_login_unified(self, urls, store_token, _do_auth_flow, load_token, load_token_info):
+        # Since the login process retrieve the api_key attribute, we use that to trigger
+        # the error
+        class MockTokenInfo:
+            @property
+            def api_key(self):
+                raise TokenNotFoundError
+
+        raises_error = MockTokenInfo()
+        load_token_info.return_value = raises_error
+
         load_token.return_value = None
         _do_auth_flow.return_value = "dot-com-access-token"
 
