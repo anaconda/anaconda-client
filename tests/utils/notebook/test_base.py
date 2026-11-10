@@ -1,6 +1,6 @@
 import unittest
 
-from binstar_client.utils.notebook import notebook_url, parse, has_environment
+from binstar_client.utils.notebook import has_environment, notebook_url, parse
 from tests.utils.utils import data_dir
 
 
