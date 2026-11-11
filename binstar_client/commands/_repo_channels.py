@@ -9,6 +9,7 @@ import argparse
 import logging
 import os
 import re
+import sys
 import webbrowser
 from enum import Enum
 from glob import glob
@@ -659,11 +660,16 @@ def remove_command(
     ctx: typer.Context,
     name: str = typer.Argument(..., help="Channel name to remove"),
     namespace: Optional[str] = typer.Option(None, "--namespace", "-n", help="Namespace the channel belongs to"),
+    yes: bool = typer.Option(False, "--yes", "-y", help="Skip the confirmation prompt."),
 ) -> None:
-    """Remove a channel."""
+    """Remove a channel and all of its packages. This cannot be undone."""
     api = ctx.obj.repo_api
     resolved = _resolve_namespace_and_channel(api, name, namespace)
     qualified = f"{resolved.namespace}/{resolved.channel_name}"
+
+    if not yes:
+        _confirm_channel_removal(api, qualified)
+
     _, error = api.remove_channel(qualified)
     ChannelEvents.removed(api, app.info.name, resolved.namespace, channel_path=qualified, error=bool(error))
     if error:
@@ -1162,6 +1168,41 @@ def _render_package_listing(api, channel: str, files: bool) -> None:
             console.print(table)
     else:
         console.print(table)
+
+
+def _stdin_is_interactive() -> bool:
+    """Whether a human can answer a prompt (stdin is a terminal)."""
+    return sys.stdin.isatty()
+
+
+def _confirm_channel_removal(api, qualified: str) -> None:
+    """Ask for confirmation before deleting a channel.
+
+    The default answer is "no". With no terminal to answer the prompt (CI, piped
+    input), that default applies: the channel is NOT removed and the command exits
+    1 so scripts notice. Pass --yes to skip the prompt.
+    """
+    if not _stdin_is_interactive():
+        console.print(
+            f"[red]Error:[/red] Channel '[cyan]{qualified}[/cyan]' was not removed. "
+            "No terminal is attached and confirmation is required. "
+            "Re-run with --yes to remove it without a prompt."
+        )
+        raise typer.Exit(1)
+
+    try:
+        _, total = api.list_artifacts(qualified, limit=0)
+        contents = f"its {total} package(s)"
+    except Exception as exc:
+        logger.debug("Could not look up package count for %s: %s", qualified, exc)
+        contents = "all of its packages"
+    console.print(
+        f"[yellow]Warning:[/yellow] This will permanently delete channel "
+        f"[cyan]{qualified}[/cyan] and {contents}. This cannot be undone."
+    )
+    if not typer.confirm("Are you sure?", default=False):
+        console.print("Channel not removed.")
+        raise typer.Exit(0)
 
 
 def _remove_from_repo(api, channel: str, target: str, force: bool) -> None:
