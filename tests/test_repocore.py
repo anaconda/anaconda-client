@@ -1767,8 +1767,9 @@ class TestRepoCoreChannelsCLI:
         app = _get_channels_app()
         mock_api = MagicMock()
 
-        with _patch_repo_api(mock_api), patch(
-            "binstar_client.commands._repo_channels._stdin_is_interactive", return_value=False
+        with (
+            _patch_repo_api(mock_api),
+            patch("binstar_client.commands._repo_channels._stdin_is_interactive", return_value=False),
         ):
             result = runner.invoke(app, ["remove", "myorg/dev"], input="y\n")
 
