@@ -1171,7 +1171,6 @@ def _render_package_listing(api, channel: str, files: bool) -> None:
 
 
 def _stdin_is_interactive() -> bool:
-    """Whether a human can answer a prompt (stdin is a terminal)."""
     return sys.stdin.isatty()
 
 
@@ -1179,8 +1178,8 @@ def _confirm_channel_removal(api, qualified: str) -> None:
     """Ask for confirmation before deleting a channel.
 
     The default answer is "no". With no terminal to answer the prompt (CI, piped
-    input), that default applies: the channel is NOT removed and the command exits
-    1 so scripts notice. Pass --yes to skip the prompt.
+    input) the channel is NOT removed and the command exits 1.
+    Pass --yes to skip the prompt.
     """
     if not _stdin_is_interactive():
         console.print(
