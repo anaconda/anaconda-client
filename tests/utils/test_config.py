@@ -1,4 +1,3 @@
-# -*- coding: utf8 -*-
 """Test anaconda-client configuration set/get."""
 
 from __future__ import annotations

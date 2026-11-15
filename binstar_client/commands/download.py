@@ -4,8 +4,6 @@ Usage:
     anaconda download <channel_name>/<package_name>
 """
 
-from __future__ import unicode_literals
-
 import argparse
 import logging
 import os
@@ -41,7 +39,7 @@ def parse(handle):
         return None, components[0]
     if len(components) == 2:
         return components[0], components[1]
-    raise BinstarError("{} can't be parsed".format(handle))
+    raise BinstarError(f"{handle} can't be parsed")
 
 
 class Downloader:
@@ -110,8 +108,7 @@ class Downloader:
                 pass
 
         with open(os.path.join(self.output, filename), 'wb') as fdout:
-            for chunk in requests_handle.iter_content(4096):
-                fdout.write(chunk)
+            fdout.writelines(requests_handle.iter_content(4096))
 
     def can_download(self, dist, force=False):
         """
@@ -175,7 +172,7 @@ def add_parser(subparsers):
     parser.add_argument(
         '-t',
         '--package-type',
-        help='Set the package type [{0}]. Defaults to downloading all package types available'.format(pkg_types),
+        help=f'Set the package type [{pkg_types}]. Defaults to downloading all package types available',
         action='append',
     )
     parser.set_defaults(main=main)
@@ -222,11 +219,11 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
             '--output',
             help='Download as',
         ),
-        package_type: List[str] = typer.Option(
+        package_type: list[str] = typer.Option(
             None,
             '-t',
             '--package-type',
-            help='Set the package type [{0}]. Defaults to downloading all package types available'.format(pkg_types),
+            help=f'Set the package type [{pkg_types}]. Defaults to downloading all package types available',
         ),
     ) -> None:
         args = argparse.Namespace(

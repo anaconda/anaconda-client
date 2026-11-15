@@ -1,4 +1,3 @@
-# -*- coding: utf8 -*-
 from __future__ import annotations
 
 import base64
@@ -7,24 +6,25 @@ import logging
 import sys
 from hashlib import md5
 
+from binstar_client.deprecations import DEPRECATE_IN_1_15_0, REMOVE_IN_2_0_0, deprecated
+
 # Re-export config
 from .config import (
-    get_server_api,
-    dirs,
-    load_token,
-    store_token,
-    remove_token,
-    get_config,
-    set_config,
-    load_config,
-    get_binstar,
+    DEFAULT_CONFIG,
+    SITE_CONFIG,
     USER_CONFIG,
     USER_LOGDIR,
-    SITE_CONFIG,
-    DEFAULT_CONFIG,
+    dirs,
+    get_binstar,
+    get_config,
+    get_server_api,
+    load_config,
+    load_token,
+    remove_token,
+    set_config,
+    store_token,
 )
 from .spec import PackageSpec, package_specs, parse_specs
-from binstar_client.deprecations import deprecated, DEPRECATE_IN_1_15_0, REMOVE_IN_2_0_0
 
 logger = logging.getLogger('binstar')
 

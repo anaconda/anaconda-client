@@ -1,4 +1,3 @@
-# -*- coding: utf8 -*-
 """Tests for package registration commands."""
 
 import json

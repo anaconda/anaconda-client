@@ -195,7 +195,7 @@ def _is_sbom(filename: str) -> bool:
         return False
 
 
-def _detect_package_type(filename: str) -> Optional[str]:
+def _detect_package_type(filename: str) -> str | None:
     """
     Detect package type from filename.
 
@@ -230,7 +230,7 @@ def _detect_package_type(filename: str) -> Optional[str]:
     return None
 
 
-def windows_glob(item: str) -> List[str]:
+def windows_glob(item: str) -> list[str]:
     """Handle glob expansion on Windows.
 
     Args:
@@ -244,7 +244,7 @@ def windows_glob(item: str) -> List[str]:
     return [item]
 
 
-def determine_package_type(filename: str, package_type: Optional[PackageType] = None) -> str:
+def determine_package_type(filename: str, package_type: PackageType | None = None) -> str:
     """Determine the package type from file or explicit argument.
 
     Args:

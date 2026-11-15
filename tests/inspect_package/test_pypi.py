@@ -1,5 +1,3 @@
-from __future__ import print_function, unicode_literals
-
 import os
 import shutil
 import tempfile
@@ -165,14 +163,14 @@ class Test(unittest.TestCase):
             tmpdir = os.path.join(tmpdir, 'has-dash')
             try:
                 os.mkdir(tmpdir)
-            except (IOError, OSError) as error:
+            except OSError as error:
                 raise unittest.SkipTest('Cannot create temporary directory %r' % tmpdir) from error
         elif dash_count > 1:
             raise unittest.SkipTest('Too many dashes in temporary directory path %r' % tmpdir)
 
         try:
             shutil.copy(filename, tmpdir)
-        except (IOError, OSError) as error:
+        except OSError as error:
             raise unittest.SkipTest('Cannot copy package to temporary directory') from error
 
         tmpfilename = os.path.join(tmpdir, 'test_package34-0.3.1-py2.7.egg')

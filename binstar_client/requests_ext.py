@@ -1,10 +1,9 @@
-# -*- coding: utf8 -*-
 from __future__ import annotations
 
-from io import BytesIO, StringIO
-from itertools import chain
 import logging
 import typing
+from io import BytesIO, StringIO
+from itertools import chain
 
 from requests.auth import AuthBase
 from urllib3.filepost import choose_boundary
@@ -22,8 +21,8 @@ ValueT = typing.TypeVar('ValueT')
 
 @deprecated(deprecate_in=DEPRECATE_IN_1_15_0, remove_in=REMOVE_IN_2_0_0)
 def iter_fields(
-    fields: typing.Union[typing.Mapping[KeyT, ValueT], typing.Iterable[typing.Tuple[KeyT, ValueT]]],
-) -> typing.Iterator[typing.Tuple[KeyT, ValueT]]:
+    fields: typing.Mapping[KeyT, ValueT] | typing.Iterable[tuple[KeyT, ValueT]],
+) -> typing.Iterator[tuple[KeyT, ValueT]]:
     """Iterate over fields."""
     if isinstance(fields, typing.Mapping):
         return iter(fields.items())

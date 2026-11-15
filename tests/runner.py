@@ -4,10 +4,10 @@ Created on Sep 23, 2013
 @author: sean
 """
 
-from unittest.runner import TextTestRunner, TextTestResult
-from unittest.signals import registerResult
-import time
 import sys
+import time
+from unittest.runner import TextTestResult, TextTestRunner
+from unittest.signals import registerResult
 
 WARNING = '\033[33m'
 OKBLUE = '\033[34m'
@@ -61,7 +61,7 @@ class ColorTextTestResult(TextTestResult):
     def addSkip(self, test, reason):
         super().addSkip(test, reason)
         if self.showAll:
-            self.stream.writeln(blue('skipped {0!r}'.format(reason)))
+            self.stream.writeln(blue(f'skipped {reason!r}'))
         elif self.dots:
             self.stream.write(blue('s'))
             self.stream.flush()
