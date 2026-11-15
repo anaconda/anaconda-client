@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, print_function, unicode_literals
-
 import collections
 import hashlib
 import logging
@@ -12,22 +9,23 @@ import defusedxml.ElementTree as ET
 import requests
 from tqdm import tqdm
 
+from binstar_client.deprecations import DEPRECATE_IN_1_15_0, REMOVE_IN_2_0_0, deprecated
+
 from . import errors
 from ._version import __version__
-from binstar_client.deprecations import DEPRECATE_IN_1_15_0, REMOVE_IN_2_0_0, deprecated
 
 # For backwards compatibility
 from .errors import (
     BinstarError,
-    Unauthorized,
     Conflict,
+    DestinationPathExists,
+    NoMetadataError,
     NotFound,
-    UserError,
+    PillowNotInstalled,
     ServerError,
     ShowHelp,
-    NoMetadataError,
-    DestinationPathExists,
-    PillowNotInstalled,
+    Unauthorized,
+    UserError,
 )
 from .mixins.channels import ChannelsMixin
 from .mixins.notices import NoticesMixin
@@ -72,7 +70,7 @@ class Binstar(OrgMixin, ChannelsMixin, NoticesMixin, PackageMixin):
         self.token = token
         self._token_warning_sent = False
 
-        user_agent = 'Anaconda-Client/{} (+https://anaconda.org)'.format(__version__)
+        user_agent = f'Anaconda-Client/{__version__} (+https://anaconda.org)'
         self._session.headers.update(
             {
                 'User-Agent': user_agent,
@@ -82,10 +80,9 @@ class Binstar(OrgMixin, ChannelsMixin, NoticesMixin, PackageMixin):
         )
 
         if token:
-            self._session.headers.update({'Authorization': 'token {}'.format(token)})
+            self._session.headers.update({'Authorization': f'token {token}'})
 
-        if domain.endswith('/'):
-            domain = domain[:-1]
+        domain = domain.removesuffix('/')
         if not domain.startswith(('http://', 'https://')):
             domain = 'https://' + domain
         self.domain = domain
@@ -286,9 +283,9 @@ class Binstar(OrgMixin, ChannelsMixin, NoticesMixin, PackageMixin):
            (e.g. 'private', 'authenticated', 'public')
         """
         if login:
-            url = '{0}/packages/{1}'.format(self.domain, login)
+            url = f'{self.domain}/packages/{login}'
         else:
-            url = '{0}/packages'.format(self.domain)
+            url = f'{self.domain}/packages'
 
         arguments = collections.OrderedDict()
 
@@ -392,7 +389,7 @@ class Binstar(OrgMixin, ChannelsMixin, NoticesMixin, PackageMixin):
         :param package_name: the name of the package to be updated
         :param attrs: A dictionary of attributes to update
         """
-        url = '{}/package/{}/{}'.format(self.domain, login, package_name)
+        url = f'{self.domain}/package/{login}/{package_name}'
 
         payload = {'public_attrs': dict(attrs)}
         res = self.session.patch(url, json=payload)
@@ -408,7 +405,7 @@ class Binstar(OrgMixin, ChannelsMixin, NoticesMixin, PackageMixin):
         :param version: version of the package to update
         :param attrs: A dictionary of attributes to update
         """
-        url = '{}/release/{}/{}/{}'.format(self.domain, login, package_name, version)
+        url = f'{self.domain}/release/{login}/{package_name}/{version}'
         payload = {'public_attrs': dict(attrs)}
         res = self.session.patch(url, json=payload)
         self._check_response(res)
@@ -640,7 +637,7 @@ class Binstar(OrgMixin, ChannelsMixin, NoticesMixin, PackageMixin):
 
     def user_licenses(self):
         """Download the user current trial/paid licenses."""
-        url = '{domain}/license'.format(domain=self.domain)
+        url = f'{self.domain}/license'
         res = self.session.get(url)
         self._check_response(res)
         return res.json()

@@ -1,4 +1,3 @@
-# -*- coding: utf8 -*-
 """Tests for whoami command."""
 
 import json
