@@ -22,11 +22,13 @@ def _download(headers):
 
 def test_download_warns_on_deprecation(caplog):
     with caplog.at_level(logging.WARNING, logger='binstar'):
-        _download({
-            'Deprecation': 'true',
-            'Sunset': 'Sat, 01 May 2027 00:00:00 GMT',
-            'Link': '<https://conda.example.com/u/linux-64/f>; rel="successor-version"',
-        })
+        _download(
+            {
+                'Deprecation': 'true',
+                'Sunset': 'Sat, 01 May 2027 00:00:00 GMT',
+                'Link': '<https://conda.example.com/u/linux-64/f>; rel="successor-version"',
+            }
+        )
     assert 'deprecated' in caplog.text
     assert 'Sat, 01 May 2027' in caplog.text
     assert 'https://conda.example.com/u/linux-64/f' in caplog.text
