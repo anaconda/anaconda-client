@@ -491,6 +491,20 @@ class Binstar(OrgMixin, ChannelsMixin, NoticesMixin, PackageMixin):
         self._check_response(res)
         return res.json()
 
+    @staticmethod
+    def _warn_if_deprecated(res):
+        """Log a warning if the server marks the endpoint as deprecated (RFC 8594)."""
+        if str(res.headers.get('Deprecation', '')).lower() in ('', 'false'):
+            return
+        message = 'The endpoint %s is deprecated.' % res.request.path_url.split('?')[0]
+        sunset = res.headers.get('Sunset')
+        if sunset:
+            message += ' It may become unavailable after %s.' % sunset
+        successor = res.links.get('successor-version', {}).get('url')
+        if successor:
+            message += ' Use %s instead.' % successor
+        logger.warning(message)
+
     def download(self, login, package_name, release, basename, md5=None):
         """
         Download a package distribution
@@ -513,6 +527,7 @@ class Binstar(OrgMixin, ChannelsMixin, NoticesMixin, PackageMixin):
 
         res = self.session.get(url, headers=headers, allow_redirects=False)
         self._check_response(res, allowed=[200, 302, 304])
+        self._warn_if_deprecated(res)
 
         if res.status_code == 200:
             # We received the content directly from anaconda.org
