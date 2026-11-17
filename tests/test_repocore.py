@@ -1701,7 +1701,8 @@ class TestRepoCoreChannelsCLI:
             channel_name="newchannel", namespace="testuser", privacy="private"
         )
 
-    def test_channels_remove_with_namespace_resolution(self):
+    @pytest.mark.parametrize("flag", ["--yes", "-y"])
+    def test_channels_remove_with_namespace_resolution(self, flag):
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
@@ -1709,21 +1710,87 @@ class TestRepoCoreChannelsCLI:
         mock_api.remove_channel.return_value = (None, None)
 
         with _patch_repo_api(mock_api):
-            result = runner.invoke(app, ["remove", "dev"])
+            result = runner.invoke(app, ["remove", "dev", flag])
 
         assert result.exit_code == 0
         mock_api.remove_channel.assert_called_once_with("myorg/dev")
 
-    def test_channels_remove_with_slash(self):
+    @pytest.mark.parametrize("flag", ["--yes", "-y"])
+    def test_channels_remove_with_slash(self, flag):
         runner = CliRunner()
         app = _get_channels_app()
         mock_api = MagicMock()
         mock_api.remove_channel.return_value = (None, None)
 
         with _patch_repo_api(mock_api):
-            result = runner.invoke(app, ["remove", "myorg/dev"])
+            result = runner.invoke(app, ["remove", "myorg/dev", flag])
 
         assert result.exit_code == 0
+        mock_api.remove_channel.assert_called_once_with("myorg/dev")
+        mock_api.list_artifacts.assert_not_called()
+
+    @staticmethod
+    def _tty():
+        return patch("binstar_client.commands._repo_channels._stdin_is_interactive", return_value=True)
+
+    def test_channels_remove_confirm_yes(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_artifacts.return_value = ([], 3)
+        mock_api.remove_channel.return_value = (None, None)
+
+        with _patch_repo_api(mock_api), self._tty():
+            result = runner.invoke(app, ["remove", "myorg/dev"], input="y\n")
+
+        assert result.exit_code == 0, result.output
+        assert "myorg/dev" in result.output
+        assert "3 package(s)" in result.output
+        mock_api.remove_channel.assert_called_once_with("myorg/dev")
+
+    @pytest.mark.parametrize("answer", ["n\n", "\n"])
+    def test_channels_remove_decline_or_default(self, answer):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_artifacts.return_value = ([], 3)
+
+        with _patch_repo_api(mock_api), self._tty():
+            result = runner.invoke(app, ["remove", "myorg/dev"], input=answer)
+
+        assert result.exit_code == 0, result.output
+        assert "not removed" in result.output
+        mock_api.remove_channel.assert_not_called()
+
+    def test_channels_remove_no_tty_fails_fast(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+
+        with (
+            _patch_repo_api(mock_api),
+            patch("binstar_client.commands._repo_channels._stdin_is_interactive", return_value=False),
+        ):
+            result = runner.invoke(app, ["remove", "myorg/dev"], input="y\n")
+
+        assert result.exit_code == 1
+        assert "was not removed" in result.output
+        assert "--yes" in result.output
+        mock_api.remove_channel.assert_not_called()
+        mock_api.list_artifacts.assert_not_called()
+
+    def test_channels_remove_count_lookup_fails(self):
+        runner = CliRunner()
+        app = _get_channels_app()
+        mock_api = MagicMock()
+        mock_api.list_artifacts.side_effect = RepoCoreError("boom")
+        mock_api.remove_channel.return_value = (None, None)
+
+        with _patch_repo_api(mock_api), self._tty():
+            result = runner.invoke(app, ["remove", "myorg/dev"], input="y\n")
+
+        assert result.exit_code == 0, result.output
+        assert "all of its packages" in result.output
         mock_api.remove_channel.assert_called_once_with("myorg/dev")
 
     def test_channels_remove_no_namespace_errors(self):
