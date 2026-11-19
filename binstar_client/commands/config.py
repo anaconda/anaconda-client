@@ -67,8 +67,12 @@ import logging
 from argparse import Namespace, RawDescriptionHelpFormatter
 from typing import Callable, List, Optional
 
-import click
 import typer
+
+try:
+    from typer._click import types as click_types
+except ImportError:
+    import click as click_types  # type: ignore[no-redef]
 
 from binstar_client.errors import ShowHelp
 from binstar_client.utils.config import (
@@ -205,11 +209,11 @@ def mount_subcommand(app: typer.Typer, name: str, hidden: bool, help_text: str, 
     def config_subcommand(
         ctx: typer.Context,
         type_: Optional[str] = typer.Option(None, '--type', help='The type of the values in the set commands'),
-        set_: List[click.Tuple] = typer.Option(
+        set_: List[click_types.Tuple] = typer.Option(
             [],
             '--set',
             help='sets a new variable: name value',
-            click_type=click.Tuple([str, str]),
+            click_type=click_types.Tuple([str, str]),
         ),
         get: Optional[str] = typer.Option(
             None,
