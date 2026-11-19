@@ -45,9 +45,9 @@ def main(args):
             else:
                 logger.error('Invalid package specification: %s', spec)
 
-        except errors.NotFound:
+        except errors.NotFound as error:
             if args.force:
-                logger.warning('', exc_info=True)
+                logger.warning('Not removing %s: %s', spec, error.args[0])
                 continue
             raise
 
